@@ -13,8 +13,13 @@ const progress = 'Publishing. This can take up to a minute; this page updates wh
  * ordinary config reads and settles it by its exact idempotency key, also when the server's stored
  * setup is not byte-identical to the journaled one.
  */
-async function noAnswerPublication(t: TestContext, outcome: 'ACTIVE' | 'OPERATOR_HOLD' = 'ACTIVE') {
+async function noAnswerPublication(
+  t: TestContext,
+  outcome: 'ACTIVE' | 'OPERATOR_HOLD' = 'ACTIVE',
+  options: { clock?: boolean } = {},
+) {
   const f = await fixture(t);
+  if (options.clock) await f.page.clock.install();
   let publishKey: string | null = null;
   let settled = false;
   let reads = 0;
@@ -133,4 +138,47 @@ test('#436: an unanswered publish that stops for review shows that, not a spinne
   await f.page.getByText('Publication requires review.').first().waitFor();
   assert.equal(await f.page.getByText(progress, { exact: true }).count(), 0);
   assert.equal(await f.page.locator('ui-save-bar button[variant="primary"][loading]').count(), 0);
+});
+
+test('#436: a followed publish that never settles offers to continue the original request', {
+  timeout: 40000,
+}, async (t) => {
+  const f = await noAnswerPublication(t, 'ACTIVE', { clock: true });
+  assert.equal(await f.page.getByRole('button', { name: 'Retry', exact: true }).count(), 0);
+  // The server stops at the session's expiry; after the follow window the original request can be continued.
+  await f.page.clock.fastForward(46_000);
+  await f.modal
+    .getByText('Publication is still processing. Continue the original request to check its status.', { exact: true })
+    .waitFor();
+  await f.page.getByRole('button', { name: 'Retry', exact: true }).waitFor();
+  assert.equal(await f.page.getByText(progress, { exact: true }).count(), 0);
+  assert.ok(await storedIntent(f.page), 'the original request keeps its custody');
+});
+
+test('#436: a publish that was never sent is a failure, not followed progress', { timeout: 40000 }, async (t) => {
+  const f = await fixture(t);
+  let publishes = 0;
+  await f.page.route('**/api/admin/products/111/config', async (route) => {
+    const request = route.request();
+    if (request.method() === 'POST' && JSON.parse(request.postData() ?? '{}').action === 'publish') publishes++;
+    if (request.method() === 'PUT') {
+      // The session cannot be renewed for the publish request that follows the confirmed save.
+      await f.page.evaluate(() => {
+        window.shopify.idToken = async () => {
+          throw new Error('Open this page from Shopify Admin to verify your session.');
+        };
+      });
+    }
+    return route.fallback();
+  });
+  await f.open();
+  await f.page
+    .locator('s-button[slot="primary-action"]')
+    .filter({ hasText: /^Publish$/ })
+    .evaluate((button: HTMLElementTagNameMap['s-button']) => button.click());
+  const modal = f.page.locator('s-modal').filter({ hasText: 'Publish setup' });
+  await modal.getByRole('button', { name: 'Publish preview', exact: true }).click();
+  await modal.getByText(/could not be published/).waitFor();
+  assert.equal(publishes, 0, 'no publish request was sent');
+  assert.equal(await f.page.getByText(progress, { exact: true }).count(), 0);
 });

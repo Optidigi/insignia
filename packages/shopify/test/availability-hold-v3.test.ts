@@ -277,6 +277,67 @@ test('#446 review: MAX_COST_EXCEEDED is not retried and an observation reports a
   expect(store.reads - reads).toBe(1);
 });
 
+test('#436: sales-channel reads run at most eight at once and a failure drains every started read', async () => {
+  const channels = Array.from({ length: 12 }, (_, index) => `gid://shopify/Publication/${400 + index}`);
+  let inFlight = 0,
+    peak = 0,
+    started = 0;
+  const fetchImpl = vi.fn<typeof fetch>(async (_url: unknown, init?: RequestInit) => {
+    const request = graphqlRequest(String(init?.body));
+    if (!request.query.includes('publication(id:'))
+      return new Response(
+        JSON.stringify({
+          data: {
+            ...identity,
+            node: {
+              ...product(),
+              resourcePublications: {
+                nodes: channels.map((id) => ({
+                  publication: { id },
+                  isPublished: true,
+                  publishDate: '2026-10-07T10:00:00Z',
+                })),
+                pageInfo: complete,
+              },
+            },
+          },
+        }),
+      );
+    const id = string(request.variables.publicationId);
+    started++;
+    peak = Math.max(peak, ++inFlight);
+    try {
+      // The first channel answers at once with another Publication; the rest answer later.
+      if (id !== channels[0]) await new Promise((resolve) => setTimeout(resolve, 40));
+      return new Response(
+        JSON.stringify({ data: { ...identity, publication: { ...anchor(), id: id === channels[0] ? 'other' : id } } }),
+      );
+    } finally {
+      inFlight--;
+    }
+  });
+  const port = createShopifyAvailabilityHoldV3Port({
+    credentials: {
+      acquire: async () => ({
+        kind: 'usable',
+        shopDomain: 'synthetic.myshopify.com',
+        accessToken: 'synthetic-token',
+        accessExpiresAt: new Date('2099-01-01T00:00:00Z'),
+      }),
+    },
+    isCurrent: async () => true,
+    fetchImpl,
+    now,
+    timeoutMs: 10000,
+  });
+  await expect(port.snapshot(scope, productId)).rejects.toMatchObject({ kind: 'owner_mismatch' });
+  // Rejected only after every started sibling read settled; none started after the failure.
+  expect(inFlight).toBe(0);
+  expect(peak).toBeGreaterThan(1);
+  expect(peak).toBeLessThanOrEqual(8);
+  expect(started).toBeLessThanOrEqual(8);
+});
+
 type Scenario = {
   beforeWrite?: () => boolean;
   ackNonEffective?: 'acquire' | 'restore' | 'compensate';

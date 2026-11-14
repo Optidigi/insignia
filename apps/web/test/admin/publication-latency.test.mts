@@ -281,11 +281,16 @@ test('#436: a first publication spends its provider calls on sequencing, not rep
         return 'USD';
       },
     };
+    let denials = 0;
     const configs = createMerchantConfigService({
       core,
       catalog,
       eligibility: async () => {
         await count('subscription read');
+        if (denials > 0) {
+          denials--;
+          return { allowed: false, reason: 'Synthetic subscription lapsed' };
+        }
         return { allowed: true, reason: null };
       },
       publication: () => activation.publications,
@@ -298,21 +303,23 @@ test('#436: a first publication spends its provider calls on sequencing, not rep
       catalog,
       configs,
     });
+    const publish = (key: string) =>
+      handleAdminRequest(
+        new Request(`https://synthetic.example/api/admin/products/${productId}/config`, {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer synthetic-identity',
+            Origin: 'https://synthetic.example',
+            'Content-Type': 'application/json',
+            'Idempotency-Key': key,
+          },
+          body: JSON.stringify({ action: 'publish', configId, draftVersion: '1' }),
+        }),
+        services,
+        { kind: 'config', productId: `gid://shopify/Product/${productId}` },
+      );
     const started = performance.now();
-    const response = await handleAdminRequest(
-      new Request(`https://synthetic.example/api/admin/products/${productId}/config`, {
-        method: 'POST',
-        headers: {
-          Authorization: 'Bearer synthetic-identity',
-          Origin: 'https://synthetic.example',
-          'Content-Type': 'application/json',
-          'Idempotency-Key': 'm5-436-first-publication',
-        },
-        body: JSON.stringify({ action: 'publish', configId, draftVersion: '1' }),
-      }),
-      services,
-      { kind: 'config', productId: `gid://shopify/Product/${productId}` },
-    );
+    const response = await publish('m5-436-first-publication');
     const elapsed = Math.round(performance.now() - started);
     assert.equal(response.status, 202);
     assert.equal((await response.json()).state, 'ACTIVE');
@@ -332,6 +339,17 @@ test('#436: a first publication spends its provider calls on sequencing, not rep
     // A held-product observation reads its four sales channels together, and is not repeated
     // between two field writes. Before #436 this publication took 146 rounds.
     assert.ok(rounds <= 75, `${rounds} rounds ${JSON.stringify(budget)}`);
+
+    // A denial is never reused: the next request reads the subscription again and proceeds.
+    const read = () => calls.get('subscription read') ?? 0;
+    denials = 1;
+    let before = read();
+    assert.equal((await publish('m5-436-denied')).status, 403);
+    assert.equal(read() - before, 1);
+    before = read();
+    const republished = await publish('m5-436-after-denial');
+    assert.equal(republished.status, 202, await republished.clone().text());
+    assert.ok(read() - before >= 1, 'the request after a denial reads the subscription again');
   } finally {
     await core.close();
   }

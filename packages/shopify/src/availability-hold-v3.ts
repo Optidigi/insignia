@@ -37,6 +37,8 @@ const TRANSIENT_READ_FAILURES = new Set<ShopifyAvailabilityHoldError['kind']>([
 ]);
 /** Budget kept for the rest of an operation (and its readback) when waiting out throttling. */
 const THROTTLE_RETRY_RESERVE_MS = 3000;
+// Direct sales-channel reads in flight at once within one availability observation (#436).
+const ANCHOR_READ_CONCURRENCY = 8;
 const fail = (kind: ConstructorParameters<typeof ShopifyAvailabilityHoldError>[0]): never => {
   throw new ShopifyAvailabilityHoldError(kind);
 };
@@ -423,29 +425,45 @@ export function createShopifyAvailabilityHoldV3Port(
     const ids = [...new Set([...required, ...projection.effectiveVisibility.publishedPublicationIds])].sort();
     if (ids.length > AVAILABILITY_V3_ANCHOR_LIMIT) return fail('provider_shape');
     // The direct anchor reads are independent of each other and bracketed by the two product
-    // reads, so they run concurrently (#436); results keep the sorted ID order.
-    const anchors: ProductAvailabilitySnapshotV3['effectiveAnchors'][number][] = await Promise.all(
-      ids.map(async (publicationId) => {
-        const data = await executeRead(scope, budget, ANCHOR, {
-          publicationId,
-          productQuery: `id:${productId.split('/').at(-1)}`,
-        });
-        identity(data, scope);
-        const pub = record(data.publication);
-        if (!pub || pub.__typename !== 'Publication' || pub.id !== publicationId) return fail('owner_mismatch');
-        if (typeof pub.autoPublish !== 'boolean' || typeof pub.supportsFuturePublishing !== 'boolean')
-          return fail('provider_shape');
-        const included = connection(pub.includedProducts);
-        if (included.length !== 1 || included[0]!.id !== productId) return fail('owner_mismatch');
-        return {
-          publicationId,
-          resolved: true as const,
-          productIncluded: true as const,
-          autoPublish: pub.autoPublish,
-          supportsFuturePublishing: pub.supportsFuturePublishing,
-        };
+    // reads, so up to ANCHOR_READ_CONCURRENCY run at once (#436). After a failure no further read
+    // starts, every started read is drained before the first failure is rethrown, and results keep
+    // the sorted ID order.
+    const readAnchor = async (publicationId: string) => {
+      const data = await executeRead(scope, budget, ANCHOR, {
+        publicationId,
+        productQuery: `id:${productId.split('/').at(-1)}`,
+      });
+      identity(data, scope);
+      const pub = record(data.publication);
+      if (!pub || pub.__typename !== 'Publication' || pub.id !== publicationId) return fail('owner_mismatch');
+      if (typeof pub.autoPublish !== 'boolean' || typeof pub.supportsFuturePublishing !== 'boolean')
+        return fail('provider_shape');
+      const included = connection(pub.includedProducts);
+      if (included.length !== 1 || included[0]!.id !== productId) return fail('owner_mismatch');
+      return {
+        publicationId,
+        resolved: true as const,
+        productIncluded: true as const,
+        autoPublish: pub.autoPublish,
+        supportsFuturePublishing: pub.supportsFuturePublishing,
+      };
+    };
+    const anchors: ProductAvailabilitySnapshotV3['effectiveAnchors'][number][] = [];
+    let failure: { reason: unknown } | null = null;
+    let next = 0;
+    await Promise.allSettled(
+      Array.from({ length: Math.min(ANCHOR_READ_CONCURRENCY, ids.length) }, async () => {
+        while (!failure && next < ids.length) {
+          const index = next++;
+          try {
+            anchors[index] = await readAnchor(ids[index]!);
+          } catch (reason) {
+            failure ??= { reason };
+          }
+        }
       }),
     );
+    if (failure) throw (failure as { reason: unknown }).reason;
     let receivedAt = time();
     if (ids.length) {
       const final = await executeRead(scope, budget, READ, { productId });

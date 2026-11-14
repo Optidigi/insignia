@@ -1147,10 +1147,12 @@ export function createMerchantConfigService(input: {
           reconciliationFailure = advanced.kind;
           break;
         }
-        // A step that wrote and read back its field under an owned hold (or a same-mode publication)
-        // leaves activation where it was: it only waits for the remaining field writes, and the next
-        // step re-observes the hold itself before writing. Re-running activation would only repeat
-        // that observation (#436). Any other outcome, including a refused step, runs activation.
+        // While activation is HELD (or a same-mode PUBLICATION_PENDING), a PENDING step leaves it
+        // where it was: activation only waits for the remaining field writes. PENDING means a field
+        // was written and read back, or a write was retryable (network/ambiguous) or not dispatched.
+        // Either way the next step re-checks its admission (the owned hold) before any write, so
+        // re-running activation here would only repeat that observation (#436). Every other outcome,
+        // including ADMISSION_PENDING, runs activation.
         const activationWaiting: boolean =
           advanced.kind === 'PENDING' && (activationKind === 'HELD' || activationKind === 'PUBLICATION_PENDING');
         const activated: Pick<ActivationResult, 'kind'> | null = activation

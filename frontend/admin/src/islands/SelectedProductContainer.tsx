@@ -10,7 +10,7 @@ import {
 import { calibratedDimensions } from '@insignia/visualizer/geometry';
 import { withAdminLocale, useAdminLocale } from '../shared/admin-i18n';
 import { useAdminPageReady } from '../shared/admin-page-ready';
-import { authenticatedJson } from '../shared/admin-request';
+import { authenticatedJson, isUnansweredRequest } from '../shared/admin-request';
 import type { ConfigView } from '../shared/admin-view';
 import {
   configRejectionFrom,
@@ -118,6 +118,7 @@ function SelectedProductContainer({ productId }: { productId: string }) {
         if (publishing && !owned.hasPending()) {
           // The followed publication settled: adopt the server's confirmed draft, as a direct answer would.
           await observe(fresh);
+          if (version !== requestVersion.current || started !== activity.current) return;
           setFollowUntil(0);
           setRemote(fresh.config?.publication.state === 'FAILED' ? 'failed' : 'idle');
           return;
@@ -332,9 +333,12 @@ function SelectedProductContainer({ productId }: { productId: string }) {
       setRemote('pending');
       const value = await owned.retry();
       await observe(value);
+      setFollowUntil(0);
       setRemote(owned.hasPending() ? 'pending' : value.config?.publication.state === 'FAILED' ? 'failed' : 'idle');
     } catch (error) {
-      if (client.current === owned) setRemote(failedRemote(owned, error, 'failed'));
+      if (client.current !== owned) return;
+      setFollowUntil(0);
+      setRemote(failedRemote(owned, error, 'failed'));
     }
   }
   /** A write that is still unresolved stays pending; a server rejection is final; anything else is `otherwise`. */
@@ -531,7 +535,7 @@ function SelectedProductContainer({ productId }: { productId: string }) {
                 setRemote('conflict');
                 return { status: 'changed', product };
               }
-              if (client.current === owned && owned.hasPendingPublication() && !(error && typeof error === 'object' && 'status' in error)) {
+              if (client.current === owned && owned.hasPendingPublication() && isUnansweredRequest(error)) {
                 // No answer arrived (deadline or lost response): the request may still be publishing.
                 setFollowUntil(Date.now() + PUBLICATION_FOLLOW_MS);
                 setRemote('pending');

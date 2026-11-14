@@ -83,13 +83,41 @@ async function jsonResponse<T>(response: Response): Promise<T> {
 export function isShopifyBusy(error: unknown): boolean {
   return !!error && typeof error === 'object' && 'code' in error && error.code === 'BUSY';
 }
+/** A failure without an HTTP answer after the request was actually sent: its effect is unknown.
+ * Failures before dispatch (token wait, deadline, missing host) are known to have had none. */
+export function isUnansweredRequest(error: unknown): boolean {
+  return !!error && typeof error === 'object' && !('status' in error) && 'dispatched' in error && error.dispatched === true;
+}
 export async function authenticatedJson<T>(path: string, init: RequestInit = {}, forceFresh = false): Promise<T> {
   const policy = adminRequestPolicy(path, init);
+  let dispatched = false;
+  try {
+    return await authenticatedRequest<T>(path, init, forceFresh, policy, () => {
+      dispatched = true;
+    });
+  } catch (error) {
+    if (error && typeof error === 'object' && !('status' in error))
+      try {
+        Object.defineProperty(error, 'dispatched', { value: dispatched, configurable: true });
+      } catch {
+        /* A frozen error stays unmarked, which reads as not dispatched. */
+      }
+    throw error;
+  }
+}
+function authenticatedRequest<T>(
+  path: string,
+  init: RequestInit,
+  forceFresh: boolean,
+  policy: ReturnType<typeof adminRequestPolicy>,
+  dispatching: () => void,
+): Promise<T> {
   return browserDeadline(
     async (signal) => {
       const send = async (fresh = forceFresh) => {
         const token = await sessionToken(fresh, policy);
         signal.throwIfAborted();
+        dispatching();
         return fetch(path, {
           ...init,
           headers: {

@@ -339,7 +339,11 @@ export function createSelectedProductClient(input: {
         : publication.state === 'ACTIVE' &&
           publication.activeRevisionId === publication.revisionId &&
           !!config.publishedSetup &&
-          (exact || ('setup' in value && sameJson(config.publishedSetup.product, value.setup.product)));
+          (exact ||
+            // Byte comparison only for a server that reports no request key; a key identifies the request.
+            (publication.requestKey == null &&
+              'setup' in value &&
+              sameJson(config.publishedSetup.product, value.setup.product)));
     if (settled) input.storage.removeItem(key());
     return settled;
   }

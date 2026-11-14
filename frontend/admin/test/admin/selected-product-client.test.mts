@@ -794,9 +794,11 @@ for (const outcome of ['ACTIVE', 'FAILED'] as const)
     assert.equal(client.hasPendingPublication(), true, 'the unanswered request keeps its custody');
     published = true;
     const later = await client.peek();
-    // Another request's outcome for the same draft does not settle this one.
+    // Another request's outcome for the same draft does not settle this one, even when its
+    // published setup has exactly the journaled bytes.
     const other = structuredClone(later);
     other.config!.publication.requestKey = 'another-key:publish';
+    if (outcome === 'ACTIVE') other.config!.publishedSetup = candidate;
     assert.equal(client.adoptObservation(other), true);
     assert.equal(client.hasPending(), true);
     assert.equal(client.adoptObservation(later), true);
