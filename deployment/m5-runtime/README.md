@@ -6,8 +6,8 @@ Active VPS management custody is `%h/.local/share/insignia/runtime/`. Some live 
 
 ## Current state
 
-As of 13 November 2026 (rewrite-dev on host alias `prod`). [Delivery state](../../docs/delivery/state.md#deployed-identities) holds the exact image digests and custody locators.
-- **Release profile:** `native-a11y-quantity-9b5dbdee`, set as `INSIGNIA_RELEASE_PROFILE` in web and worker and, with its matching code manifest, in the verifier. It binds version `1207622696961` in [native-a11y-quantity-release-binding.json](native-a11y-quantity-release-binding.json) (39 versions) and the 14-module [baseline](native-a11y-quantity-module-baseline.json); see [A11y-quantity candidate](#a11y-quantity-candidate-development-transition).
+As of 14 November 2026 (rewrite-dev on host alias `prod`). [Delivery state](../../docs/delivery/state.md#deployed-identities) holds the exact image digests and custody locators.
+- **Release profile:** `native-merchant-batch-a03b41ba`, set as `INSIGNIA_RELEASE_PROFILE` in web and worker and, with its matching code manifest, in the verifier. It binds version `1211378860033` in [native-merchant-batch-release-binding.json](native-merchant-batch-release-binding.json) (40 versions) and the 14-module [baseline](native-merchant-batch-module-baseline.json); see [Merchant-batch candidate](#merchant-batch-candidate-development-transition).
 - **Functions:** source `aa3b6166`, unchanged since the cart-line v3 cutover; pins in [Cart-line v3](#cart-line-v3-candidate-development-transition).
 - **Schema 64**, equal to the 64 migrations in `packages/database/migrations`. Migration 64 (signing envelope writer guard) and the signer image with the revoke lock were deployed on 13 November 2026 (`afc3c1da`); expected function-ACL digest `bda94d7ecad6c07dc0cecd83d79983d0`.
 - **`INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON`** in web is `{"appKey":…}` only since 13 November 2026 ([Expected Function configuration](#expected-function-configuration)). Worker and verifier never carried it.
@@ -242,6 +242,17 @@ The earlier read-only observation of `stitchs-vat-verification-20261004.myshopif
 ## Past transitions
 
 Each section below records one past transition: what it changed and the operator steps it needed then. They are history, not current instructions; [Current state](#current-state) and [Deploy next](#deploy-next) are current. Newest first.
+
+### Merchant-batch candidate development transition
+
+Standing owner grant, 13 November 2026 (deploy B of the merchant-issue batch): ship the Designer and storefront changes merged up to main `a03b41ba` (#430/#424 Designer fixes and the autosave 429 pause, #459/#445 pixel-limit reason copy) to rewrite-dev as one theme-only app version. The server side of `a03b41ba` (#455–#463) was deployed under `native-a11y-quantity-9b5dbdee` before the candidate was created, with the host inspector switched to the `a03b41ba` package (tree `782f474c`, #445 pixel-limit reason). No migration (schema 64, ACL digests unchanged).
+
+`native-merchant-batch-a03b41ba` binds inactive version `1211378860033` in [native-merchant-batch-release-binding.json](native-merchant-batch-release-binding.json) (40 versions) and the 14-module [baseline](native-merchant-batch-module-baseline.json) (canonical hash `a3809ff58bcec22361d845c75fb7769f09f0b0f84ebfb1d7f67dad8f6eda72cd`).
+- It was created once at `2026-11-14T08:07:28Z` (CLI 4.9.4) from the frozen `native-a11y-quantity-9b5dbdee` staging. Only `extensions/insignia-theme/assets` changed: its 15 files are the foundation build of `a03b41ba` (run 43572894686, attempt 1), byte-identical to a local build of the same tree; eight files differ from the Active version (six renamed chunks, `insignia-designer-frame.js` and `insignia-element.js`).
+- Blocks, snippets, locales, every non-theme module and both Function modules are unchanged, including module ids, wasm and input queries. The foundation wasm of `a03b41ba` equals the Active pins (transform `5c8708b5…`/183604, validation `6c362b36…`/181608); the Function source still is `aa3b6166`.
+- `1207622696961` stays the sole Active version until the release; all NEVER_RELEASE versions are inactive.
+
+Phase B operator changes, made together with the single release: set `INSIGNIA_RELEASE_PROFILE=native-merchant-batch-a03b41ba` in web and worker, and the same profile with the matching manifest in the verifier, using binding-head images. Creating the candidate makes `native-a11y-quantity-9b5dbdee` fail closed (inventory 40) until this step and the release complete. No migration, grant or other environment change.
 
 ### Signing envelope writer guard and signer revoke lock
 
