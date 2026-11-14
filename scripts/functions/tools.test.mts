@@ -34,3 +34,23 @@ test('trampoline requests the pinned official asset and a failed download instal
   assert.equal(requested, 'https://api.github.com/repos/Shopify/shopify-function-wasm-api/releases/assets/298980878');
   assert.equal(accept, 'application/octet-stream');
 });
+
+test('trampoline download authenticates only when the CI download token is provided', async (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'function-tool-auth-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const seen: (string | null)[] = [];
+  t.mock.method(globalThis, 'fetch', async (_input: string | URL | Request, init?: RequestInit) => {
+    seen.push(new Headers(init?.headers).get('Authorization'));
+    return new Response(null, { status: 504 });
+  });
+  const previous = process.env.INSIGNIA_GITHUB_DOWNLOAD_TOKEN;
+  t.after(() => {
+    if (previous === undefined) delete process.env.INSIGNIA_GITHUB_DOWNLOAD_TOKEN;
+    else process.env.INSIGNIA_GITHUB_DOWNLOAD_TOKEN = previous;
+  });
+  delete process.env.INSIGNIA_GITHUB_DOWNLOAD_TOKEN;
+  await assert.rejects(ensurePinnedTool(join(root, 'a'), 'trampoline'), /HTTP 504/);
+  process.env.INSIGNIA_GITHUB_DOWNLOAD_TOKEN = 'ci-token';
+  await assert.rejects(ensurePinnedTool(join(root, 'b'), 'trampoline'), /HTTP 504/);
+  assert.deepEqual(seen, [null, 'Bearer ci-token']);
+});
