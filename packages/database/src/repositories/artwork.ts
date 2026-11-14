@@ -34,9 +34,29 @@ type Row = {
   updated_at: Date;
   retry_at: Date | null;
   cleanup_attempt_at: Date | null;
+  quarantine_cleaned_at: Date | null;
   quarantine_cleanup_attempt_at: Date | null;
 };
 const active = `EXISTS (SELECT 1 FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=a.shop_id AND s.current_generation=a.installation_generation AND i.deactivated_at IS NULL)`;
+/**
+ * Late writes are bounded: a presigned PUT accepted before its upload link expired, or an inspection
+ * lease that lapsed before deletion. Cleanup keeps reconciling keys until one successful sweep was
+ * *issued* after that window, then settles (#465). Elapsed time alone never settles a row: a sweep
+ * backlog or a storage outage covering the window leaves it eligible.
+ *
+ * quarantine_cleaned_at records the start of the last successful sweep: of a USABLE row's quarantine
+ * key, or of a tombstone's keys. The DELETING->DELETED transition clears it.
+ */
+const lateWriteMs = ARTWORK_POLICY.leaseMs + 30000;
+const unsettled = (windowStart: string) =>
+  `(a.quarantine_cleaned_at IS NULL OR a.quarantine_cleaned_at < ${windowStart} + ${lateWriteMs} * interval '1 millisecond')`;
+const settled = (cleanedAt: Date | null, windowStart: number) =>
+  cleanedAt !== null && +cleanedAt >= windowStart + lateWriteMs;
+// A quarantine key can be rewritten until its upload link expires.
+const quarantinePending = unsettled('a.upload_until');
+// A tombstone's window starts at its own deletion (the DELETED transition's updated_at, which re-sweeps
+// leave untouched) or its upload deadline, whichever is later; not at the original retention expiry.
+const tombstonePending = unsettled('greatest(a.updated_at,a.upload_until)');
 const expired = `(a.expires_at <= $1 OR (a.state='UPLOADING' AND a.collected_at <= $1::timestamptz - interval '24 hours') OR a.state IN ('REJECTED','DELETING') OR NOT (${active}))`;
 const map = (r: Row): ArtworkRecord => ({
   assetId: r.asset_id,
@@ -342,8 +362,8 @@ export function createArtworkRepository(pool: Pool, database: Kysely<Database> =
     },
     async selectExpired(limit, now) {
       const r = await pool.query<Row>(
-        `SELECT a.* FROM artwork_assets a WHERE ((state!='DELETED' AND ${expired}) OR (state='DELETED' AND expires_at + ($3 + 30000) * interval '1 millisecond' >= $1 AND updated_at <= $1::timestamptz - interval '60 seconds')) AND (claim_until IS NULL OR claim_until<=$1) AND (cleanup_attempt_at IS NULL OR cleanup_attempt_at<=$1::timestamptz-interval '60 seconds') ORDER BY cleanup_attempt_at NULLS FIRST,collected_at,asset_id LIMIT $2`,
-        [now, Math.max(1, Math.min(100, Math.trunc(limit))), ARTWORK_POLICY.leaseMs],
+        `SELECT a.* FROM artwork_assets a WHERE ((state!='DELETED' AND ${expired}) OR (state='DELETED' AND ${tombstonePending})) AND (claim_until IS NULL OR claim_until<=$1) AND (cleanup_attempt_at IS NULL OR cleanup_attempt_at<=$1::timestamptz-interval '60 seconds') ORDER BY cleanup_attempt_at NULLS FIRST,collected_at,asset_id LIMIT $2`,
+        [now, Math.max(1, Math.min(100, Math.trunc(limit)))],
       );
       return r.rows.map(map);
     },
@@ -354,8 +374,9 @@ export function createArtworkRepository(pool: Pool, database: Kysely<Database> =
           if (r.claim_until && r.claim_until > now) return null;
           if (r.cleanup_attempt_at && +r.cleanup_attempt_at > +now - 60000) return null;
           if (r.state === 'DELETED') {
-            if (+now > +r.expires_at + ARTWORK_POLICY.leaseMs + 30000 || +r.updated_at > +now - 60000) return null;
-            await c.query('UPDATE artwork_assets SET updated_at=$2,cleanup_attempt_at=$2 WHERE asset_id=$1', [id, now]);
+            if (settled(r.quarantine_cleaned_at, Math.max(+r.updated_at, +r.upload_until))) return null;
+            // A re-sweep records only its attempt; updated_at stays the deletion time that bounds the window.
+            await c.query('UPDATE artwork_assets SET cleanup_attempt_at=$2 WHERE asset_id=$1', [id, now]);
             return map(r);
           }
           if (
@@ -376,18 +397,22 @@ export function createArtworkRepository(pool: Pool, database: Kysely<Database> =
       await locked(
         id,
         async (c, r) => {
-          if (r.state === 'DELETING' || r.state === 'DELETED')
+          if (r.state === 'DELETING')
             await c.query(
-              "UPDATE artwork_assets SET state='DELETED',manifest=NULL,owner_hash=NULL,rejection=NULL,claim_id=NULL,claim_until=NULL,updated_at=$2 WHERE asset_id=$1",
+              "UPDATE artwork_assets SET state='DELETED',manifest=NULL,owner_hash=NULL,rejection=NULL,claim_id=NULL,claim_until=NULL,quarantine_cleaned_at=NULL,updated_at=$2 WHERE asset_id=$1",
               [id, now],
             );
+          // A re-swept tombstone is already scrubbed: record only when its successful sweep was issued.
+          // The inspector's sweep is serialized, so the current attempt is the one that just completed.
+          else if (r.state === 'DELETED')
+            await c.query('UPDATE artwork_assets SET quarantine_cleaned_at=cleanup_attempt_at WHERE asset_id=$1', [id]);
         },
         undefined,
       );
     },
     async selectQuarantineCleanup(limit, now) {
       const rows = await pool.query<Row>(
-        `SELECT a.* FROM artwork_assets a WHERE state='USABLE' AND (quarantine_cleanup_attempt_at IS NULL OR quarantine_cleanup_attempt_at<=$1::timestamptz-interval '60 seconds') AND upload_until<=$1 AND expires_at>$1 AND ${active} ORDER BY quarantine_cleanup_attempt_at NULLS FIRST,upload_until,asset_id LIMIT $2`,
+        `SELECT a.* FROM artwork_assets a WHERE state='USABLE' AND ${quarantinePending} AND (quarantine_cleanup_attempt_at IS NULL OR quarantine_cleanup_attempt_at<=$1::timestamptz-interval '60 seconds') AND upload_until<=$1 AND expires_at>$1 AND ${active} ORDER BY quarantine_cleanup_attempt_at NULLS FIRST,upload_until,asset_id LIMIT $2`,
         [now, Math.max(1, Math.min(100, Math.trunc(limit)))],
       );
       return rows.rows.map(map);
@@ -401,6 +426,7 @@ export function createArtworkRepository(pool: Pool, database: Kysely<Database> =
             r.state !== 'USABLE' ||
             r.upload_until > now ||
             r.expires_at <= now ||
+            settled(r.quarantine_cleaned_at, +r.upload_until) ||
             (r.quarantine_cleanup_attempt_at && +r.quarantine_cleanup_attempt_at > +now - 60000)
           )
             return false;
@@ -419,7 +445,8 @@ export function createArtworkRepository(pool: Pool, database: Kysely<Database> =
         async (c, r, live) => {
           if (live && r.state === 'USABLE' && r.upload_until <= now)
             await c.query(
-              'UPDATE artwork_assets SET quarantine_cleaned_at=$2,quarantine_cleanup_attempt_at=$2,updated_at=$2 WHERE asset_id=$1',
+              // Record when the successful delete was issued (its attempt), not when it completed.
+              'UPDATE artwork_assets SET quarantine_cleaned_at=coalesce(quarantine_cleanup_attempt_at,$2),quarantine_cleanup_attempt_at=coalesce(quarantine_cleanup_attempt_at,$2),updated_at=$2 WHERE asset_id=$1',
               [id, now],
             );
         },

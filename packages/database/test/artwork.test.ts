@@ -1,5 +1,11 @@
 import { randomUUID } from 'node:crypto';
-import { ARTWORK_POLICY, type ArtworkManifest, type ArtworkRecord } from '@insignia/application';
+import {
+  ARTWORK_POLICY,
+  type ArtworkManifest,
+  type ArtworkRecord,
+  type ArtworkStorage,
+  createArtworkService,
+} from '@insignia/application';
 import { Pool } from 'pg';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { createDurableCore } from '../src/index.js';
@@ -361,7 +367,15 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable artwork ownership and
       expect(await store.selectExpired(100, new Date(+deadline + 61000))).not.toContainEqual(
         expect.objectContaining({ assetId: input.assetId }),
       );
-      expect(await store.markDeleting(input.assetId, new Date(+deadline + ARTWORK_POLICY.leaseMs + 30001))).toBeNull();
+      // Elapsed time alone does not settle it: one successful sweep issued after the window does (#465).
+      const pastWindow = new Date(+deadline + ARTWORK_POLICY.leaseMs + 30001);
+      expect((await store.markDeleting(input.assetId, pastWindow))?.state).toBe('DELETED');
+      await store.finishDeleting(input.assetId, new Date(+pastWindow + 1000));
+      const later = new Date(+pastWindow + 3600000);
+      expect(await store.selectExpired(100, later)).not.toContainEqual(
+        expect.objectContaining({ assetId: input.assetId }),
+      );
+      expect(await store.markDeleting(input.assetId, later)).toBeNull();
     } finally {
       await db.destroy();
     }
@@ -491,5 +505,166 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable artwork ownership and
     } finally {
       await db.destroy();
     }
+  });
+  describe('cleanup settles instead of re-claiming every row forever (#465)', () => {
+    // Late writes (an in-flight presigned PUT, a lapsed inspection lease) are bounded by this window.
+    const lateWriteMs = ARTWORK_POLICY.leaseMs + 30000;
+    const manifest: ArtworkManifest = {
+      version: 'm6-inspection-v1',
+      mimeType: 'image/png',
+      byteLength: 10,
+      sha256: 'c'.repeat(64),
+      width: 2,
+      height: 2,
+      previewSha256: 'd'.repeat(64),
+      previewByteLength: 15,
+    };
+    /** Drive the real service sweep as the inspector does: limit 20, every 30 seconds. */
+    async function sweep(from: Date, durationMs: number, unavailable: (at: number) => boolean = () => false) {
+      let clock = from;
+      const removed: { key: string; at: number }[] = [];
+      const storage = {
+        remove: async ({ key }: { key: string }) => {
+          if (unavailable(+clock)) throw new Error('storage unavailable');
+          removed.push({ key, at: +clock });
+        },
+      } as unknown as ArtworkStorage;
+      const failures: number[] = [];
+      const service = createArtworkService({
+        store,
+        storage,
+        clock: () => clock,
+        inspect: () => Promise.reject(new Error('unused')),
+        onCleanupError: () => failures.push(+clock),
+      });
+      for (let at = +from; at <= +from + durationMs; at += 30000) {
+        clock = new Date(at);
+        await service.cleanup(20);
+      }
+      const times = (key: string) => removed.filter((r) => r.key === key).map((r) => r.at);
+      return { removed, failures, times };
+    }
+    async function usable(shopId: string) {
+      const scope = { shopId, installationGeneration: '1', kind: 'merchant' as const };
+      const input = record(shopId);
+      await store.create(input);
+      await store.complete(scope, input.assetId, now);
+      const claim = randomUUID();
+      await store.claim(input.assetId, claim, now, new Date(+now + ARTWORK_POLICY.leaseMs));
+      await store.prepare(input.assetId, claim, manifest, now);
+      await store.settle(input.assetId, claim, now);
+      return input;
+    }
+    /** Rejected at `now`: deleted long before its seven-day retention expiry. */
+    async function rejected(shopId: string) {
+      const input = record(shopId);
+      await store.create(input);
+      await store.complete({ shopId, installationGeneration: '1', kind: 'merchant' }, input.assetId, now);
+      const claim = randomUUID();
+      await store.claim(input.assetId, claim, now, new Date(+now + 60000));
+      await store.reject(input.assetId, claim, 'INSPECTION_REJECTED', now);
+      return input;
+    }
+    async function expectSettledTombstone(input: ArtworkRecord, at: Date) {
+      expect(await store.selectExpired(100, at)).not.toContainEqual(
+        expect.objectContaining({ assetId: input.assetId }),
+      );
+      expect(await store.markDeleting(input.assetId, at)).toBeNull();
+      expect(
+        (await pool.query('SELECT state,owner_hash FROM artwork_assets WHERE asset_id=$1', [input.assetId])).rows[0],
+      ).toEqual({ state: 'DELETED', owner_hash: null });
+    }
+    it('stops re-cleaning a USABLE quarantine key after a delete issued past its late-upload window', async () => {
+      const db = await openTestDatabase();
+      try {
+        const { shopId } = await ownTestShop(db);
+        const scope = { shopId, installationGeneration: '1', kind: 'merchant' as const };
+        const input = await usable(shopId);
+        const { removed, times } = await sweep(input.uploadUntil, 3600000);
+        const quarantine = times(input.quarantineKey);
+        const windowEnd = +input.uploadUntil + lateWriteMs;
+        // Reconciled through the window, once more after it, then settled: not once a minute until expiry.
+        expect(Math.max(...quarantine)).toBeGreaterThanOrEqual(windowEnd);
+        expect(Math.max(...quarantine)).toBeLessThanOrEqual(windowEnd + 90000);
+        expect(quarantine.length).toBeLessThanOrEqual(Math.ceil(lateWriteMs / 60000) + 2);
+        // Retained artwork is never touched and stays usable.
+        expect(removed.filter((r) => r.key !== input.quarantineKey && r.key.endsWith(input.assetId))).toEqual([]);
+        const after = new Date(+input.uploadUntil + 3600000);
+        expect(await store.readUsability(scope, [input.assetId], after)).toHaveLength(1);
+        expect(await store.markQuarantineCleanupAttempt(input.assetId, after)).toBe(false);
+      } finally {
+        await db.destroy();
+      }
+    });
+    it('settles an early tombstone after a sweep issued past its late-write window, not at the original expiry', async () => {
+      const db = await openTestDatabase();
+      try {
+        const { shopId } = await ownTestShop(db);
+        const input = await rejected(shopId);
+        const { times } = await sweep(now, 3600000);
+        const original = times(input.originalKey);
+        const windowEnd = +input.uploadUntil + lateWriteMs;
+        expect(original[0]).toBe(+now);
+        // A presigned PUT may still land until the upload link expires: re-sweep through and past that window.
+        expect(Math.max(...original)).toBeGreaterThanOrEqual(windowEnd);
+        expect(Math.max(...original)).toBeLessThanOrEqual(windowEnd + 90000);
+        expect(original.length).toBeLessThanOrEqual(Math.ceil((windowEnd - +now) / 60000) + 2);
+        await expectSettledTombstone(input, new Date(+now + 3600000));
+      } finally {
+        await db.destroy();
+      }
+    });
+    it('keeps an early tombstone eligible behind a large deletion backlog until a sweep passes its window', async () => {
+      const db = await openTestDatabase();
+      try {
+        const { shopId } = await ownTestShop(db);
+        const input = await rejected(shopId);
+        // The first sweep deletes the asset well before its upload link expires.
+        expect((await sweep(now, 0)).times(input.originalKey)).toEqual([+now]);
+        const earlier = new Date(+now - 1000);
+        // Then a mass rejection/erasure lands ahead of its re-sweeps, beyond what limit 20 drains in its window.
+        await pool.query(
+          `INSERT INTO artwork_assets(asset_id,shop_id,installation_generation,owner_hash,declared_mime,declared_bytes,state,rejection,quarantine_key,original_key,preview_key,collected_at,upload_until,expires_at,owner_kind)
+           SELECT id,$1,1,'b'||repeat('0',63),'image/png',1,'REJECTED','INSPECTION_REJECTED','quarantine/'||id,'original/'||id,'preview/'||id,$2,$3,$4,'guest'
+           FROM (SELECT gen_random_uuid() id FROM generate_series(1,400)) g`,
+          [
+            shopId,
+            earlier,
+            new Date(+earlier + ARTWORK_POLICY.uploadMs),
+            new Date(+earlier + ARTWORK_POLICY.retainedMs),
+          ],
+        );
+        const duration = 2 * 3600000;
+        const { times } = await sweep(new Date(+now + 30000), duration);
+        const quarantine = times(input.quarantineKey);
+        expect(quarantine.length).toBeGreaterThan(0);
+        expect(Math.max(...quarantine)).toBeGreaterThanOrEqual(+input.uploadUntil + lateWriteMs);
+        const end = new Date(+now + 30000 + duration);
+        await expectSettledTombstone(input, end);
+        // The whole backlog settled too: nothing of this shop is still selected for cleanup.
+        expect((await store.selectExpired(100, end)).filter((row) => row.shopId === shopId)).toEqual([]);
+      } finally {
+        await db.destroy();
+      }
+    }, 300_000);
+    it('re-cleans after a storage outage that spans the late-write window', async () => {
+      const db = await openTestDatabase();
+      try {
+        const { shopId } = await ownTestShop(db);
+        const kept = await usable(shopId);
+        const tombstone = await rejected(shopId);
+        const windowEnd = +tombstone.uploadUntil + lateWriteMs;
+        const outage = (at: number) => at >= +tombstone.uploadUntil - 60000 && at <= windowEnd + 120000;
+        const { failures, times } = await sweep(now, 3600000, outage);
+        expect(failures.length).toBeGreaterThan(0);
+        // Each key's last successful delete was issued after the outage, past the window; then both settled.
+        for (const key of [tombstone.quarantineKey, tombstone.originalKey, kept.quarantineKey])
+          expect(Math.max(...times(key))).toBeGreaterThan(windowEnd + 120000);
+        await expectSettledTombstone(tombstone, new Date(+now + 3600000));
+        expect(await store.markQuarantineCleanupAttempt(kept.assetId, new Date(+now + 3600000))).toBe(false);
+      } finally {
+        await db.destroy();
+      }
+    });
   });
 });
