@@ -30,7 +30,8 @@ function jsonBody(value: unknown) {
   return encoded;
 }
 
-type Request = (path: string, init?: RequestInit) => Promise<unknown>;
+/** `resendValidityMs`: the session-token validity a resent publish waits for (#468). */
+type Request = (path: string, init?: RequestInit, resendValidityMs?: number) => Promise<unknown>;
 type StoragePort = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 const custodyBase = z.strictObject({
   authority: z.string(),
@@ -49,6 +50,14 @@ const custodySchema = z.union([journalSchema, markerSchema]);
 const savedSchema = z.strictObject({ kind: z.literal('saved'), draftVersion: z.string() });
 const createdSchema = z.strictObject({ kind: z.literal('created'), configId: z.string() });
 const acceptedSchema = z.object({ kind: z.literal('accepted'), state: z.string(), revisionId: z.string().optional() });
+const resendSchema = z.object({
+  kind: z.literal('resend'),
+  revisionId: z.string().optional(),
+  minimumValidityMs: z.number(),
+});
+const publishSchema = z.discriminatedUnion('kind', [acceptedSchema, resendSchema]);
+// Each resend waits for a new session token; the server makes progress with every one.
+const maxResends = 3;
 
 /** Local custody contains only the exact unresolved write intent, never an authoritative product draft. */
 export class SelectedProductReviewChanged extends Error {
@@ -78,7 +87,9 @@ export function createSelectedProductClient(input: {
   const number = /^gid:\/\/shopify\/Product\/([1-9][0-9]*)$/.exec(input.productId)?.[1];
   if (!number) throw new Error('Invalid product identity');
   const endpoint = `/api/admin/products/${number}/config`;
-  const transport = input.request ?? authenticatedJson;
+  const transport: Request =
+    input.request ??
+    ((path, init, resendValidityMs) => authenticatedJson(path, init, false, resendValidityMs));
   const now = input.now ?? Date.now;
   let current: ConfigView | null = null;
   let scope: { shop: string; authority: string } | null = null;
@@ -103,10 +114,10 @@ export function createSelectedProductClient(input: {
     current = null;
     if (denied) input.onDenied?.();
   }
-  async function request(path: string, init?: RequestInit): Promise<unknown> {
+  async function request(path: string, init?: RequestInit, resendValidityMs?: number): Promise<unknown> {
     assertCurrent();
     try {
-      const value = await transport(path, init);
+      const value = await transport(path, init, resendValidityMs);
       assertCurrent();
       return value;
     } catch (error) {
@@ -297,17 +308,33 @@ export function createSelectedProductClient(input: {
     if (current?.config && isMerchantPublicationOperatorBlocked(current.config.publication.state))
       throw new Error('The existing publication requires operator reconciliation');
     if (!value.configId || !value.draftVersion) throw new Error('Publication identity unavailable');
-    const accepted = acceptedSchema.parse(
-      await request(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Idempotency-Key': `${value.key}:publish`,
-          'X-Insignia-Setup-Authority': value.authority,
+    const send = (resendValidityMs?: number) =>
+      request(
+        endpoint,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Idempotency-Key': `${value.key}:publish`,
+            'X-Insignia-Setup-Authority': value.authority,
+          },
+          body: jsonBody({ action: 'publish', configId: value.configId, draftVersion: value.draftVersion }),
         },
-        body: jsonBody({ action: 'publish', configId: value.configId, draftVersion: value.draftVersion }),
-      }),
-    );
+        resendValidityMs,
+      );
+    let accepted = publishSchema.parse(await send());
+    // #468: the staff session ended between publication steps. Re-send the same request (same key and
+    // bytes) as soon as a new session token is available; the server resumes from its persisted step.
+    for (let resent = 0; accepted.kind === 'resend'; resent++) {
+      if (accepted.revisionId && accepted.revisionId !== value.acceptedRevisionId) {
+        value = { ...value, acceptedRevisionId: accepted.revisionId };
+        store(value);
+      }
+      if (resent === maxResends)
+        // The server stopped it and is not running it: keep custody and offer Retry at once.
+        throw new Error('Publication is still in progress');
+      accepted = publishSchema.parse(await send(accepted.minimumValidityMs));
+    }
     if (accepted.revisionId) {
       value = { ...value, acceptedRevisionId: accepted.revisionId };
       store(value);

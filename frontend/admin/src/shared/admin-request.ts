@@ -1,7 +1,8 @@
 import { adminRequestPolicy } from './admin-request-policy.ts';
 import { readFreshBridgeToken } from './bridge-token.ts';
 
-const tokenRequests = new Map<number, Promise<string>>();
+// Shared per scheduling policy: a publication never shares an ordinary request's token promise.
+const tokenRequests = new Map<string, Promise<string>>();
 async function browserDeadline<T>(
   task: (signal: AbortSignal) => Promise<T>,
   caller?: AbortSignal | null,
@@ -42,7 +43,7 @@ function sessionToken(forceFresh = false, policy = adminRequestPolicy('')): Prom
       policy.timeoutMs,
     );
   if (forceFresh) return acquire();
-  const key = policy.minimumValidityMs;
+  const key = `${policy.timeoutMs}:${policy.minimumValidityMs}`;
   let pending = tokenRequests.get(key);
   if (!pending) {
     pending = acquire().finally(() => tokenRequests.delete(key));
@@ -88,8 +89,14 @@ export function isShopifyBusy(error: unknown): boolean {
 export function isUnansweredRequest(error: unknown): boolean {
   return !!error && typeof error === 'object' && !('status' in error) && 'dispatched' in error && error.dispatched === true;
 }
-export async function authenticatedJson<T>(path: string, init: RequestInit = {}, forceFresh = false): Promise<T> {
-  const policy = adminRequestPolicy(path, init);
+/** `resendValidityMs`: a resent publish's required session-token validity (#468). */
+export async function authenticatedJson<T>(
+  path: string,
+  init: RequestInit = {},
+  forceFresh = false,
+  resendValidityMs?: number,
+): Promise<T> {
+  const policy = adminRequestPolicy(path, init, resendValidityMs);
   let dispatched = false;
   try {
     return await authenticatedRequest<T>(path, init, forceFresh, policy, (sent) => {
