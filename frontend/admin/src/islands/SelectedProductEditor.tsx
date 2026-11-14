@@ -2486,7 +2486,13 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     }
     const target = product.views.find((item) => item.id === issue.viewId) ?? product.views[0];
     if (target) select(target, issue.placementId ?? null, true, false);
-    if (issue.key.endsWith('.calibration')) { startMeasurementFor(target, issue.placementId ?? null); return; }
+    if (issue.key.endsWith('.calibration')) {
+      // Calibration measures the view's own image. With an appearance photo active the canvas would show that
+      // photo instead, so measure on the base image the calibration is stored for (the canvas ruler is hidden then).
+      setActivePhotoGroup(null);
+      startMeasurementFor(target, issue.placementId ?? null);
+      return;
+    }
     if (issue.groupKey)
       requestAnimationFrame(() => {
         const panel = document.querySelector<HTMLElement>('[data-variant-photo-panel]');
