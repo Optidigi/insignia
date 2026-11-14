@@ -1719,28 +1719,41 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     cancelDrawingTask();
     dispatchDialog({ type: 'copy-setup-opened', id: uid(), source: structuredClone(canonicalPlacementDecimals(candidate)) });
   }
-  function startMeasurement() {
-    if (!view?.imageUrl || !prepareSelectionChange()) return;
+  /**
+   * Start measuring an explicit view. A caller that selects a view in the same event cannot rely on
+   * `view`, which is still the previous render's value, so it passes the target and its placement.
+   */
+  function startMeasurementFor(target: EditorView | undefined, placementId: string | null) {
+    if (!target?.imageUrl || !prepareSelectionChange()) return;
+    const current =
+      target.calibration && calibrationMatchesImage(target.calibration, target) ? target.calibration : null;
     dispatchWorkspace({
       type: 'measurement-started',
-      viewId: view.id,
-      placementId: selectedId,
-      imageUrl: view.imageUrl,
-      line: calibration ? { a: calibration.a, b: calibration.b } : null,
-      distance: calibration ? String(calibration.distanceCm) : '',
+      viewId: target.id,
+      placementId,
+      imageUrl: target.imageUrl,
+      line: current ? { a: current.a, b: current.b } : null,
+      distance: current ? String(current.distanceCm) : '',
     });
     if (matchMedia('(max-width: 800px)').matches) {
       setExpandedCanvas(true);
     }
   }
+  function startMeasurement() {
+    startMeasurementFor(view, selectedId);
+  }
   function applyMeasurement() {
-    if (
-      !view ||
-      workspaceMode.kind !== 'measuring' ||
-      workspaceMode.viewId !== view.id ||
-      workspaceMode.imageUrl !== view.imageUrl
-    )
+    if (!view || workspaceMode.kind !== 'measuring') return;
+    if (workspaceMode.viewId !== view.id) {
+      // The line belongs to another view's image: never apply it here and never fail silently.
+      // Restart measuring on the visible view and show the existing measurement message.
+      startMeasurementFor(view, selectedId);
+      dispatchWorkspace({ type: 'measurement-error', reason: 'measurement-invalid' });
       return;
+    }
+    if (workspaceMode.imageUrl !== view.imageUrl)
+      // Same view with a re-issued image URL: keep the merchant's line and apply it to the current image.
+      dispatchWorkspace({ type: 'measurement-image-reissued', viewId: view.id, imageUrl: view.imageUrl });
     const parsed = placementCalibrationSchema.safeParse({
       imageUrl: view.imageUrl,
       imageWidth: view.imageWidth,
@@ -2450,7 +2463,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     }
     const target = product.views.find((item) => item.id === issue.viewId) ?? product.views[0];
     if (target) select(target, issue.placementId ?? null, true, false);
-    if (issue.key.endsWith('.calibration')) { requestAnimationFrame(startMeasurement); return; }
+    if (issue.key.endsWith('.calibration')) { startMeasurementFor(target, issue.placementId ?? null); return; }
     if (issue.groupKey)
       requestAnimationFrame(() => {
         const panel = document.querySelector<HTMLElement>('[data-variant-photo-panel]');
@@ -3358,7 +3371,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                       ?.focus({ preventScroll: true });
                   });
               }}
-              onStartMeasure={activePhoto ? undefined : startMeasurement}
+              onStartMeasure={activePhoto ? undefined : () => startMeasurement()}
               onCancelMeasure={cancelCalibration}
               onCancelDraw={cancelDrawingTask}
               onDraw={(rect): CanvasDrawFailure | undefined => {

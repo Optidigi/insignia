@@ -66,6 +66,7 @@ export type PlacementWorkspaceEvent =
   | { type: 'measurement-coordinates-toggled'; open: boolean }
   | { type: 'measurement-point-changed'; point: 'a' | 'b'; axis: 'x' | 'y'; value: string }
   | { type: 'measurement-error'; reason: 'measurement-invalid' }
+  | { type: 'measurement-image-reissued'; viewId: string; imageUrl: string }
   | { type: 'measurement-committed'; viewId: string; imageUrl: string }
   | { type: 'group-area-edit-started'; viewId: string; placementId: string; groupKey: string }
   | { type: 'size-preview-toggled'; viewId: string; placementId: string; sizeId: string }
@@ -190,6 +191,10 @@ export function placementWorkspaceReducer(
       }
     case 'measurement-error':
       return mode.kind === 'measuring' ? { mode: { ...mode, error: event.reason } } : state;
+    case 'measurement-image-reissued':
+      return mode.kind === 'measuring' && mode.viewId === event.viewId
+        ? { mode: { ...mode, imageUrl: event.imageUrl } }
+        : state;
     case 'measurement-committed':
       return mode.kind === 'measuring' && mode.viewId === event.viewId && mode.imageUrl === event.imageUrl
         ? initialPlacementWorkspaceState
