@@ -35,7 +35,6 @@ export function adminServices(overrides: AdminOverrides = {}): AdminServices {
       read: unexpected,
       create: unexpected,
       save: unexpected,
-      copy: unexpected,
       publish: unexpected,
       ...overrides.configs,
     },

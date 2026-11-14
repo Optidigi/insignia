@@ -2,6 +2,8 @@
 
 Research date: 20 October 2026. Source checkout: `codex/ui-redesign`, HEAD `1a18b463631ef162cdb577a8a4268500630a7e82`. This note records implemented source behavior. It does not establish native credentials, deployed configuration, successful provider mutations, production readiness or owner acceptance.
 
+Update, 14 November 2026: the server `copy` action described below was removed as unused; Copy setup runs in the editor and saves through create and save.
+
 The inventory follows the actual Astro route exports into their handlers, services, validators and durable repositories. It covers all seven `/api/admin` route files, five merchant `/api/artwork` route files and two `/api/purchases/v1` route files. Those 14 files implement 28 recognized merchant method/path pairs: 17 GET, eight POST, two PUT and one DELETE. One POST config path accepts three distinct actions. Twenty-six pairs have current merchant browser callers; the two signing pairs have no caller in the merchant islands or shared browser code. The other nine API files belong to buyer/guest transport, webhooks and internal metrics.
 
 ## Authentication and transport shared by the inventory

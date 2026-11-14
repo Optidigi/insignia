@@ -6,7 +6,7 @@ import type { DurableTransaction } from '@insignia/database';
 import { CONFIG_DRAFT_STORAGE_VERSION, type DurableCore, sha256CanonicalJson } from '@insignia/database';
 import { parseSignedMinor, validateLeanConfig, validatePublishedConfig } from '@insignia/domain';
 import { GEOMETRY_VERSION, type GeometryV1, validateGeometryBridge } from '@insignia/visualizer/geometry';
-import { CONFIG_REJECTION_CODES, type ConfigRejectionCode } from '../shared/config-rejection.ts';
+import type { ConfigRejectionCode } from '../shared/config-rejection.ts';
 import { projectActivationPublicationState } from './admin/activation-state.ts';
 import type { AdminActor as Actor, CatalogProduct } from './admin/contracts.js';
 import {
@@ -213,103 +213,6 @@ function validatedDraft(
   }
   return { ...draft, geometry };
 }
-function cloneForProduct(source: MerchantDraft, targetConfigId: string): MerchantDraft {
-  const suffix = targetConfigId.replaceAll('-', '').slice(0, 12);
-  let ordinal = 0;
-  const fresh = (prefix: string) => `${prefix}_${suffix}_${++ordinal}`;
-  const methods = new Map(source.methods.map((item) => [item.id, fresh('method')]));
-  const placements = new Map(source.placements.map((item) => [item.id, fresh('place')]));
-  const steps = new Map((source.geometry as GeometryV1).steps.map((item) => [item.id, fresh('step')]));
-  const options = new Map(source.productionOptions.map((item) => [item.id, fresh('option')]));
-  const values = new Map(
-    source.productionOptions.flatMap((item) => item.allowedValueIds).map((id) => [id, fresh('value')]),
-  );
-  const prices = new Map(source.pricingRules.map((item) => [item.id, fresh('price')]));
-  const views = new Map((source.geometry as GeometryV1).views.map((item) => [item.id, fresh('view')]));
-  const labels = Object.fromEntries(
-    (
-      [
-        ['methods', methods],
-        ['placements', placements],
-        ['steps', steps],
-        ['views', views],
-        ['options', options],
-        ['prices', prices],
-      ] as const
-    ).map(([kind, ids]) => [
-      kind,
-      Object.fromEntries(
-        [...ids.entries()].flatMap(([oldId, newId]) => {
-          const label = source.labels?.[kind]?.[oldId];
-          return label ? [[newId, label]] : [];
-        }),
-      ),
-    ]),
-  ) as NonNullable<MerchantDraft['labels']>;
-  labels.values = Object.fromEntries(
-    source.productionOptions.flatMap((option) => {
-      const oldLabels = source.labels?.values?.[option.id];
-      const remapped = Object.fromEntries(
-        option.allowedValueIds.flatMap((id) => {
-          const label = oldLabels?.[id];
-          return label ? [[values.get(id)!, label]] : [];
-        }),
-      );
-      return Object.keys(remapped).length ? [[options.get(option.id)!, remapped]] : [];
-    }),
-  );
-  const renamed = {
-    ...source,
-    labels,
-    methods: source.methods.map((item) => ({ id: methods.get(item.id)! })),
-    placements: source.placements.map((item) => ({
-      ...item,
-      id: placements.get(item.id)!,
-      allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
-      allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
-    })),
-    productionOptions: source.productionOptions.map((item) => ({
-      id: options.get(item.id)!,
-      allowedValueIds: item.allowedValueIds.map((id) => values.get(id)!),
-    })),
-    pricingRules: source.pricingRules.map((rule) => ({
-      ...rule,
-      id: prices.get(rule.id)!,
-      scope:
-        rule.scope.kind === 'general'
-          ? rule.scope
-          : rule.scope.kind === 'method'
-            ? { ...rule.scope, methodId: methods.get(rule.scope.methodId)! }
-            : rule.scope.kind === 'placement'
-              ? {
-                  ...rule.scope,
-                  placementId: placements.get(rule.scope.placementId)!,
-                  ...(rule.scope.methodId ? { methodId: methods.get(rule.scope.methodId)! } : {}),
-                }
-              : {
-                  ...rule.scope,
-                  placementId: placements.get(rule.scope.placementId)!,
-                  stepId: steps.get(rule.scope.stepId)!,
-                  ...(rule.scope.methodId ? { methodId: methods.get(rule.scope.methodId)! } : {}),
-                },
-    })),
-    geometry: {
-      ...(source.geometry as GeometryV1),
-      views: (source.geometry as GeometryV1).views.map((view) => {
-        const { image: _sourceProductImage, ...independentView } = view;
-        return {
-          ...independentView,
-          id: views.get(view.id)!,
-          variantImages: [],
-          placements: view.placements.map((item) => ({ ...item, id: placements.get(item.id)!, variantOverrides: [] })),
-        };
-      }),
-      steps: (source.geometry as GeometryV1).steps.map((item) => ({ ...item, id: steps.get(item.id)! })),
-    },
-  };
-  return MerchantDraftSchema.parse(renamed);
-}
-
 /** Commands bind every product read and mutation to the verified current M3 tenant. */
 export function createMerchantConfigService(input: {
   core: DurableCore;
@@ -705,81 +608,6 @@ export function createMerchantConfigService(input: {
                 message: 'Configured Method inheritance metadata changed. Reload and review the draft.',
               }
             : { kind: 'saved', draftVersion: result.resultRef.slice('saved:'.length) };
-    },
-    async copy(actor: Actor, sourceProductId: string, targetProductId: string, key: string): Promise<Outcome> {
-      await product(actor, sourceProductId);
-      await product(actor, targetProductId);
-      if (sourceProductId === targetProductId)
-        return { kind: 'invalid', code: 'COPY_TARGET_SAME', message: 'Copy target must differ' };
-      let result: { kind: 'executed' | 'replayed'; resultRef: string };
-      try {
-        result = await executeCommand(
-          commandTransactions(actor),
-          core.commands,
-          command(actor, 'm5-copy-config', key, { sourceProductId, targetProductId }),
-          async (tx) => {
-            if (await core.configs.getByProductForUpdate(tx, actor.tenantShopId, productNumber(targetProductId)))
-              return 'occupied';
-            const source = await core.configs.getByProductForUpdate(
-              tx,
-              actor.tenantShopId,
-              productNumber(sourceProductId),
-            );
-            if (!source) return 'missing';
-            let draft: MerchantDraft;
-            try {
-              draft = validatedDraft(source.draftValue, actor, sourceProductId, false);
-            } catch {
-              return 'invalid';
-            }
-            const id = randomUUID();
-            const targetDraft = cloneForProduct(draft, id);
-            try {
-              validatedDraft(targetDraft, actor, targetProductId);
-            } catch (error) {
-              // Only the Lean price rule asks for a price review; every other rule keeps its own code.
-              if (error instanceof DraftValidationError && error.code === 'LEAN_PRICING_INVALID') return 'lean-review';
-              return `invalid-target:${error instanceof DraftValidationError ? error.code : 'DRAFT_INVALID'}`;
-            }
-            await core.configs.createConfig(tx, {
-              shopId: actor.tenantShopId,
-              configId: id,
-              externalProductId: productNumber(targetProductId),
-              draftSchemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
-              draftValue: targetDraft,
-            });
-            return id;
-          },
-        );
-      } catch (error) {
-        if (targetOccupied(error)) return { kind: 'conflict', message: 'Target product already has a configuration' };
-        throw error;
-      }
-      if (result.resultRef === 'occupied')
-        return { kind: 'conflict', message: 'Target product already has a configuration' };
-      if (result.resultRef === 'missing')
-        return { kind: 'invalid', code: 'COPY_SOURCE_MISSING', message: 'Source configuration does not exist' };
-      if (result.resultRef === 'lean-review')
-        return {
-          kind: 'invalid',
-          code: 'COPY_LEAN_REVIEW_REQUIRED',
-          message: 'Create and review a Lean price proposal before copying this historical configuration.',
-        };
-      if (result.resultRef === 'invalid')
-        return {
-          kind: 'invalid',
-          code: 'COPY_SOURCE_NEEDS_REVIEW',
-          message: 'Source draft needs review before copying',
-        };
-      if (result.resultRef.startsWith('invalid-target:')) {
-        const code = result.resultRef.slice('invalid-target:'.length);
-        return {
-          kind: 'invalid',
-          code: CONFIG_REJECTION_CODES.find((known) => known === code) ?? 'DRAFT_INVALID',
-          message: 'The copied configuration does not satisfy the target product. Review it before copying.',
-        };
-      }
-      return { kind: 'created', configId: result.resultRef };
     },
     async publish(
       actor: Actor,
