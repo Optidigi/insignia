@@ -466,3 +466,36 @@ test('guest artwork timing lines whitelist a bounded vocabulary', () => {
   ])
     assert.throws(() => logger.info('artwork_request_timing', { artworkTiming: invalid as never }), /artwork timing/);
 });
+
+test('admin configuration rejections log only the command and a bounded reason code', () => {
+  let output = '';
+  const stream = new Writable({
+    write(chunk, _encoding, callback) {
+      output += chunk;
+      callback();
+    },
+  });
+  const { logger } = createObservability({ stream });
+  logger.info('admin_config_rejected', {
+    configAction: 'save',
+    rejectionCode: 'CONFIG_POLICY_INVALID',
+    // @ts-expect-error Deliberately inject merchant content to prove runtime omission.
+    draft: { title: 'SECRET' },
+    message: 'SECRET',
+    path: 'selectedSetup.SECRET',
+  });
+  const entry = parseRecord(lastLine(output));
+  assert.deepEqual(entry, {
+    level: 30,
+    time: entry.time,
+    event: 'admin_config_rejected',
+    configAction: 'save',
+    rejectionCode: 'CONFIG_POLICY_INVALID',
+  });
+  assert.throws(() => logger.info('admin_config_rejected', { configAction: 'save', rejectionCode: 'secret text' }));
+  assert.throws(() =>
+    // @ts-expect-error Unknown command actions are rejected.
+    logger.info('admin_config_rejected', { configAction: 'SECRET', rejectionCode: 'DRAFT_INVALID' }),
+  );
+  assert.doesNotMatch(output, /SECRET|secret text/);
+});

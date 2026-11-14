@@ -18,9 +18,19 @@ import {
   validateGeometryBridge,
 } from '@insignia/visualizer/geometry';
 import type { CatalogProduct } from '../shared/admin-view.js';
+import type { ConfigRejectionCode } from '../shared/config-rejection.ts';
 
 export class SelectedSetupAuthorityError extends Error {}
 export class SelectedSetupCapacityError extends Error {}
+/** A selected setup that breaks one identifiable authoring rule; the message carries no merchant content. */
+export class SelectedSetupValidationError extends Error {
+  readonly code: ConfigRejectionCode;
+  constructor(code: ConfigRejectionCode, message: string) {
+    super(message);
+    this.code = code;
+  }
+}
+const invalid = (code: ConfigRejectionCode, message: string) => new SelectedSetupValidationError(code, message);
 
 const validId = (value: string) => /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(value);
 const positive = (value: string) =>
@@ -45,9 +55,9 @@ export function selectedProductDraft(setupInput: SelectedProductSetup, previous:
       'This configuration exceeds the qualified geometry capacity (16 views and 64 sizes).',
     );
   if (new Set(product.images.map((image) => image.id)).size !== product.images.length)
-    throw new Error('Repeated product preview media identity');
+    throw invalid('SETUP_MEDIA_NOT_OWNED', 'Repeated product preview media identity');
   const exponent = previous.shopCurrency === 'USD' || previous.shopCurrency === 'EUR' ? 2 : null;
-  if (exponent === null) throw new Error('Selected product currency is not qualified');
+  if (exponent === null) throw invalid('SETUP_CURRENCY_UNSUPPORTED', 'Selected product currency is not qualified');
   // A placement without a method or a size is unfinished authoring work: it stays in selectedSetup
   // and blocks publication readiness, but never enters the commerce projection (#438).
   const projected = (placement: SelectedProductSetup['product']['views'][number]['placements'][number]) =>
@@ -81,18 +91,19 @@ export function selectedProductDraft(setupInput: SelectedProductSetup, previous:
   const geometry: GeometryV1 = { version: GEOMETRY_VERSION, views: [], steps: [] };
   const identifiers = new Set<string>();
   const claim = (id: string) => {
-    if (!validId(id) || identifiers.has(id)) throw new Error('Invalid or repeated selected product identity');
+    if (!validId(id) || identifiers.has(id))
+      throw invalid('SETUP_IDENTITY_INVALID', 'Invalid or repeated selected product identity');
     identifiers.add(id);
   };
   for (const method of product.methods.filter((method) => usedMethodIds.has(method.id))) {
-    if (!validId(method.id)) throw new Error('Invalid method identity');
+    if (!validId(method.id)) throw invalid('SETUP_IDENTITY_INVALID', 'Invalid method identity');
     if (method.name.trim()) labels.methods![method.id] = method.name.trim();
   }
   for (const view of product.views) {
     claim(view.id);
     if (view.name.trim()) labels.views![view.id] = view.name.trim();
     const source = product.images.find((image) => image.url === view.imageUrl);
-    if (view.imageUrl && !source) throw new Error('Choose product-owned preview media');
+    if (view.imageUrl && !source) throw invalid('SETUP_MEDIA_NOT_OWNED', 'Choose product-owned preview media');
     const mapped: GeometryV1['views'][number] = {
       id: view.id,
       ...(source ? { image: { revisionId: source.id, width: source.width, height: source.height } } : {}),
@@ -110,11 +121,12 @@ export function selectedProductDraft(setupInput: SelectedProductSetup, previous:
       for (const size of placement.sizes) {
         const id = selectedStepIdentity(placement.id, size.id);
         claim(id);
-        if (!positive(size.widthPercent) || Number(size.widthPercent) > 100) throw new Error('Invalid decoration size');
+        if (!positive(size.widthPercent) || Number(size.widthPercent) > 100)
+          throw invalid('SETUP_SIZE_INVALID', 'Invalid decoration size');
         const fraction = Number(size.widthPercent) / 100;
         const heightFraction = Number(size.heightPercent ?? size.widthPercent) / 100;
         if (!positive(size.heightPercent ?? size.widthPercent) || heightFraction > 1)
-          throw new Error('Invalid decoration height');
+          throw invalid('SETUP_SIZE_INVALID', 'Invalid decoration height');
         steps.push(id);
         if (size.name.trim()) labels.steps![id] = size.name.trim();
         const dimensions =
@@ -167,11 +179,15 @@ export function selectedProductDraft(setupInput: SelectedProductSetup, previous:
         });
         for (const methodId of placement.methodIds) {
           const method = product.methods.find((item) => item.id === methodId);
-          if (!method) throw new Error('Unknown selected method');
+          if (!method) throw invalid('SETUP_METHOD_UNKNOWN', 'Unknown selected method');
           const amount = method.pricing === 'fixed' ? method.amount : (size.prices[methodId] ?? '');
           if (amount === '') continue; // Missing is unavailable; it never becomes free.
           const decimal = amount.trim().replace(',', '.');
-          parseMinor(decimal, exponent);
+          try {
+            parseMinor(decimal, exponent);
+          } catch {
+            throw invalid('PRICE_AMOUNT_INVALID', 'Review amount precision; amounts are never rounded.');
+          }
           const priceId = selectedPriceIdentity(id, methodId);
           const priorRules = previous.pricingRules.filter(
             (rule) =>
@@ -208,10 +224,10 @@ export function selectedProductDraft(setupInput: SelectedProductSetup, previous:
         (item) => item.groupKey === group.key && item.viewId === view.id,
       );
       const image = assignment?.imageId ? product.images.find((item) => item.id === assignment.imageId) : source;
-      if (!image) throw new Error('Choose product-owned preview media');
+      if (!image) throw invalid('SETUP_MEDIA_NOT_OWNED', 'Choose product-owned preview media');
       for (const id of group.variantIds) {
         const number = /^gid:\/\/shopify\/ProductVariant\/([1-9][0-9]{0,19})$/.exec(id)?.[1];
-        if (!number) throw new Error('Invalid Shopify variant identity');
+        if (!number) throw invalid('SETUP_IDENTITY_INVALID', 'Invalid Shopify variant identity');
         const variantId = `variant_${number}`;
         if (image.id !== source?.id)
           mapped.variantImages.push({

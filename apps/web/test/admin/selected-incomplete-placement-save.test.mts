@@ -4,14 +4,17 @@ import { test } from 'node:test';
 import { MerchantDraftSchema, SelectedProductSetupSchema } from '@insignia/contracts';
 import { createDurableCore, sha256CanonicalJson } from '@insignia/database';
 import { Pool } from 'pg';
+import { handleAdminRequest } from '../../src/server/admin/http.ts';
 import { createMerchantConfigService } from '../../src/server/merchant-config.ts';
 import { selectedPublicationProblems } from '../../src/server/selected-product.ts';
-import { adminActor, required } from './support/fixtures.mts';
+import { adminActor, adminServices, required } from './support/fixtures.mts';
 
 const database = process.env.DATABASE_URL;
 const productId = 'gid://shopify/Product/111';
 const front = 'https://cdn.shopify.com/s/files/1/0/files/shirt-white-front.jpg?v=1';
 const back = 'https://cdn.shopify.com/s/files/1/0/files/shirt-navy-back.jpg?v=1';
+// Shopify shop IDs are unique across the shared test database.
+const uniqueShopifyShopId = () => String(BigInt(`0x${randomUUID().replaceAll('-', '').slice(0, 12)}`) + 1n);
 
 // The QA products' shape (#438): Shopify media where the featured image repeats the first media
 // image, two saved views, no methods yet, then one newly added default placement.
@@ -56,10 +59,11 @@ test('a draft with a newly added placement that has no method or size yet saves,
 }, async () => {
   const core = createDurableCore(new Pool({ connectionString: database }));
   const shopId = randomUUID();
+  const shopifyShopId = uniqueShopifyShopId();
   const actor = adminActor({
     tenantShopId: shopId,
     shop: `incomplete-${randomUUID().replaceAll('-', '')}.myshopify.com`,
-    shopId: 'gid://shopify/Shop/123',
+    shopId: `gid://shopify/Shop/${shopifyShopId}`,
     installationGeneration: '1',
   });
   try {
@@ -67,7 +71,7 @@ test('a draft with a newly added placement that has no method or size yet saves,
       core.tenants.createShop(tx, {
         shopId,
         shopDomain: actor.shop,
-        shopifyShopId: '123',
+        shopifyShopId,
         externalInstallationId: actor.installationId,
       }),
     );
@@ -138,6 +142,102 @@ test('a draft with a newly added placement that has no method or size yet saves,
       completed.placements.map((placement) => [placement.id, placement.allowedMethodIds]),
       [[chest, ['print']]],
     );
+  } finally {
+    await core.close();
+  }
+});
+
+test('config validation rejections carry a stable reason code and are recorded without merchant content', {
+  skip: !database,
+  timeout: 15000,
+}, async () => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  const shopId = randomUUID();
+  const shopifyShopId = uniqueShopifyShopId();
+  const actor = adminActor({
+    tenantShopId: shopId,
+    shop: `rejection-${randomUUID().replaceAll('-', '')}.myshopify.com`,
+    shopId: `gid://shopify/Shop/${shopifyShopId}`,
+    installationGeneration: '1',
+  });
+  try {
+    await core.transactions.run((tx) =>
+      core.tenants.createShop(tx, {
+        shopId,
+        shopDomain: actor.shop,
+        shopifyShopId,
+        externalInstallationId: actor.installationId,
+      }),
+    );
+    const authority = sha256CanonicalJson(
+      required(await core.tenants.getActiveAuthorizationScope({ shopId, installationGeneration: '1' })),
+    );
+    const catalog = {
+      get: async () => ({ id: productId, title: 'QA tee', status: 'DRAFT', imageUrl: front, variants: [] }),
+      shopCurrency: async () => 'USD',
+    };
+    const service = createMerchantConfigService({
+      core,
+      catalog,
+      eligibility: async () => ({ allowed: false, reason: 'Incomplete' }),
+      publication: () => {
+        throw new Error('Saving never publishes');
+      },
+    });
+    const created = await service.create(actor, productId, `${randomUUID()}:create`, authority);
+    const configId = created.kind === 'created' ? created.configId : '';
+    const draft = MerchantDraftSchema.parse(required((await service.read(actor, productId)).config).draft);
+    const recorded: unknown[] = [];
+    const origin = 'https://synthetic-admin.example.test';
+    const services = adminServices({
+      appOrigin: origin,
+      authenticate: async () => actor,
+      catalog: { get: catalog.get },
+      configs: service,
+      recordConfigRejection: (rejection) => recorded.push(rejection),
+    });
+    const put = (body: unknown, key: string | null = `${randomUUID()}:save`) =>
+      handleAdminRequest(
+        new Request(`${origin}/api/admin/products/111/config`, {
+          method: 'PUT',
+          headers: {
+            Authorization: 'Bearer synthetic',
+            Origin: origin,
+            'Content-Type': 'application/json',
+            'X-Insignia-Setup-Authority': authority,
+            ...(key ? { 'Idempotency-Key': key } : {}),
+          },
+          body: JSON.stringify(body),
+        }),
+        services,
+        { kind: 'config', productId },
+      );
+    const saveSetup = (selectedSetup: unknown, key?: string | null) =>
+      put({ action: 'save', configId, draftVersion: '1', draft: { ...draft, selectedSetup } }, key);
+
+    const unknownMethod = await saveSetup(setupWith([newPlacement(randomUUID(), { methodIds: ['embroidery'] })]));
+    assert.equal(unknownMethod.status, 422);
+    const unknownBody = await unknownMethod.json();
+    assert.equal(unknownBody.kind, 'invalid');
+    assert.equal(unknownBody.code, 'SETUP_METHOD_UNKNOWN');
+    assert.equal(unknownBody.noEffect, true);
+
+    const precise = setupWith([newPlacement(randomUUID(), { methodIds: ['print'] })]);
+    precise.product.methods[0]!.amount = '3.501';
+    const precision = await saveSetup(precise);
+    assert.equal(precision.status, 422);
+    assert.equal((await precision.json()).code, 'PRICE_AMOUNT_INVALID');
+
+    const keyless = await saveSetup(setupWith([]), null);
+    assert.equal(keyless.status, 422);
+    assert.equal((await keyless.json()).code, 'IDEMPOTENCY_KEY_REQUIRED');
+
+    assert.deepEqual(recorded, [
+      { action: 'save', code: 'SETUP_METHOD_UNKNOWN' },
+      { action: 'save', code: 'PRICE_AMOUNT_INVALID' },
+      { action: 'command', code: 'IDEMPOTENCY_KEY_REQUIRED' },
+    ]);
+    assert.equal(required((await service.read(actor, productId)).config).draftVersion, '1', 'rejections write nothing');
   } finally {
     await core.close();
   }
