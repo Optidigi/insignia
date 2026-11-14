@@ -926,7 +926,8 @@
     },
     "publishErrors": {
       "conflict": "Diese Vorschau wurde geändert, während Sie sie geprüft haben. Schließen Sie den Dialog und prüfen Sie die neueste Einrichtung.",
-      "storageError": "Ihr Browser konnte diese Vorschau nicht veröffentlichen. Ihre Arbeit und die vorherige veröffentlichte Vorschau bleiben erhalten. Versuchen Sie es erneut oder speichern Sie einen Entwurf."
+      "storageError": "Diese Vorschau konnte nicht veröffentlicht werden. Ihre Arbeit und die vorherige veröffentlichte Vorschau bleiben erhalten. Versuchen Sie es erneut oder speichern Sie einen Entwurf.",
+      "shopifyBusy": "Shopify ist gerade ausgelastet, daher wurde diese Vorschau nicht veröffentlicht. Ihre Arbeit und die vorherige veröffentlichte Vorschau bleiben erhalten. Warten Sie einige Sekunden und versuchen Sie es erneut."
     },
     "history": {
       "changeUndone": "Änderung rückgängig gemacht.",

@@ -23,6 +23,7 @@ export async function withAdminDeadline<T>(
   task: (signal: AbortSignal) => Promise<T>,
   label: string,
   onTimeout?: () => void,
+  timeoutMs = 10_000,
 ): Promise<T> {
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -35,7 +36,7 @@ export async function withAdminDeadline<T>(
         /* cancellation is best effort */
       }
       reject(new ShopifyAdminUnavailableError(label + ' timed out'));
-    }, 10_000);
+    }, timeoutMs);
   });
   try {
     return await Promise.race([task(controller.signal), deadline]);

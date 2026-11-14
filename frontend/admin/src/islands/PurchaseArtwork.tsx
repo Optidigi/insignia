@@ -20,7 +20,7 @@ import PurchaseProductionSheet from '../components/PurchaseProductionSheet';
 import PurchaseVariants from '../components/PurchaseVariants';
 import { useAdminLocale, withAdminLocale } from '../shared/admin-i18n.js';
 import { useAdminPageReady } from '../shared/admin-page-ready';
-import { authenticatedJson } from '../shared/admin-request';
+import { authenticatedJson, isShopifyBusy } from '../shared/admin-request';
 import { artworkStatus } from '../shared/artwork-status';
 import { ordersReturnPath } from '../shared/orders-return-path';
 import { startOriginalArtworkDownload } from '../shared/original-artwork-download';
@@ -208,7 +208,8 @@ function Placement({
           type: 'operation-failed',
           identity: requestedIdentity,
           request,
-          errorCode: (e as { status?: number }).status === 409 ? 'artworkChanged' : 'attachmentFailed',
+          errorCode:
+            (e as { status?: number }).status === 409 && !isShopifyBusy(e) ? 'artworkChanged' : 'attachmentFailed',
         });
         deny(e);
       }
@@ -626,7 +627,9 @@ function PurchaseArtwork({ purchaseId, returnTo }: { purchaseId: string; returnT
       if (generation === current.current && commandRequest.current === token) {
         setNeedsRefresh(true);
         setCommandNotice(
-          error && typeof error === 'object' && 'status' in error && error.status === 409 ? 'changed' : 'failed',
+          error && typeof error === 'object' && 'status' in error && error.status === 409 && !isShopifyBusy(error)
+            ? 'changed'
+            : 'failed',
         );
         deny(error);
       }

@@ -951,7 +951,8 @@
     },
     "publishErrors": {
       "conflict": "Cet aperçu a changé pendant votre vérification. Fermez cette boîte de dialogue et vérifiez la dernière configuration.",
-      "storageError": "Votre navigateur n’a pas pu publier cet aperçu. Votre travail et l’aperçu publié précédent sont conservés. Réessayez ou enregistrez un brouillon."
+      "storageError": "Cet aperçu n’a pas pu être publié. Votre travail et l’aperçu publié précédent sont conservés. Réessayez ou enregistrez un brouillon.",
+      "shopifyBusy": "Shopify est actuellement surchargé, cet aperçu n’a donc pas été publié. Votre travail et l’aperçu publié précédent sont conservés. Patientez quelques secondes et réessayez."
     },
     "history": {
       "changeUndone": "Modification annulée.",

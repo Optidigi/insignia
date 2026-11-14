@@ -12,7 +12,7 @@ import {
 } from '@insignia/contracts';
 import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminActor } from '../admin/contracts.js';
-import { mutationOrigin, validActor } from '../admin/http.ts';
+import { ADMIN_BUSY_RETRY_AFTER_SECONDS, mutationOrigin, shopifyBusy, validActor } from '../admin/http.ts';
 import { artworkJsonBody } from '../artwork/body.ts';
 import { canReadPurchaseRecords } from './access.ts';
 import type { PurchaseServices } from './service.ts';
@@ -49,7 +49,24 @@ export async function handlePurchaseRequest(
     if (!services) throw new HttpError(503, 'UNAVAILABLE');
     if (!/^Bearer [^\s]{1,8192}$/.test(request.headers.get('Authorization') ?? ''))
       throw new HttpError(401, 'UNAUTHORIZED');
-    const actor: AdminActor | null = await services.authenticate(request);
+    // Order artwork reads and every order write are staff-sensitive: fresh online exchange.
+    const sensitive =
+      request.method !== 'GET' ||
+      /^[^/]+\/artwork\//.test(route) ||
+      route === 'privacy' ||
+      route.startsWith('privacy/');
+    let actor: AdminActor | null;
+    try {
+      actor = await services.authenticate(request, sensitive ? { fresh: true } : undefined);
+    } catch (error) {
+      if (!shopifyBusy(error)) throw error;
+      const response = respond(
+        { code: 'BUSY', message: 'Shopify is busy right now. Wait a few seconds and try again.', requestId },
+        409,
+      );
+      response.headers.set('Retry-After', String(ADMIN_BUSY_RETRY_AFTER_SECONDS));
+      return response;
+    }
     if (!validActor(actor, Date.now())) throw new HttpError(401, 'UNAUTHORIZED');
     if (!canReadPurchaseRecords(actor)) throw new HttpError(403, 'PERMISSION_REQUIRED');
     const url = new URL(request.url);

@@ -1,4 +1,4 @@
-import type { AdminAuthenticationStage } from '@insignia/observability';
+import type { AdminAuthenticationStage, AdminProviderDiagnosticCode } from '@insignia/observability';
 import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminActor } from './contracts.js';
 
@@ -26,14 +26,20 @@ export interface AdminInstallation {
   installationGeneration: string;
   active: boolean;
   grantedScopes: string[];
+  /** Shop timezone from the same provider observation. */
+  ianaTimezone?: string;
 }
-export interface AdminIdentityPort {
+export interface AdminIdentityPort<G extends OnlineAdminGrant = OnlineAdminGrant> {
   /** Shopify SDK adapter verifies JWT signature, audience, issuer and expiry. */
   verifySessionToken(token: string): Promise<VerifiedAdminIdentity>;
   /** Online exchange must bind the grant's staff and shop to that identity. */
-  exchangeOnlineGrant(token: string, identity: VerifiedAdminIdentity): Promise<OnlineAdminGrant>;
-  /** Read current provider and durable installation state; no stale grant cache. */
-  readInstallation(grant: OnlineAdminGrant): Promise<AdminInstallation>;
+  exchangeOnlineGrant(token: string, identity: VerifiedAdminIdentity): Promise<G>;
+  /** Read current provider and durable installation state. */
+  readInstallation(grant: G): Promise<AdminInstallation>;
+  /** Durable fence for a reused observation: true only while the shop's current
+   * database installation (active, generation, external installation id, tenant)
+   * still equals it. Without this port nothing is reused. */
+  confirmInstallation?(installation: AdminInstallation): Promise<boolean>;
 }
 
 /** Durable reconciliation exposes only its fixed failing stage, never database messages. */
@@ -52,20 +58,120 @@ export class AdminInstallationReconciliationError extends Error {
     this.stage = stage;
   }
 }
+/** Shopify was throttling or degraded during authentication; the request can be retried. */
+export class AdminAuthenticationBusyError extends Error {
+  /** Structural marker: separately bundled server modules cannot rely on class identity. */
+  readonly transient = true;
+  readonly authentication = true;
+  constructor() {
+    super('Shopify is busy');
+    this.name = 'AdminAuthenticationBusyError';
+  }
+}
 
 const SHOP = /^[a-z0-9][a-z0-9-]*\.myshopify\.com$/;
 const SHOP_ID = /^gid:\/\/shopify\/Shop\/[1-9][0-9]*$/;
 const READ = ['read_products', 'write_products'];
 
-/** One verified token, online staff grant and installation observation per call.
- * Provider or database outages throw so HTTP responds 503; invalid identity is
- * null and responds 401. No process cache can survive reinstall/deactivation. */
-export function createAdminAuthenticator(
-  port: AdminIdentityPort,
-  now: () => number = Date.now,
-  diagnostic: (stage: AdminAuthenticationStage) => void = () => {},
+/** A verified installation observation is reused for at most this long, and every
+ * reuse is fenced against the durable installation. Long enough for one screen's
+ * burst of requests (and its follow-ups) to share one Shopify read; short enough
+ * that a scope change granted in Shopify appears within half a minute. */
+export const ADMIN_INSTALLATION_REUSE_MS = 30_000;
+/** Online grants are reused only while at least this much lifetime remains, the
+ * same margin publication and Shopify reads already require of a grant. */
+export const ADMIN_GRANT_REUSE_MARGIN_MS = 30_000;
+/** Owner decision (14 Nov 2026): a remembered online grant is reused for at most five
+ * minutes, so staff permission changes in Shopify apply within that time even on
+ * non-sensitive actions. */
+export const ADMIN_GRANT_REUSE_MAX_MS = 5 * 60_000;
+
+type Pending<T> = { value?: T; promise: Promise<T> };
+/** Process-local reuse of verified authentication facts. Bounded; oldest entries are evicted first. */
+export function createAdminAuthenticationCache<G extends OnlineAdminGrant = OnlineAdminGrant>(
+  options: { maxGrants?: number; maxInstallations?: number } = {},
 ) {
-  return async (request: Request): Promise<AdminActor | null> => {
+  const maxGrants = options.maxGrants ?? 1000;
+  const maxInstallations = options.maxInstallations ?? 500;
+  const grants = new Map<string, { grant: G; rememberedAtMs: number }>();
+  const installations = new Map<string, { installation: AdminInstallation; observedAtMs: number }>();
+  const pendingGrants = new Map<string, Pending<G>>();
+  const pendingInstallations = new Map<string, Pending<AdminInstallation>>();
+  function bounded<V>(map: Map<string, V>, key: string, value: V, limit: number) {
+    map.delete(key);
+    map.set(key, value);
+    while (map.size > limit) map.delete(map.keys().next().value as string);
+  }
+  return {
+    grants,
+    installations,
+    pendingGrants,
+    pendingInstallations,
+    rememberGrant(key: string, grant: G, rememberedAtMs: number) {
+      bounded(grants, key, { grant, rememberedAtMs }, maxGrants);
+    },
+    rememberInstallation(shop: string, installation: AdminInstallation, observedAtMs: number) {
+      bounded(installations, shop, { installation, observedAtMs }, maxInstallations);
+    },
+    /** A changed installation revokes every reused grant for the shop as well. */
+    forgetShop(shop: string) {
+      installations.delete(shop);
+      for (const key of grants.keys()) if (key.startsWith(`${shop}\n`)) grants.delete(key);
+    },
+    size() {
+      return { grants: grants.size, installations: installations.size };
+    },
+  };
+}
+export type AdminAuthenticationCache<G extends OnlineAdminGrant = OnlineAdminGrant> = ReturnType<
+  typeof createAdminAuthenticationCache<G>
+>;
+export type AdminAuthenticationDiagnostic = (
+  stage: AdminAuthenticationStage,
+  detail?: { providerCode?: AdminProviderDiagnosticCode },
+) => void;
+export type AdminAuthentication<G extends OnlineAdminGrant> = {
+  actor: AdminActor;
+  grant: G;
+  installation: AdminInstallation;
+};
+
+/** Single flight per key: concurrent callers share one provider call; failures are not kept.
+ * `joined` tells a caller that the call was started by another request. */
+function share<T>(
+  pending: Map<string, Pending<T>>,
+  key: string,
+  load: () => Promise<T>,
+): { promise: Promise<T>; joined: boolean } {
+  const existing = pending.get(key);
+  if (existing) return { promise: existing.promise, joined: true };
+  const entry: Pending<T> = {
+    promise: load().finally(() => {
+      if (pending.get(key) === entry) pending.delete(key);
+    }),
+  };
+  pending.set(key, entry);
+  return { promise: entry.promise, joined: false };
+}
+
+/** Every request verifies its session token (signature, audience, expiry, not-before).
+ * With a cache, a verified online grant is reused for the same shop, staff and
+ * session until shortly before its expiry, and an installation observation for
+ * ADMIN_INSTALLATION_REUSE_MS, fenced against the durable installation on every
+ * reuse. `fresh` (staff-sensitive actions) bypasses both. Provider or database
+ * outages throw so HTTP responds 503 (409 BUSY when Shopify is throttling);
+ * invalid identity is null and responds 401. */
+export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
+  port: AdminIdentityPort<G>,
+  now: () => number = Date.now,
+  diagnostic: AdminAuthenticationDiagnostic = () => {},
+  cache?: AdminAuthenticationCache<G>,
+) {
+  function unavailable(error: unknown): never {
+    if (error instanceof AdminOnlineIdentityError && error.transient) throw new AdminAuthenticationBusyError();
+    throw new Error('Authentication unavailable');
+  }
+  return async (request: Request, options: { fresh?: boolean } = {}): Promise<AdminAuthentication<G> | null> => {
     const authorization = request.headers.get('Authorization');
     const match = /^Bearer ([^\s]{1,8192})$/.exec(authorization ?? '');
     if (!match) {
@@ -95,37 +201,99 @@ export function createAdminAuthenticator(
       diagnostic('SESSION_IDENTITY_REJECTED');
       return null;
     }
-    let grant: OnlineAdminGrant;
-    try {
-      grant = await port.exchangeOnlineGrant(match[1]!, identity);
-    } catch (error) {
-      diagnostic(error instanceof AdminOnlineIdentityError ? error.stage : 'ONLINE_EXCHANGE_FAILED');
-      if (error instanceof AdminOnlineIdentityError) throw error;
-      throw new Error('Authentication unavailable');
+    const reuse = !!cache && !!port.confirmInstallation && !options.fresh;
+    let installation: AdminInstallation | undefined;
+    if (reuse) {
+      const cached = cache.installations.get(identity.shop);
+      if (cached && current - cached.observedAtMs < ADMIN_INSTALLATION_REUSE_MS && current >= cached.observedAtMs) {
+        const confirmed = await port.confirmInstallation!(cached.installation).catch(() => false);
+        if (confirmed && cache.installations.get(identity.shop) === cached) installation = cached.installation;
+        else cache.forgetShop(identity.shop);
+      } else if (cached) cache.installations.delete(identity.shop);
     }
-    if (
-      grant.shop !== identity.shop ||
-      grant.staffId !== identity.staffId ||
-      !Number.isFinite(grant.expiresAtMs) ||
-      grant.expiresAtMs <= current ||
-      !Array.isArray(grant.appScopes) ||
-      !Array.isArray(grant.userScopes)
-    ) {
+    const grantKey = `${identity.shop}\n${identity.staffId}\n${identity.sessionId}`;
+    let grant: G | undefined;
+    if (reuse) {
+      const cached = cache.grants.get(grantKey);
+      if (
+        cached &&
+        cached.grant.expiresAtMs - ADMIN_GRANT_REUSE_MARGIN_MS > current &&
+        current >= cached.rememberedAtMs &&
+        current - cached.rememberedAtMs < ADMIN_GRANT_REUSE_MAX_MS
+      )
+        grant = cached.grant;
+      else if (cached) cache.grants.delete(grantKey);
+    }
+    let reusedGrant = grant !== undefined;
+    async function exchangeGrant(): Promise<G> {
+      try {
+        const exchange = () => port.exchangeOnlineGrant(match![1]!, identity);
+        return reuse ? await share(cache!.pendingGrants, grantKey, exchange).promise : await exchange();
+      } catch (error) {
+        diagnostic(
+          error instanceof AdminOnlineIdentityError ? error.stage : 'ONLINE_EXCHANGE_FAILED',
+          error instanceof AdminOnlineIdentityError && error.providerCode
+            ? { providerCode: error.providerCode }
+            : undefined,
+        );
+        if (error instanceof AdminOnlineIdentityError && !error.transient) throw error;
+        return unavailable(error);
+      }
+    }
+    const grantMatches = (candidate: G) =>
+      candidate.shop === identity.shop &&
+      candidate.staffId === identity.staffId &&
+      Number.isFinite(candidate.expiresAtMs) &&
+      candidate.expiresAtMs > current &&
+      Array.isArray(candidate.appScopes) &&
+      Array.isArray(candidate.userScopes);
+    if (!grant) grant = await exchangeGrant();
+    if (!grantMatches(grant)) {
       diagnostic('ONLINE_GRANT_MISMATCH');
       return null;
     }
-    diagnostic('ONLINE_EXCHANGE_SUCCEEDED');
-    let installation: AdminInstallation;
-    try {
-      installation = await port.readInstallation(grant);
-    } catch (error) {
-      diagnostic(
-        error instanceof AdminOnlineIdentityError || error instanceof AdminInstallationReconciliationError
-          ? error.stage
-          : 'INSTALLATION_PROVIDER_READ_FAILED',
-      );
-      throw new Error('Authentication unavailable');
-    }
+    diagnostic(reusedGrant ? 'ONLINE_GRANT_REUSED_SUCCEEDED' : 'ONLINE_EXCHANGE_SUCCEEDED');
+    const reusedInstallation = installation !== undefined;
+    if (!installation) {
+      // At most two reads: the first, and one retry for a revoked or joined grant.
+      for (let attempt = 1; !installation && attempt <= 2; attempt++) {
+        let joined = false;
+        try {
+          const read = () => port.readInstallation(grant!);
+          if (reuse && attempt === 1) {
+            const pending = share(cache.pendingInstallations, identity.shop, read);
+            joined = pending.joined;
+            installation = await pending.promise;
+          } else installation = await read();
+        } catch (error) {
+          diagnostic(
+            error instanceof AdminOnlineIdentityError || error instanceof AdminInstallationReconciliationError
+              ? error.stage
+              : 'INSTALLATION_PROVIDER_READ_FAILED',
+            error instanceof AdminOnlineIdentityError && error.providerCode
+              ? { providerCode: error.providerCode }
+              : undefined,
+          );
+          const transient = error instanceof AdminOnlineIdentityError && error.transient;
+          // A reused grant may have been revoked in Shopify (uninstall, reinstall, logout):
+          // drop it and try once more with a fresh exchange. A waiter that joined another
+          // request's failed read retries once with its own grant.
+          const revokedGrant = reusedGrant && error instanceof AdminOnlineIdentityError && !transient;
+          if (attempt > 1 || transient || !(revokedGrant || joined)) unavailable(error);
+          if (revokedGrant) {
+            cache?.grants.delete(grantKey);
+            grant = await exchangeGrant();
+            reusedGrant = false;
+            if (!grantMatches(grant)) {
+              diagnostic('ONLINE_GRANT_MISMATCH');
+              return null;
+            }
+            diagnostic('ONLINE_EXCHANGE_SUCCEEDED');
+          }
+        }
+      }
+      if (!installation) unavailable(new Error('Installation read returned no result'));
+    } else diagnostic('INSTALLATION_OBSERVATION_REUSED_SUCCEEDED');
     if (
       installation.shop !== identity.shop ||
       !SHOP_ID.test(installation.shopId) ||
@@ -147,6 +315,11 @@ export function createAdminAuthenticator(
       return null;
     }
     diagnostic('TENANT_RECONCILIATION_SUCCEEDED');
+    if (cache) {
+      // Only checked facts are kept; a fresh request refreshes them for later reuse.
+      if (!reusedInstallation) cache.rememberInstallation(identity.shop, installation, current);
+      if (!reusedGrant) cache.rememberGrant(grantKey, grant, current);
+    }
     const canRead = [grant.appScopes, grant.userScopes, installation.grantedScopes].every((scopes) =>
       READ.some((scope) => scopes.includes(scope)),
     );
@@ -155,23 +328,39 @@ export function createAdminAuthenticator(
     );
     diagnostic('AUTHENTICATION_SUCCEEDED');
     return {
-      shop: identity.shop,
-      shopId: installation.shopId,
-      installationId: installation.installationId,
-      tenantShopId: installation.tenantShopId,
-      installationGeneration: installation.installationGeneration,
-      staffId: identity.staffId,
-      sessionId: identity.sessionId,
-      expiresAtMs: Math.min(identity.expiresAtMs, grant.expiresAtMs),
-      canRead,
-      canEdit,
-      canReadArtwork: grant.accountOwner === true && canRead,
-      canUploadArtwork: grant.accountOwner === true && canEdit,
-      canReadOrders:
-        grant.accountOwner === true &&
-        [grant.appScopes, grant.userScopes, installation.grantedScopes].every((scopes) =>
-          scopes.includes('read_orders'),
-        ),
+      grant,
+      installation,
+      actor: {
+        shop: identity.shop,
+        shopId: installation.shopId,
+        installationId: installation.installationId,
+        tenantShopId: installation.tenantShopId,
+        installationGeneration: installation.installationGeneration,
+        staffId: identity.staffId,
+        sessionId: identity.sessionId,
+        expiresAtMs: Math.min(identity.expiresAtMs, grant.expiresAtMs),
+        canRead,
+        canEdit,
+        canReadArtwork: grant.accountOwner === true && canRead,
+        canUploadArtwork: grant.accountOwner === true && canEdit,
+        canReadOrders:
+          grant.accountOwner === true &&
+          [grant.appScopes, grant.userScopes, installation.grantedScopes].every((scopes) =>
+            scopes.includes('read_orders'),
+          ),
+      },
     };
   };
+}
+
+/** Actor-only form of createAdminGrantAuthenticator. */
+export function createAdminAuthenticator<G extends OnlineAdminGrant>(
+  port: AdminIdentityPort<G>,
+  now: () => number = Date.now,
+  diagnostic: AdminAuthenticationDiagnostic = () => {},
+  cache?: AdminAuthenticationCache<G>,
+) {
+  const authenticate = createAdminGrantAuthenticator(port, now, diagnostic, cache);
+  return async (request: Request, options: { fresh?: boolean } = {}): Promise<AdminActor | null> =>
+    (await authenticate(request, options))?.actor ?? null;
 }

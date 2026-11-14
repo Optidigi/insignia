@@ -1,7 +1,7 @@
 import type { createArtworkService, createCustomerArtworkLinks } from '@insignia/application';
 import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminActor } from '../admin/contracts.js';
-import { mutationOrigin, validActor } from '../admin/http.ts';
+import { adminBusy, mutationOrigin, shopifyBusy, validActor } from '../admin/http.ts';
 import { artworkJsonBody } from '../artwork/body.ts';
 
 export type CustomerArtworkHttpServices = {
@@ -9,7 +9,7 @@ export type CustomerArtworkHttpServices = {
   links: ReturnType<typeof createCustomerArtworkLinks>;
   view?(capability: string): Promise<unknown>;
   artwork: Pick<ReturnType<typeof createArtworkService>, 'begin' | 'complete' | 'status' | 'preview'> | undefined;
-  authenticate(request: Request): Promise<AdminActor | null>;
+  authenticate(request: Request, options?: { fresh?: boolean }): Promise<AdminActor | null>;
   assertMerchantAccess?(actor: AdminActor): Promise<void>;
   ensureInspectionReady(): Promise<void>;
 };
@@ -115,7 +115,14 @@ export async function handleMerchantArtworkLinkRequest(
   if (!/^Bearer [^\s]{1,8192}$/.test(request.headers.get('Authorization') ?? ''))
     return json({ error: 'Authentication required' }, 401);
   try {
-    const actor = await services.authenticate(request);
+    // Sharing order artwork is staff-sensitive: fresh online exchange.
+    let actor: AdminActor | null;
+    try {
+      actor = await services.authenticate(request, { fresh: true });
+    } catch (error) {
+      if (shopifyBusy(error)) return adminBusy();
+      throw error;
+    }
     if (!validActor(actor, Date.now())) return json({ error: 'Authentication required' }, 401);
     if (!actor.canReadOrders || !actor.canReadArtwork || !actor.canUploadArtwork)
       return json({ error: 'Artwork permission required' }, 403);

@@ -2,7 +2,7 @@ import { CommandDigestConflictError } from '@insignia/application';
 import { MerchantPreferencesCommandSchema } from '@insignia/contracts';
 import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminServices } from './contracts.js';
-import { adminJson, mutationOrigin, validActor } from './http.ts';
+import { adminBusy, adminJson, busyWithoutEffect, mutationOrigin, validActor } from './http.ts';
 import { PreferencesAuthorizationError, PreferencesValidationError } from './preferences.ts';
 
 const maxBody = 256_000;
@@ -55,6 +55,7 @@ export async function handlePreferencesRequest(
     const result = await services.preferences.save(actor, parsed.data, key);
     return adminJson(result.kind === 'saved' ? 200 : 409, result);
   } catch (error) {
+    if (busyWithoutEffect(request, error)) return adminBusy();
     if (error instanceof PreferencesAuthorizationError)
       return adminJson(403, { error: 'Current tenant permission required' });
     if (error instanceof PreferencesValidationError) return adminJson(422, { error: 'Invalid store preferences' });

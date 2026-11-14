@@ -83,9 +83,11 @@ export interface AdminServices {
   billing?(actor: AdminActor): Promise<BillingView>;
   /** Fixed private owner allocation; absence does not authorize key setup. */
   signingOwner?: SigningOwnerAction;
-  /** Must verify the Shopify session token, active installation and online staff
-   * grant on every request, including reinstall/deactivation invalidation. */
-  authenticate(request: Request): Promise<AdminActor | null>;
+  /** Must verify the Shopify session token on every request and bind it to an online
+   * staff grant and the active installation, including reinstall/deactivation
+   * invalidation. A verified grant and a durably fenced installation observation may
+   * be reused (see auth.ts); `fresh` (staff-sensitive actions) never reuses either. */
+  authenticate(request: Request, options?: { fresh?: boolean }): Promise<AdminActor | null>;
   /** HTTP-only rejected boundary observation; no request, claims or error crosses this port. */
   recordAuthenticationRejection?(stage: 'BEARER_MISSING' | 'BEARER_MALFORMED' | 'AUTHENTICATED_ACTOR_REJECTED'): void;
   /** Configuration-route 422 observation: action and reason code only, never request or draft content. */

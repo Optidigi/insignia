@@ -1,9 +1,10 @@
 import { CommandDigestConflictError } from '@insignia/application';
 import { MethodConfigurationSchema } from '@insignia/contracts';
-import { AdminOnlineIdentityError } from '@insignia/shopify';
+import { AdminOnlineIdentityError, ShopifyAdminUnavailableError } from '@insignia/shopify';
 import type { ConfigRejectionCode } from '../../shared/config-rejection.ts';
 import { SelectedSetupAuthorityError } from '../selected-product.ts';
 import { selectedMediaUrlsValid } from '../selected-product-media-urls.ts';
+import { AdminAuthenticationBusyError } from './auth.ts';
 import { CatalogQueryError } from './catalog-query.ts';
 import type { AdminActor, AdminServices, CommandOutcome, ConfigRejectionAction } from './contracts.js';
 import { MethodAuthorizationError, MethodCurrencyConflictError } from './methods.ts';
@@ -36,6 +37,36 @@ export function adminJson(status: number, value: unknown): Response {
       'X-Content-Type-Options': 'nosniff',
     },
   });
+}
+
+/** Shopify answered with throttling or an outage; nothing about the request was wrong. */
+export function shopifyBusy(error: unknown): boolean {
+  return (
+    error instanceof AdminAuthenticationBusyError ||
+    error instanceof ShopifyAdminUnavailableError ||
+    (error instanceof Error && (error as { transient?: unknown }).transient === true)
+  );
+}
+/** Transient provider conditions are 409 BUSY with Retry-After, never a 5xx (spec §13.1). */
+export function adminBusy(): Response {
+  const response = adminJson(409, {
+    code: 'BUSY',
+    error: 'Shopify is busy right now. Wait a few seconds and try again.',
+  });
+  response.headers.set('Retry-After', String(ADMIN_BUSY_RETRY_AFTER_SECONDS));
+  return response;
+}
+export const ADMIN_BUSY_RETRY_AFTER_SECONDS = 2;
+function authenticationBusy(error: unknown): boolean {
+  return (
+    error instanceof AdminAuthenticationBusyError ||
+    (error instanceof Error && (error as { authentication?: unknown }).authentication === true && shopifyBusy(error))
+  );
+}
+/** BUSY only when nothing can have happened: authentication (before any effect) or a read.
+ * A failed mutation may already have had an effect and keeps its ambiguous 503. */
+export function busyWithoutEffect(request: Request, error: unknown): boolean {
+  return authenticationBusy(error) || (request.method === 'GET' && shopifyBusy(error));
 }
 
 export function validActor(actor: AdminActor | null, now: number): actor is AdminActor {
@@ -113,6 +144,30 @@ function outcome(services: AdminServices, action: ConfigRejectionAction, result:
   }
 }
 
+async function authenticateAdmin(
+  request: Request,
+  services: AdminServices,
+  fresh: boolean,
+): Promise<AdminActor | Response> {
+  let actor: AdminActor | null;
+  try {
+    actor = await services.authenticate(request, fresh ? { fresh: true } : undefined);
+  } catch (error) {
+    if (error instanceof AdminOnlineIdentityError && error.stage === 'ONLINE_EXCHANGE_REFRESH_REQUIRED') {
+      const response = adminJson(401, { error: 'Authentication required' });
+      response.headers.set('X-Shopify-Retry-Invalid-Session-Request', '1');
+      return response;
+    }
+    if (shopifyBusy(error)) return adminBusy();
+    return adminJson(503, { error: 'Authentication unavailable' });
+  }
+  if (!validActor(actor, Date.now())) {
+    if (actor !== null) services.recordAuthenticationRejection?.('AUTHENTICATED_ACTOR_REJECTED');
+    return adminJson(401, { error: 'Authentication required' });
+  }
+  return actor;
+}
+
 /** A 422 from the configuration route: observable by reason code only, never by request content. */
 function configRejected(
   services: AdminServices,
@@ -139,21 +194,14 @@ export async function handleAdminRequest(
     );
     return adminJson(401, { error: 'Authentication required' });
   }
-  let actor: AdminActor | null;
-  try {
-    actor = await services.authenticate(request);
-  } catch (error) {
-    if (error instanceof AdminOnlineIdentityError && error.stage === 'ONLINE_EXCHANGE_REFRESH_REQUIRED') {
-      const response = adminJson(401, { error: 'Authentication required' });
-      response.headers.set('X-Shopify-Retry-Invalid-Session-Request', '1');
-      return response;
-    }
-    return adminJson(503, { error: 'Authentication unavailable' });
-  }
-  if (!validActor(actor, Date.now())) {
-    if (actor !== null) services.recordAuthenticationRejection?.('AUTHENTICATED_ACTOR_REJECTED');
-    return adminJson(401, { error: 'Authentication required' });
-  }
+  // Billing and signing are staff-sensitive: they always use a fresh online exchange.
+  const authenticated = await authenticateAdmin(
+    request,
+    services,
+    route.kind === 'billing' || route.kind === 'signing',
+  );
+  if (authenticated instanceof Response) return authenticated;
+  let actor = authenticated;
   if (url.searchParams.has('shop') && url.searchParams.get('shop') !== actor.shop)
     return adminJson(403, { error: 'Shop mismatch' });
   if (!actor.canRead) return adminJson(403, { error: 'Read permission required' });
@@ -349,7 +397,14 @@ export async function handleAdminRequest(
       typeof body.draftVersion === 'string' &&
       VERSION.test(body.draftVersion) &&
       Object.keys(body).length === 3
-    )
+    ) {
+      // Publishing is staff-sensitive: confirm the same staff with a fresh online exchange.
+      const fresh = await authenticateAdmin(request, services, true);
+      if (fresh instanceof Response) return fresh;
+      if (fresh.shop !== actor.shop || fresh.staffId !== actor.staffId || fresh.tenantShopId !== actor.tenantShopId)
+        return adminJson(401, { error: 'Authentication required' });
+      if (!fresh.canEdit) return adminJson(403, { error: 'Edit permission required' });
+      actor = fresh;
       return outcome(
         services,
         'publish',
@@ -362,6 +417,7 @@ export async function handleAdminRequest(
             : {}),
         }),
       );
+    }
     if (
       request.method === 'PUT' &&
       body.action === 'save' &&
@@ -407,6 +463,7 @@ export async function handleAdminRequest(
       return adminJson(403, { error: 'Current tenant installation required' });
     if (error instanceof CommandDigestConflictError)
       return adminJson(409, { kind: 'conflict', message: 'Command key was used for a different request' });
+    if (busyWithoutEffect(request, error)) return adminBusy();
     return adminJson(503, { error: 'Admin service unavailable' });
   }
 }

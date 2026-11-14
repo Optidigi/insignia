@@ -5,7 +5,7 @@ import {
   VersionedMethodConfigurationSchema,
 } from '@insignia/contracts';
 import { z } from 'zod';
-import { authenticatedJson } from '../shared/admin-request.ts';
+import { authenticatedJson, isShopifyBusy } from '../shared/admin-request.ts';
 
 export interface MethodJournalStorage {
   getItem(key: string): string | null;
@@ -74,7 +74,9 @@ export function createMethodCatalogTransport(input: {
         });
       } catch (error) {
         const status = error && typeof error === 'object' && 'status' in error ? error.status : null;
-        if ([401, 403, 409, 422].includes(Number(status))) input.storage.removeItem(storageKey);
+        // A BUSY 409 had no effect: keep the journal so the same command is retried.
+        if (!isShopifyBusy(error) && [401, 403, 409, 422].includes(Number(status)))
+          input.storage.removeItem(storageKey);
         throw error;
       }
       if (method === 'DELETE') {

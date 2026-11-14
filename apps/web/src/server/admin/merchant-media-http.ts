@@ -1,6 +1,6 @@
 import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminServices } from './contracts.js';
-import { adminJson, mutationOrigin, validActor } from './http.ts';
+import { adminBusy, adminJson, busyWithoutEffect, mutationOrigin, validActor } from './http.ts';
 import { MerchantMediaError } from './merchant-media.ts';
 
 const limit = 5 * 1024 * 1024;
@@ -65,6 +65,7 @@ export async function handleMerchantMediaRequest(
     if (!bytes) return adminJson(422, { error: 'A PNG image of at most 5 MiB is required' });
     return adminJson(200, await services.media.upload(actor, productId, assetId, bytes, expectedAuthority));
   } catch (error) {
+    if (busyWithoutEffect(request, error)) return adminBusy();
     if (error instanceof AdminOnlineIdentityError) return adminJson(503, { error: 'Authentication unavailable' });
     if (error instanceof MerchantMediaError)
       return adminJson(

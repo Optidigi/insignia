@@ -8,6 +8,7 @@ type Model = {
   domain: string;
   exchangeFailed: boolean;
   providerFailed: boolean;
+  providerThrottled: boolean;
   userScopes: string;
   installationReads: number;
   catalogReads: number;
@@ -91,6 +92,7 @@ async function fixture(run: (fixture: Fixture) => Promise<void>) {
     domain: shop,
     exchangeFailed: false,
     providerFailed: false,
+    providerThrottled: false,
     userScopes: 'read_products,write_products',
     installationReads: 0,
     catalogReads: 0,
@@ -126,6 +128,13 @@ async function fixture(run: (fixture: Fixture) => Promise<void>) {
       if (query.includes('M5001StaffInstallation')) {
         model.installationReads++;
         if (model.providerFailed) return Response.json({ errors: [{ message: 'synthetic secret body' }] });
+        if (model.providerThrottled)
+          return Response.json({
+            errors: [{ message: 'Throttled', extensions: { code: 'THROTTLED' } }],
+            extensions: {
+              cost: { requestedQueryCost: 2, throttleStatus: { currentlyAvailable: 0, restoreRate: 100 } },
+            },
+          });
         const response = Response.json({
           data: {
             shop: { id: model.shopId, myshopifyDomain: model.domain, ianaTimezone: 'America/New_York' },
@@ -212,14 +221,26 @@ test(
       });
       const result = await services.catalog.list(actor, { query: 'shirt', cursor: null, limit: 10 });
       assert.equal(required(result.products[0]).title, 'Synthetic bootstrap shirt');
+      // #435: the same staff session reuses its verified grant and the fenced installation observation.
+      const reused = await services.authenticate(request());
+      assert.equal(required(reused).tenantShopId, actor.tenantShopId);
+      assert.equal(model.exchanges, 1);
+      assert.equal(model.installationReads, 1);
       model.userScopes = 'read_products';
-      const again = await services.authenticate(request());
+      // A staff-sensitive (fresh) request exchanges and observes again.
+      const again = await services.authenticate(request(), { fresh: true });
       assert.equal(required(again).tenantShopId, actor.tenantShopId);
       assert.equal(required(again).installationGeneration, '1');
       assert.equal(required(again).canRead, true);
       assert.equal(required(again).canEdit, false, 'staff permissions come from this online grant');
+      assert.equal(
+        required(await services.authenticate(request())).canEdit,
+        false,
+        'later requests reuse the fresher grant',
+      );
       assert.deepEqual(await core.tenants.getManagedInstallationState(shop), state);
       assert.equal(await core.tenants.getShopByDomain('wrong.myshopify.com'), null);
+      assert.equal(model.exchanges, 2);
       assert.equal(model.installationReads, 2);
       assert.equal(model.catalogReads, 1);
       const readiness = await required(services.inspectReadiness)(required(again));
@@ -268,6 +289,50 @@ test(
 );
 
 test(
+  '#435: a processed uninstall fences the reused installation observation and grant',
+  { skip: !database, timeout: 30000 },
+  async () =>
+    fixture(async ({ core, services, model, shop, request }) => {
+      const actor = required(await services.authenticate(request()));
+      assert.ok(await services.authenticate(request()));
+      assert.equal(model.installationReads, 1);
+      // The settlement a verified app/uninstalled delivery performs.
+      await core.transactions.run((tx) =>
+        core.tenants.deactivateCurrent(tx, actor.tenantShopId, actor.installationGeneration),
+      );
+      assert.equal(required(await core.tenants.getManagedInstallationState(shop)).active, false);
+      const exchanges = model.exchanges;
+      await assert.rejects(services.authenticate(request()), { message: 'Authentication unavailable' });
+      assert.equal(model.installationReads, 2, 'the cached observation is not reused after uninstall');
+      assert.equal(model.exchanges, exchanges + 1, 'the reused grant is dropped with it');
+    }),
+);
+
+test(
+  '#446: a Shopify-throttled installation read answers 409 BUSY with Retry-After, not 503',
+  { skip: !database, timeout: 30000 },
+  async () =>
+    fixture(async ({ services, model, shop, handleAdminRequest }) => {
+      model.providerThrottled = true;
+      const response = await handleAdminRequest(
+        new Request('https://synthetic.example/api/admin/products', {
+          headers: { Authorization: `Bearer ${staffToken(shop)}` },
+        }),
+        services,
+        { kind: 'list' },
+      );
+      assert.equal(response.status, 409);
+      assert.equal(response.headers.get('Retry-After'), '2');
+      assert.deepEqual(await response.json(), {
+        code: 'BUSY',
+        error: 'Shopify is busy right now. Wait a few seconds and try again.',
+      });
+      assert.equal(model.installationReads, 3, 'two bounded retries after the first throttled read');
+      assert.equal(model.catalogReads, 0);
+    }),
+);
+
+test(
   'production confirms a reinstall twice, advances once and rejects historical stale sessions',
   { skip: !database, timeout: 30000 },
   async () =>
@@ -275,12 +340,17 @@ test(
       const first = await services.authenticate(request());
       const original = model.install;
       model.install = 'gid://shopify/AppInstallation/32';
-      const next = await services.authenticate(request());
+      // Fresh (staff-sensitive) requests and requests after the reuse window observe the provider.
+      const next = await services.authenticate(request(), { fresh: true });
       assert.equal(required(next).tenantShopId, required(first).tenantShopId);
       assert.equal(required(next).installationGeneration, '2');
       assert.equal(model.installationReads, 3, 'new installation requires independent confirmation');
+      // The reused observation now carries the new generation.
+      assert.equal(required(await services.authenticate(request())).installationGeneration, '2');
       model.install = original;
-      await assert.rejects(services.authenticate(request()), { message: 'Authentication unavailable' });
+      await assert.rejects(services.authenticate(request(), { fresh: true }), {
+        message: 'Authentication unavailable',
+      });
       assert.equal(required(await core.tenants.getManagedInstallationState(shop)).currentGeneration, '2');
       await assert.rejects(services.catalog.list(required(first), { query: '', cursor: null, limit: 10 }), {
         message: 'Admin installation changed',
@@ -299,7 +369,9 @@ test(
       model.afterRead = () => {
         model.install = 'gid://shopify/AppInstallation/34';
       };
-      await assert.rejects(services.authenticate(request()), { message: 'Authentication unavailable' });
+      await assert.rejects(services.authenticate(request(), { fresh: true }), {
+        message: 'Authentication unavailable',
+      });
       assert.deepEqual(await core.tenants.getManagedInstallationState(shop), before);
     }),
 );
@@ -312,8 +384,11 @@ test(
       const actors = await Promise.all(Array.from({ length: 24 }, () => services.authenticate(request())));
       assert.equal(new Set(actors.map((actor) => required(actor).tenantShopId)).size, 1);
       assert.ok(actors.every((actor) => required(actor).installationGeneration === '1'));
+      assert.equal(model.installationReads, 1, '#435: concurrent first requests share one installation read');
       model.install = 'gid://shopify/AppInstallation/35';
-      const renewed = await Promise.all(Array.from({ length: 24 }, () => services.authenticate(request())));
+      const renewed = await Promise.all(
+        Array.from({ length: 24 }, () => services.authenticate(request(), { fresh: true })),
+      );
       assert.ok(renewed.every((actor) => required(actor).installationGeneration === '2'));
       assert.equal(required(await core.tenants.getManagedInstallationState(shop)).currentGeneration, '2');
     }),
@@ -373,6 +448,9 @@ test(
         405,
       );
       model.userScopes = '';
+      // #435: a removed staff permission applies from the next fresh exchange (staff-sensitive
+      // action) or once the reused online grant expires.
+      await services.authenticate(new Request(url, { headers }), { fresh: true });
       assert.equal((await handleAdminRequest(new Request(url, { headers }), services, route)).status, 403);
       assert.equal(model.catalogReads, 0);
       assert.doesNotMatch(JSON.stringify(body), /staffId|sessionId|accessToken|privateEnvelope/);

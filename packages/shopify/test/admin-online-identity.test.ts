@@ -8,6 +8,7 @@ import {
   createAdminOnlineIdentity,
   deadlineAwareOnlineFetch,
   hasAdminAccessScope,
+  INSTALLATION_READ_BUDGET_MS,
 } from '../src/admin-online-identity.js';
 import { jsonRecord, required } from './fixture-assertions.js';
 
@@ -307,6 +308,108 @@ describe('production Shopify online staff adapter with synthetic transport', () 
         accessToken: 'synthetic',
       }),
     ).rejects.toMatchObject({ stage: 'INSTALLATION_PROVIDER_READ_FAILED' });
+  });
+});
+
+describe('installation read under Shopify throttling (#446)', () => {
+  const installed = {
+    data: {
+      shop: { id: 'gid://shopify/Shop/7', myshopifyDomain: shop, ianaTimezone: 'America/New_York' },
+      currentAppInstallation: { id: 'gid://shopify/AppInstallation/9', accessScopes: [{ handle: 'write_products' }] },
+    },
+  };
+  const throttled = {
+    errors: [{ message: 'Throttled', extensions: { code: 'THROTTLED' } }],
+    extensions: {
+      cost: {
+        requestedQueryCost: 10,
+        throttleStatus: { maximumAvailable: 2000, currentlyAvailable: 0, restoreRate: 100 },
+      },
+    },
+  };
+  it('waits for the advertised restore time and retries a THROTTLED read', async () => {
+    const replies = [throttled, throttled, installed];
+    const started: number[] = [];
+    const provider = createAdminOnlineIdentity({
+      apiKey: key,
+      apiSecret: secret,
+      hostName: 'example.test',
+      async fetchImpl() {
+        started.push(Date.now());
+        return Response.json(required(replies.shift()));
+      },
+    });
+    await expect(provider.readInstallation({ shop, accessToken: 'synthetic' })).resolves.toMatchObject({
+      installationId: 'gid://shopify/AppInstallation/9',
+    });
+    expect(started).toHaveLength(3);
+    // 10 cost points at a restore rate of 100/s: at least 100 ms between attempts.
+    expect(required(started[1]) - required(started[0])).toBeGreaterThanOrEqual(90);
+  });
+  it('reports a still-throttled read as transient with the provider code, after bounded retries', async () => {
+    let calls = 0;
+    const provider = createAdminOnlineIdentity({
+      apiKey: key,
+      apiSecret: secret,
+      hostName: 'example.test',
+      async fetchImpl() {
+        calls++;
+        return calls % 2
+          ? Response.json(throttled)
+          : new Response('', { status: 429, headers: { 'Retry-After': '0' } });
+      },
+    });
+    await expect(provider.readInstallation({ shop, accessToken: 'synthetic' })).rejects.toMatchObject({
+      stage: 'INSTALLATION_PROVIDER_READ_FAILED',
+      transient: true,
+      providerCode: 'THROTTLED',
+    });
+    expect(calls).toBe(3);
+  });
+  it('answers BUSY early instead of waiting past the total read budget', async () => {
+    let calls = 0;
+    const slow = {
+      ...throttled,
+      extensions: {
+        cost: { requestedQueryCost: 1000, throttleStatus: { currentlyAvailable: 0, restoreRate: 50 } },
+      },
+    };
+    const provider = createAdminOnlineIdentity({
+      apiKey: key,
+      apiSecret: secret,
+      hostName: 'example.test',
+      async fetchImpl() {
+        calls++;
+        return Response.json(slow);
+      },
+    });
+    const started = Date.now();
+    await expect(provider.readInstallation({ shop, accessToken: 'synthetic' })).rejects.toMatchObject({
+      transient: true,
+      providerCode: 'THROTTLED',
+    });
+    // A 20 s advertised restore is clamped to 2 s per wait; a third wait would pass the budget.
+    expect(calls).toBe(3);
+    expect(Date.now() - started).toBeLessThan(INSTALLATION_READ_BUDGET_MS);
+    expect(INSTALLATION_READ_BUDGET_MS).toBeLessThan(10_000);
+  });
+  it('does not retry a denied read and marks it non-transient', async () => {
+    let calls = 0;
+    const provider = createAdminOnlineIdentity({
+      apiKey: key,
+      apiSecret: secret,
+      hostName: 'example.test',
+      async fetchImpl() {
+        calls++;
+        return Response.json({ errors: [{ message: 'Denied', extensions: { code: 'ACCESS_DENIED' } }] });
+      },
+    });
+    await expect(provider.readInstallation({ shop, accessToken: 'synthetic' })).rejects.toMatchObject({
+      stage: 'INSTALLATION_PROVIDER_READ_FAILED',
+      transient: false,
+      providerCode: 'ACCESS_DENIED',
+    });
+    expect(calls).toBe(1);
   });
 });
 

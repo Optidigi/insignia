@@ -17,7 +17,7 @@ import {
   type ManagedInstallationIdentity,
   sha256CanonicalJson,
 } from '@insignia/database';
-import { type AdminAuthenticationStage, createObservability } from '@insignia/observability';
+import { createObservability } from '@insignia/observability';
 import {
   canonicalAdminAccessScopes,
   createActiveSubscriptionClient,
@@ -43,7 +43,13 @@ import { Pool } from 'pg';
 import { loadCredentialKeys } from '../../../../worker/src/config.ts';
 import { createMerchantConfigService } from '../merchant-config.js';
 import { createSignerClient, type SignerClient } from '../signer-client.ts';
-import { type AdminInstallation, AdminInstallationReconciliationError, createAdminAuthenticator } from './auth.js';
+import {
+  type AdminAuthenticationDiagnostic,
+  type AdminInstallation,
+  AdminInstallationReconciliationError,
+  createAdminAuthenticationCache,
+  createAdminGrantAuthenticator,
+} from './auth.js';
 import { createMerchantBillingReader } from './billing.js';
 import { type CatalogListInput, filteredCatalogPage } from './catalog-query.js';
 import type { AdminActor, AdminServices, CatalogProduct } from './contracts.js';
@@ -149,6 +155,8 @@ export function createProductionAdminServices(
   const requestTokens = new WeakMap<AdminActor, string>();
   const merchantTimezones = new WeakMap<AdminActor, string>();
   const authenticationLogger = createObservability().logger;
+  // One web instance: verified grants and fenced installation observations are reused per process.
+  const authenticationCache = createAdminAuthenticationCache<OnlineStaffGrant>();
   const activations = new WeakMap<AdminActor, ReturnType<typeof core.productionActivations.create>>();
   const verifications = new WeakMap<AdminActor, DurableCoreReleaseReader>();
   const verified = new WeakMap<AdminActor, NonNullable<Awaited<ReturnType<DurableCoreReleaseReader['read']>>>>();
@@ -644,30 +652,40 @@ export function createProductionAdminServices(
     recordConfigRejection({ action, code }) {
       authenticationLogger.info('admin_config_rejected', { configAction: action, rejectionCode: code });
     },
-    async authenticate(request) {
+    async authenticate(request, options = {}) {
       const correlationId = randomUUID();
-      const diagnostic = (authStage: AdminAuthenticationStage) =>
-        authenticationLogger.info('admin_authentication', { authStage, correlationId });
-      let online: OnlineStaffGrant | undefined;
-      let merchantTimezone: string | undefined;
-      const authenticator = createAdminAuthenticator(
+      const diagnostic: AdminAuthenticationDiagnostic = (authStage, detail) =>
+        detail?.providerCode
+          ? authenticationLogger.warn('admin_authentication', {
+              authStage,
+              correlationId,
+              providerCode: detail.providerCode,
+            })
+          : authenticationLogger.info('admin_authentication', { authStage, correlationId });
+      const authenticator = createAdminGrantAuthenticator<OnlineStaffGrant>(
         {
           verifySessionToken: shopify.verify,
-          async exchangeOnlineGrant(token, identity) {
-            online = await shopify.exchangeOnline(token, identity);
-            return online;
+          exchangeOnlineGrant: (token, identity) => shopify.exchangeOnline(token, identity),
+          async confirmInstallation(observed) {
+            const state = await core.tenants.getManagedInstallationState(observed.shop);
+            return (
+              !!state &&
+              state.active &&
+              state.shopId === observed.tenantShopId &&
+              state.currentGeneration === observed.installationGeneration &&
+              state.externalInstallationId === observed.installationId &&
+              'gid://shopify/Shop/' + state.shopifyShopId === observed.shopId
+            );
           },
-          async readInstallation(current): Promise<AdminInstallation> {
-            if (!online || online.shop !== current.shop) throw new Error('Online grant missing');
+          async readInstallation(online): Promise<AdminInstallation> {
             // Capture durable state before provider IO. A stale observation may
             // not reverse a generation committed while that IO was in flight.
-            const expected = await core.tenants.getManagedInstallationState(current.shop).catch(() => {
+            const expected = await core.tenants.getManagedInstallationState(online.shop).catch(() => {
               throw new AdminInstallationReconciliationError('TENANT_READ_FAILED');
             });
             const observationStartedAt = new Date();
             const provider = await shopify.readInstallation(online);
             diagnostic('INSTALLATION_PROVIDER_READ_SUCCEEDED');
-            merchantTimezone = provider.ianaTimezone;
             const identity: ManagedInstallationIdentity = {
               shopDomain: provider.shop,
               shopifyShopId: provider.shopId.slice('gid://shopify/Shop/'.length),
@@ -729,16 +747,21 @@ export function createProductionAdminServices(
               installationGeneration: installed.state.currentGeneration,
               active: installed.state.active,
               grantedScopes: provider.grantedScopes,
+              ianaTimezone: provider.ianaTimezone,
             };
           },
         },
         Date.now,
         diagnostic,
+        authenticationCache,
       );
-      const actor = await authenticator(request);
+      const authenticated = await authenticator(request, options);
+      const actor = authenticated?.actor ?? null;
+      const online = authenticated?.grant;
       if (actor && online) {
         grants.set(actor, online);
         requestTokens.set(actor, request.headers.get('Authorization')!.slice(7));
+        const merchantTimezone = authenticated.installation.ianaTimezone;
         if (merchantTimezone) merchantTimezones.set(actor, merchantTimezone);
         if (offlineBootstrap && actor.canRead && online.accountOwner === true) {
           const scope = await core.tenants.getActiveAuthorizationScope({

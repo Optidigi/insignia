@@ -124,3 +124,25 @@ test('explicitly saving an equal Method price adopts current currency through on
   await transport.persist([configuration]);
   assert.equal(calls.length, 1);
 });
+test('#451: a Shopify BUSY 409 keeps the Method journal so the identical command is retried', async () => {
+  const journal = storage();
+  const sends: (string | null)[] = [];
+  let busy = true;
+  const request = async (_path: string, init?: RequestInit) => {
+    sends.push(new Headers(init?.headers).get('Idempotency-Key'));
+    if (busy) {
+      busy = false;
+      throw Object.assign(new Error('Shopify is busy right now. Wait a few seconds and try again.'), {
+        status: 409,
+        code: 'BUSY',
+      });
+    }
+    return { kind: 'created', method: { configuration, version: '1', currency: 'USD' } };
+  };
+  const first = createMethodCatalogTransport({ ...scope, records: [], storage: journal, request });
+  await assert.rejects(first.persist([configuration]), /Shopify is busy/);
+  const reloaded = createMethodCatalogTransport({ ...scope, records: [], storage: journal, request });
+  await reloaded.resume();
+  assert.equal(sends.length, 2);
+  assert.equal(sends[1], sends[0]);
+});

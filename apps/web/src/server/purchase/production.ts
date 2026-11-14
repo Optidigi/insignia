@@ -39,7 +39,7 @@ export async function createProductionPurchaseServices(
     return createPurchaseServices({
       core,
       appOrigin,
-      authenticate: async (request) => (await adminServices()?.authenticate(request)) ?? null,
+      authenticate: async (request, options) => (await adminServices()?.authenticate(request, options)) ?? null,
       assertCurrentAccess: async (actor) => {
         const assertAccess = adminServices()?.assertPurchaseAccess;
         if (!assertAccess) throw new Error('Current merchant authority unavailable');

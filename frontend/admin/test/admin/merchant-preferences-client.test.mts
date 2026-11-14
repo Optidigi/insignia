@@ -73,3 +73,31 @@ test('a refresh cannot silently restamp a stale edited guidance snapshot with a 
   await assert.rejects(() => edit, /changed/i);
   assert.equal(sentVersion, '0', 'version belongs to the observed draft, not a later in-flight refresh');
 });
+test('#451: a Shopify BUSY 409 keeps the pending intent and its wording; it is not a conflict', async () => {
+  const storage = journal();
+  const keys: (string | null)[] = [];
+  let busy = true;
+  const request = async (_path: string, init?: RequestInit): Promise<unknown> => {
+    if (!init?.method) return initial();
+    keys.push(new Headers(init.headers).get('Idempotency-Key'));
+    if (busy) {
+      busy = false;
+      throw Object.assign(new Error('Shopify is busy right now. Wait a few seconds and try again.'), {
+        status: 409,
+        code: 'BUSY',
+      });
+    }
+    return {
+      kind: 'saved',
+      preferences: { ...initial(), guidanceVersion: '1', guidance: { dismissed: true, completedSteps: [] } },
+    };
+  };
+  const client = createMerchantPreferencesClient(request, storage, () => 'busy-guidance-key');
+  await client.read();
+  await assert.rejects(() => client.saveGuidance({ dismissed: true, completedSteps: [] }), /Shopify is busy/);
+  assert.notEqual(storage.getItem('insignia:pending-preferences:v1:example.myshopify.com:guidance'), null);
+  const reloaded = createMerchantPreferencesClient(request, storage, () => 'must-not-replace-original-key');
+  await reloaded.read();
+  assert.deepEqual(keys, ['busy-guidance-key', 'busy-guidance-key']);
+  assert.equal(storage.getItem('insignia:pending-preferences:v1:example.myshopify.com:guidance'), null);
+});

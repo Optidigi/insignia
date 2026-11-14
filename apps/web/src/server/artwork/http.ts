@@ -3,7 +3,7 @@ import { ARTWORK_POLICY, ArtworkError, type ArtworkScope, type createArtworkServ
 import { type ArtworkTimingDiagnostic, createObservability } from '@insignia/observability';
 import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminActor } from '../admin/contracts.js';
-import { adminJson, mutationOrigin, validActor } from '../admin/http.ts';
+import { adminBusy, adminJson, mutationOrigin, shopifyBusy, validActor } from '../admin/http.ts';
 import { artworkEmptyBody, artworkJsonBody } from './body.ts';
 
 export type ArtworkRoute = { audience: 'merchant' | 'guest' } & (
@@ -13,7 +13,7 @@ export type ArtworkRoute = { audience: 'merchant' | 'guest' } & (
 export interface ArtworkHttpServices {
   appOrigin: string;
   artwork: ReturnType<typeof createArtworkService>;
-  authenticate(request: Request): Promise<AdminActor | null>;
+  authenticate(request: Request, options?: { fresh?: boolean }): Promise<AdminActor | null>;
   /** Verifies App Proxy, current installation and server-issued resource/session capability. */
   verifyGuest?(request: Request): Promise<ArtworkScope | null>;
   issueGuest?(request: Request): Promise<{ token: string; expiresAt: string } | null>;
@@ -109,7 +109,11 @@ async function respondArtwork(
     if (route.audience === 'merchant') {
       if (!/^Bearer [^\s]{1,8192}$/.test(request.headers.get('Authorization') ?? ''))
         return adminJson(401, { error: 'Authentication required' });
-      const actor = await services.authenticate(request);
+      // Artwork writes and downloads are staff-sensitive: fresh online exchange.
+      const actor = await services.authenticate(
+        request,
+        write || route.kind === 'download' ? { fresh: true } : undefined,
+      );
       if (!validActor(actor, Date.now())) return adminJson(401, { error: 'Authentication required' });
       if (actor.canReadArtwork !== true || (write && actor.canUploadArtwork !== true))
         return adminJson(403, { error: 'Artwork permission required' });
@@ -129,6 +133,7 @@ async function respondArtwork(
     }
   } catch (error) {
     note.failure = 'AUTHENTICATION_UNAVAILABLE';
+    if (shopifyBusy(error)) return adminBusy();
     const response = adminJson(
       error instanceof AdminOnlineIdentityError && error.stage === 'ONLINE_EXCHANGE_REFRESH_REQUIRED' ? 401 : 503,
       { error: 'Authentication unavailable' },

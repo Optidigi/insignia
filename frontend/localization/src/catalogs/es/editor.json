@@ -1047,7 +1047,8 @@
     },
     "publishErrors": {
       "conflict": "Esta vista previa cambió mientras la revisabas. Cierra este cuadro de diálogo y revisa la configuración más reciente.",
-      "storageError": "Tu navegador no pudo publicar esta vista previa. Se conservarán tu trabajo y la vista previa publicada anterior. Vuelve a intentarlo o guarda un borrador."
+      "storageError": "No se pudo publicar esta vista previa. Se conservarán tu trabajo y la vista previa publicada anterior. Vuelve a intentarlo o guarda un borrador.",
+      "shopifyBusy": "Shopify está ocupado en este momento, así que esta vista previa no se publicó. Se conservarán tu trabajo y la vista previa publicada anterior. Espera unos segundos y vuelve a intentarlo."
     },
     "history": {
       "changeUndone": "Cambio deshecho.",

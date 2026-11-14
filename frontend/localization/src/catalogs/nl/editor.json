@@ -204,7 +204,8 @@
     },
     "publishErrors": {
       "conflict": "Dit voorbeeld is gewijzigd terwijl je het controleerde. Sluit dit dialoogvenster en controleer de nieuwste configuratie.",
-      "storageError": "Je browser kon dit voorbeeld niet publiceren. Je werk en het vorige gepubliceerde voorbeeld zijn behouden. Probeer het opnieuw of sla een concept op."
+      "storageError": "Dit voorbeeld kon niet worden gepubliceerd. Je werk en het vorige gepubliceerde voorbeeld zijn behouden. Probeer het opnieuw of sla een concept op.",
+      "shopifyBusy": "Shopify is op dit moment druk, dus dit voorbeeld is niet gepubliceerd. Je werk en het vorige gepubliceerde voorbeeld zijn behouden. Wacht een paar seconden en probeer het opnieuw."
     },
     "history": {
       "changeUndone": "Wijziging ongedaan gemaakt.",
