@@ -156,8 +156,11 @@ export function homeSetupFromTheme(input: ThemeSetupStatus, hasPublishedProduct:
   };
 }
 
-export function homeHasPublishedProduct(input: unknown): boolean {
-  return productsSchema.parse(input).products.some((p) => p.configurationSummary?.state === 'published');
+/** Result of the dedicated `configuration=published&limit=1` read; `undefined` when the answer is not complete. */
+export function homePublishedProductFromResponse(input: unknown): boolean | undefined {
+  const page = productsSchema.parse(input);
+  if (page.products.some((p) => p.configurationSummary?.state === 'published')) return true;
+  return page.products.length === 0 && page.nextCursor === null ? false : undefined;
 }
 
 /** Getting-started steps the store itself proves done; an unknown observation never counts. */

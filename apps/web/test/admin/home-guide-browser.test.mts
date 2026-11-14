@@ -6,7 +6,7 @@ import { browserFixture, preferences, routePolaris } from './support/selected-br
 
 /** Built Home and storefront-setup pages against synthetic Shopify theme and store reads. */
 
-type Embed = 'active' | 'available' | 'unreadable';
+type Embed = 'active' | 'available' | 'unreadable' | 'rejected';
 type GuideStep = 'product' | 'storefront' | 'test';
 
 const embedRead = {
@@ -30,6 +30,7 @@ const embedRead = {
     },
   ],
   unreadable: null,
+  rejected: 'reject',
 } as const;
 
 const product = (state: 'not_configured' | 'draft' | 'published') => ({
@@ -88,6 +89,10 @@ async function openMerchantPage(
   scenario: {
     embed: Embed;
     product?: 'not_configured' | 'draft' | 'published';
+    /** The only published product is not on the first catalog page. */
+    publishedBeyondFirstPage?: boolean;
+    /** Receives the body of every saved guidance command. */
+    saves?: unknown[];
     acknowledged?: GuideStep[];
     orders?: 'none' | 'test-only';
     locale?: string;
@@ -103,22 +108,45 @@ async function openMerchantPage(
     window.shopify = {
       config: { shop: 'example.myshopify.com' },
       idToken: async () => 'synthetic-home-guide',
-      app: { extensions: async () => read },
+      app: {
+        extensions: async () => {
+          if (read === 'reject') throw new Error('Synthetic App Bridge failure');
+          return read;
+        },
+      },
     };
   }, embedRead[scenario.embed]);
   await routePolaris(page, source);
   await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) => route.fulfill({ body: '' }));
   await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
-  await page.route('**/api/admin/preferences', (route) =>
-    route.fulfill({
-      json: { ...preferences, guidance: { dismissed: false, completedSteps: scenario.acknowledged ?? [] } },
-    }),
-  );
-  await page.route(/\/api\/admin\/products(\?.*)?$/, (route) =>
-    route.fulfill({
-      json: { products: [product(scenario.product ?? 'not_configured')], nextCursor: null },
-    }),
-  );
+  let guidance = { dismissed: false, completedSteps: scenario.acknowledged ?? [] };
+  let guidanceVersion = 0;
+  await page.route('**/api/admin/preferences', (route) => {
+    if (route.request().method() === 'POST') {
+      const command = route.request().postDataJSON();
+      scenario.saves?.push(command);
+      guidance = command.guidance;
+      guidanceVersion++;
+      return route.fulfill({
+        json: {
+          kind: 'saved',
+          preferences: { ...preferences, guidanceVersion: String(guidanceVersion), guidance },
+        },
+      });
+    }
+    return route.fulfill({ json: { ...preferences, guidanceVersion: String(guidanceVersion), guidance } });
+  });
+  await page.route(/\/api\/admin\/products(\?.*)?$/, (route) => {
+    const state = scenario.product ?? 'not_configured';
+    // The filtered read answers for the whole catalog; the default read is only the first page.
+    if (new URL(route.request().url()).searchParams.get('configuration') === 'published')
+      return route.fulfill({
+        json: { products: state === 'published' ? [product('published')] : [], nextCursor: null },
+      });
+    return scenario.publishedBeyondFirstPage
+      ? route.fulfill({ json: { products: [product('not_configured')], nextCursor: 'page-2' } })
+      : route.fulfill({ json: { products: [product(state)], nextCursor: null } });
+  });
   await page.route(/\/api\/admin\/billing$/, (route) => route.fulfill({ json: { newActionsAllowed: true } }));
   await page.route(/\/api\/purchases\/v1\/statistics$/, (route) => route.fulfill({ json: statistics }));
   await page.route(/\/api\/purchases\/v1\?/, (route) =>
@@ -138,14 +166,20 @@ test('Home guide ticks the theme and published-product steps from the same store
   assert.equal(await page.getByRole('heading', { name: 'Get started with Insignia' }).count(), 1);
   const test = stepCheckbox(page, 'Mark customer test as complete');
   await test.click({ trial: true }); // waits until the merchant's preferences are loaded and editable
-  const product = stepCheckbox(page, 'Mark product setup as incomplete');
-  const storefront = stepCheckbox(page, 'Mark storefront connection as incomplete');
+  const product = stepCheckbox(page, 'Complete: product setup (detected from your store)');
+  const storefront = stepCheckbox(page, 'Complete: storefront connection (detected from your store)');
   assert.equal(await product.isChecked(), true);
   assert.equal(await storefront.isChecked(), true);
   assert.equal(await product.isDisabled(), true, 'an observed fact is not a manual acknowledgement');
   assert.equal(await storefront.isDisabled(), true);
   assert.equal(await test.isChecked(), false, 'a customer test is only ever acknowledged by the merchant');
   assert.equal(await test.isDisabled(), false);
+  assert.equal(
+    await page.getByText('Detected from your store', { exact: true }).count(),
+    2,
+    'visible note per locked step',
+  );
+  assert.equal(await storefront.evaluate((box) => getComputedStyle(box).cursor), 'default', 'locked is not clickable');
   assert.equal(await page.getByText('Connect your theme', { exact: true }).count(), 1, 'step title stays listed');
   assert.equal(await page.getByRole('link', { name: 'Open theme setup' }).count(), 0, 'no theme action when connected');
 });
@@ -223,16 +257,16 @@ test('Home order tiles say that test and cancelled orders are not counted, in ev
       'Gesamtzahl der bestellten Artikel mit Produktanpassungen. Testbestellungen und stornierte Bestellungen werden nicht mitgezählt.',
     ],
     fr: [
-      'Commandes contenant au moins une personnalisation Insignia. Les commandes de test et les commandes annulées ne sont pas comptées.',
-      'Quantité totale d’articles personnalisés commandés. Les commandes de test et les commandes annulées ne sont pas comptées.',
+      'Commandes contenant au moins une personnalisation Insignia. Les commandes de test et les commandes annulées ne sont pas comptabilisées.',
+      'Quantité totale d’articles personnalisés commandés. Les commandes de test et les commandes annulées ne sont pas comptabilisées.',
     ],
     es: [
-      'Pedidos que contienen al menos un diseño de Insignia. Los pedidos de prueba y los cancelados no se cuentan.',
+      'Pedidos que contienen al menos una personalización de Insignia. Los pedidos de prueba y los cancelados no se cuentan.',
       'Cantidad total de artículos personalizados pedidos. Los pedidos de prueba y los cancelados no se cuentan.',
     ],
     it: [
-      'Ordini che contengono almeno una personalizzazione Insignia. Gli ordini di prova e quelli annullati non sono conteggiati.',
-      'Quantità totale di articoli personalizzati ordinati. Gli ordini di prova e quelli annullati non sono conteggiati.',
+      'Ordini che contengono almeno una personalizzazione Insignia. Gli ordini di prova e quelli annullati non vengono conteggiati.',
+      'Quantità totale di articoli personalizzati ordinati. Gli ordini di prova e quelli annullati non vengono conteggiati.',
     ],
   };
   for (const [locale, definitions] of Object.entries(expected)) {
@@ -247,4 +281,38 @@ test('Home order tiles say that test and cancelled orders are not counted, in ev
     assert.deepEqual(shown.slice(0, 2), definitions, locale);
     await page.close();
   }
+});
+
+test('a published product beyond the first catalog page still ticks the product step', {
+  timeout: 30000,
+}, async (t) => {
+  const page = await openMerchantPage(t, '/admin/home', {
+    embed: 'available',
+    product: 'published',
+    publishedBeyondFirstPage: true,
+  });
+  await page.getByText('1 of 3 complete', { exact: true }).waitFor();
+  assert.equal(await stepCheckbox(page, 'Complete: product setup (detected from your store)').isChecked(), true);
+});
+
+test('a rejected theme read leaves the theme step open without breaking the rest of Home', {
+  timeout: 30000,
+}, async (t) => {
+  const page = await openMerchantPage(t, '/admin/home', { embed: 'rejected', product: 'published' });
+  await page.getByText('1 of 3 complete', { exact: true }).waitFor();
+  assert.equal(await stepCheckbox(page, 'Mark storefront connection as complete').isChecked(), false);
+});
+
+test('saving guidance writes only the merchant acknowledgements, never observed steps', {
+  timeout: 30000,
+}, async (t) => {
+  const saves: unknown[] = [];
+  const page = await openMerchantPage(t, '/admin/home', { embed: 'active', product: 'published', saves });
+  await page.getByText('2 of 3 complete', { exact: true }).waitFor();
+  await stepCheckbox(page, 'Mark customer test as complete').click();
+  await page.getByText('3 of 3 complete', { exact: true }).waitFor();
+  assert.equal(saves.length, 1);
+  const [command] = saves as { action: string; guidance: { completedSteps: string[] } }[];
+  assert.equal(command?.action, 'guidance');
+  assert.deepEqual(command?.guidance.completedSteps, ['test']);
 });

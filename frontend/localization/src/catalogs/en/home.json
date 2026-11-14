@@ -117,6 +117,8 @@
     "show": "Show getting started guide",
     "markIncomplete": "Mark {{step}} as incomplete",
     "markComplete": "Mark {{step}} as complete",
+    "observedComplete": "Complete: {{step}} (detected from your store)",
+    "observedNote": "Detected from your store",
     "steps": {
       "product": "Configure a product",
       "storefront": "Connect your theme",

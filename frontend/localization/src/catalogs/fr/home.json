@@ -93,9 +93,9 @@
     },
     "metrics": {
       "customizedOrders": "Commandes personnalisées",
-      "customizedOrdersDefinition": "Commandes contenant au moins une personnalisation Insignia. Les commandes de test et les commandes annulées ne sont pas comptées.",
+      "customizedOrdersDefinition": "Commandes contenant au moins une personnalisation Insignia. Les commandes de test et les commandes annulées ne sont pas comptabilisées.",
       "customizedItems": "Articles personnalisés commandés",
-      "customizedItemsDefinition": "Quantité totale d’articles personnalisés commandés. Les commandes de test et les commandes annulées ne sont pas comptées."
+      "customizedItemsDefinition": "Quantité totale d’articles personnalisés commandés. Les commandes de test et les commandes annulées ne sont pas comptabilisées."
     },
     "orders": "Afficher les commandes",
     "unavailable": "Les statistiques sont actuellement indisponibles.",
@@ -118,6 +118,8 @@
     "show": "Afficher le guide de démarrage",
     "markIncomplete": "Marquer l’étape « {{step}} » comme inachevée",
     "markComplete": "Marquer l’étape « {{step}} » comme terminée",
+    "observedComplete": "Étape terminée : {{step}} (détectée dans votre boutique)",
+    "observedNote": "Détectée dans votre boutique",
     "steps": {
       "product": "Configurer un produit",
       "storefront": "Connecter votre thème",

@@ -7,13 +7,11 @@ import type {
   HomeOrdersPanel,
   HomePanel,
   HomeProductsPanel,
-  HomeGuidanceStepId,
-  HomeSetup,
   HomeStatistics,
   MerchantHomeModel,
 } from '../shared/merchant-home';
 import {
-  homeHasPublishedProduct,
+  homePublishedProductFromResponse,
   homeOrdersFromResponse,
   homeProductsFromResponse,
   homeGuidanceWithObservedSteps,
@@ -22,15 +20,18 @@ import {
   homeStatisticsFromResponse,
   homeStatisticsFromAggregate,
 } from '../shared/merchant-home-source';
-import { themeSetupStatus, unknownThemeSetup } from '../shared/storefront-setup';
+import { type ThemeSetupStatus, themeSetupStatus, unknownThemeSetup } from '../shared/storefront-setup';
 import MerchantHome from './MerchantHome';
 
 /** Composition of existing authenticated reads. This does not create an aggregation or task-authority endpoint. */
 function MerchantHomeContainer() {
   const [products, setProducts] = useState<HomeProductsPanel>({ state: 'loading' });
   const [orders, setOrders] = useState<HomeOrdersPanel>({ state: 'loading' });
-  const [setup, setSetup] = useState<HomeSetup>();
-  const [observedSteps, setObservedSteps] = useState<HomeGuidanceStepId[]>([]);
+  const [theme, setTheme] = useState<ThemeSetupStatus>(unknownThemeSetup);
+  const [published, setPublished] = useState(false);
+  // Both are derived from the same two observations, never stored separately.
+  const setup = homeSetupFromTheme(theme, published);
+  const observedSteps = homeObservedGuidanceSteps(theme, published);
   const [restrictedPlan, setRestrictedPlan] = useState(false);
   const [sessionLost, setSessionLost] = useState(false);
   const [statistics, setStatistics] = useState<HomeStatistics | undefined>({ state: 'loading' });
@@ -45,11 +46,6 @@ function MerchantHomeContainer() {
   const guidanceCompletedSteps = guidance.completedSteps;
   const mounted = useRef(false);
   const requests = useRef<Partial<Record<HomePanel, AbortController>>>({});
-  const facts = useRef({ theme: unknownThemeSetup(), published: false });
-  const refreshSetup = () => {
-    setSetup(homeSetupFromTheme(facts.current.theme, facts.current.published));
-    setObservedSteps(homeObservedGuidanceSteps(facts.current.theme, facts.current.published));
-  };
   async function load(panel: HomePanel) {
     requests.current[panel]?.abort();
     const controller = new AbortController();
@@ -63,9 +59,22 @@ function MerchantHomeContainer() {
       );
       if (!mounted.current || controller.signal.aborted) return;
       if (panel === 'products') {
-        setProducts(homeProductsFromResponse(value));
-        facts.current.published = homeHasPublishedProduct(value);
-        refreshSetup();
+        // The default list is one page; only the dedicated filtered read can say whether any product is published.
+        let anyPublished: boolean | undefined;
+        try {
+          anyPublished = homePublishedProductFromResponse(
+            await authenticatedJson<unknown>('/api/admin/products?configuration=published&limit=1', {
+              signal: controller.signal,
+            }),
+          );
+        } catch {
+          /* An unanswered filter read leaves publication to what the first page proves. */
+        }
+        if (!mounted.current || controller.signal.aborted) return;
+        const { hasPublishedProduct: firstPage, ...ready } = homeProductsFromResponse(value);
+        const publication = anyPublished ?? firstPage;
+        setProducts(publication === undefined ? ready : { ...ready, hasPublishedProduct: publication });
+        setPublished(publication === true);
       } else {
         setOrders(homeOrdersFromResponse(value));
         setStatistics(homeStatisticsFromResponse(value));
@@ -107,8 +116,7 @@ function MerchantHomeContainer() {
     async function theme() {
       const generation = ++themeGeneration;
       let timer: ReturnType<typeof setTimeout> | undefined;
-      facts.current.theme = unknownThemeSetup();
-      refreshSetup();
+      setTheme(unknownThemeSetup());
       if (!bridge?.app?.extensions) return;
       try {
         const result = await Promise.race([
@@ -119,8 +127,7 @@ function MerchantHomeContainer() {
           }),
         ]);
         if (mounted.current && generation === themeGeneration) {
-          facts.current.theme = themeSetupStatus(result);
-          refreshSetup();
+          setTheme(themeSetupStatus(result));
         }
       } catch {
         /* Unknown is displayed as unverified, never as missing. Setup owns recovery. */

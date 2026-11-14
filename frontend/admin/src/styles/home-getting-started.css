@@ -93,6 +93,24 @@
   border-block-end: 1.5px solid white;
   transform: translateY(-1px) rotate(-45deg);
 }
+.home-guide__check:disabled {
+  cursor: default;
+}
+/* Disabled because the viewer cannot edit: faded, like other unavailable controls. */
+.home-guide__check:disabled:not(.home-guide__check--observed) {
+  opacity: 0.5;
+}
+/* A step the store proves done is fixed, not a merchant choice: a filled marker without the pointer affordance. */
+.home-guide__check--observed:checked {
+  background: #616161;
+  border-color: #616161;
+}
+.home-guide__check-hit:has(.home-guide__check:disabled) {
+  cursor: default;
+}
+.home-guide__observed {
+  padding-inline-start: 36px;
+}
 .home-guide__check:focus-visible,
 .home-guide__step-toggle:focus-visible {
   outline: 2px solid currentColor;

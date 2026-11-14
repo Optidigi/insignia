@@ -1469,6 +1469,8 @@ export interface AdminMessageTable {
   'home:guidance.hideAction': object;
   'home:guidance.markComplete': { step: string };
   'home:guidance.markIncomplete': { step: string };
+  'home:guidance.observedComplete': { step: string };
+  'home:guidance.observedNote': object;
   'home:guidance.product.addDescription': object;
   'home:guidance.product.addTitle': object;
   'home:guidance.product.configure': object;

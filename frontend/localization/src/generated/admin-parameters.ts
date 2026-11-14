@@ -1505,6 +1505,8 @@ export const adminParameterContracts = {
   'home:guidance.hideAction': {},
   'home:guidance.markComplete': { step: 'string' },
   'home:guidance.markIncomplete': { step: 'string' },
+  'home:guidance.observedComplete': { step: 'string' },
+  'home:guidance.observedNote': {},
   'home:guidance.product.addDescription': {},
   'home:guidance.product.addTitle': {},
   'home:guidance.product.configure': {},

@@ -117,6 +117,8 @@
     "show": "Instelgids weergeven",
     "markIncomplete": "{{step}} markeren als niet voltooid",
     "markComplete": "{{step}} markeren als voltooid",
+    "observedComplete": "Voltooid: {{step}} (herkend in je winkel)",
+    "observedNote": "Herkend in je winkel",
     "steps": {
       "product": "Product configureren",
       "storefront": "Je thema koppelen",

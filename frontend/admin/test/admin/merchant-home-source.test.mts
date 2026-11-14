@@ -111,3 +111,10 @@ test('getting-started steps are observed from the published product and a fully 
     observedSteps: ['product'],
   });
 });
+
+test('the filtered published read proves publication, and only an exhausted empty answer proves absence', async () => {
+  const { homePublishedProductFromResponse } = await import('../../src/shared/merchant-home-source.ts');
+  assert.equal(homePublishedProductFromResponse({ products: [product('published')], nextCursor: null }), true);
+  assert.equal(homePublishedProductFromResponse({ products: [], nextCursor: null }), false);
+  assert.equal(homePublishedProductFromResponse({ products: [], nextCursor: 'more' }), undefined);
+});
