@@ -62,6 +62,12 @@ function SelectedProductContainer({ productId }: { productId: string }) {
     const timer = setTimeout(() => setFollowUntil(0), Math.max(0, followUntil - Date.now()));
     return () => clearTimeout(timer);
   }, [followUntil]);
+  /** An unresolved write (`remote` is pending while custody is held), a followed unanswered publish, or a publication
+   * the server is still carrying out. Nothing else changes by itself, so nothing else needs a timer. */
+  const following =
+    remote === 'pending' ||
+    followUntil > 0 ||
+    (!!view?.config && isMerchantPublicationContinuing(view.config.publication.state));
   const [settled, setSettled] = useState<PlacementProduct | undefined>();
   const [adopted, setAdopted] = useState(false);
   const [, renderMetadata] = useState(0);
@@ -151,9 +157,13 @@ function SelectedProductContainer({ productId }: { productId: string }) {
         running = false;
       }
     }
-    const timer = setInterval(() => {
-      if (document.visibilityState === 'visible') void inspect();
-    }, PUBLICATION_POLL_MS);
+    // Only a write or publication that is still unresolved needs repeated reads. An idle editor reads again
+    // when the tab regains focus or visibility, not on a timer.
+    const timer = following
+      ? setInterval(() => {
+          if (document.visibilityState === 'visible') void inspect();
+        }, PUBLICATION_POLL_MS)
+      : undefined;
     // A background tab skips the interval; check at once when it becomes visible again.
     const visible = () => {
       if (document.visibilityState === 'visible') void inspect();
@@ -165,7 +175,7 @@ function SelectedProductContainer({ productId }: { productId: string }) {
       window.removeEventListener('focus', inspect);
       document.removeEventListener('visibilitychange', visible);
     };
-  }, [productId]);
+  }, [productId, following]);
   function denied() {
     requestVersion.current++;
     activity.current++;
