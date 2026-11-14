@@ -73,7 +73,7 @@ test('typed geometry reaches the selected owner before blur and remains exact af
 }, async (t) => {
   const f = await fixture(t);
   await f.open();
-  const horizontal = f.page.getByRole('spinbutton', { name: 'Center X', exact: true });
+  const horizontal = f.page.getByRole('textbox', { name: 'Center X', exact: true });
   await horizontal.fill('40');
   await editName(f.page, 'Rerender without geometry loss');
   assert.equal(await horizontal.inputValue(), '40');
@@ -94,7 +94,7 @@ for (const invalid of ['-1', '1.001'])
     await f.open();
     await f.page.getByRole('button', { name: 'Edit Printing price', exact: true }).click();
     const modal = f.page.locator('s-modal').filter({ has: f.page.locator('[data-method-price-field]') });
-    await modal.getByRole('spinbutton', { name: 'Price per placement per item', exact: true }).fill(invalid);
+    await modal.getByRole('textbox', { name: 'Price per placement per item', exact: true }).fill(invalid);
     const done = modal.getByRole('button', { name: 'Done', exact: true });
     await done.click();
     await modal.getByText('Enter a valid nonnegative price.', { exact: true }).waitFor();
@@ -531,12 +531,10 @@ test('dragging the real selected canvas updates typed geometry and the saved pro
   await f.page.mouse.move(x + 24, y + 12, { steps: 8 });
   await f.page.mouse.up();
   await f.page.waitForFunction(() => {
-    const field = document.querySelector<HTMLElementTagNameMap['s-number-field']>(
-      's-number-field[name="area-centerX"]',
-    );
+    const field = document.querySelector<HTMLElementTagNameMap['s-text-field']>('s-text-field[name="area-centerX"]');
     return !!field && Number(field.value) > 38;
   });
-  const horizontal = Number(await f.page.getByRole('spinbutton', { name: 'Center X', exact: true }).inputValue());
+  const horizontal = Number(await f.page.getByRole('textbox', { name: 'Center X', exact: true }).inputValue());
   assert.ok(horizontal > 38 && horizontal < 45);
   assert.equal((await acknowledgedSave(f.page)).status(), 200);
   await f.page.waitForFunction(
@@ -563,7 +561,7 @@ test('a blank product-specific cell is not offered while explicit zero is an exa
   binding.prices = { default: { source: 'product', value: '' }, '["chest","small"]': { source: 'product', value: '' } };
   const f = await fixture(t, { initialDraft: initial });
   await f.open();
-  const price = f.page.getByRole('spinbutton', { name: 'Price for Small', exact: true });
+  const price = f.page.getByRole('textbox', { name: 'Price for Small', exact: true });
   assert.equal(await price.inputValue(), '');
   assert.equal(await price.getAttribute('placeholder'), 'Not offered');
   await price.fill('0');
@@ -575,11 +573,11 @@ test('a blank product-specific cell is not offered while explicit zero is an exa
         'insignia:selected-product-write:v1:selected-browser.myshopify.com:gid://shopify/Product/111',
       ),
   );
-  assert.equal(f.read().selectedSetup?.product.views[0]?.placements[0]?.sizes[0]?.prices[methodId], '0');
+  assert.equal(f.read().selectedSetup?.product.views[0]?.placements[0]?.sizes[0]?.prices[methodId], '0.00');
   assert.equal(f.read().selectedSetup?.methodBindings[methodId]?.prices['["chest","small"]']?.source, 'product');
   await f.page.reload();
   await f.page.locator('.placement-editor').waitFor({ state: 'visible' });
-  assert.equal(await f.page.getByRole('spinbutton', { name: 'Price for Small', exact: true }).inputValue(), '0');
+  assert.equal(await f.page.getByRole('textbox', { name: 'Price for Small', exact: true }).inputValue(), '0.00');
 });
 
 test('a different authoring scope cannot replay or silently replace a previous installation pending intent', {

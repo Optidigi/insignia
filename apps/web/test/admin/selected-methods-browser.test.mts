@@ -95,7 +95,7 @@ test('lost selected Method create reply resumes its original exact command on re
   const f = await methodsFixture(t, { empty: true, loseFirstReply: true });
   await f.open('/admin/methods/new');
   await f.page.getByRole('textbox', { name: /^Method name/ }).fill('Embroidery');
-  await f.page.getByRole('spinbutton', { name: 'Price per location per item', exact: true }).fill('4.50');
+  await f.page.getByRole('textbox', { name: 'Price per location per item', exact: true }).fill('4.50');
   await f.page.locator('ui-save-bar button[variant="primary"]').evaluate((button: HTMLButtonElement) => button.click());
   await f.page
     .getByText('These methods could not be saved. Keep this page open and try again.', { exact: true })
@@ -197,7 +197,7 @@ test('explicit same-amount Method review adopts the changed shop currency and su
 }, async (t) => {
   const f = await methodsFixture(t, { currency: 'EUR' });
   await f.open(`/admin/methods/${methodId}`);
-  const price = f.page.getByRole('spinbutton', { name: 'Price per location per item', exact: true });
+  const price = f.page.getByRole('textbox', { name: 'Price per location per item', exact: true });
   assert.equal(await price.inputValue(), '');
   assert.equal(f.records()[0]?.currency, 'USD');
   assert.equal(f.writes.length, 0);
@@ -231,7 +231,7 @@ test('explicit same-amount Method review adopts the changed shop currency and su
   await f.page.reload();
   await f.page.locator('.method-workflow').waitFor({ state: 'visible' });
   assert.equal(
-    await f.page.getByRole('spinbutton', { name: 'Price per location per item', exact: true }).inputValue(),
+    await f.page.getByRole('textbox', { name: 'Price per location per item', exact: true }).inputValue(),
     '3.50',
   );
   assert.equal(f.writes.length, 1);

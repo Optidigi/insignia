@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'preact/hooks';
 import { useAdminLocale } from '../../../src/shared/admin-i18n.js';
 import Dialog from './method-dialog.tsx';
-import { formatPrice, parsePrice } from './method-workflow-prices.mts';
+import { DecimalField } from '../../../src/components/DecimalField.tsx';
+import { currencyPrefix, formatPrice, parsePrice } from './method-workflow-prices.mts';
 import { availablePlacementMethods, type PlacementMethodCatalog } from '../../../src/islands/selected-method-choices.ts';
 import {
   createPlacementMethodManagerState,
@@ -536,23 +537,21 @@ export default function PlacementMethodManager({
                   <s-paragraph>
                     {translateUi('editor:placementMethodManager.fixedPriceDetails', { methodName: activeMethod.name })}
                   </s-paragraph>
-                  <s-number-field
+                  <DecimalField
+                    kind="price"
                     label={translateUi('editor:placementMethodManager.pricePerPlacementPerGarment')}
-                    prefix={currency === 'USD' ? '$' : '€'}
-                    inputMode="decimal"
-                    min={0}
-                    step={0.01}
+                    prefix={currencyPrefix(currency)}
                     value={activeMethod.amount}
                     error={managerErrorMessage(errors[activeMethod.id] ?? null, translateUi)}
                     details={translateUi('editor:placementMethodManager.freePriceDetails')}
                     data-method-price-field
                     data-method-price-invalid={!!errors[activeMethod.id]}
-                    onInput={(event) => {
+                    onValue={(amount) => {
                       send({
                         type: 'fixed-price-edited',
                         sessionId,
                         methodId: activeMethod.id,
-                        amount: event.currentTarget.value,
+                        amount,
                       });
                     }}
                   />
@@ -571,21 +570,19 @@ export default function PlacementMethodManager({
                         </s-text>
                         {stateReason && <s-text color="subdued">{priceStateMessage(stateReason, translateUi)}</s-text>}
                       </div>
-                      <s-number-field
+                      <DecimalField
+                        kind="price"
                         label={translateUi('editor:placementMethodManager.priceForSize', {
                           sizeName: size.name || translateUi('editor:placementMethodManager.sizeFallback'),
                         })}
                         labelAccessibilityVisibility="exclusive"
-                        prefix={currency === 'USD' ? '$' : '€'}
-                        inputMode="decimal"
-                        min={0}
-                        step={0.01}
+                        prefix={currencyPrefix(currency)}
                         value={value}
                         placeholder={translateUi('editor:placementMethodManager.notOffered')}
                         error={error}
                         data-method-price-field
                         data-method-price-invalid={!!error}
-                        onInput={(event) => updatePrice(size.id, screen.methodId, event.currentTarget.value)}
+                        onValue={(text) => updatePrice(size.id, screen.methodId, text)}
                       />
                     </div>
                   );

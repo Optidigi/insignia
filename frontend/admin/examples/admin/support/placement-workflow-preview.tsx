@@ -15,7 +15,7 @@ async function start() {
   if (!root) return;
   try {
     await Promise.all(
-      ['s-page', 's-number-field', 's-money-field', 's-modal', 's-empty-state', 's-drop-zone', 's-image'].map((tag) =>
+      ['s-page', 's-text-field', 's-modal', 's-empty-state', 's-drop-zone', 's-image'].map((tag) =>
         customElements.whenDefined(tag),
       ),
     );
