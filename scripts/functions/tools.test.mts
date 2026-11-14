@@ -23,14 +23,14 @@ test('trampoline requests the pinned official asset and a failed download instal
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const destination = join(root, 'trampoline');
   let requested: string | undefined;
-  let accept: string | null = null;
-  t.mock.method(globalThis, 'fetch', async (input: string | URL | Request, init?: RequestInit) => {
+  t.mock.method(globalThis, 'fetch', async (input: string | URL | Request) => {
     requested = String(input);
-    accept = new Headers(init?.headers).get('Accept');
     return new Response(null, { status: 504 });
   });
   await assert.rejects(ensurePinnedTool(destination, 'trampoline'), /HTTP 504/);
   assert.equal(existsSync(destination), false);
-  assert.equal(requested, 'https://api.github.com/repos/Shopify/shopify-function-wasm-api/releases/assets/298980878');
-  assert.equal(accept, 'application/octet-stream');
+  assert.equal(
+    requested,
+    'https://github.com/Shopify/shopify-function-wasm-api/releases/download/shopify_function_trampoline/v2.0.1/shopify-function-trampoline-x86_64-linux-v2.0.1.gz',
+  );
 });
