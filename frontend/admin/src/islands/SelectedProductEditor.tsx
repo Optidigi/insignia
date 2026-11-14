@@ -1719,28 +1719,39 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     cancelDrawingTask();
     dispatchDialog({ type: 'copy-setup-opened', id: uid(), source: structuredClone(canonicalPlacementDecimals(candidate)) });
   }
-  function startMeasurement() {
-    if (!view?.imageUrl || !prepareSelectionChange()) return;
+  /**
+   * Start measuring an explicit view. A caller that selects a view in the same event cannot rely on
+   * `view`, which is still the previous render's value, so it passes the target and its placement.
+   */
+  function startMeasurementFor(target: EditorView | undefined, placementId: string | null): boolean {
+    if (!target?.imageUrl || !prepareSelectionChange()) return false;
+    const current =
+      target.calibration && calibrationMatchesImage(target.calibration, target) ? target.calibration : null;
     dispatchWorkspace({
       type: 'measurement-started',
-      viewId: view.id,
-      placementId: selectedId,
-      imageUrl: view.imageUrl,
-      line: calibration ? { a: calibration.a, b: calibration.b } : null,
-      distance: calibration ? String(calibration.distanceCm) : '',
+      viewId: target.id,
+      placementId,
+      imageUrl: target.imageUrl,
+      line: current ? { a: current.a, b: current.b } : null,
+      distance: current ? String(current.distanceCm) : '',
     });
     if (matchMedia('(max-width: 800px)').matches) {
       setExpandedCanvas(true);
     }
+    return true;
+  }
+  function startMeasurement() {
+    startMeasurementFor(view, selectedId);
   }
   function applyMeasurement() {
-    if (
-      !view ||
-      workspaceMode.kind !== 'measuring' ||
-      workspaceMode.viewId !== view.id ||
-      workspaceMode.imageUrl !== view.imageUrl
-    )
+    if (!view || workspaceMode.kind !== 'measuring') return;
+    if (workspaceMode.viewId !== view.id || workspaceMode.imageUrl !== view.imageUrl) {
+      // The line was drawn on another view or image: never apply it here and never fail silently.
+      // Restart measuring on the visible image with the existing message, or leave measuring cleanly.
+      if (startMeasurementFor(view, selectedId)) dispatchWorkspace({ type: 'measurement-error', reason: 'measurement-invalid' });
+      else cancelCalibration();
       return;
+    }
     const parsed = placementCalibrationSchema.safeParse({
       imageUrl: view.imageUrl,
       imageWidth: view.imageWidth,
@@ -2450,7 +2461,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     }
     const target = product.views.find((item) => item.id === issue.viewId) ?? product.views[0];
     if (target) select(target, issue.placementId ?? null, true, false);
-    if (issue.key.endsWith('.calibration')) { requestAnimationFrame(startMeasurement); return; }
+    if (issue.key.endsWith('.calibration')) { startMeasurementFor(target, issue.placementId ?? null); return; }
     if (issue.groupKey)
       requestAnimationFrame(() => {
         const panel = document.querySelector<HTMLElement>('[data-variant-photo-panel]');
@@ -3358,7 +3369,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                       ?.focus({ preventScroll: true });
                   });
               }}
-              onStartMeasure={activePhoto ? undefined : startMeasurement}
+              onStartMeasure={activePhoto ? undefined : () => startMeasurement()}
               onCancelMeasure={cancelCalibration}
               onCancelDraw={cancelDrawingTask}
               onDraw={(rect): CanvasDrawFailure | undefined => {
