@@ -147,7 +147,14 @@ The signing wrapping key lives only in `runtime/signer-secrets/signing-wrap-keys
 
 ### Known behaviour, limits and open follow-ups
 
-**Open issues.** None. **Merged, not yet deployed** (needs a theme release; planned with the phase 2 fixes): #430, which fixes #424 (untitled cart-review rows read "Customized product" in the Designer language; unnamed artwork gets its own singular label) and makes autosave stop only on `SESSION_QUOTA`, pausing until `Retry-After` for other 429s.
+**Open issues (14 Nov 2026), from the merchant-UI passes (#434–#444, #446) and the storefront buyer-agent QA (#445).** Evidence: `~/insignia-qa/runs/2026-11-13/merchant-p{1,2,3}/` and `~/insignia-qa/runs/2026-11-14/merchant-{repro-a,cover-b}/` on the dev host; each issue has the lead's code/log/DB notes in its comments.
+- S1: #446 (admin 503s under concurrent use; interrupted publish stays `requested`, product left Draft by the availability hold), #437 (merchant price fields drop a typed comma).
+- S2: #435 (per-request online exchange and installation read; root of #446), #438 (save rejected with 422/503 shows "retry", edits lost), #443 (calibration from the publish checklist uses the previous view; cause found), #434 (stored image's browser read-back fails; CSP/R2 CORS suspected), #436 (synchronous ~65 s publish exceeds the 60 s client timeout).
+- S3/S4: #440, #441, #442, #444, #439 (copy only), #445 (storefront: huge-dimension image rejected with a generic message).
+- Suggested order: #435+#446 → #437 → #438 → #443 → #434 → #436 → the S3/S4 set; then one single-agent merchant coverage pass (keyboard, interruptions, Draft/Active lifecycle, dark mode, storefront check of a merchant-built product). Two concurrent merchant sessions triggered #446, so run merchant QA one session at a time until it is fixed.
+- QA products on rewrite-dev are all Draft (titles `QA merchant P1–P3`, `QA repro A – …`, `QA cover B – Tee`); `QA cover B – Tee` keeps its stuck `requested` publication as #446 evidence.
+
+**Merged, not yet deployed** (needs a theme release; planned with the phase 2 fixes): #430, which fixes #424 (untitled cart-review rows read "Customized product" in the Designer language; unnamed artwork gets its own singular label) and makes autosave stop only on `SESSION_QUOTA`, pausing until `Retry-After` for other 429s.
 
 **Released but not visible to buyers.**
 - German theme cart messages: the *Sie* text (#391) is released, but the store publishes English only (`/de/cart` returns 404), so buyers don't see it.
