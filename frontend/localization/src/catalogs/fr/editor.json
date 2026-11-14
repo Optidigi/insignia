@@ -838,7 +838,6 @@
     "shownToCustomersForExampleFrontOrBack": "Affiché aux clients, par exemple « Devant » ou « Dos ».",
     "removeView": "Supprimer la vue",
     "publishPreview": "Publier l’aperçu",
-    "chooseAProductImageToStartNextMarkTheArtworkAreaCustomersCanCustomize": "Choisissez une image du produit pour commencer. Indiquez ensuite la zone du visuel que les clients pourront personnaliser.",
     "localPreviewOnlyShopifyIsnTUpdated": "Aperçu local uniquement. Shopify n’est pas modifié.",
     "discardChanges2": "Abandonner les modifications ?",
     "yourChangesSinceTheLastSaveWillBeLost": "Vos modifications depuis le dernier enregistrement seront perdues.",
@@ -875,7 +874,6 @@
     "reduceCanvas": "Réduire le canevas",
     "expandCanvas": "Agrandir le canevas",
     "publicationActions": {
-      "addView": "Ajouter une vue",
       "addPlacement": "Ajouter un emplacement",
       "chooseImage": "Choisir une image",
       "reviewAlignment": "Vérifier l’alignement",
@@ -1044,7 +1042,6 @@
     "addPlacementToBeginDetails": "Ajoutez un emplacement, puis redimensionnez et positionnez sa zone de visuel sur l’image.",
     "placementAccessibilityName": "Emplacement {{placementName}}",
     "publishHeadings": {
-      "addProductView": "Ajouter une vue du produit",
       "finishSetup": "Terminer la configuration avant de publier",
       "publishSetup": "Publier la configuration"
     },

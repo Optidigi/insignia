@@ -248,9 +248,7 @@ export default function PlacementMethodManager({
     focusPriceInput.current = 'first';
   }
 
-  addByEnter.current = () => {
-    if (stateRef.current.createName.trim()) createProductMethod();
-  };
+  addByEnter.current = createProductMethod;
 
   function openPrices(methodId: string) {
     if (!stateRef.current.draft.methodIds.includes(methodId)) return;

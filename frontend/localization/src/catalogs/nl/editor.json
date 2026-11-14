@@ -90,7 +90,6 @@
     "shownToCustomersForExampleFrontOrBack": "Zichtbaar voor klanten, bijvoorbeeld Voorkant of Achterkant.",
     "removeView": "Aanzicht verwijderen",
     "publishPreview": "Voorbeeld publiceren",
-    "chooseAProductImageToStartNextMarkTheArtworkAreaCustomersCanCustomize": "Kies eerst een productafbeelding. Geef daarna het ontwerpgebied aan dat klanten kunnen aanpassen.",
     "localPreviewOnlyShopifyIsnTUpdated": "Alleen lokaal voorbeeld. Shopify is niet bijgewerkt.",
     "discardChanges2": "Wijzigingen verwerpen?",
     "yourChangesSinceTheLastSaveWillBeLost": "Wijzigingen sinds de laatste keer opslaan gaan verloren.",
@@ -127,7 +126,6 @@
     "reduceCanvas": "Canvas verkleinen",
     "expandCanvas": "Canvas vergroten",
     "publicationActions": {
-      "addView": "Aanzicht toevoegen",
       "addPlacement": "Decoratieplek toevoegen",
       "chooseImage": "Afbeelding kiezen",
       "reviewAlignment": "Uitlijning controleren",
@@ -296,7 +294,6 @@
     "addPlacementToBeginDetails": "Voeg een decoratieplek toe en pas daarna het formaat en de positie van het ontwerpgebied op de afbeelding aan.",
     "placementAccessibilityName": "Decoratieplek {{placementName}}",
     "publishHeadings": {
-      "addProductView": "Productaanzicht toevoegen",
       "finishSetup": "Rond de configuratie af voordat je publiceert",
       "publishSetup": "Configuratie publiceren"
     },

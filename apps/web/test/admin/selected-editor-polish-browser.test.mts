@@ -49,6 +49,11 @@ test('#442 item 2: "Draft saved" goes to the Shopify toast, which stays long eno
   assert.equal(message, 'Draft saved. Publish separately to update the storefront.');
   assert.ok((options?.duration ?? 0) >= 8000, 'long enough to read');
   assert.equal(await f.page.locator('.placement-notice.is-feedback').count(), 0, 'no in-page banner over the fields');
+  assert.equal(
+    await f.page.locator('.placement-announcement', { hasText: 'Draft saved' }).count(),
+    0,
+    'the host toast announces it; the iframe live region does not repeat it',
+  );
 });
 
 test('#442 item 4: the calibration hint says what to measure', { timeout: 20000 }, async (t) => {
@@ -96,16 +101,26 @@ test('#442 item 7: Publish is disabled while the editor has no views', { timeout
   assert.equal(f.mutations.length, 0);
 });
 
-test('#442 item 3: Enter in the Add method name field adds the method', { timeout: 20000 }, async (t) => {
+test('#442 item 3: Enter in the Add method name field adds exactly one method; an empty name shows the name error', {
+  timeout: 20000,
+}, async (t) => {
   const f = await fixture(t);
   await f.open();
   await f.page.getByRole('button', { name: 'Manage methods', exact: true }).click();
   const dialog = f.page.locator('s-modal[data-method-dialog]');
   await dialog.getByRole('button', { name: 'Add method', exact: true }).first().click();
   const name = dialog.getByRole('textbox', { name: 'Method name', exact: true });
+  await name.press('Enter');
+  assert.ok(
+    await dialog.locator('s-text-field[data-new-product-method]').getAttribute('error'),
+    'empty name is refused',
+  );
   await name.fill('Embroidery');
   await name.press('Enter');
+  await f.page.keyboard.press('Enter');
   await name.waitFor({ state: 'detached' });
   // The new method is added to the placement and its price screen opens.
   await dialog.locator('section[aria-label*="Embroidery"]').waitFor();
+  await dialog.getByRole('button', { name: 'Back to methods', exact: true }).click();
+  assert.equal(await dialog.getByRole('checkbox', { name: 'Embroidery', exact: true }).count(), 1);
 });

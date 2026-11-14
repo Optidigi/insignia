@@ -8,19 +8,36 @@ const barId = 'method-draft-save-bar';
 const lastBarEvent = (page: import('playwright').Page) =>
   page.evaluate((id) => window.saveBarEvents.filter(([, target]) => target === id).at(-1)?.[0] ?? null, barId);
 
-test('#442 item 6: a new library method offers Save before any edit and explains what is missing', {
+test('#442 item 6: a blank new library method shows no save bar; the first edit shows it and Discard clears the form', {
   timeout: 20000,
 }, async (t) => {
   const f = await methodsFixture(t, { empty: true });
   await f.open('/admin/methods/new');
+  await f.page.getByRole('textbox', { name: /^Method name/ }).waitFor();
+  assert.equal(
+    await f.page.evaluate(
+      (id) => window.saveBarEvents.some(([kind, target]) => kind === 'show' && target === id),
+      barId,
+    ),
+    false,
+    'nothing to save yet, so the host bar is not shown (Shopify shows it on the first edit)',
+  );
+  const name = f.page.getByRole('textbox', { name: /^Method name/ });
+  await name.fill('Embroidery');
   await f.page.waitForFunction(
     (id) => window.saveBarEvents.filter(([, target]) => target === id).at(-1)?.[0] === 'show',
     barId,
   );
-  assert.equal(await f.page.locator('ui-save-bar button[variant="primary"]').isDisabled(), false);
-  await f.page.locator('ui-save-bar button[variant="primary"]').evaluate((button: HTMLButtonElement) => button.click());
-  await f.page.locator('[data-invalid="true"]').first().waitFor({ state: 'attached' });
-  assert.equal(f.writes.length, 0, 'an incomplete method is not written');
+  await f.page
+    .locator('ui-save-bar button')
+    .nth(1)
+    .evaluate((button: HTMLButtonElement) => button.click());
+  const modal = f.page.locator('#method-draft-save-bar-discard');
+  await modal.getByRole('button', { name: 'Discard', exact: true }).click();
+  await modal.waitFor({ state: 'hidden' });
+  assert.equal(await name.inputValue(), '');
+  assert.equal(await lastBarEvent(f.page), 'hide');
+  assert.equal(f.writes.length, 0);
 });
 
 test('#442 item 6: a saved library price reads with two decimals', { timeout: 20000 }, async (t) => {

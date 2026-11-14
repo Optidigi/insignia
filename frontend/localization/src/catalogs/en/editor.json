@@ -813,7 +813,6 @@
     "shownToCustomersForExampleFrontOrBack": "Shown to customers. For example, Front or Back.",
     "removeView": "Remove view",
     "publishPreview": "Publish preview",
-    "chooseAProductImageToStartNextMarkTheArtworkAreaCustomersCanCustomize": "Choose a product image to start. Next, mark the artwork area customers can customize.",
     "localPreviewOnlyShopifyIsnTUpdated": "Local preview only. Shopify isn’t updated.",
     "discardChanges2": "Discard changes?",
     "yourChangesSinceTheLastSaveWillBeLost": "Your changes since the last save will be lost.",
@@ -850,7 +849,6 @@
     "reduceCanvas": "Reduce canvas",
     "expandCanvas": "Expand canvas",
     "publicationActions": {
-      "addView": "Add a view",
       "addPlacement": "Add placement",
       "chooseImage": "Choose image",
       "reviewAlignment": "Review alignment",
@@ -1019,7 +1017,6 @@
     "addPlacementToBeginDetails": "Add a placement, then resize and position its artwork area on the image.",
     "placementAccessibilityName": "{{placementName}} placement",
     "publishHeadings": {
-      "addProductView": "Add a product view",
       "finishSetup": "Finish setup before publishing",
       "publishSetup": "Publish setup"
     },

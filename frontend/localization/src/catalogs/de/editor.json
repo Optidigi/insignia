@@ -813,7 +813,6 @@
     "shownToCustomersForExampleFrontOrBack": "Wird der Kundschaft angezeigt. Zum Beispiel: Vorderseite oder Rückseite.",
     "removeView": "Ansicht entfernen",
     "publishPreview": "Vorschau veröffentlichen",
-    "chooseAProductImageToStartNextMarkTheArtworkAreaCustomersCanCustomize": "Wählen Sie zuerst ein Produktbild aus. Markieren Sie anschließend den Motivbereich, den die Kundschaft anpassen kann.",
     "localPreviewOnlyShopifyIsnTUpdated": "Nur lokale Vorschau. Shopify wird nicht aktualisiert.",
     "discardChanges2": "Änderungen verwerfen?",
     "yourChangesSinceTheLastSaveWillBeLost": "Ihre Änderungen seit dem letzten Speichern gehen verloren.",
@@ -850,7 +849,6 @@
     "reduceCanvas": "Arbeitsfläche verkleinern",
     "expandCanvas": "Arbeitsfläche vergrößern",
     "publicationActions": {
-      "addView": "Ansicht hinzufügen",
       "addPlacement": "Veredelungsposition hinzufügen",
       "chooseImage": "Bild auswählen",
       "reviewAlignment": "Ausrichtung prüfen",
@@ -1019,7 +1017,6 @@
     "addPlacementToBeginDetails": "Fügen Sie eine Veredelungsposition hinzu und passen Sie anschließend den Motivbereich auf dem Bild an.",
     "placementAccessibilityName": "Veredelungsposition {{placementName}}",
     "publishHeadings": {
-      "addProductView": "Produktansicht hinzufügen",
       "finishSetup": "Schließen Sie die Einrichtung vor der Veröffentlichung ab",
       "publishSetup": "Einrichtung veröffentlichen"
     },

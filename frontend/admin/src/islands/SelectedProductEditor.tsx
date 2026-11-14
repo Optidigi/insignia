@@ -989,8 +989,6 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
         : 'editor:placementWorkflowPreview.status.draftChanges'
       : 'editor:placementWorkflowPreview.status.draft',
   );
-  const missingViewIssue =
-    publishReview?.issues.length === 1 && publishReview.issues[0]?.key === 'views' ? publishReview.issues[0] : null;
   const publishViewCount = publishReview?.product.views.length ?? 0;
   const publishPlacementCount =
     publishReview?.product.views.reduce((sum, item) => sum + item.placements.length, 0) ?? 0;
@@ -2358,7 +2356,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     saveDraft();
   }
   function openPublishReview() {
-    if (adapter.readOnly || adapter.publicationBlocked || writeBusyRef.current || adapter.pending()) return;
+    if (!product.views.length || adapter.readOnly || adapter.publicationBlocked || writeBusyRef.current || adapter.pending()) return;
     if (movementEditing) {
       setNotice({ kind: 'message', reason: 'movement-edit-before-publish' });
       return;
@@ -2438,7 +2436,6 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     const { key } = issue;
     if (key.endsWith('.calibration')) return translateUi('editor:placementWorkflowPreview.realCalibrateImage');
     if (key.endsWith('.review')) return translateUi('editor:placementWorkflowPreview.realReviewMethods');
-    if (key === 'views') return translateUi('editor:placementWorkflowPreview.publicationActions.addView');
     if (key.endsWith('.placements'))
       return translateUi('editor:placementWorkflowPreview.publicationActions.addPlacement');
     if (key.endsWith('.imageUrl')) return translateUi('editor:placementWorkflowPreview.publicationActions.chooseImage');
@@ -2486,12 +2483,6 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     if (dialog.kind === 'publish') dispatchDialog({ type: 'dialog-closed', id: dialog.id });
     if (issue.groupKey) {
       setActivePhotoGroup(issue.groupKey);
-    }
-    if (issue.key === 'views' && product.views.length === 0) {
-      setErrors({});
-      setNotice(null);
-      openViewDialog();
-      return;
     }
     const target = product.views.find((item) => item.id === issue.viewId) ?? product.views[0];
     if (target) select(target, issue.placementId ?? null, true, false);
@@ -2706,7 +2697,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
         role="status"
         aria-live="polite"
       >
-        {noticeText}
+        {feedback && hostToast() ? '' : noticeText}
       </span>
       <span class="placement-announcement" role="status" aria-live="polite">
         {historyNotice === 'change-undone'
@@ -4171,20 +4162,14 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
       {publishReview && (
         <Dialog
           heading={
-            missingViewIssue
-              ? translateUi('editor:placementWorkflowPreview.publishHeadings.addProductView')
-              : publishReview.issues.length
-                ? translateUi('editor:placementWorkflowPreview.publishHeadings.finishSetup')
-                : translateUi('editor:placementWorkflowPreview.publishHeadings.publishSetup')
+            publishReview.issues.length
+              ? translateUi('editor:placementWorkflowPreview.publishHeadings.finishSetup')
+              : translateUi('editor:placementWorkflowPreview.publishHeadings.publishSetup')
           }
-          size={missingViewIssue || !publishReview.issues.length ? 'small-100' : 'base'}
+          size={!publishReview.issues.length ? 'small-100' : 'base'}
           onClose={() => dispatchDialog({ type: 'dialog-closed', id: publishReview.id })}
           actions={
-            missingViewIssue ? (
-              <s-button slot="primary-action" variant="primary" onClick={() => reviewPublishIssue(missingViewIssue)}>
-                {translateUi('editor:placementWorkflowPreview.addView')}
-              </s-button>
-            ) : publishReview.issues.length ? null : (
+            publishReview.issues.length ? null : (
               <s-button slot="primary-action" variant="primary" onClick={confirmPublish}>
                 {translateUi(production ? 'editor:placementWorkflowPreview.realPublish' : 'editor:placementWorkflowPreview.publishPreview')}
               </s-button>
@@ -4193,24 +4178,16 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
         >
           <s-stack gap="base">
             {publishReview.issues.length ? (
-              missingViewIssue ? (
-                <s-paragraph>
-                  {translateUi(
-                    'editor:placementWorkflowPreview.chooseAProductImageToStartNextMarkTheArtworkAreaCustomersCanCustomize',
-                  )}
-                </s-paragraph>
-              ) : (
-                <div class="placement-publication-issues">
-                  {publishReview.issues.map((issue) => (
-                    <div class="placement-publication-issue" key={issue.key}>
-                      <s-text>{publicationIssueText(issue, publishReview.product, translateUi)}</s-text>
-                      <s-button variant="secondary" onClick={() => reviewPublishIssue(issue)}>
-                        {publicationIssueAction(issue)}
-                      </s-button>
-                    </div>
-                  ))}
-                </div>
-              )
+              <div class="placement-publication-issues">
+                {publishReview.issues.map((issue) => (
+                  <div class="placement-publication-issue" key={issue.key}>
+                    <s-text>{publicationIssueText(issue, publishReview.product, translateUi)}</s-text>
+                    <s-button variant="secondary" onClick={() => reviewPublishIssue(issue)}>
+                      {publicationIssueAction(issue)}
+                    </s-button>
+                  </div>
+                ))}
+              </div>
             ) : (
               <>
                 <div class="placement-publish-summary">
