@@ -50,7 +50,11 @@ export async function handlePurchaseRequest(
     if (!/^Bearer [^\s]{1,8192}$/.test(request.headers.get('Authorization') ?? ''))
       throw new HttpError(401, 'UNAUTHORIZED');
     // Order artwork reads and every order write are staff-sensitive: fresh online exchange.
-    const sensitive = request.method !== 'GET' || /^[^/]+\/artwork\//.test(route);
+    const sensitive =
+      request.method !== 'GET' ||
+      /^[^/]+\/artwork\//.test(route) ||
+      route === 'privacy' ||
+      route.startsWith('privacy/');
     let actor: AdminActor | null;
     try {
       actor = await services.authenticate(request, sensitive ? { fresh: true } : undefined);

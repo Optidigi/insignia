@@ -370,19 +370,23 @@ export function createAdminOnlineIdentity(input: {
     /** Retries only throttled or 5xx reads, at most twice, waiting for Shopify's advertised restore time. */
     async readInstallation(grant: Pick<OnlineStaffGrant, 'shop' | 'accessToken'>): Promise<AdminInstallationRead> {
       if (!shopDomain.test(grant.shop) || !grant.accessToken) throw new Error('Invalid online grant');
+      const startedAt = Date.now();
       for (let attempt = 1; ; attempt++) {
         const failure: { retryAfterMs?: number } = {};
+        const remaining = INSTALLATION_READ_BUDGET_MS - (Date.now() - startedAt);
         try {
-          return await readInstallationOnce(grant, failure);
+          return await readInstallationOnce(grant, failure, Math.max(MIN_INSTALLATION_ATTEMPT_MS, remaining));
         } catch (error) {
+          const delay = Math.min(2000, Math.max(100, failure.retryAfterMs ?? 250 * attempt));
           if (
             !(error instanceof AdminOnlineIdentityError) ||
             !error.transient ||
             !RETRYABLE_READ_CODES.has(error.providerCode as AdminProviderCode) ||
-            attempt >= INSTALLATION_READ_ATTEMPTS
+            attempt >= INSTALLATION_READ_ATTEMPTS ||
+            // Answer BUSY early rather than wait past the budget.
+            Date.now() - startedAt + delay + MIN_INSTALLATION_ATTEMPT_MS > INSTALLATION_READ_BUDGET_MS
           )
             throw error;
-          const delay = Math.min(2000, Math.max(100, failure.retryAfterMs ?? 250 * attempt));
           await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
@@ -391,6 +395,7 @@ export function createAdminOnlineIdentity(input: {
   async function readInstallationOnce(
     grant: Pick<OnlineStaffGrant, 'shop' | 'accessToken'>,
     failure: { retryAfterMs?: number },
+    timeoutMs: number,
   ): Promise<AdminInstallationRead> {
     {
       let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
@@ -516,6 +521,7 @@ export function createAdminOnlineIdentity(input: {
         () => {
           void reader?.cancel().catch(() => {});
         },
+        timeoutMs,
       ).catch((error: unknown) => {
         if (error instanceof AdminOnlineIdentityError) throw error;
         if (error instanceof ShopifyAdminUnavailableError) throw readFailure('TIMEOUT');
@@ -527,6 +533,11 @@ export function createAdminOnlineIdentity(input: {
 }
 
 const INSTALLATION_READ_ATTEMPTS = 3;
+/** Total time for an installation read including throttle waits. The admin browser client
+ * gives a whole request 10 s; with a typical sub-second exchange this leaves room for the
+ * server to answer 409 BUSY before that deadline instead of being cut off. */
+export const INSTALLATION_READ_BUDGET_MS = 6000;
+const MIN_INSTALLATION_ATTEMPT_MS = 1000;
 const RETRYABLE_READ_CODES = new Set<AdminProviderCode>(['THROTTLED', 'HTTP_429', 'HTTP_5XX', 'INTERNAL_SERVER_ERROR']);
 const TRANSIENT_READ_CODES = new Set<AdminProviderCode>([...RETRYABLE_READ_CODES, 'TIMEOUT', 'NETWORK']);
 function readFailure(providerCode: AdminProviderCode): AdminOnlineIdentityError {

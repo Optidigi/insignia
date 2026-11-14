@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminIdentityPort, AdminInstallation, OnlineAdminGrant } from '../../src/server/admin/auth.ts';
 import {
+  ADMIN_GRANT_REUSE_MAX_MS,
   ADMIN_INSTALLATION_REUSE_MS,
   AdminAuthenticationBusyError,
   AdminInstallationReconciliationError,
@@ -472,4 +473,102 @@ test('#446: a throttled installation read surfaces as a retryable busy failure w
   );
   await assert.rejects(auth(request), AdminAuthenticationBusyError);
   assert.deepEqual(events.at(-1), { stage: 'INSTALLATION_PROVIDER_READ_FAILED', providerCode: 'THROTTLED' });
+});
+
+test('#451 review: a reused grant revoked in Shopify is dropped and the read succeeds with a fresh exchange', async () => {
+  let clock = now;
+  let token = 'revoked';
+  const reads: string[] = [];
+  const h = cachedSetup(
+    {
+      verifySessionToken: async () => ({ ...identity, expiresAtMs: clock + 60_000 }),
+      exchangeOnlineGrant: async () => {
+        h.counts.exchange++;
+        return { ...grant, expiresAtMs: now + 3_600_000, appScopes: ['write_products', `token:${token}`] };
+      },
+      readInstallation: async (current) => {
+        h.counts.read++;
+        const used = current.appScopes.find((scope) => scope.startsWith('token:'))!;
+        reads.push(used);
+        if (used === 'token:revoked' && h.counts.read > 1)
+          throw new AdminOnlineIdentityError('INSTALLATION_PROVIDER_READ_FAILED', { providerCode: 'HTTP_401' });
+        return installation;
+      },
+    },
+    { now: () => clock },
+  );
+  assert.ok(await h.auth(request));
+  token = 'current';
+  clock = now + ADMIN_INSTALLATION_REUSE_MS; // the observation expired; the grant is still reusable
+  assert.ok(await h.auth(request));
+  assert.deepEqual(reads, ['token:revoked', 'token:revoked', 'token:current']);
+  assert.equal(h.counts.exchange, 2);
+  // The fresh grant is remembered in place of the revoked one.
+  clock = now + 2 * ADMIN_INSTALLATION_REUSE_MS;
+  assert.ok(await h.auth(request));
+  assert.equal(h.counts.exchange, 2);
+  assert.deepEqual(reads.at(-1), 'token:current');
+});
+
+test('#451 review: a fresh grant whose read is denied is not retried', async () => {
+  const h = cachedSetup({
+    readInstallation: async () => {
+      h.counts.read++;
+      throw new AdminOnlineIdentityError('INSTALLATION_PROVIDER_READ_FAILED', { providerCode: 'HTTP_403' });
+    },
+  });
+  await assert.rejects(h.auth(request), { message: 'Authentication unavailable' });
+  assert.equal(h.counts.exchange, 1);
+  assert.equal(h.counts.read, 1);
+});
+
+test('#451 review: a remembered grant is reused for at most five minutes', async () => {
+  let clock = now;
+  const h = cachedSetup(
+    {
+      verifySessionToken: async () => ({ ...identity, expiresAtMs: clock + 60_000 }),
+      exchangeOnlineGrant: async () => {
+        h.counts.exchange++;
+        return { ...grant, expiresAtMs: now + 3_600_000 };
+      },
+    },
+    { now: () => clock },
+  );
+  await h.auth(request);
+  clock = now + ADMIN_GRANT_REUSE_MAX_MS - 1;
+  await h.auth(request);
+  assert.equal(h.counts.exchange, 1);
+  clock = now + ADMIN_GRANT_REUSE_MAX_MS;
+  await h.auth(request);
+  assert.equal(h.counts.exchange, 2);
+  assert.equal(ADMIN_GRANT_REUSE_MAX_MS, 300_000);
+});
+
+test('#451 review: a waiter that joined a failed shared read retries once with its own grant', async () => {
+  let release: (() => void) | undefined;
+  let reads = 0;
+  const h = cachedSetup({
+    verifySessionToken: async (token) => ({
+      ...identity,
+      sessionId: token === 'synthetic' ? 'session-a' : 'session-b',
+    }),
+    readInstallation: async () => {
+      reads++;
+      if (reads === 1) {
+        await new Promise<void>((resolve) => {
+          release = resolve;
+        });
+        throw new AdminOnlineIdentityError('INSTALLATION_PROVIDER_READ_FAILED', { providerCode: 'HTTP_401' });
+      }
+      return installation;
+    },
+  });
+  const first = h.auth(request);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const other = h.auth(new Request(request.url, { headers: { Authorization: 'Bearer other' } }));
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  release?.();
+  await assert.rejects(first, { message: 'Authentication unavailable' });
+  assert.ok(await other);
+  assert.equal(reads, 2);
 });

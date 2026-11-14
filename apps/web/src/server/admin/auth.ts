@@ -81,6 +81,10 @@ export const ADMIN_INSTALLATION_REUSE_MS = 30_000;
 /** Online grants are reused only while at least this much lifetime remains, the
  * same margin publication and Shopify reads already require of a grant. */
 export const ADMIN_GRANT_REUSE_MARGIN_MS = 30_000;
+/** Owner decision (14 Nov 2026): a remembered online grant is reused for at most five
+ * minutes, so staff permission changes in Shopify apply within that time even on
+ * non-sensitive actions. */
+export const ADMIN_GRANT_REUSE_MAX_MS = 5 * 60_000;
 
 type Pending<T> = { value?: T; promise: Promise<T> };
 /** Process-local reuse of verified authentication facts. Bounded; oldest entries are evicted first. */
@@ -89,7 +93,7 @@ export function createAdminAuthenticationCache<G extends OnlineAdminGrant = Onli
 ) {
   const maxGrants = options.maxGrants ?? 1000;
   const maxInstallations = options.maxInstallations ?? 500;
-  const grants = new Map<string, { grant: G }>();
+  const grants = new Map<string, { grant: G; rememberedAtMs: number }>();
   const installations = new Map<string, { installation: AdminInstallation; observedAtMs: number }>();
   const pendingGrants = new Map<string, Pending<G>>();
   const pendingInstallations = new Map<string, Pending<AdminInstallation>>();
@@ -103,8 +107,8 @@ export function createAdminAuthenticationCache<G extends OnlineAdminGrant = Onli
     installations,
     pendingGrants,
     pendingInstallations,
-    rememberGrant(key: string, grant: G) {
-      bounded(grants, key, { grant }, maxGrants);
+    rememberGrant(key: string, grant: G, rememberedAtMs: number) {
+      bounded(grants, key, { grant, rememberedAtMs }, maxGrants);
     },
     rememberInstallation(shop: string, installation: AdminInstallation, observedAtMs: number) {
       bounded(installations, shop, { installation, observedAtMs }, maxInstallations);
@@ -132,17 +136,22 @@ export type AdminAuthentication<G extends OnlineAdminGrant> = {
   installation: AdminInstallation;
 };
 
-/** Single flight per key: concurrent callers share one provider call; failures are not kept. */
-async function shared<T>(pending: Map<string, Pending<T>>, key: string, load: () => Promise<T>): Promise<T> {
+/** Single flight per key: concurrent callers share one provider call; failures are not kept.
+ * `joined` tells a caller that the call was started by another request. */
+function share<T>(
+  pending: Map<string, Pending<T>>,
+  key: string,
+  load: () => Promise<T>,
+): { promise: Promise<T>; joined: boolean } {
   const existing = pending.get(key);
-  if (existing) return existing.promise;
+  if (existing) return { promise: existing.promise, joined: true };
   const entry: Pending<T> = {
     promise: load().finally(() => {
       if (pending.get(key) === entry) pending.delete(key);
     }),
   };
   pending.set(key, entry);
-  return entry.promise;
+  return { promise: entry.promise, joined: false };
 }
 
 /** Every request verifies its session token (signature, audience, expiry, not-before).
@@ -205,15 +214,21 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
     const grantKey = `${identity.shop}\n${identity.staffId}\n${identity.sessionId}`;
     let grant: G | undefined;
     if (reuse) {
-      const cached = cache.grants.get(grantKey)?.grant;
-      if (cached && cached.expiresAtMs - ADMIN_GRANT_REUSE_MARGIN_MS > current) grant = cached;
+      const cached = cache.grants.get(grantKey);
+      if (
+        cached &&
+        cached.grant.expiresAtMs - ADMIN_GRANT_REUSE_MARGIN_MS > current &&
+        current >= cached.rememberedAtMs &&
+        current - cached.rememberedAtMs < ADMIN_GRANT_REUSE_MAX_MS
+      )
+        grant = cached.grant;
       else if (cached) cache.grants.delete(grantKey);
     }
-    const reusedGrant = grant !== undefined;
-    if (!grant) {
+    let reusedGrant = grant !== undefined;
+    async function exchangeGrant(): Promise<G> {
       try {
-        const exchange = () => port.exchangeOnlineGrant(match[1]!, identity);
-        grant = reuse ? await shared(cache.pendingGrants, grantKey, exchange) : await exchange();
+        const exchange = () => port.exchangeOnlineGrant(match![1]!, identity);
+        return reuse ? await share(cache!.pendingGrants, grantKey, exchange).promise : await exchange();
       } catch (error) {
         diagnostic(
           error instanceof AdminOnlineIdentityError ? error.stage : 'ONLINE_EXCHANGE_FAILED',
@@ -222,36 +237,59 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
             : undefined,
         );
         if (error instanceof AdminOnlineIdentityError && !error.transient) throw error;
-        unavailable(error);
+        return unavailable(error);
       }
     }
-    if (
-      grant.shop !== identity.shop ||
-      grant.staffId !== identity.staffId ||
-      !Number.isFinite(grant.expiresAtMs) ||
-      grant.expiresAtMs <= current ||
-      !Array.isArray(grant.appScopes) ||
-      !Array.isArray(grant.userScopes)
-    ) {
+    const grantMatches = (candidate: G) =>
+      candidate.shop === identity.shop &&
+      candidate.staffId === identity.staffId &&
+      Number.isFinite(candidate.expiresAtMs) &&
+      candidate.expiresAtMs > current &&
+      Array.isArray(candidate.appScopes) &&
+      Array.isArray(candidate.userScopes);
+    if (!grant) grant = await exchangeGrant();
+    if (!grantMatches(grant)) {
       diagnostic('ONLINE_GRANT_MISMATCH');
       return null;
     }
     diagnostic(reusedGrant ? 'ONLINE_GRANT_REUSED_SUCCEEDED' : 'ONLINE_EXCHANGE_SUCCEEDED');
     const reusedInstallation = installation !== undefined;
     if (!installation) {
-      try {
-        const read = () => port.readInstallation(grant!);
-        installation = reuse ? await shared(cache.pendingInstallations, identity.shop, read) : await read();
-      } catch (error) {
-        diagnostic(
-          error instanceof AdminOnlineIdentityError || error instanceof AdminInstallationReconciliationError
-            ? error.stage
-            : 'INSTALLATION_PROVIDER_READ_FAILED',
-          error instanceof AdminOnlineIdentityError && error.providerCode
-            ? { providerCode: error.providerCode }
-            : undefined,
-        );
-        unavailable(error);
+      for (let attempt = 1; !installation; attempt++) {
+        let joined = false;
+        try {
+          const read = () => port.readInstallation(grant!);
+          if (reuse && attempt === 1) {
+            const pending = share(cache.pendingInstallations, identity.shop, read);
+            joined = pending.joined;
+            installation = await pending.promise;
+          } else installation = await read();
+        } catch (error) {
+          diagnostic(
+            error instanceof AdminOnlineIdentityError || error instanceof AdminInstallationReconciliationError
+              ? error.stage
+              : 'INSTALLATION_PROVIDER_READ_FAILED',
+            error instanceof AdminOnlineIdentityError && error.providerCode
+              ? { providerCode: error.providerCode }
+              : undefined,
+          );
+          const transient = error instanceof AdminOnlineIdentityError && error.transient;
+          // A reused grant may have been revoked in Shopify (uninstall, reinstall, logout):
+          // drop it and try once more with a fresh exchange. A waiter that joined another
+          // request's failed read retries once with its own grant.
+          const revokedGrant = reusedGrant && error instanceof AdminOnlineIdentityError && !transient;
+          if (attempt > 1 || transient || !(revokedGrant || joined)) unavailable(error);
+          if (revokedGrant) {
+            cache?.grants.delete(grantKey);
+            grant = await exchangeGrant();
+            reusedGrant = false;
+            if (!grantMatches(grant)) {
+              diagnostic('ONLINE_GRANT_MISMATCH');
+              return null;
+            }
+            diagnostic('ONLINE_EXCHANGE_SUCCEEDED');
+          }
+        }
       }
     } else diagnostic('INSTALLATION_OBSERVATION_REUSED_SUCCEEDED');
     if (
@@ -278,7 +316,7 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
     if (cache) {
       // Only checked facts are kept; a fresh request refreshes them for later reuse.
       if (!reusedInstallation) cache.rememberInstallation(identity.shop, installation, current);
-      if (!reusedGrant) cache.rememberGrant(grantKey, grant);
+      if (!reusedGrant) cache.rememberGrant(grantKey, grant, current);
     }
     const canRead = [grant.appScopes, grant.userScopes, installation.grantedScopes].every((scopes) =>
       READ.some((scope) => scopes.includes(scope)),

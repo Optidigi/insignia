@@ -8,6 +8,7 @@ import {
   createAdminOnlineIdentity,
   deadlineAwareOnlineFetch,
   hasAdminAccessScope,
+  INSTALLATION_READ_BUDGET_MS,
 } from '../src/admin-online-identity.js';
 import { jsonRecord, required } from './fixture-assertions.js';
 
@@ -364,6 +365,33 @@ describe('installation read under Shopify throttling (#446)', () => {
       providerCode: 'THROTTLED',
     });
     expect(calls).toBe(3);
+  });
+  it('answers BUSY early instead of waiting past the total read budget', async () => {
+    let calls = 0;
+    const slow = {
+      ...throttled,
+      extensions: {
+        cost: { requestedQueryCost: 1000, throttleStatus: { currentlyAvailable: 0, restoreRate: 50 } },
+      },
+    };
+    const provider = createAdminOnlineIdentity({
+      apiKey: key,
+      apiSecret: secret,
+      hostName: 'example.test',
+      async fetchImpl() {
+        calls++;
+        return Response.json(slow);
+      },
+    });
+    const started = Date.now();
+    await expect(provider.readInstallation({ shop, accessToken: 'synthetic' })).rejects.toMatchObject({
+      transient: true,
+      providerCode: 'THROTTLED',
+    });
+    // A 20 s advertised restore is clamped to 2 s per wait; a third wait would pass the budget.
+    expect(calls).toBe(3);
+    expect(Date.now() - started).toBeLessThan(INSTALLATION_READ_BUDGET_MS);
+    expect(INSTALLATION_READ_BUDGET_MS).toBeLessThan(10_000);
   });
   it('does not retry a denied read and marks it non-transient', async () => {
     let calls = 0;

@@ -6,14 +6,16 @@ import {
   type MerchantPreferencesView,
   MerchantPreferencesViewSchema,
 } from '@insignia/contracts';
-import { authenticatedJson } from './admin-request.ts';
+import { authenticatedJson, isShopifyBusy } from './admin-request.ts';
 
 type Request = (path: string, init?: RequestInit) => Promise<unknown>;
 type Journal = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 type Pending = { key: string; command: MerchantPreferencesCommand };
 const endpoint = '/api/admin/preferences';
-const journalKey = (shop: string, section: 'guidance' | 'wording') => `insignia:pending-preferences:v1:${shop}:${section}`;
-const isObject = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
+const journalKey = (shop: string, section: 'guidance' | 'wording') =>
+  `insignia:pending-preferences:v1:${shop}:${section}`;
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === 'object' && !Array.isArray(value);
 
 export class MerchantPreferencesConflictError extends Error {}
 
@@ -61,24 +63,31 @@ export function createMerchantPreferencesClient(
       });
       if (!isObject(value) || value.kind !== 'saved') throw new Error('Invalid store preference save response');
       const saved = MerchantPreferencesViewSchema.parse(value.preferences);
-      if (!current || saved.shop !== current.shop || saved.authority !== current.authority) throw new Error('Store preference authority changed');
+      if (!current || saved.shop !== current.shop || saved.authority !== current.authority)
+        throw new Error('Store preference authority changed');
       current = saved;
       clear(section);
       return saved;
     } catch (error) {
+      // Shopify was busy: nothing happened, so keep the journal and retry the same intent later.
+      if (isShopifyBusy(error)) throw error;
       const status = isObject(error) ? error.status : undefined;
       if (status === 400 || status === 409 || status === 422) clear(section);
       if (status === 401 || status === 403) {
-        clear('guidance'); clear('wording'); current = null;
+        clear('guidance');
+        clear('wording');
+        current = null;
       }
-      if (status === 409) throw new MerchantPreferencesConflictError('Store preferences changed; reload before saving again');
+      if (status === 409)
+        throw new MerchantPreferencesConflictError('Store preferences changed; reload before saving again');
       throw error;
     }
   }
   async function load(): Promise<MerchantPreferencesView> {
     const view = MerchantPreferencesViewSchema.parse(await request(endpoint));
     if (current && (view.shop !== current.shop || view.authority !== current.authority)) {
-      clear('guidance'); clear('wording');
+      clear('guidance');
+      clear('wording');
     }
     current = view;
     restore(view);
@@ -87,12 +96,19 @@ export function createMerchantPreferencesClient(
     for (const section of ['guidance', 'wording'] as const) {
       const operation = pending[section];
       if (!operation) continue;
-      try { await send(operation); }
-      catch (error) { if (!(error instanceof MerchantPreferencesConflictError)) throw error; }
+      try {
+        await send(operation);
+      } catch (error) {
+        if (!(error instanceof MerchantPreferencesConflictError)) throw error;
+      }
     }
-    return current = MerchantPreferencesViewSchema.parse(await request(endpoint));
+    return (current = MerchantPreferencesViewSchema.parse(await request(endpoint)));
   }
-  async function save(section: 'guidance' | 'wording', value: MerchantGuidance | MerchantCustomerWordingOverlays, observedVersion: string | undefined): Promise<MerchantPreferencesView> {
+  async function save(
+    section: 'guidance' | 'wording',
+    value: MerchantGuidance | MerchantCustomerWordingOverlays,
+    observedVersion: string | undefined,
+  ): Promise<MerchantPreferencesView> {
     if (!current) await load();
     if (!current) throw new Error('Store preferences not loaded');
     const prior = pending[section];
@@ -101,9 +117,21 @@ export function createMerchantPreferencesClient(
       // The original receipt is now known; a new explicit save follows that version.
       observedVersion = section === 'guidance' ? current?.guidanceVersion : current?.wordingVersion;
     }
-    const command = MerchantPreferencesCommandSchema.parse(section === 'guidance'
-      ? { action: section, authority: current.authority, expectedVersion: observedVersion ?? current.guidanceVersion, guidance: value }
-      : { action: section, authority: current.authority, expectedVersion: observedVersion ?? current.wordingVersion, overlays: value });
+    const command = MerchantPreferencesCommandSchema.parse(
+      section === 'guidance'
+        ? {
+            action: section,
+            authority: current.authority,
+            expectedVersion: observedVersion ?? current.guidanceVersion,
+            guidance: value,
+          }
+        : {
+            action: section,
+            authority: current.authority,
+            expectedVersion: observedVersion ?? current.wordingVersion,
+            overlays: value,
+          },
+    );
     const operation = { key: freshKey(), command };
     // Persist before dispatch. If custody is unavailable, do not create an unresumable write.
     if (!journal) throw new Error('Pending store preference custody unavailable');
@@ -124,6 +152,9 @@ export function createMerchantPreferencesClient(
   };
 }
 function browserJournal(): Journal | null {
-  try { return typeof window === 'undefined' ? null : window.sessionStorage; }
-  catch { return null; }
+  try {
+    return typeof window === 'undefined' ? null : window.sessionStorage;
+  } catch {
+    return null;
+  }
 }
