@@ -1,4 +1,5 @@
 /** Explicit interaction and dialog transitions for the local placement editor. */
+import { parseDecimalNumber } from './decimal-input.mts';
 import type { PlacementPublicationIssue } from './placement-publication.mts';
 import type { EditorPlacement, PlacementProduct, PlacementRect } from './placement-workflow-model.mts';
 
@@ -167,9 +168,9 @@ export function placementWorkspaceReducer(
       if (mode.kind !== 'measuring') return state;
       {
         const key = `${event.point}-${event.axis}` as const;
-        const input = Number(event.value);
+        const input = parseDecimalNumber(event.value);
         const line =
-          event.value.trim() && Number.isFinite(input)
+          input !== null
             ? {
                 ...(mode.line ?? { a: { x: 0, y: 0 }, b: { x: 0, y: 0 } }),
                 [event.point]: {

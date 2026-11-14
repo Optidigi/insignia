@@ -1,3 +1,5 @@
+import { parseDecimalText } from './decimal-input.mts';
+
 export type PriceResult = { kind: 'valid'; minor: bigint } | { kind: 'invalid' };
 
 export function cellKey(locationId: string, sizeId: string): string {
@@ -5,10 +7,21 @@ export function cellKey(locationId: string, sizeId: string): string {
 }
 
 export function parsePrice(value: string): PriceResult {
-  const match = /^(0|[1-9]\d{0,4})(?:[.,](\d{1,2}))?$/.exec(value.trim());
-  if (!match?.[1]) return { kind: 'invalid' };
-  const minor = BigInt(match[1]) * 100n + BigInt((match[2] ?? '').padEnd(2, '0') || '0');
+  const parts = parseDecimalText(value);
+  if (!parts || parts.integer.length > 5 || parts.fraction.length > 2) return { kind: 'invalid' };
+  const minor = BigInt(parts.integer) * 100n + BigInt(parts.fraction.padEnd(2, '0') || '0');
   return minor <= 9_999_999n ? { kind: 'valid', minor } : { kind: 'invalid' };
+}
+
+/** A valid price becomes exact two-decimal text ("7,5" is "7.50"); invalid text is never turned into an amount. */
+export function canonicalPriceText(value: string): string {
+  const price = parsePrice(value);
+  return price.kind === 'valid' ? `${price.minor / 100n}.${String(price.minor % 100n).padStart(2, '0')}` : value;
+}
+
+/** The qualified shop currencies are EUR and USD. */
+export function currencyPrefix(currency: string): string {
+  return currency === 'USD' ? '$' : '€';
 }
 
 export function formatPrice(minor: bigint, locale = 'en-GB', currency = 'EUR'): string {

@@ -1,5 +1,6 @@
 /** Selected product editor presentation. Persistence/host effects are supplied by its composition. */
 import AdminSaveBar from '../components/AdminSaveBar.tsx';
+import { DecimalField } from '../components/DecimalField.tsx';
 import { useEffect, useReducer, useRef, useState } from 'preact/hooks';
 import AdminResourceName from '../components/AdminResourceName.tsx';
 import AdminTruncatedLabel from '../components/AdminTruncatedLabel.tsx';
@@ -8,7 +9,8 @@ import { productEditorReturnPath } from '../shared/products-return-path.ts';
 import { storefrontProductTestSetupHref } from '../shared/storefront-product-test.ts';
 import Dialog from '../../examples/admin/support/method-dialog.tsx';
 import { methodLibraryHref } from '../../examples/admin/support/method-return-context.mts';
-import { formatPrice, parsePrice } from '../../examples/admin/support/method-workflow-prices.mts';
+import { currencyPrefix, formatPrice, parsePrice } from '../../examples/admin/support/method-workflow-prices.mts';
+import { parseDecimalNumber } from '../../examples/admin/support/decimal-input.mts';
 import {
   approximatePlacementDimensions,
   calibrationMatchesImage,
@@ -73,6 +75,7 @@ import {
   moveEditorItemTo,
   movementRectContainsPlacementRect,
   nextItemName,
+  canonicalPlacementDecimals,
   type PlacementProduct,
   type PlacementRect,
   type PlacementSetupIssue,
@@ -94,6 +97,8 @@ import type { PublishPlacementPreviewResult } from '../../examples/admin/support
 import type { PlacementMethodCatalog } from './selected-method-choices.ts';
 import type { PlacementSetupCopyPorts } from '../../examples/admin/support/placement-setup-copy-dialog.tsx';
 import type { EditorProductImage, EditorMethod, MethodDraftBinding } from '@insignia/contracts';
+/** Typed decimal text as a number; NaN keeps schema checks failing for text the shared parser rejects. */
+const decimalOrNaN = (text: string): number => parseDecimalNumber(text) ?? Number.NaN;
 type MethodBindings = Record<string, MethodDraftBinding>;
 type EditorSnapshot = { product: PlacementProduct; bindings: MethodBindings };
 export type ProductPublicationResult = PublishPlacementPreviewResult | { status: 'pending' } | { status:'rejected' } | { status: 'changed'; product: PlacementProduct };
@@ -1712,7 +1717,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     }
     cancelCalibration();
     cancelDrawingTask();
-    dispatchDialog({ type: 'copy-setup-opened', id: uid(), source: structuredClone(candidate) });
+    dispatchDialog({ type: 'copy-setup-opened', id: uid(), source: structuredClone(canonicalPlacementDecimals(candidate)) });
   }
   function startMeasurement() {
     if (!view?.imageUrl || !prepareSelectionChange()) return;
@@ -1741,12 +1746,12 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
       imageWidth: view.imageWidth,
       imageHeight: view.imageHeight,
       ...measurementLine,
-      distanceCm: Number(measurementDistance.replace(',', '.')),
+      distanceCm: decimalOrNaN(measurementDistance),
     });
     if (
       !parsed.success ||
       Object.values(measurementPointInputs).some(
-        (value) => typeof value !== 'string' || !value.trim() || !Number.isFinite(Number(value)),
+        (value) => typeof value !== 'string' || parseDecimalNumber(value) === null,
       )
     ) {
       dispatchWorkspace({
@@ -1794,17 +1799,13 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
           }}
         >
           <div>
-            <s-number-field
+            <DecimalField
               label={translateUi('editor:placementWorkflowPreview.knownLength')}
               name="reference-length"
               suffix="cm"
-              min={0.1}
-              step={0.1}
               value={measurementDistance}
               error={measurementError}
-              onInput={(event) =>
-                dispatchWorkspace({ type: 'measurement-distance-changed', value: event.currentTarget.value })
-              }
+              onValue={(value) => dispatchWorkspace({ type: 'measurement-distance-changed', value })}
             />
           </div>
           <div>
@@ -1824,7 +1825,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
           <div class="placement-fields-grid">
             {(['a', 'b'] as const).flatMap((point) =>
               (['x', 'y'] as const).map((axis) => (
-                <s-number-field
+                <DecimalField
                   key={`${point}-${axis}`}
                   name={`measurement-${point}-${axis}`}
                   label={translateUi('editor:placementWorkflowPreview.pointCoordinate', {
@@ -1832,19 +1833,16 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                     axis: axis.toUpperCase(),
                   })}
                   suffix="%"
-                  min={0}
-                  max={100}
-                  step={0.5}
                   value={
                     measurementPointInputs[`${point}-${axis}`] ??
                     (measurementLine ? String(Math.round(measurementLine[point][axis] * 1000) / 10) : '')
                   }
-                  onInput={(event) =>
+                  onValue={(value) =>
                     dispatchWorkspace({
                       type: 'measurement-point-changed',
                       point,
                       axis,
-                      value: event.currentTarget.value,
+                      value,
                     })
                   }
                 />
@@ -2054,17 +2052,14 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                       {methodPlacement.sizes.map((size) => (
                         <div class="placement-price-row" key={size.id}>
                           <span>{size.name || translateUi('editor:placementWorkflowPreview.unnamedSize')}</span>
-                          {/* Polaris 2.0 RC Money field has no public step and marks cents invalid.
-                                  Number field supports decimal prices without changing its Shadow DOM. */}
-                          <s-number-field
+                          {/* Polaris money and number fields are number inputs, which discard a typed comma. */}
+                          <DecimalField
+                            kind="price"
                             label={translateUi('editor:placementWorkflowPreview.priceForSize', {
                               sizeName: size.name || translateUi('editor:placementWorkflowPreview.unnamedSize'),
                             })}
                             labelAccessibilityVisibility="exclusive"
-                            prefix={adapter.currency === 'USD' ? '$' : '€'}
-                            inputMode="decimal"
-                            min={0}
-                            step={0.01}
+                            prefix={currencyPrefix(adapter.currency)}
                             value={size.prices[method.id] ?? ''}
                             placeholder={translateUi('editor:placementWorkflowPreview.notOffered')}
                             error={
@@ -2073,15 +2068,15 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                             }
                             data-field-invalid={!!fieldError(`sizes.${size.id}.prices.${method.id}`)}
                             data-method-invalid={!!methodErrors[`${size.id}:${method.id}`]}
-                            onInput={(event) => {
+                            onValue={(text) => {
                               if (!placement) return;
-                              adapter.priceEdited?.(placement.id, size.id, method.id, event.currentTarget.value);
+                              adapter.priceEdited?.(placement.id, size.id, method.id, text);
                               patchMethodSettings({
                                 sizes: methodPlacement.sizes.map((entry) =>
                                   entry.id === size.id
                                     ? {
                                         ...entry,
-                                        prices: { ...entry.prices, [method.id]: event.currentTarget.value },
+                                        prices: { ...entry.prices, [method.id]: text },
                                       }
                                     : entry,
                                 ),
@@ -2135,7 +2130,8 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
       return null;
     }
     if (!geometryInput) return product;
-    if (!geometryInput.value.trim() || !Number.isFinite(Number(geometryInput.value))) {
+    const typedGeometry = parseDecimalNumber(geometryInput.value);
+    if (typedGeometry === null) {
       setErrors({
         [`views.${geometryInput.viewId}.placements.${geometryInput.placementId}.rect.${geometryInput.key}`]:
           'geometry-input-required',
@@ -2145,7 +2141,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
       setSelectedId(geometryInput.placementId);
       setPanel('settings');
       requestAnimationFrame(() =>
-        main.current?.querySelector<HTMLElement>(`s-number-field[name="area-${geometryInput.key}"]`)?.focus(),
+        main.current?.querySelector<HTMLElement>(`s-text-field[name="area-${geometryInput.key}"]`)?.focus(),
       );
       return null;
     }
@@ -2156,7 +2152,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     const currentRect = groupAreaScope && displayedRect ? displayedRect : currentArea.rect;
     const candidate = artworkRectCandidate(product, geometryInput.viewId, geometryInput.placementId, {
       ...currentRect,
-      [geometryInput.key]: Number(geometryInput.value) / 100,
+      [geometryInput.key]: typedGeometry / 100,
     });
     setProduct(candidate);
     setGeometryInput(null);
@@ -2227,9 +2223,9 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     targetViewId: string,
     targetAreaId: string,
   ) {
-    if (movementEditing || !value.trim()) return;
-    const number = Number(value);
-    if (!Number.isFinite(number)) return;
+    if (movementEditing) return;
+    const number = parseDecimalNumber(value);
+    if (number === null) return;
     const currentRect = displayedRect ?? placement?.rect;
     if (currentRect) changeArtworkRect(targetAreaId, { ...currentRect, [key]: number / 100 }, targetViewId);
     setGeometryInput((current) =>
@@ -2251,7 +2247,8 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     let candidate = product;
     if (geometryInput) {
       const { key, value, viewId: targetView, placementId } = geometryInput;
-      if (!value.trim() || !Number.isFinite(Number(value))) {
+      const typedValue = parseDecimalNumber(value);
+      if (typedValue === null) {
         setErrors({ [`views.${targetView}.placements.${placementId}.rect.${key}`]: 'geometry-input-required' });
         setNotice({ kind: 'message', reason: 'invalid-setup' });
         return false;
@@ -2264,7 +2261,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                 ...item,
                 placements: item.placements.map((area) =>
                   area.id === placementId
-                    ? { ...area, rect: clampPlacementRect({ ...area.rect, [key]: Number(value) / 100 }) }
+                    ? { ...area, rect: clampPlacementRect({ ...area.rect, [key]: typedValue / 100 }) }
                     : area,
                 ),
               }
@@ -2311,6 +2308,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     const transportIssues = adapter.saveIssues?.(candidate) ?? [];
     if (transportIssues.length) { setNotice({ kind: 'publication-issue', issue: transportIssues[0]! }); return false; }
     setErrors({});
+    candidate = canonicalPlacementDecimals(candidate);
     writeBusyRef.current = true;
     setWriteBusy(true);
     try { const confirmed = await adapter.save(candidate); if (confirmed) candidate = confirmed; } catch {
@@ -2341,7 +2339,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     dispatchDialog({
       type: 'publish-opened',
       id: uid(),
-      product: structuredClone(candidate),
+      product: structuredClone(canonicalPlacementDecimals(candidate)),
       revision: adapter.revision(),
       issues: [...placementPublicationIssues(candidate), ...imageLoadIssues(candidate), ...(adapter.publicationIssues?.(candidate) ?? [])],
     });
@@ -2488,7 +2486,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
       if (!field && issue.key.endsWith('.prices')) {
         const methods = main.current?.querySelector<HTMLElement>('[data-placement-methods]');
         methods?.scrollIntoView({ block: 'start' });
-        methods?.querySelector<HTMLElement>('s-number-field,s-button')?.focus({ preventScroll: true });
+        methods?.querySelector<HTMLElement>('s-text-field,s-button')?.focus({ preventScroll: true });
       }
     });
   }
@@ -2688,7 +2686,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
           disabled={movementEditing || drawing || calibrationEditing}
           onClick={() =>
             adapter.preview(
-              product,
+              canonicalPlacementDecimals(product),
               (reason) => {
                 setNotice({ kind: 'customer-preview-failed', reason });
                 setPanel('settings');
@@ -3331,8 +3329,8 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
               preview={preview}
               editingLocked={movementEditing}
               interactionRevision={interactionRevision}
-              sizePercent={Number(previewSize?.widthPercent ?? '100')}
-              sizeHeightPercent={Number(previewSize?.heightPercent ?? previewSize?.widthPercent ?? '100')}
+              sizePercent={decimalOrNaN(previewSize?.widthPercent ?? '100')}
+              sizeHeightPercent={decimalOrNaN(previewSize?.heightPercent ?? previewSize?.widthPercent ?? '100')}
               movementRect={movementEditing ? movementDraft : null}
               drawing={drawing}
               drawTarget={drawingTarget === 'movement' ? 'movement' : 'artwork'}
@@ -3346,7 +3344,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                 requestAnimationFrame(() =>
                   requestAnimationFrame(() => {
                     main.current
-                      ?.querySelector<HTMLElement>('.placement-calibration-form s-number-field[name="measurement-a-x"]')
+                      ?.querySelector<HTMLElement>('.placement-calibration-form s-text-field[name="measurement-a-x"]')
                       ?.focus();
                   }),
                 );
@@ -3356,7 +3354,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                 if (pointerType === 'mouse' && matchMedia('(min-width: 801px)').matches)
                   requestAnimationFrame(() => {
                     main.current
-                      ?.querySelector<HTMLElement>('.placement-calibration-form s-number-field')
+                      ?.querySelector<HTMLElement>('.placement-calibration-form s-text-field')
                       ?.focus({ preventScroll: true });
                   });
               }}
@@ -3646,14 +3644,11 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                       ['centerY', translateUi('editor:placementWorkflowPreview.geometryLabels.centerY')],
                     ] as const
                   ).map(([key, label]) => (
-                    <s-number-field
+                    <DecimalField
                       key={key}
                       label={label}
                       name={`area-${key}`}
                       disabled={movementEditing}
-                      min={key === 'width' || key === 'height' ? 2 : 0}
-                      max={100}
-                      step={0.5}
                       suffix="%"
                       value={
                         geometryInput?.placementId === placement.id && geometryInput.key === key
@@ -3662,15 +3657,15 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                       }
                       error={fieldError(`rect.${key}`)}
                       data-field-invalid={!!fieldError(`rect.${key}`)}
-                      onInput={(event) =>
+                      onValue={(value) =>
                         setGeometryInput({
                           viewId: view.id,
                           placementId: placement.id,
                           key,
-                          value: event.currentTarget.value,
+                          value,
                         })
                       }
-                      onChange={(event) => geometry(key, event.currentTarget.value, view.id, placement.id)}
+                      onCommit={(value) => geometry(key, value, view.id, placement.id)}
                     />
                   ))}
                 </div>
@@ -3806,23 +3801,21 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                         })
                       }
                     />
-                    <s-number-field
+                    <DecimalField
                       label={translateUi(size.heightPercent!==undefined?'editor:placementWorkflowPreview.legacyWidthScale':'editor:placementWorkflowPreview.areaScale')}
                       labelAccessibilityVisibility="exclusive"
-                      min={size.heightPercent!==undefined?0:1}
-                      max={100}
                       value={size.widthPercent}
                       error={fieldError(`sizes.${size.id}.widthPercent`)}
                       data-field-invalid={!!fieldError(`sizes.${size.id}.widthPercent`)}
-                      onInput={(event) =>
+                      onValue={(value) =>
                         patchPlacement({
                           sizes: placement.sizes.map((entry) =>
-                            entry.id === size.id ? { ...entry, widthPercent: event.currentTarget.value } : entry,
+                            entry.id === size.id ? { ...entry, widthPercent: value } : entry,
                           ),
                         })
                       }
                     />
-                    {size.heightPercent!==undefined&&<s-number-field label={translateUi('editor:placementWorkflowPreview.legacyHeightScale')} min={0} max={100} value={size.heightPercent} error={fieldError(`sizes.${size.id}.heightPercent`)} data-field-invalid={!!fieldError(`sizes.${size.id}.heightPercent`)} onInput={event=>patchPlacement({sizes:placement.sizes.map(entry=>entry.id===size.id?{...entry,heightPercent:event.currentTarget.value}:entry)})}/>}
+                    {size.heightPercent!==undefined&&<DecimalField label={translateUi('editor:placementWorkflowPreview.legacyHeightScale')} value={size.heightPercent} error={fieldError(`sizes.${size.id}.heightPercent`)} data-field-invalid={!!fieldError(`sizes.${size.id}.heightPercent`)} onValue={value=>patchPlacement({sizes:placement.sizes.map(entry=>entry.id===size.id?{...entry,heightPercent:value}:entry)})}/>}
                     <s-button
                       icon="view"
                       variant={preview && previewSize?.id === size.id ? 'secondary' : 'tertiary'}

@@ -66,7 +66,7 @@ for (let iteration = 1; iteration <= iterations; iteration++) {
       });
       await f.open();
       const originalPixels = await canvasPixels(f.page);
-      await f.page.getByRole('spinbutton', { name: 'Center X', exact: true }).fill('60');
+      await f.page.getByRole('textbox', { name: 'Center X', exact: true }).fill('60');
       await editName(f.page, 'Preserve local edit across activation');
       const pixels = await canvasPixels(f.page);
       assert.notDeepEqual(
@@ -81,7 +81,7 @@ for (let iteration = 1; iteration <= iterations; iteration++) {
       );
       await f.page.evaluate(() => window.dispatchEvent(new Event('focus')));
       await observation;
-      assert.equal(await f.page.getByRole('spinbutton', { name: 'Center X', exact: true }).inputValue(), '60');
+      assert.equal(await f.page.getByRole('textbox', { name: 'Center X', exact: true }).inputValue(), '60');
       assert.deepEqual(await canvasPixels(f.page), pixels, 'Publication metadata must not repaint a different draft');
       assert.ok(reads >= 2);
       assert.equal(
@@ -198,7 +198,7 @@ for (let iteration = 1; iteration <= iterations; iteration++) {
     async (t) => {
       const f = await fixture(t, { loseSaveReply: true });
       await f.open();
-      await f.page.getByRole('spinbutton', { name: 'Center X', exact: true }).fill('60');
+      await f.page.getByRole('textbox', { name: 'Center X', exact: true }).fill('60');
       await editName(f.page, 'Recover this intent');
       await hostSave(f.page);
       await f.page

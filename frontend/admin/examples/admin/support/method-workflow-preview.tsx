@@ -13,7 +13,7 @@ async function start() {
   const root = document.getElementById('method-workflow-preview');
   if (!root) return;
   await Promise.all(
-    ['s-page', 's-modal', 's-choice-list', 's-money-field'].map((tag) => customElements.whenDefined(tag)),
+    ['s-page', 's-modal', 's-choice-list', 's-text-field'].map((tag) => customElements.whenDefined(tag)),
   );
   try {
     const response = await fetch(`/__preview/method-workflow/data${largeCatalog() ? '?catalog=large' : ''}`);

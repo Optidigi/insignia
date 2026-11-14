@@ -288,7 +288,7 @@ test('equal-valued explicit Method edits become dirty metadata and undo restores
   async function makeEqualOverride() {
     await f.page.getByRole('button', { name: 'Edit Printing price', exact: true }).click();
     const dialog = f.page.locator('s-modal').filter({ has: f.page.locator('[data-method-price-field]') });
-    await dialog.getByRole('spinbutton', { name: /^Price per placement per item/ }).fill('3.50');
+    await dialog.getByRole('textbox', { name: /^Price per placement per item/ }).fill('3.50');
     await dialog.getByRole('button', { name: 'Done', exact: true }).click();
     await dialog.waitFor({ state: 'hidden' });
     await f.page.waitForFunction(() => {

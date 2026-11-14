@@ -18,6 +18,7 @@ import {
 import ProductPicker from '../../examples/admin/support/method-product-picker.tsx';
 import { readMethodReturnContext } from '../../examples/admin/support/method-return-context.mts';
 import MethodSummary from '../../examples/admin/support/method-summary.tsx';
+import { canonicalPriceText, currencyPrefix } from '../../examples/admin/support/method-workflow-prices.mts';
 import {
   confirmMethodNavigation,
   createMethodWorkflowState,
@@ -29,6 +30,7 @@ import {
 } from '../../examples/admin/support/method-workflow-state.mts';
 import AdminIndexToolbar from '../components/AdminIndexToolbar.tsx';
 import AdminSaveBar from '../components/AdminSaveBar.tsx';
+import { DecimalField } from '../components/DecimalField.tsx';
 import { useAdminLocale } from '../shared/admin-i18n.js';
 
 const indexPath = '/admin/methods';
@@ -330,7 +332,7 @@ export default function SelectedMethods({
       id: currentEditor.id || operationIdentity(currentState.editorSessionId),
       name: currentEditor.name.trim(),
       explanation: currentEditor.explanation.trim(),
-      amount: currentEditor.pricing === 'product' ? '' : currentEditor.amount,
+      amount: currentEditor.pricing === 'product' ? '' : canonicalPriceText(currentEditor.amount),
       translations:
         currentEditor.translations &&
         Object.fromEntries(
@@ -710,17 +712,16 @@ export default function SelectedMethods({
                     )}
                     {editor.pricing === 'fixed' ? (
                       <div class="method-price-field">
-                        <s-money-field
+                        <DecimalField
+                          kind="price"
                           data-invalid={!!errors.amount}
                           label={t('methods:workflow.fields.pricePerLocation')}
                           name="method-amount"
-                          currencyCode={currency}
+                          prefix={currencyPrefix(currency)}
                           value={currencyMismatch && !priceCurrencyReviewed ? '' : editor.amount}
-                          min={0}
-                          max={99999.99}
                           error={errors.amount ? t('methods:workflow.copy.priceRequired') : ''}
                           details={t('methods:workflow.fields.priceHelp')}
-                          onInput={(event) => {
+                          onValue={(value) => {
                             if (readOnly || writing.current) return;
                             setPriceReviewSessions((sessions) =>
                               sessions.includes(workflow.editorSessionId)
@@ -730,7 +731,7 @@ export default function SelectedMethods({
                             sendWorkflow({
                               type: 'default-price-edited',
                               sessionId: workflow.editorSessionId,
-                              value: event.currentTarget.value,
+                              value,
                             });
                           }}
                         />
