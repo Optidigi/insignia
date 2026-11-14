@@ -45,10 +45,12 @@ async function clickPublish(f: Fixture) {
 }
 
 async function setField(f: Fixture, name: string, value: string) {
-  await f.page.locator(`s-number-field[name="${name}"]`).evaluate((field: HTMLInputElement, next) => {
-    field.value = next;
-    field.dispatchEvent(new Event('input', { bubbles: true }));
-  }, value);
+  await f.page
+    .locator(`:is(s-number-field, s-text-field)[name="${name}"]`)
+    .evaluate((field: HTMLInputElement, next) => {
+      field.value = next;
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+    }, value);
 }
 
 async function drawAndApply(f: Fixture) {
