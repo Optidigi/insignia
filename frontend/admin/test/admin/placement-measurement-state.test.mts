@@ -5,53 +5,42 @@ import {
   placementWorkspaceReducer,
 } from '../../examples/admin/support/placement-workflow-state.mts';
 
+const oldImage = 'https://cdn.example/front.jpg?v=1';
+const newImage = 'https://cdn.example/front.jpg?v=2';
 const started = placementWorkspaceReducer(initialPlacementWorkspaceState, {
   type: 'measurement-started',
   viewId: 'front',
   placementId: null,
-  imageUrl: 'https://cdn.example/front.jpg?v=1',
+  imageUrl: oldImage,
   line: { a: { x: 0.1, y: 0.1 }, b: { x: 0.6, y: 0.1 } },
   distance: '40',
 });
 
-test('a re-issued image URL for the measured view keeps the line and lets the measurement commit', () => {
-  const refreshed = placementWorkspaceReducer(started, {
-    type: 'measurement-image-reissued',
-    viewId: 'front',
-    imageUrl: 'https://cdn.example/front.jpg?v=2',
-  });
-  assert.equal(refreshed.mode.kind, 'measuring');
-  assert.equal(refreshed.mode.kind === 'measuring' && refreshed.mode.imageUrl, 'https://cdn.example/front.jpg?v=2');
-  assert.deepEqual(refreshed.mode.kind === 'measuring' && refreshed.mode.line, {
-    a: { x: 0.1, y: 0.1 },
-    b: { x: 0.6, y: 0.1 },
-  });
-  const committed = placementWorkspaceReducer(refreshed, {
-    type: 'measurement-committed',
-    viewId: 'front',
-    imageUrl: 'https://cdn.example/front.jpg?v=2',
-  });
-  assert.deepEqual(committed, initialPlacementWorkspaceState);
-});
-
-test('a re-issued image URL for a different view leaves the measurement unchanged', () => {
+test('a commit for another image than the measured one is fenced and the measurement stays open', () => {
   assert.equal(
-    placementWorkspaceReducer(started, {
-      type: 'measurement-image-reissued',
-      viewId: 'back',
-      imageUrl: 'https://cdn.example/back.jpg',
-    }),
+    placementWorkspaceReducer(started, { type: 'measurement-committed', viewId: 'front', imageUrl: newImage }),
     started,
   );
 });
 
-test('a commit for a stale image URL is still fenced', () => {
+test('a URL mismatch restarts measuring on the current image without the old line, then reports the error', () => {
+  const restarted = placementWorkspaceReducer(started, {
+    type: 'measurement-started',
+    viewId: 'front',
+    placementId: null,
+    imageUrl: newImage,
+    line: null,
+    distance: '',
+  });
+  const reported = placementWorkspaceReducer(restarted, { type: 'measurement-error', reason: 'measurement-invalid' });
+  assert.equal(reported.mode.kind, 'measuring');
+  if (reported.mode.kind !== 'measuring') return;
+  assert.equal(reported.mode.imageUrl, newImage);
+  assert.equal(reported.mode.line, null);
+  assert.equal(reported.mode.error, 'measurement-invalid');
+  // The old image can no longer commit; the new one is the measured identity.
   assert.equal(
-    placementWorkspaceReducer(started, {
-      type: 'measurement-committed',
-      viewId: 'front',
-      imageUrl: 'https://cdn.example/front.jpg?v=2',
-    }),
-    started,
+    placementWorkspaceReducer(reported, { type: 'measurement-committed', viewId: 'front', imageUrl: oldImage }),
+    reported,
   );
 });

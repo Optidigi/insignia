@@ -1723,8 +1723,8 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
    * Start measuring an explicit view. A caller that selects a view in the same event cannot rely on
    * `view`, which is still the previous render's value, so it passes the target and its placement.
    */
-  function startMeasurementFor(target: EditorView | undefined, placementId: string | null) {
-    if (!target?.imageUrl || !prepareSelectionChange()) return;
+  function startMeasurementFor(target: EditorView | undefined, placementId: string | null): boolean {
+    if (!target?.imageUrl || !prepareSelectionChange()) return false;
     const current =
       target.calibration && calibrationMatchesImage(target.calibration, target) ? target.calibration : null;
     dispatchWorkspace({
@@ -1738,22 +1738,20 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     if (matchMedia('(max-width: 800px)').matches) {
       setExpandedCanvas(true);
     }
+    return true;
   }
   function startMeasurement() {
     startMeasurementFor(view, selectedId);
   }
   function applyMeasurement() {
     if (!view || workspaceMode.kind !== 'measuring') return;
-    if (workspaceMode.viewId !== view.id) {
-      // The line belongs to another view's image: never apply it here and never fail silently.
-      // Restart measuring on the visible view and show the existing measurement message.
-      startMeasurementFor(view, selectedId);
-      dispatchWorkspace({ type: 'measurement-error', reason: 'measurement-invalid' });
+    if (workspaceMode.viewId !== view.id || workspaceMode.imageUrl !== view.imageUrl) {
+      // The line was drawn on another view or image: never apply it here and never fail silently.
+      // Restart measuring on the visible image with the existing message, or leave measuring cleanly.
+      if (startMeasurementFor(view, selectedId)) dispatchWorkspace({ type: 'measurement-error', reason: 'measurement-invalid' });
+      else cancelCalibration();
       return;
     }
-    if (workspaceMode.imageUrl !== view.imageUrl)
-      // Same view with a re-issued image URL: keep the merchant's line and apply it to the current image.
-      dispatchWorkspace({ type: 'measurement-image-reissued', viewId: view.id, imageUrl: view.imageUrl });
     const parsed = placementCalibrationSchema.safeParse({
       imageUrl: view.imageUrl,
       imageWidth: view.imageWidth,
