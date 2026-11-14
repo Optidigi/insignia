@@ -75,7 +75,9 @@ END $$;
 -- Triggers guard every transition; the audit and the operator claim function stay owner-only.
 DO $$ BEGIN
  IF to_regclass('public.m5_publication_abandonment_audit') IS NOT NULL THEN
-  GRANT SELECT, UPDATE ON public.m5_activation_state, public.m4_publication_progress TO insignia_queue_consume;
+  GRANT SELECT ON public.m5_activation_state, public.m4_publication_progress TO insignia_queue_consume;
+  GRANT UPDATE(kind, version, hold) ON public.m5_activation_state TO insignia_queue_consume;
+  GRANT UPDATE(phase, version) ON public.m4_publication_progress TO insignia_queue_consume;
   GRANT UPDATE(status, failed_at, failure_class, availability_resolved_at) ON public.publication_operations TO insignia_queue_consume;
   GRANT SELECT, DELETE ON public.m5_current_publication_pointer TO insignia_queue_consume;
   -- Read by the existing invoker transition triggers the pass fires.

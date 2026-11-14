@@ -372,13 +372,9 @@ BEGIN
 END;
 $$;
 
--- 4. Operator claim (part A's command calls it; no runtime role may). The role has no login; the
--- owner grants it to the SSH-run command identity separately.
-DO $role$ BEGIN
- IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='insignia_publication_operator') THEN
-  CREATE ROLE insignia_publication_operator NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
- END IF;
-END $role$;
+-- 4. Operator claim (part A's command calls it; no runtime role may). Roles are created by
+-- owner-run scripts, not migrations: scripts/database/publication-operator-role.sql creates the
+-- NOLOGIN role insignia_publication_operator and grants EXECUTE; this grants it only if it exists.
 CREATE FUNCTION public.m5_operator_claim_abandoned_hold(p_shop_id text, p_config_id text, p_operation_id text,
  p_expected_version bigint, p_command_key text, p_inspect_digest text) RETURNS bigint
 -- The existing activation triggers it fires resolve unqualified names through public.
@@ -416,7 +412,11 @@ BEGIN
  RETURN result;
 END $$;
 REVOKE ALL ON FUNCTION public.m5_operator_claim_abandoned_hold(text,text,text,bigint,text,text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.m5_operator_claim_abandoned_hold(text,text,text,bigint,text,text) TO insignia_publication_operator;
+DO $grant$ BEGIN
+ IF EXISTS (SELECT FROM pg_roles WHERE rolname='insignia_publication_operator') THEN
+  GRANT EXECUTE ON FUNCTION public.m5_operator_claim_abandoned_hold(text,text,text,bigint,text,text) TO insignia_publication_operator;
+ END IF;
+END $grant$;
 
 -- migrate:down
 DO $guard$ BEGIN
@@ -424,14 +424,13 @@ DO $guard$ BEGIN
  OR EXISTS(SELECT FROM public.m4_publication_progress WHERE phase='abandoned')
  OR EXISTS(SELECT FROM public.m5_publication_abandonment_audit)
  OR EXISTS(SELECT FROM public.m5_restoration_no_dispatch_consumptions WHERE original_receipt->'current'='null'::jsonb)
+ -- An unconsumed no-current NOT_DISPATCHED receipt: the previous rules could not settle it.
+ OR EXISTS(SELECT FROM public.m5_activation_state WHERE hold#>>'{restorationReceipt,kind}'='NOT_DISPATCHED'
+   AND hold#>'{restorationReceipt,current}'='null'::jsonb)
  THEN RAISE EXCEPTION 'publication abandonment evidence requires forward-compatible retention'; END IF;
 END $guard$;
+-- The operator role belongs to its owner-run script and stays.
 DROP FUNCTION public.m5_operator_claim_abandoned_hold(text,text,text,bigint,text,text);
-DO $role$ BEGIN
- -- The role is cluster-wide; keep it while another database still grants it anything.
- DROP ROLE IF EXISTS insignia_publication_operator;
-EXCEPTION WHEN dependent_objects_still_exist THEN NULL;
-END $role$;
 DROP TRIGGER publication_operations_abandonment_guard ON public.publication_operations;
 DROP TRIGGER m4_publication_progress_abandonment_guard ON public.m4_publication_progress;
 DROP FUNCTION public.enforce_publication_abandonment_freeze();

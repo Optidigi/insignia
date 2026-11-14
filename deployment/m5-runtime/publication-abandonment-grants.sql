@@ -9,7 +9,9 @@ DO $$ BEGIN
    AND relowner<>(SELECT oid FROM pg_roles WHERE rolname=current_user))
  THEN RAISE EXCEPTION 'migration 65 and the schema owner are required'; END IF;
 END $$;
-GRANT SELECT, UPDATE ON public.m5_activation_state, public.m4_publication_progress TO :"worker_role";
+GRANT SELECT ON public.m5_activation_state, public.m4_publication_progress TO :"worker_role";
+GRANT UPDATE(kind, version, hold) ON public.m5_activation_state TO :"worker_role";
+GRANT UPDATE(phase, version) ON public.m4_publication_progress TO :"worker_role";
 GRANT UPDATE(status, failed_at, failure_class, availability_resolved_at) ON public.publication_operations TO :"worker_role";
 GRANT SELECT, DELETE ON public.m5_current_publication_pointer TO :"worker_role";
 GRANT SELECT ON public.m5_availability_resolutions, public.m5_activation_evidence TO :"worker_role";

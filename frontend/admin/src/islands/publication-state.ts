@@ -26,33 +26,22 @@ export const isMerchantPublicationSettledFailure = (state: PublicationState) =>
   state === 'FAILED' || state === 'ABANDONED_RESTORED';
 
 export type PublicationNoticeKey =
-  | 'realPublicationBlocked'
   | 'publicationAbandonedRestored'
   | 'publicationAbandonmentRestoring'
   | 'publicationHoldNeedsSupport';
-export type PublicationNotice = Readonly<{
-  key: PublicationNoticeKey;
-  tone: 'info' | 'warning' | 'critical';
-  /** Reload is offered only where reviewing a fresh copy can help. */
-  actions: readonly 'reload'[];
-  /** The server's English reason is shown only for the existing review states. */
-  showReason: boolean;
-}>;
+export type PublicationNotice = Readonly<{ key: PublicationNoticeKey; tone: 'info' | 'warning' | 'critical' }>;
 
-/** The editor's notice for a server-projected publication state, independent of the local write
- * state; null when the state needs no standing notice. */
+/** #466: the editor's own banner for a server-projected abandoned-hold or support state. It is
+ * separate from the write-state banner (save/publish failures, rejections, retry, reload), which
+ * keeps every other state, including the existing review states. Null for every other state. */
 export function publicationNotice(state: PublicationState): PublicationNotice | null {
   switch (state) {
     case 'ABANDONMENT_RESTORING':
-      return { key: 'publicationAbandonmentRestoring', tone: 'info', actions: [], showReason: false };
+      return { key: 'publicationAbandonmentRestoring', tone: 'info' };
     case 'ABANDONED_RESTORED':
-      return { key: 'publicationAbandonedRestored', tone: 'warning', actions: [], showReason: false };
+      return { key: 'publicationAbandonedRestored', tone: 'warning' };
     case 'HOLD_NEEDS_SUPPORT':
-      return { key: 'publicationHoldNeedsSupport', tone: 'critical', actions: [], showReason: false };
-    case 'OPERATOR_HOLD':
-    case 'RESTORATION_CONFLICT':
-    case 'CONFLICT':
-      return { key: 'realPublicationBlocked', tone: 'critical', actions: ['reload'], showReason: true };
+      return { key: 'publicationHoldNeedsSupport', tone: 'critical' };
     default:
       return null;
   }

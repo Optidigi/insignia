@@ -165,6 +165,38 @@ test('#466: abandoned-hold states project before the failed branch; support copy
     }),
     'HOLD_NEEDS_SUPPORT',
   );
+  // Review U2: the support copy wins over a recorded reconciliation hold.
+  assert.equal(
+    projectActivationPublicationState({
+      ...requested,
+      activationKind: 'OPERATOR_HOLD',
+      holdPresent: true,
+      reconciliationKind: 'OPERATOR_HOLD',
+    }),
+    'HOLD_NEEDS_SUPPORT',
+  );
+  assert.equal(
+    projectActivationPublicationState({
+      phase: 'active',
+      effectiveOperationId: 'op',
+      operationId: 'op',
+      activationKind: 'RESTORED',
+      reconciliationKind: 'OPERATOR_HOLD',
+      recoveryFromAnotherOperation: true,
+    }),
+    'HOLD_NEEDS_SUPPORT',
+  );
+  // Without a hold, a reconciliation hold keeps its review wording.
+  assert.equal(
+    projectActivationPublicationState({
+      phase: 'active',
+      effectiveOperationId: 'op',
+      operationId: 'op',
+      activationKind: 'RESTORED',
+      reconciliationKind: 'OPERATOR_HOLD',
+    }),
+    'OPERATOR_HOLD',
+  );
   // An `operator-hold` phase without a hold (a field conflict) keeps its review wording.
   assert.equal(
     projectActivationPublicationState({

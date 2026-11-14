@@ -1672,6 +1672,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     const client = await pool.connect();
     const runtime = `abandon_runtime_${randomUUID().replaceAll('-', '')}`;
     const operator = `abandon_operator_${randomUUID().replaceAll('-', '')}`;
+    // The owner-run script creates the operator role (idempotent) and grants EXECUTE.
+    await client.query(
+      await readFile(new URL('../../../scripts/database/publication-operator-role.sql', import.meta.url), 'utf8'),
+    );
     try {
       await client.query('BEGIN');
       await client.query(`CREATE ROLE ${runtime} NOLOGIN`);

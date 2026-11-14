@@ -13,19 +13,25 @@ export function projectActivationPublicationState(input: {
   /** #466: the current operation's activation row still carries an availability hold. */
   holdPresent?: boolean;
 }): PublicationState {
-  if (input.reconciliationKind === 'OPERATOR_HOLD') return 'OPERATOR_HOLD';
-  // #466, before the `failed` branch. The abandoned request is invisible after finalize, so the
-  // restoring state comes from the current operation and the restored one from the derived input.
+  // #466, before the reconciliation and `failed` branches. The abandoned request is invisible
+  // after finalize, so the restoring state comes from the current operation and the restored one
+  // from the derived input.
   if (
     input.activationKind === 'ABANDON_CLAIMED' ||
     (input.activationKind === 'ABANDON_RESTORED' && input.operationStatus === 'requested')
   )
     return 'ABANDONMENT_RESTORING';
+  // Safe before the other-operation hold below: prepare() refuses a publication while any hold of
+  // this config is unresolved, and only the newest operation can take one. When the newest one was
+  // abandoned and restored, no other operation of the config can still carry a hold.
   if (input.abandonedLatest) return 'ABANDONED_RESTORED';
-  // A hold another operation of this config still carries (an older request, a prior installation).
+  // A pre-activation hold that needs the operator shows the support copy (spec: the product may be
+  // unavailable), also when a reconciliation hold is recorded: a hold another operation of this
+  // config still carries (an older request, a prior installation), or this request's own.
   if (input.recoveryFromAnotherOperation) return 'HOLD_NEEDS_SUPPORT';
   if (input.activationKind === 'OPERATOR_HOLD' && input.operationStatus !== 'activated' && input.holdPresent)
     return 'HOLD_NEEDS_SUPPORT';
+  if (input.reconciliationKind === 'OPERATOR_HOLD') return 'OPERATOR_HOLD';
   if (input.operationStatus === 'failed' || input.operationStatus === 'superseded')
     return input.activationKind === null || ['RESOLVED', 'RESTORED', 'ABANDON_RESTORED'].includes(input.activationKind)
       ? 'FAILED'

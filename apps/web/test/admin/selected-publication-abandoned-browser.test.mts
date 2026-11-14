@@ -3,7 +3,7 @@ import { type TestContext, test } from 'node:test';
 import type { Page } from 'playwright';
 import type { PublicationState } from '../../src/shared/admin-view.ts';
 import { required } from './support/fixtures.mts';
-import { editName, fixture, storedIntent } from './support/selected-browser.mts';
+import { editName, fixture, hostSave, storedIntent } from './support/selected-browser.mts';
 
 const restoring =
   'Publishing didn’t finish. Insignia is putting your product back as it was; this page updates when it’s done.';
@@ -13,8 +13,8 @@ const support =
 const serverReason = 'Synthetic English server reason.';
 
 /** #466: the server projects the publication state; the editor shows it through publicationNotice. */
-async function serverState(t: TestContext, initial: PublicationState) {
-  const f = await fixture(t);
+async function serverState(t: TestContext, initial: PublicationState, scenario: { loseSaveReply?: boolean } = {}) {
+  const f = await fixture(t, scenario);
   let state = initial;
   let requestKey: string | null = null;
   let publishKey: string | null = null;
@@ -127,4 +127,57 @@ test('#466: a hold that needs support shows the support copy, blocks Publish and
   assert.equal(await banner.locator('s-button').count(), 0);
   assert.equal(await f.page.getByText(serverReason).count(), 0);
   assert.equal(await f.page.getByText('Publication requires review.').count(), 0);
+});
+
+test('#466 review U1: a lost save under the restored notice keeps its own banner with Retry', {
+  timeout: 60000,
+}, async (t) => {
+  const f = await serverState(t, 'ABANDONED_RESTORED', { loseSaveReply: true });
+  await f.open();
+  await f.page.locator('s-banner').filter({ hasText: restored }).waitFor();
+  await editName(f.page, 'Edit whose reply was lost');
+  await hostSave(f.page);
+  await f.page.getByRole('button', { name: 'Retry', exact: true }).waitFor();
+  await f.page
+    .getByText('Your changes could not be confirmed. Retry the original request before saving different changes.')
+    .first()
+    .waitFor();
+  // Both owners keep their banner: the publication notice and the write state.
+  assert.equal(await f.page.locator('s-banner').filter({ hasText: restored }).count(), 1);
+  assert.equal(
+    await f.page.locator('s-banner').filter({ hasText: restored }).getByRole('button', { name: 'Retry' }).count(),
+    0,
+  );
+});
+
+test('#466 review U1: a rejected save under the restored notice keeps its rejection text and reload action', {
+  timeout: 60000,
+}, async (t) => {
+  const f = await serverState(t, 'ABANDONED_RESTORED');
+  let rejected = false;
+  await f.page.route('**/api/admin/products/111/config', (route) => {
+    if (route.request().method() !== 'PUT' || rejected) return route.fallback();
+    rejected = true;
+    return route.fulfill({
+      status: 422,
+      json: {
+        kind: 'invalid',
+        noEffect: true,
+        code: 'METHOD_LINKS_CHANGED',
+        message: 'Review the configuration validation errors before saving or publishing.',
+      },
+    });
+  });
+  await f.open();
+  await f.page.locator('s-banner').filter({ hasText: restored }).waitFor();
+  await editName(f.page, 'Unsaved edit');
+  await hostSave(f.page);
+  await f.page
+    .getByText(
+      'The methods linked to this product changed after this draft was made. Reload to review them. Reloading discards the changes you have not saved.',
+    )
+    .first()
+    .waitFor();
+  await f.page.getByRole('button', { name: 'Discard changes and reload', exact: true }).waitFor();
+  assert.equal(await f.page.locator('s-banner').filter({ hasText: restored }).count(), 1);
 });

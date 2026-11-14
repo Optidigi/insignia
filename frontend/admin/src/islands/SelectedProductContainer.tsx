@@ -345,8 +345,10 @@ function SelectedProductContainer({ productId }: { productId: string }) {
     }));
   const publicationProgressing = followUntil > 0 && !!client.current?.hasPendingPublication();
   const publicationNeedsReview = !!view?.config && isMerchantPublicationOperatorBlocked(view.config.publication.state);
-  /** The server-projected publication notice (review, abandoned hold, support), shown whatever the local write state. */
+  /** #466: the server-projected abandoned-hold or support notice, shown whatever the local write state. */
   const notice = view?.config ? publicationNotice(view.config.publication.state) : null;
+  /** The existing review states stay in the write-state banner; a state with its own notice does not. */
+  const reviewInBanner = publicationNeedsReview && !notice;
   async function retry() {
     if (!client.current) return;
     const owned = client.current;
@@ -610,41 +612,31 @@ function SelectedProductContainer({ productId }: { productId: string }) {
           </s-button>
         </s-banner>
       )}
-      {(remote !== 'idle' || notice) && (
-        <s-banner
-          tone={
-            notice
-              ? notice.tone
-              : publicationProgressing
-                ? 'info'
-                : remote === 'pending'
-                  ? 'warning'
-                  : 'critical'
-          }
-        >
-          {rejected && !notice
+      {/* #466: the server-projected publication notice has its own banner; the write-state banner below
+          keeps its own retry, rejection and reload behaviour (one owner per state). */}
+      {notice && (
+        <s-banner tone={notice.tone}>{t(`editor:placementWorkflowPreview.${notice.key}`)}</s-banner>
+      )}
+      {(remote !== 'idle' || reviewInBanner) && (
+        <s-banner tone={publicationProgressing && !reviewInBanner ? 'info' : remote === 'pending' ? 'warning' : 'critical'}>
+          {rejected && !reviewInBanner
             ? configRejectionText(rejected, t)
             : t(
-                notice
-                  ? `editor:placementWorkflowPreview.${notice.key}`
-                  : view.config && remote === 'failed' && !view.config.publishEligibility.allowed
-                    ? 'editor:placementWorkflowPreview.realPublicationBlocked'
-                    : view.config?.publication.state === 'FAILED' && !client.current?.hasPending()
-                      ? 'editor:placementWorkflowPreview.realPublicationFailed'
-                      : publicationProgressing
-                        ? 'editor:placementWorkflowPreview.realPublicationProgress'
-                        : 'editor:placementWorkflowPreview.realSaveFailed',
+                view.config && (reviewInBanner || (remote === 'failed' && !view.config.publishEligibility.allowed))
+                  ? 'editor:placementWorkflowPreview.realPublicationBlocked'
+                  : view.config?.publication.state === 'FAILED' && !client.current?.hasPending()
+                    ? 'editor:placementWorkflowPreview.realPublicationFailed'
+                    : publicationProgressing
+                      ? 'editor:placementWorkflowPreview.realPublicationProgress'
+                      : 'editor:placementWorkflowPreview.realSaveFailed',
               )}
-          {!rejected &&
-            (notice?.showReason ?? true) &&
-            (view.config?.publication.reason || view.config?.publishEligibility.reason) && (
-              <s-paragraph>{view.config.publication.reason ?? view.config.publishEligibility.reason}</s-paragraph>
-            )}
+          {!rejected && (view.config?.publication.reason || view.config?.publishEligibility.reason) && (
+            <s-paragraph>{view.config.publication.reason ?? view.config.publishEligibility.reason}</s-paragraph>
+          )}
           {client.current?.hasPending() && !publicationProgressing && (
             <s-button onClick={() => void retry()}>{t('common:actions.retry')}</s-button>
           )}
-          {!client.current?.hasPending() &&
-            (notice ? notice.actions.includes('reload') : !rejected || configRejectionNeedsReload(rejected)) && (
+          {!client.current?.hasPending() && (!rejected || configRejectionNeedsReload(rejected)) && (
             <s-button onClick={() => location.reload()}>
               {t(
                 rejected
