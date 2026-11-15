@@ -1,6 +1,7 @@
 /** Deployment selects a closed reviewed target, never release authority.
  * Every consumer still independently reads and qualifies trusted release evidence. */
 export type RuntimeReleaseProfileName =
+  | 'native-scopes-e896db0a'
   | 'native-designer-d2002a28'
   | 'native-merchant-batch-a03b41ba'
   | 'native-a11y-quantity-9b5dbdee'
@@ -36,6 +37,11 @@ export type RuntimeReleaseProfileName =
   | 'lean-markets-7b17cd9'
   | 'lean-privacy-theme-23fd116';
 const profiles = Object.freeze({
+  'native-scopes-e896db0a': Object.freeze({
+    name: 'native-scopes-e896db0a' as const,
+    activeVersionRef: '1222703742977',
+    functionsSourceCommit: 'aa3b6166eb2b4679f27e1b7f128d914137ba8412',
+  }),
   'native-designer-d2002a28': Object.freeze({
     name: 'native-designer-d2002a28' as const,
     activeVersionRef: '1222232834049',

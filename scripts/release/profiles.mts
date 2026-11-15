@@ -80,6 +80,8 @@ import reviewCartCandidate from '../../deployment/m5-runtime/native-review-cart-
 };
 import reviewNavModules from '../../deployment/m5-runtime/native-review-nav-module-baseline.json' with { type: 'json' };
 import reviewNavBinding from '../../deployment/m5-runtime/native-review-nav-release-binding.json' with { type: 'json' };
+import scopesModules from '../../deployment/m5-runtime/native-scopes-module-baseline.json' with { type: 'json' };
+import scopesBinding from '../../deployment/m5-runtime/native-scopes-release-binding.json' with { type: 'json' };
 import selectedOnlyModules from '../../deployment/m5-runtime/native-selected-fixed-module-baseline.json' with {
   type: 'json',
 };
@@ -180,6 +182,16 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  // Same theme and Functions as designer; only the app_access scopes change (spec §6.1 baseline required).
+  'native-scopes-e896db0a': {
+    versionId: scopesBinding.versionId,
+    versionTag: scopesBinding.versionTag,
+    versionIds: scopesBinding.versionIds,
+    moduleHash: scopesBinding.moduleHash,
+    modules: scopesModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   // Same Functions as cart-line v3 and every non-theme module of merchant-batch; only theme assets change.
   'native-designer-d2002a28': {
     versionId: designerBinding.versionId,
