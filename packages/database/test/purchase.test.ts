@@ -11,7 +11,7 @@ import { sha256CanonicalJson } from '../src/hash/canonical.js';
 import { createDurableCore } from '../src/index.js';
 import { PgAcceptedQuoteRepository } from '../src/repositories/accepted-quote.js';
 import { createArtworkRepository } from '../src/repositories/artwork.js';
-import { createPurchaseRepository } from '../src/repositories/purchase.js';
+import { createPurchaseRepository, webhookIdParsingSupported } from '../src/repositories/purchase.js';
 import { createTestShop, openTestDatabase } from './support/postgres.js';
 import { purchaseFixture } from './support/purchase-fixture.js';
 
@@ -449,6 +449,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
     input: PurchaseObservation,
     topic = 'orders/paid',
     resource = 'Order',
+    numericId = false,
   ) {
     const domain = `${randomUUID()}.myshopify.com`,
       orderNumber = input.order.orderId.split('/').at(-1)!;
@@ -462,7 +463,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
       eventId: null,
       name: null,
       rawBody: Buffer.from(
-        JSON.stringify({ id: orderNumber, admin_graphql_api_id: `gid://shopify/${resource}/${orderNumber}` }),
+        // Shopify sends a numeric id; its exact text needs the parser's numeric source.
+        numericId
+          ? `{"id":${orderNumber},"admin_graphql_api_id":"gid://shopify/${resource}/${orderNumber}"}`
+          : JSON.stringify({ id: orderNumber, admin_graphql_api_id: `gid://shopify/${resource}/${orderNumber}` }),
       ),
     });
     await core.webhooks.withQueueHandoff(receipt.id, async () => 'enqueued');
@@ -693,6 +697,30 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
       for (const id of malformed.slice(0, 3)) expect(await repo.claimPurchaseReconciliationHint(id)).toBeNull();
       expect((await repo.selectPurchaseRecoveryHints(1000)).some((h) => malformed.includes(h.inboxId))).toBe(false);
     } finally {
+      await core.close();
+    }
+  });
+  it('a parser without numeric source text closes no receipt as unusable (#495 review)', async () => {
+    const input = await observation(),
+      repo = createPurchaseRepository(db),
+      core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+    const parse = JSON.parse;
+    try {
+      const id = await orderReceipt(core, input, 'orders/paid', 'Order', true);
+      await receivedDaysAgo([id], 8);
+      // Simulates a runtime whose reviver receives no `context` (no `context.source`).
+      JSON.parse = (text: string, reviver?: (this: unknown, key: string, value: unknown) => unknown) =>
+        parse(text, reviver && ((key, value) => reviver(key, value)));
+      expect(webhookIdParsingSupported()).toBe(false);
+      expect(await repo.selectPurchaseRecoveryHints(20)).not.toContainEqual(expect.objectContaining({ inboxId: id }));
+      expect(await receiptRow(id)).toEqual({ state: 'pending', attempts: 0, last_error_class: null });
+      JSON.parse = parse;
+      expect(webhookIdParsingSupported()).toBe(true);
+      expect((await repo.selectPurchaseRecoveryHints(20))[0]?.inboxId).toBe(id);
+      const claim = await repo.claimPurchaseReconciliationHint(id);
+      requirePurchase(await repo.reconcile({ ...input, inboxId: id, claimToken: claim!.claimToken }));
+    } finally {
+      JSON.parse = parse;
       await core.close();
     }
   });

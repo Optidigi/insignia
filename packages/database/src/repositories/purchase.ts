@@ -180,6 +180,32 @@ export function purchaseDesigns(record: Pick<PurchaseRecord, 'bindings'>) {
 function canonicalWebhookId(value: unknown): value is string {
   return typeof value === 'string' && /^[1-9][0-9]{0,19}$/.test(value) && BigInt(value) <= 18446744073709551615n;
 }
+const WEBHOOK_ID_SOURCE_UNAVAILABLE = 'WEBHOOK_ID_SOURCE_UNAVAILABLE';
+function parseWebhookBody(text: string) {
+  return JSON.parse(text, (key: string, value: unknown, context?: { source?: string }) => {
+    // Node 24 preserves the numeric lexeme here, before any rounded Number is consumed.
+    // Object-valued/string identifiers bypass this primitive-only extraction and are checked by the caller.
+    if ((key === 'id' || key === 'order_id') && typeof value === 'number') {
+      const source = context?.source;
+      if (source === undefined) throw new Error(WEBHOOK_ID_SOURCE_UNAVAILABLE);
+      if (!canonicalWebhookId(source)) throw new Error('INVALID_WEBHOOK_ID_LITERAL');
+      return source;
+    }
+    return value;
+  });
+}
+/**
+ * Whether this runtime's JSON parser exposes numeric source text, which reading a webhook's 64-bit ids exactly
+ * requires. Without it no order receipt can yield a hint; a purchase runner must refuse to start.
+ */
+export function webhookIdParsingSupported() {
+  try {
+    const body = parseWebhookBody('{"id":18446744073709551615,"order_id":9007199254740993}');
+    return body.id === '18446744073709551615' && body.order_id === '9007199254740993';
+  } catch {
+    return false;
+  }
+}
 export function createPurchaseRepository(db: Kysely<Database>) {
   /** null: the receipt is not (or no longer) hintable; 'unusable': it is, but its stored body can never yield a hint. */
   async function readHint(
@@ -212,17 +238,10 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       return 'unusable';
     let body: Record<string, unknown>;
     try {
-      body = JSON.parse(row.payload.toString('utf8'), (key: string, value: unknown, context?: { source?: string }) => {
-        // Node 24 preserves the numeric lexeme here, before any rounded Number is consumed.
-        // Object-valued/string identifiers bypass this primitive-only extraction and are checked below.
-        if ((key === 'id' || key === 'order_id') && typeof value === 'number') {
-          const source = context?.source;
-          if (!canonicalWebhookId(source)) throw new Error('INVALID_WEBHOOK_ID_LITERAL');
-          return source;
-        }
-        return value;
-      });
-    } catch {
+      body = parseWebhookBody(row.payload.toString('utf8'));
+    } catch (error) {
+      // Without the parser's source text no id can be read exactly; that says nothing about this body.
+      if (error instanceof Error && error.message === WEBHOOK_ID_SOURCE_UNAVAILABLE) return null;
       return 'unusable';
     }
     if (!body || typeof body !== 'object' || Array.isArray(body)) return 'unusable';

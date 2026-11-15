@@ -132,3 +132,21 @@ test('purchase webhook is processed only after an independent owned order read; 
   assert.equal(reconciled.order.orderId, hint.orderId);
   assert.equal(reconciled.exception, null);
 });
+
+test('the purchase runner refuses to start when the JSON parser cannot supply exact numeric ids', () => {
+  const parse = JSON.parse;
+  // Simulates a runtime whose reviver receives no `context` (no `context.source`).
+  JSON.parse = (text: string, reviver?: (this: unknown, key: string, value: unknown) => unknown) =>
+    parse(text, reviver && ((key, value) => reviver(key, value)));
+  try {
+    assert.throws(
+      () => createPurchaseRunner({ core: {} as DurableCore, orders: { read: async () => orderFixture() } }),
+      /PURCHASE_RUNNER_JSON_SOURCE_UNSUPPORTED/,
+    );
+  } finally {
+    JSON.parse = parse;
+  }
+  assert.doesNotThrow(() =>
+    createPurchaseRunner({ core: {} as DurableCore, orders: { read: async () => orderFixture() } }),
+  );
+});
