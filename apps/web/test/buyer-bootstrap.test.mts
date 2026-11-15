@@ -341,7 +341,6 @@ test('bootstrap admits an explicit recurring-only policy and rejects mixed meter
         billing: 'recurring-only',
         planHandle: 'synthetic-flat-only',
         policyId: 'synthetic-recurring',
-        shopId: 'gid://shopify/Shop/11',
         features: ['base'],
       },
     ],
@@ -355,7 +354,12 @@ test('bootstrap admits an explicit recurring-only policy and rejects mixed meter
     value.services,
   );
   assert.deepEqual(required(value.getComposition()).entitlementPolicy, policy);
-  for (const fields of [{ usageHandle: 'meter' }, { includedUsage: 100 }, { billing: 'unknown' }]) {
+  for (const fields of [
+    { usageHandle: 'meter' },
+    { includedUsage: 100 },
+    { billing: 'unknown' },
+    { shopId: 'gid://shopify/Shop/11' },
+  ]) {
     const rejected = seam();
     const invalid = { ...policy, plans: [{ ...policy.plans[0], ...fields }] };
     assert.equal(
