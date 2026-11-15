@@ -24,7 +24,6 @@ const policy: EntitlementPolicyConfig = {
       billing: 'recurring-only',
       planHandle: 'standard',
       policyId: 'lean-standard',
-      shopId: actor.shopId,
       features: ['configure'],
     },
   ],
@@ -131,30 +130,34 @@ test('installation change during provider observation rejects the entire display
     /installation changed/,
   );
 });
-test('zero recurring terms are development only for an explicitly shop-scoped recognized policy', async () => {
+test('zero recurring terms of a recognized plan are development terms on any shop; a priced plan is not', async () => {
   const rewrite = { ...actor, shop: 'development-example.myshopify.com', shopId: 'gid://shopify/Shop/3' };
   const read = createMerchantBillingReader({
     appId: 'gid://shopify/App/2',
-    policy: { ...policy, plans: policy.plans.map((plan) => ({ ...plan, shopId: rewrite.shopId })) },
+    policy,
     now: () => at,
     current: async () => {},
     read: async () => snapshot({ shopId: rewrite.shopId }),
   });
   const result = await read(rewrite);
   assert.equal(result.developmentTerms, true);
+  assert.equal(result.newActionsAllowed, true);
   assert.equal(
     result.managementUrl,
     'https://admin.shopify.com/store/development-example/charges/insignia-1/pricing_plans',
   );
-  const generalPolicy = { ...policy, plans: policy.plans.map(({ shopId, ...plan }) => plan) };
-  const general = createMerchantBillingReader({
-    appId: 'gid://shopify/App/2',
-    policy: generalPolicy,
-    now: () => at,
-    current: async () => {},
-    read: async () => snapshot(),
+  const priced = snapshot({
+    items: [
+      {
+        handle: 'standard',
+        price: { kind: 'flat', providerTypename: 'FlatRatePrice', currency: 'USD', amount: '49.99', active: true },
+        usage: null,
+        discount: null,
+      },
+    ],
   });
-  assert.equal((await general(actor)).developmentTerms, false);
+  assert.equal((await reader(priced)(actor)).developmentTerms, false);
+  assert.equal((await reader(snapshot({ items: [] }))(actor)).developmentTerms, false);
   assert.equal((await reader(snapshot())({ ...actor, shop: 'example.myshopify.com/evil' })).managementUrl, null);
 });
 test('normal production composition exposes the billing reader when existing provider policy is configured', async (t) => {

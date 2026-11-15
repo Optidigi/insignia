@@ -5,7 +5,6 @@
     {
       "planHandle": "insignia-standard-20261015",
       "policyId": "lean-v1-standard-all-features",
-      "shopId": "gid://shopify/Shop/105501393179",
       "features": [
         "m5.configure",
         "m5.required",

@@ -52,8 +52,6 @@ export type PlanFeaturePolicy = {
   billing: 'recurring-only';
   planHandle: string;
   policyId: string;
-  /** Optional exact authoritative provider Shop GID; restricts this policy's recognition. */
-  shopId?: string;
   features: readonly string[];
 };
 export type EntitlementPolicyConfig = {
@@ -95,13 +93,13 @@ export function validEntitlementPolicy(config: EntitlementPolicyConfig): boolean
       !plan ||
       !plan.planHandle ||
       !plan.policyId ||
-      ('shopId' in plan &&
-        (typeof plan.shopId !== 'string' || !/^gid:\/\/shopify\/Shop\/[1-9][0-9]*$/.test(plan.shopId))) ||
       !Array.isArray(plan.features) ||
       plan.features.some((feature: string) => !feature)
     )
       return false;
-    if (plan.billing !== 'recurring-only' || 'usageHandle' in plan || 'includedUsage' in plan) return false;
+    // A plan applies to every shop subscribed to its handle; the read is already bound to the requesting shop.
+    if (plan.billing !== 'recurring-only' || 'usageHandle' in plan || 'includedUsage' in plan || 'shopId' in plan)
+      return false;
     if (handles.has(plan.planHandle) || ids.has(plan.policyId)) return false;
     handles.add(plan.planHandle);
     ids.add(plan.policyId);
@@ -169,7 +167,7 @@ export function projectEntitlement(
   );
   if (matched.length !== 1) return base;
   const plan = matched[0];
-  if (!plan || (plan.shopId !== undefined && plan.shopId !== snapshot.shopId)) return base;
+  if (!plan) return base;
   if (
     snapshot.billingPeriod !== 'EVERY_30_DAYS' ||
     snapshot.items.length !== 1 ||

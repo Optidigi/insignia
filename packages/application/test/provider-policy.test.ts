@@ -62,7 +62,6 @@ const recurring: EntitlementPolicyConfig = {
       planHandle: 'plan.flat-only',
       policyId: 'flat-only',
       features: ['quote', 'advanced-art'],
-      shopId: 'gid://shopify/Shop/456',
     },
   ],
 };
@@ -246,34 +245,14 @@ test('binds provider read only after M3 verifies exact active tenant, provider S
     bindProviderSubscription(raw, context(at), { getActiveProviderScope: async () => null }),
   ).rejects.toThrow(/identity/);
 });
-test('explicit malformed provider shop restrictions reject configuration rather than becoming unscoped', () => {
-  for (const shopId of [
-    undefined,
-    null,
-    456,
-    true,
-    {},
-    [],
-    '',
-    '456',
-    'fixture.myshopify.com',
-    'gid://shopify/App/456',
-    'gid://shopify/Shop/0',
-    'gid://shopify/Shop/0456',
-    'gid://shopify/Shop/-456',
-    'gid://shopify/shop/456',
-    'gid://shopify/Shop/456 ',
-    'gid://shopify/Shop/456?extra',
-    'gid://shopify/Shop/456\n',
-    'gid://shopify/Shop/456\r',
-    'gid://shopify/Shop/456\r\n',
-  ]) {
+test('a plan entry cannot carry a shop restriction; recognition applies to every shop on the plan', () => {
+  for (const shopId of ['gid://shopify/Shop/456', undefined, '']) {
     // Invalid external policy data intentionally crosses the typed boundary to verify runtime rejection.
-    const malformed = {
+    const restricted = {
       ...recurring,
       plans: recurring.plans.map((plan) => ({ ...plan, shopId })),
     } as unknown as EntitlementPolicyConfig;
-    expect(() => projectEntitlement(snapshot(), malformed, context(at))).toThrow(
+    expect(() => projectEntitlement(snapshot(), restricted, context(at))).toThrow(
       'Invalid entitlement policy configuration',
     );
   }
@@ -296,16 +275,19 @@ test('scheduled cancellation retains current access until its actual provider bo
   expect(projectEntitlement(null, recurring, context(at))).toMatchObject({ freshness: 'missing', features: [] });
 });
 
-test('a different verified shop cannot borrow the plan and reauthorization requires a fresh bound read', () => {
+test('another shop needs its own bound read of the plan and reauthorization requires a fresh bound read', () => {
   const other = { ...context(at), shopId: 'gid://shopify/Shop/999', tenantShopId: 'tenant-2' };
-  expect(
-    projectEntitlement(snapshot({ shopId: other.shopId, tenantShopId: other.tenantShopId }), recurring, other),
-  ).toMatchObject({
-    freshness: 'fresh',
+  // This shop's read never grants another shop anything.
+  expect(projectEntitlement(snapshot(), recurring, other)).toMatchObject({
+    freshness: 'stale',
     recognizedPolicyId: null,
     features: [],
     qualifyingUsageDisposition: 'DENY',
   });
+  // The other shop's own current subscription to the same plan is recognized.
+  expect(
+    projectEntitlement(snapshot({ shopId: other.shopId, tenantShopId: other.tenantShopId }), recurring, other),
+  ).toMatchObject({ freshness: 'fresh', recognizedPolicyId: 'flat-only', features: ['quote', 'advanced-art'] });
   expect(projectEntitlement(snapshot(), recurring, { ...context(at), installationGeneration: '8' }).features).toEqual(
     [],
   );

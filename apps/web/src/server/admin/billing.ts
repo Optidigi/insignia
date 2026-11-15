@@ -54,13 +54,8 @@ export function createMerchantBillingReader(ports: {
       newActionsAllowed: recognized && projection.qualifyingUsageDisposition === 'NOT_METERED',
       standardPrice: { amount: '49.99', currency: 'USD', intervalDays: 30 },
       recurringPrice,
-      developmentTerms:
-        recognized &&
-        ports.policy.plans.some(
-          (plan) => plan.policyId === projection.recognizedPolicyId && plan.shopId === actor.shopId,
-        ) &&
-        recurringPrice?.currency === 'USD' &&
-        /^0(?:\.0+)?$/.test(recurringPrice.amount),
+      // Shopify charges development stores $0 for a recognized paid plan.
+      developmentTerms: recognized && recurringPrice?.currency === 'USD' && /^0(?:\.0+)?$/.test(recurringPrice.amount),
       managementUrl: managementUrl(actor.shop),
     };
   };

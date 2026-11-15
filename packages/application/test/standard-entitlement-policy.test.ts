@@ -63,14 +63,20 @@ test('exact private Standard plan enables all released features without metered 
   });
 });
 
+test('candidate recognizes the plan for any shop with its own bound read', () => {
+  const otherShop = { ...identity, shopId: 'gid://shopify/Shop/999', tenantShopId: 'other-tenant' };
+  expect(
+    projectEntitlement({ ...source('insignia-standard-20261015', true), ...otherShop }, candidate, {
+      ...otherShop,
+      now,
+    }),
+  ).toMatchObject({ recognizedPolicyId: 'lean-v1-standard-all-features', trial: true });
+});
+
 test('candidate keeps shop, generation, freshness and complete subscription membership fences', () => {
   const valid = source('insignia-standard-20261015', true);
-  const foreignShop = 'gid://shopify/Shop/999';
   const cases: [ProviderSubscriptionSnapshot, typeof context][] = [
-    [
-      { ...valid, shopId: foreignShop },
-      { ...context, shopId: foreignShop },
-    ],
+    [valid, { ...context, shopId: 'gid://shopify/Shop/999' }],
     [valid, { ...context, installationGeneration: '2' }],
     [valid, { ...context, now: new Date(now.getTime() + candidate.maxAgeMs + 1) }],
     [source('unrecognized-plan', true), context],
