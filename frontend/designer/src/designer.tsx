@@ -1029,9 +1029,13 @@ function DesignerSession({
       showValidation();
       return;
     }
-    dispatch({ type: 'step-advanced' });
     // The footer button stays where it was; move focus to the new step so Tab reaches its content first (#502).
-    window.requestAnimationFrame(() => panelRef.current?.focus({ preventScroll: true }));
+    // Only while focus is still on the control that advanced: never take it from wherever the buyer moved it since.
+    const advancedFrom = document.activeElement;
+    dispatch({ type: 'step-advanced' });
+    window.requestAnimationFrame(() => {
+      if (document.activeElement === advancedFrom) panelRef.current?.focus({ preventScroll: true });
+    });
   }
   function addToCart() {
     if (artworkOnly) return;
