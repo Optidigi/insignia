@@ -31,6 +31,7 @@ function fixture(kind: 'reserved' | 'existing' | 'busy' | 'unresolved' | 'inacti
     dispatchAcquisition: vi.fn<OfflineAcquisitionPort['dispatchAcquisition']>(async () => true),
     completeAcquisition: vi.fn<OfflineAcquisitionPort['completeAcquisition']>(async () => 'installed'),
     rejectAcquisition: vi.fn<OfflineAcquisitionPort['rejectAcquisition']>(async () => true),
+    settleUnresolved: vi.fn<OfflineAcquisitionPort['settleUnresolved']>(async () => {}),
   };
   const exchange = vi.fn(async () => pair);
   return {
@@ -78,6 +79,12 @@ describe('verified merchant bootstrap to durable offline credentials', () => {
     expect(await f.run()).toBe('unresolved');
     expect(f.credentials.rejectAcquisition).not.toHaveBeenCalled();
     expect(f.credentials.completeAcquisition).not.toHaveBeenCalled();
+    // The finished-but-unknown exchange ends its in-flight lease, so later callers see unresolved, not busy.
+    expect(f.credentials.settleUnresolved).toHaveBeenCalledWith({
+      shopId: identity.shopId,
+      installationGeneration: identity.installationGeneration,
+      attemptId: 'attempt-1',
+    });
     f.credentials.reserveAcquisition.mockResolvedValue({
       kind: 'unresolved',
     });

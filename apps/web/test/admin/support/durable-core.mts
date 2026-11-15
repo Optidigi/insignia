@@ -294,6 +294,7 @@ export function fixtureCore(overrides: Overrides = {}): DurableCore {
     credentials: {
       readUsable: unexpected,
       reserveAcquisition: unexpected,
+      settleUnresolved: unexpected,
       dispatchAcquisition: unexpected,
       completeAcquisition: unexpected,
       rejectAcquisition: unexpected,

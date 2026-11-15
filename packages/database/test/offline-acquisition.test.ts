@@ -72,6 +72,23 @@ describe('durable offline credential acquisition', () => {
       await Promise.all([firstClosed ? undefined : first.close(), peer.close(), restarted?.close()]);
     }
   });
+  it('reports an exchange still running as busy and a settled unknown outcome as unresolved at once', async () => {
+    const c = core();
+    try {
+      const input = await fixture(c);
+      const reserved = await c.credentials.reserveAcquisition(input);
+      if (reserved.kind !== 'reserved') throw new Error('No reservation');
+      const attempt = { ...input, attemptId: reserved.attemptId };
+      expect(await c.credentials.dispatchAcquisition(attempt)).toBe(true);
+      // Concurrent first requests after an install: the exchange is still in flight.
+      expect(await c.credentials.reserveAcquisition(input)).toEqual({ kind: 'busy' });
+      await c.credentials.settleUnresolved(attempt);
+      expect(await c.credentials.reserveAcquisition(input)).toEqual({ kind: 'unresolved' });
+      expect(await c.credentials.dispatchAcquisition(attempt)).toBe(false);
+    } finally {
+      await c.close();
+    }
+  });
   it('installs both encrypted values atomically and excludes direct install and refresh while dispatched', async () => {
     const c = core(),
       db = await openTestDatabase();

@@ -360,6 +360,21 @@ export function createShopCredentialRepository(database: Kysely<Database>, keys?
       });
     },
 
+    async settleUnresolved(input: AcquisitionAttempt): Promise<void> {
+      await database.transaction().execute(async (tx) => {
+        const now = await databaseNow(tx);
+        await tx
+          .updateTable('shop_credential_acquisitions')
+          .set({ reserved_until: now })
+          .where('attempt_id', '=', input.attemptId)
+          .where('shop_id', '=', input.shopId)
+          .where('installation_generation', '=', input.installationGeneration)
+          .where('state', '=', 'dispatched')
+          .where('reserved_until', '>', now)
+          .execute();
+      });
+    },
+
     async rejectAcquisition(input: AcquisitionAttempt): Promise<boolean> {
       return database.transaction().execute(async (tx) => {
         if (!(await activeInstallation(tx, input))) return false;
