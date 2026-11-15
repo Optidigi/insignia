@@ -49,6 +49,17 @@ test('owner purchase grant rejects privileged flags, inherited roles, ownership 
     await client.query('ROLLBACK');
     await client.query('REVOKE INSERT(record_id) ON trusted_release_records FROM PUBLIC');
     await client.query(script);
+    // #491: a failed receipt's backoff is written with its lease release.
+    assert.deepEqual(
+      (
+        await client.query(
+          `SELECT has_column_privilege($1,'public.inbox_messages','next_attempt_at','UPDATE') AS backoff,
+            has_column_privilege($1,'public.inbox_messages','payload','UPDATE') AS payload`,
+          [role],
+        )
+      ).rows[0],
+      { backoff: true, payload: false },
+    );
     await client.query(`SET ROLE ${role}`);
     await client.query('SELECT * FROM purchase_orders LIMIT 1');
     await assert.rejects(client.query('DELETE FROM purchase_orders'), /permission denied/);
