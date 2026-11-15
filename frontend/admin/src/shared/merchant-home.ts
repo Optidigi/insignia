@@ -130,7 +130,7 @@ export interface HomeNotice {
 
 export type MerchantHomeModel =
   | { state: 'loading' }
-  | { state: 'unavailable'; reason?: 'session-lost' | 'busy'; reopenHref?: string }
+  | { state: 'unavailable'; reason?: 'session-lost' | 'busy' | 'permission'; reopenHref?: string }
   | {
       state: 'ready';
       products: HomeProductsPanel;

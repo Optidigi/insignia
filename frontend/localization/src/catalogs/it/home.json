@@ -22,7 +22,10 @@
     "heading": "Apri Insignia in Shopify",
     "body": "Apri l'app dal pannello di controllo Shopify per continuare.",
     "action": "Apri in Shopify",
-    "sessionLost": "La sessione Shopify Admin è terminata. Apri l'app da Shopify Admin per continuare."
+    "sessionLost": "La sessione Shopify Admin è terminata. Apri l'app da Shopify Admin per continuare.",
+    "permissionHeading": "Insignia ha bisogno di accedere ai tuoi prodotti",
+    "permissionBody": "Approva l'accesso di Insignia in Shopify e assicurati che il tuo account collaboratore possa visualizzare e modificare i prodotti. Poi ricarica questa pagina.",
+    "permissionAction": "Controlla le autorizzazioni dell'app"
   },
   "failure": {
     "productsHeading": "Impossibile caricare i prodotti",

@@ -22,7 +22,10 @@
     "heading": "Abre Insignia en Shopify",
     "body": "Abre la aplicación desde el panel de control de Shopify para continuar.",
     "action": "Abrir en Shopify",
-    "sessionLost": "Tu sesión del panel de control de Shopify ha caducado. Abre la aplicación desde Shopify para continuar."
+    "sessionLost": "Tu sesión del panel de control de Shopify ha caducado. Abre la aplicación desde Shopify para continuar.",
+    "permissionHeading": "Insignia necesita acceso a tus productos",
+    "permissionBody": "Aprueba el acceso de Insignia en Shopify y asegúrate de que tu cuenta de empleado pueda ver y editar productos. Después, vuelve a cargar esta página.",
+    "permissionAction": "Comprobar permisos de la app"
   },
   "failure": {
     "productsHeading": "No se pudieron cargar los productos",

@@ -22,7 +22,10 @@
     "heading": "Insignia openen in Shopify",
     "body": "Open Insignia via Shopify-beheercentrum om verder te gaan.",
     "action": "Openen in Shopify",
-    "sessionLost": "Je Shopify-beheerderssessie is verlopen. Open Insignia opnieuw via Shopify-beheercentrum om verder te gaan."
+    "sessionLost": "Je Shopify-beheerderssessie is verlopen. Open Insignia opnieuw via Shopify-beheercentrum om verder te gaan.",
+    "permissionHeading": "Insignia heeft toegang tot je producten nodig",
+    "permissionBody": "Geef Insignia toegang in Shopify en zorg dat je personeelsaccount producten kan bekijken en bewerken. Laad deze pagina daarna opnieuw.",
+    "permissionAction": "App-machtigingen controleren"
   },
   "failure": {
     "productsHeading": "Producten konden niet worden geladen",

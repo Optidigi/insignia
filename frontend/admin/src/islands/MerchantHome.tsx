@@ -692,24 +692,30 @@ export default function MerchantHome({
     return (
       <s-page heading="Insignia" inlineSize="base">
         <section ref={homeRegion} tabIndex={-1} aria-label={t('home:sections.home')}>
-          <s-section accessibilityLabel={t('home:unavailable.heading')}>
+          <s-section
+            accessibilityLabel={t(
+              model.reason === 'permission' ? 'home:unavailable.permissionHeading' : 'home:unavailable.heading',
+            )}
+          >
             <EmptyState
               icon="store"
-              heading={t('home:unavailable.heading')}
+              heading={t(model.reason === 'permission' ? 'home:unavailable.permissionHeading' : 'home:unavailable.heading')}
               action={
                 model.reopenHref ? (
                   <s-button variant="primary" href={model.reopenHref}>
-                    {t('home:unavailable.action')}
+                    {t(model.reason === 'permission' ? 'home:unavailable.permissionAction' : 'home:unavailable.action')}
                   </s-button>
                 ) : undefined
               }
             >
               {t(
-                model.reason === 'session-lost'
-                  ? 'home:unavailable.sessionLost'
-                  : model.reason === 'busy'
-                    ? 'admin-shell:errors.shopifyBusy'
-                    : 'home:unavailable.body',
+                model.reason === 'permission'
+                  ? 'home:unavailable.permissionBody'
+                  : model.reason === 'session-lost'
+                    ? 'home:unavailable.sessionLost'
+                    : model.reason === 'busy'
+                      ? 'admin-shell:errors.shopifyBusy'
+                      : 'home:unavailable.body',
               )}
             </EmptyState>
           </s-section>

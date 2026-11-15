@@ -22,7 +22,10 @@
     "heading": "Insignia in Shopify öffnen",
     "body": "Öffnen Sie die App über Ihren Shopify-Adminbereich, um fortzufahren.",
     "action": "In Shopify öffnen",
-    "sessionLost": "Ihre Shopify-Admin-Sitzung ist abgelaufen. Öffnen Sie die App erneut über den Shopify-Adminbereich, um fortzufahren."
+    "sessionLost": "Ihre Shopify-Admin-Sitzung ist abgelaufen. Öffnen Sie die App erneut über den Shopify-Adminbereich, um fortzufahren.",
+    "permissionHeading": "Insignia benötigt Zugriff auf Ihre Produkte",
+    "permissionBody": "Genehmigen Sie den Zugriff von Insignia in Shopify und stellen Sie sicher, dass Ihr Mitarbeiterkonto Produkte ansehen und bearbeiten darf. Laden Sie diese Seite danach neu.",
+    "permissionAction": "App-Berechtigungen prüfen"
   },
   "failure": {
     "productsHeading": "Produkte konnten nicht geladen werden",

@@ -23,6 +23,12 @@ import {
 import { type ThemeSetupStatus, themeSetupStatus, unknownThemeSetup } from '../shared/storefront-setup';
 import MerchantHome from './MerchantHome';
 
+/** A 403 is a missing permission (app scope or staff access), not a lost session or a transient failure. */
+function guidanceFailureFrom(error: unknown): 'failed' | 'busy' | 'restricted' {
+  if (isShopifyBusy(error)) return 'busy';
+  return error && typeof error === 'object' && 'status' in error && error.status === 403 ? 'restricted' : 'failed';
+}
+
 /** Composition of existing authenticated reads. This does not create an aggregation or task-authority endpoint. */
 function MerchantHomeContainer() {
   const [products, setProducts] = useState<HomeProductsPanel>({ state: 'loading' });
@@ -40,8 +46,11 @@ function MerchantHomeContainer() {
   guidanceRef.current = guidance;
   const guidanceQueue = useRef<Promise<void>>(Promise.resolve());
   const preferences = useMemo(() => createMerchantPreferencesClient(), []);
-  /** One owner for the guidance read/write outcome: `busy` is Shopify throttling, which a retry can clear. */
-  const [guidanceFailure, setGuidanceFailure] = useState<null | 'failed' | 'busy'>(null);
+  /**
+   * One owner for the guidance read/write outcome: `busy` is Shopify throttling, which a retry can clear;
+   * `restricted` is a 403 (the app or this staff account lacks product access), which reopening cannot clear.
+   */
+  const [guidanceFailure, setGuidanceFailure] = useState<null | 'failed' | 'busy' | 'restricted'>(null);
   const [guidanceEditable, setGuidanceEditable] = useState(false);
   const guidanceDismissed = guidance.dismissed;
   const guidanceCompletedSteps = guidance.completedSteps;
@@ -104,7 +113,7 @@ function MerchantHomeContainer() {
         setGuidanceEditable(value.canEdit === true);
         setGuidanceFailure(null);
       } catch (error) {
-        if (mounted.current) setGuidanceFailure(isShopifyBusy(error) ? 'busy' : 'failed');
+        if (mounted.current) setGuidanceFailure(guidanceFailureFrom(error));
       }
     }
     let departed = false;
@@ -204,20 +213,22 @@ function MerchantHomeContainer() {
         dispatchGuidance({ type: 'preferences-loaded', ...saved.guidance });
         setGuidanceFailure(null);
       } catch (error) {
-        if (mounted.current) setGuidanceFailure(isShopifyBusy(error) ? 'busy' : 'failed');
+        if (mounted.current) setGuidanceFailure(guidanceFailureFrom(error));
       }
     });
   }
   const model: MerchantHomeModel = sessionLost || guidanceFailure
-    ? {
-        state: 'unavailable',
-        reopenHref: '/admin/home',
-        ...(sessionLost
-          ? { reason: 'session-lost' as const }
-          : guidanceFailure === 'busy'
-            ? { reason: 'busy' as const }
-            : {}),
-      }
+    ? sessionLost || guidanceFailure !== 'restricted'
+      ? {
+          state: 'unavailable',
+          reopenHref: '/admin/home',
+          ...(sessionLost
+            ? { reason: 'session-lost' as const }
+            : guidanceFailure === 'busy'
+              ? { reason: 'busy' as const }
+              : {}),
+        }
+      : { state: 'unavailable', reason: 'permission', reopenHref: '/admin/settings/permissions' }
     : {
         state: 'ready',
         products: products.state === 'ready' ? { ...products, canConfigure: !restrictedPlan } : products,
