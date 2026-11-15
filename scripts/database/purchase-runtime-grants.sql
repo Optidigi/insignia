@@ -44,7 +44,8 @@ GRANT SELECT(asset_id,shop_id,state,expires_at) ON public.artwork_assets TO insi
 -- Invoker trigger enforce_purchase_binding checks exactly these identifiers.
 GRANT SELECT(set_id,quote_id,shop_id,installation_generation) ON public.quote_authorization_sets TO insignia_queue_consume;
 GRANT SELECT, INSERT, UPDATE ON public.purchase_reconciliation_cursors TO insignia_queue_consume;
-GRANT UPDATE(lease_owner,lease_until) ON public.inbox_messages TO insignia_queue_consume;
+-- #491 (schema 69): a failed order receipt records when its next automated attempt is due.
+GRANT UPDATE(lease_owner,lease_until,next_attempt_at) ON public.inbox_messages TO insignia_queue_consume;
 -- Reconciliation may refresh verified display labels, never customer identity.
 GRANT SELECT, INSERT, UPDATE ON public.purchase_order_labels TO insignia_queue_consume;
 GRANT SELECT(shop_id,order_id) ON public.customer_order_erasure_fences TO insignia_queue_consume;

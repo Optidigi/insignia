@@ -19,6 +19,7 @@ test('release preparation precedes the independent order read and preparation fa
   const calls: string[] = [];
   const hint = {
     attempts: 0,
+    nextAttemptAt: null,
     apiVersion: '2026-07',
     topic: 'orders/create',
     status: 'pending',
@@ -64,6 +65,7 @@ test('purchase webhook is processed only after an independent owned order read; 
   const calls: (Observation | Failure)[] = [];
   const hint = {
     attempts: 0,
+    nextAttemptAt: null,
     apiVersion: '2026-07',
     topic: 'orders/create',
     status: 'pending',

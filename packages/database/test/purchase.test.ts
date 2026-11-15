@@ -435,6 +435,179 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
     expect(offer?.payloadCollectedAt).toBe('2026-10-01T09:00:00.000Z');
     expect(offer?.payloadExpiresAt).toBe('2026-10-08T09:00:00.000Z');
   });
+  /** Test clock: the receipt's backoff has elapsed (the database clock cannot be advanced). */
+  async function retryDue(inboxId: string) {
+    await sql`UPDATE inbox_messages SET next_attempt_at=clock_timestamp() WHERE id=${inboxId}::uuid AND next_attempt_at IS NOT NULL`.execute(
+      db,
+    );
+  }
+  const databaseNow = async () =>
+    (await sql<{ now: Date }>`SELECT clock_timestamp() AS now`.execute(db)).rows[0]!.now.getTime();
+  /** A confirmed signed order receipt for the observed order, ready for its first attempt. */
+  async function orderReceipt(
+    core: ReturnType<typeof createDurableCore>,
+    input: PurchaseObservation,
+    topic = 'orders/paid',
+  ) {
+    const domain = `${randomUUID()}.myshopify.com`,
+      orderNumber = input.order.orderId.split('/').at(-1)!;
+    await sql`UPDATE shops SET shop_domain=${domain} WHERE shop_id=${input.order.shopId}`.execute(db);
+    const receipt = await core.webhooks.receive({
+      shopDomain: domain,
+      topic,
+      apiVersion: '2026-07',
+      deliveryId: randomUUID(),
+      triggeredAt: new Date(),
+      eventId: null,
+      name: null,
+      rawBody: Buffer.from(
+        JSON.stringify({ id: orderNumber, admin_graphql_api_id: `gid://shopify/Order/${orderNumber}` }),
+      ),
+    });
+    await core.webhooks.withQueueHandoff(receipt.id, async () => 'enqueued');
+    return receipt.id;
+  }
+  const selected = async (repo: ReturnType<typeof createPurchaseRepository>, inboxId: string) =>
+    (await repo.selectPurchaseRecoveryHints(1000)).some((hint) => hint.inboxId === inboxId);
+  async function failAttempt(repo: ReturnType<typeof createPurchaseRepository>, inboxId: string) {
+    const claim = await repo.claimPurchaseReconciliationHint(inboxId);
+    expect(claim).not.toBeNull();
+    await repo.failPurchaseReconciliation({
+      inboxId,
+      claimToken: claim!.claimToken,
+      failureClass: 'PURCHASE_RECONCILIATION_UNAVAILABLE',
+    });
+    return claim!.attempts;
+  }
+  const receiptRow = async (inboxId: string) =>
+    (
+      await sql<{
+        state: string;
+        attempts: number;
+        last_error_class: string | null;
+      }>`SELECT state,attempts,last_error_class FROM inbox_messages WHERE id=${inboxId}::uuid`.execute(db)
+    ).rows[0];
+  // Spec §11: exponential backoff from 5 seconds, cap 15 minutes, up to 12 automated attempts.
+  // Delay in seconds after failed attempt 1..11; the 12th failure ends automated retries.
+  const RETRY_DELAYS = [5, 10, 20, 40, 80, 160, 320, 640, 900, 900, 900];
+  it('retries a failing order receipt from 5 s doubling to a 15-minute cap and stops after 12 attempts (#491)', async () => {
+    const input = await observation(),
+      repo = createPurchaseRepository(db),
+      core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+    try {
+      const id = await orderReceipt(core, input);
+      const delays: number[] = [];
+      for (let attempt = 1; attempt <= 12; attempt++) {
+        expect(await selected(repo, id)).toBe(true);
+        const failedAt = await databaseNow();
+        expect(await failAttempt(repo, id)).toBe(attempt);
+        if (attempt === 12) break;
+        const hint = await repo.getPurchaseReconciliationHint(id);
+        expect(hint).toMatchObject({ status: 'failed', attempts: attempt });
+        const delay = Date.parse(hint!.nextAttemptAt!) - failedAt;
+        expect(delay).toBeLessThan(RETRY_DELAYS[attempt - 1]! * 1000 + 1000);
+        delays.push(Math.floor(delay / 1000));
+        // Not due yet: neither the recovery pass nor a queue retry may claim it.
+        expect(await selected(repo, id)).toBe(false);
+        expect(await repo.claimPurchaseReconciliationHint(id)).toBeNull();
+        await retryDue(id);
+      }
+      expect(delays).toEqual(RETRY_DELAYS);
+      // Budget spent: the receipt stays failed, is never reselected and is left to discovery.
+      await retryDue(id);
+      expect(await selected(repo, id)).toBe(false);
+      expect(await repo.claimPurchaseReconciliationHint(id)).toBeNull();
+      expect(await repo.getPurchaseReconciliationHint(id)).toBeNull();
+      expect(await receiptRow(id)).toEqual({
+        state: 'failed',
+        attempts: 12,
+        last_error_class: 'PURCHASE_RECONCILIATION_UNAVAILABLE',
+      });
+    } finally {
+      await core.close();
+    }
+  });
+  it('a success between failures ends the receipt retries (#491)', async () => {
+    const input = await observation(),
+      repo = createPurchaseRepository(db),
+      core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+    try {
+      const id = await orderReceipt(core, input);
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        await failAttempt(repo, id);
+        await retryDue(id);
+      }
+      const claim = await repo.claimPurchaseReconciliationHint(id);
+      expect(claim?.attempts).toBe(4);
+      requirePurchase(await repo.reconcile({ ...input, inboxId: id, claimToken: claim!.claimToken }));
+      expect(await receiptRow(id)).toEqual({ state: 'processed', attempts: 4, last_error_class: null });
+      await retryDue(id);
+      expect(await selected(repo, id)).toBe(false);
+      expect(await repo.claimPurchaseReconciliationHint(id)).toBeNull();
+    } finally {
+      await core.close();
+    }
+  });
+  it('a receipt retried after discovery recorded its order completes without a second write (#491)', async () => {
+    const input = await observation(),
+      repo = createPurchaseRepository(db),
+      core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+    try {
+      const id = await orderReceipt(core, input);
+      await failAttempt(repo, id);
+      await retryDue(id);
+      await failAttempt(repo, id);
+      // Meanwhile recurring discovery reconciles the same order without a receipt.
+      const discovered = requirePurchase(await repo.reconcile(input));
+      // The receipt still waits for its backoff, then processes against the recorded facts.
+      expect(await repo.claimPurchaseReconciliationHint(id)).toBeNull();
+      await retryDue(id);
+      const claim = await repo.claimPurchaseReconciliationHint(id);
+      expect(claim?.attempts).toBe(3);
+      const retried = requirePurchase(await repo.reconcile({ ...input, inboxId: id, claimToken: claim!.claimToken }));
+      expect(retried.purchaseId).toBe(discovered.purchaseId);
+      expect(retried.observations).toHaveLength(1);
+      expect((await receiptRow(id))?.state).toBe('processed');
+      const orders = await sql<{
+        count: string;
+      }>`SELECT count(*)::text AS count FROM purchase_orders WHERE shop_id=${input.order.shopId} AND order_id=${input.order.orderId}`.execute(
+        db,
+      );
+      expect(orders.rows[0]?.count).toBe('1');
+    } finally {
+      await core.close();
+    }
+  });
+  it('an exhausted receipt stays failed when discovery records its order and alerts after erasure only until that evidence exists (#491, #488)', async () => {
+    const input = await observation(),
+      repo = createPurchaseRepository(db),
+      core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+    try {
+      const id = await orderReceipt(core, input, 'orders/create');
+      for (let attempt = 1; attempt <= 12; attempt++) {
+        await failAttempt(repo, id);
+        await retryDue(id);
+      }
+      expect(await selected(repo, id)).toBe(false);
+      await sql`UPDATE inbox_messages SET purge_after=clock_timestamp()+interval '20 milliseconds' WHERE id=${id}::uuid`.execute(
+        db,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 40));
+      expect((await core.webhooks.eraseExpiredPayloads(100)).blockedUnsupportedIds).toContain(id);
+      requirePurchase(await repo.reconcile(input));
+      expect((await core.webhooks.eraseExpiredPayloads(100)).blockedUnsupportedIds).not.toContain(id);
+      // No fabricated processing and no further retry: still failed with its spent budget.
+      expect(await receiptRow(id)).toEqual({
+        state: 'failed',
+        attempts: 12,
+        last_error_class: 'PURCHASE_RECONCILIATION_UNAVAILABLE',
+      });
+      expect(await selected(repo, id)).toBe(false);
+      expect(await repo.claimPurchaseReconciliationHint(id)).toBeNull();
+    } finally {
+      await core.close();
+    }
+  });
   it('uses signed bodies only as bounded read hints, reserves durable attempts and commits inbox completion with facts', async () => {
     const input = await observation(),
       repo = createPurchaseRepository(db),
@@ -496,6 +669,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
           claimToken: claim!.claimToken,
           failureClass: 'PROVIDER_UNAVAILABLE',
         });
+        await retryDue(receipt.id);
       }
       const final = await repo.claimPurchaseReconciliationHint(receipt.id);
       expect(final?.attempts).toBe(5);

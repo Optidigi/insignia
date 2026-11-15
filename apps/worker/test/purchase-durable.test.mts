@@ -74,6 +74,15 @@ test('real durable inbox retains failed independent reads and atomically complet
     assert.equal(required(await core.webhooks.getById(received.id)).state, 'failed');
     assert.equal(required(await core.purchases.getPurchaseReconciliationHint(received.id)).attempts, 1);
     failed = false;
+    // #491: the retry waits for its backoff (5 s after the first failure); a queue retry before then defers.
+    assert.equal(await runner.processInbox(received.id), 'deferred');
+    assert.equal(required(await core.purchases.getPurchaseReconciliationHint(received.id)).attempts, 1);
+    const owner = new Pool({ connectionString: process.env.DATABASE_URL });
+    try {
+      await owner.query('UPDATE inbox_messages SET next_attempt_at=clock_timestamp() WHERE id=$1', [received.id]);
+    } finally {
+      await owner.end();
+    }
     await runner.processInbox(received.id);
     assert.equal(required(await core.webhooks.getById(received.id)).state, 'processed');
     const purchases = await core.purchases.list({ shopId, installationGeneration: '1', kind: 'merchant' });

@@ -241,6 +241,7 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
       refunds: [],
     };
     let checkoutReady = true;
+    let readUnavailable = false;
     const runner = createPurchaseRunner({
       core: runtime,
       // Explicit local admission double: real broker/provider qualification is not asserted.
@@ -252,6 +253,7 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
       },
       orders: {
         async read(target) {
+          if (readUnavailable) throw new Error('provider unavailable');
           assert.equal(target.shopId, fixture.shopId);
           const acquired = await credentials.acquire(target);
           assert.equal(acquired.kind, 'usable');
@@ -472,6 +474,16 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
     assert.equal(required(first.bindings[0]).designPayload, null);
     assert.equal(required(await required(runtime).webhooks.getById(receipt)).state, 'processed');
     assert.equal(await runner.processInbox(receipt), 'deferred');
+    // #491: the queue LOGIN records a failed receipt's backoff; a retry before it is due defers.
+    readUnavailable = true;
+    const delayed = await deliver('906');
+    await assert.rejects(runner.processInbox(delayed), /PURCHASE_RECONCILIATION_UNAVAILABLE/);
+    readUnavailable = false;
+    const waiting = required(await required(runtime).purchases.getPurchaseReconciliationHint(delayed));
+    assert.equal(waiting.status, 'failed');
+    assert.equal(waiting.attempts, 1);
+    assert.ok(Date.parse(required(waiting.nextAttemptAt)) > Date.now());
+    assert.equal(await runner.processInbox(delayed), 'deferred');
     assert.equal(await required(runtime).purchases.get({ ...scope, shopId: other.shopId }, first.purchaseId), null);
     assert.equal(
       await required(runtime).purchases.getOffer({

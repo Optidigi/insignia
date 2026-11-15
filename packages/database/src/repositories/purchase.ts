@@ -23,7 +23,17 @@ export type PurchaseReconciliationHint = {
   topic: string;
   status: string;
   attempts: number;
+  /** When a failed receipt is next due (ISO); null when due now. */
+  nextAttemptAt: string | null;
 };
+/**
+ * Spec §11 default transient policy for an order receipt: 12 automated attempts, waiting 5 s after the
+ * first failure and doubling to a 15-minute cap. Then the receipt stays failed; recurring discovery
+ * reconciles the order independently and the retention alert (#488) covers it after payload erasure.
+ * No jitter: the 30-second recovery pass processes due receipts serially and quantizes short delays.
+ */
+const RECEIPT_ATTEMPTS = 12;
+const due = sql`(m.next_attempt_at IS NULL OR m.next_attempt_at<=clock_timestamp())`;
 export type PurchaseScope = { shopId: string; installationGeneration: string; kind: 'merchant' };
 export class PurchaseStateError extends Error {
   constructor(public readonly code: 'NOT_FOUND' | 'CONFLICT' | 'INVALID' | 'LOCKED' | 'EXPIRED' | 'NOT_READY') {
@@ -181,8 +191,9 @@ export function createPurchaseRepository(db: Kysely<Database>) {
         api_version: string;
         state: string;
         attempts: number;
+        next_attempt_at: Date | null;
         queue_handoff_state: string;
-      }>`SELECT m.id::text,m.shop_id,m.installation_generation::text,m.payload,m.payload_sha256,d.topic,d.api_version,m.state,m.attempts,d.queue_handoff_state FROM inbox_messages m JOIN shopify_webhook_deliveries d ON d.inbox_id=m.id JOIN shops s ON s.shop_id=m.shop_id AND s.current_generation=m.installation_generation JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE m.id=${id}::uuid AND m.source='shopify' AND m.retention_class='shopify-webhook' AND m.erasure_state='retained' AND m.purge_after>clock_timestamp() AND isfinite(m.purge_after) AND i.deactivated_at IS NULL AND m.state<>'processed' AND m.attempts<${lock ? 6 : 5} AND d.queue_handoff_state<>'exhausted' AND d.api_version='2026-07' AND d.topic IN ('orders/create','orders/paid','orders/updated','refunds/create') ${lock ? sql`FOR UPDATE OF m` : sql``}`.execute(
+      }>`SELECT m.id::text,m.shop_id,m.installation_generation::text,m.payload,m.payload_sha256,d.topic,d.api_version,m.state,m.attempts,m.next_attempt_at,d.queue_handoff_state FROM inbox_messages m JOIN shopify_webhook_deliveries d ON d.inbox_id=m.id JOIN shops s ON s.shop_id=m.shop_id AND s.current_generation=m.installation_generation JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE m.id=${id}::uuid AND m.source='shopify' AND m.retention_class='shopify-webhook' AND m.erasure_state='retained' AND m.purge_after>clock_timestamp() AND isfinite(m.purge_after) AND i.deactivated_at IS NULL AND m.state<>'processed' AND m.attempts<${lock ? RECEIPT_ATTEMPTS + 1 : RECEIPT_ATTEMPTS} AND d.queue_handoff_state<>'exhausted' AND d.api_version='2026-07' AND d.topic IN ('orders/create','orders/paid','orders/updated','refunds/create') ${lock ? sql`FOR UPDATE OF m` : sql``}`.execute(
         executor,
       )
     ).rows[0];
@@ -226,6 +237,7 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       topic: row.topic,
       status: row.state,
       attempts: row.attempts,
+      nextAttemptAt: row.next_attempt_at?.toISOString() ?? null,
     };
   }
 
@@ -656,7 +668,7 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       if (!Number.isInteger(limit) || limit < 1 || limit > 1000) fail('INVALID');
       const ids = await sql<{
         id: string;
-      }>`SELECT m.id::text FROM inbox_messages m JOIN shopify_webhook_deliveries d ON d.inbox_id=m.id WHERE (m.state IN ('pending','failed') OR (m.state='leased' AND m.lease_until<=clock_timestamp())) AND m.attempts<5 AND m.erasure_state='retained' AND m.purge_after>clock_timestamp() AND d.queue_handoff_state='confirmed' AND d.api_version='2026-07' AND d.topic IN ('orders/create','orders/paid','orders/updated','refunds/create') ORDER BY m.received_at LIMIT ${limit}`.execute(
+      }>`SELECT m.id::text FROM inbox_messages m JOIN shopify_webhook_deliveries d ON d.inbox_id=m.id WHERE (m.state IN ('pending','failed') OR (m.state='leased' AND m.lease_until<=clock_timestamp())) AND m.attempts<${RECEIPT_ATTEMPTS} AND ${due} AND m.erasure_state='retained' AND m.purge_after>clock_timestamp() AND d.queue_handoff_state='confirmed' AND d.api_version='2026-07' AND d.topic IN ('orders/create','orders/paid','orders/updated','refunds/create') ORDER BY m.received_at LIMIT ${limit}`.execute(
         db,
       );
       const hints = await Promise.all(ids.rows.map((r) => hint(db, r.id)));
@@ -665,10 +677,10 @@ export function createPurchaseRepository(db: Kysely<Database>) {
     async claimPurchaseReconciliationHint(inboxId: string) {
       return db.transaction().execute(async (tx) => {
         const found = await hint(tx, inboxId, true);
-        if (!found || found.attempts >= 5) return null;
+        if (!found || found.attempts >= RECEIPT_ATTEMPTS) return null;
         const token = randomUUID();
         const claimed =
-          await sql`UPDATE inbox_messages m SET state='leased',attempts=attempts+1,lease_owner=${token},lease_until=clock_timestamp()+interval '1 minute' FROM shopify_webhook_deliveries d WHERE m.id=${inboxId}::uuid AND d.inbox_id=m.id AND d.queue_handoff_state='confirmed' AND (m.state IN ('pending','failed') OR m.lease_until<=clock_timestamp()) RETURNING m.id`.execute(
+          await sql`UPDATE inbox_messages m SET state='leased',attempts=attempts+1,lease_owner=${token},lease_until=clock_timestamp()+interval '1 minute' FROM shopify_webhook_deliveries d WHERE m.id=${inboxId}::uuid AND d.inbox_id=m.id AND d.queue_handoff_state='confirmed' AND (m.state IN ('pending','failed') OR m.lease_until<=clock_timestamp()) AND ${due} RETURNING m.id`.execute(
             tx,
           );
         return claimed.rows.length ? { ...found, attempts: found.attempts + 1, claimToken: token } : null;
@@ -676,7 +688,9 @@ export function createPurchaseRepository(db: Kysely<Database>) {
     },
     async failPurchaseReconciliation(input: { inboxId: string; claimToken: string; failureClass: string }) {
       if (!/^[A-Z_]{1,64}$/.test(input.failureClass)) fail('INVALID');
-      await sql`UPDATE inbox_messages SET state='failed',last_error_class=${input.failureClass},lease_owner=NULL,lease_until=NULL WHERE id=${input.inboxId}::uuid AND lease_owner=${input.claimToken} AND state='leased'`.execute(
+      // `attempts` already counts this attempt (reserved at claim): wait 5 s * 2^(attempts-1), at most
+      // 15 minutes; the last attempt leaves no next one.
+      await sql`UPDATE inbox_messages SET state='failed',last_error_class=${input.failureClass},lease_owner=NULL,lease_until=NULL,next_attempt_at=CASE WHEN attempts<${RECEIPT_ATTEMPTS} THEN clock_timestamp()+make_interval(secs=>LEAST(900,5*power(2,attempts-1))) END WHERE id=${input.inboxId}::uuid AND lease_owner=${input.claimToken} AND state='leased'`.execute(
         db,
       );
     },
