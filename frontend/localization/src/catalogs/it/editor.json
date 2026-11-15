@@ -1098,6 +1098,7 @@
     "realReplacePublishedQuestion": "Sostituire la configurazione online con questa? Una volta online, i clienti potranno personalizzare questo prodotto con la nuova configurazione. Le modifiche successive resteranno in bozza fino alla pubblicazione.",
     "publishNeedsView": "La pubblicazione sarà disponibile quando il prodotto avrà una vista.",
     "realSaveFailed": "Non è stato possibile confermare le modifiche. Riprova la richiesta originale prima di salvare modifiche diverse.",
+    "realDraftConflict": "Questa bozza è stata salvata altrove, ad esempio in un'altra scheda. Le modifiche in questa pagina non sono salvate. Ricaricando la bozza attuale viene mostrata la versione salvata e le modifiche vengono scartate.",
     "realPublished": "Pubblicato",
     "realDraftChanged": "I valori ereditati sono cambiati. Controlla le modifiche salvate prima di pubblicare di nuovo.",
     "realCurrencyReview": "La valuta del negozio è ora {{currency}}. Controlla tutti i prezzi prima di salvare una nuova proposta.",

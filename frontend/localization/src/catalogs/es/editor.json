@@ -1193,6 +1193,7 @@
     "realReplacePublishedQuestion": "¿Reemplazar la configuración activa por esta? Cuando la nueva esté activa, los clientes podrán personalizar este producto con ella. Los cambios posteriores permanecerán en un borrador hasta que los publiques.",
     "publishNeedsView": "La publicación estará disponible cuando el producto tenga una vista.",
     "realSaveFailed": "No se pudieron confirmar los cambios. Reintenta la solicitud original antes de guardar otros cambios.",
+    "realDraftConflict": "Este borrador se guardó en otro lugar, por ejemplo en otra pestaña. Tus cambios en esta página no están guardados. Al recargar el borrador actual se muestra la versión guardada y se descartan tus cambios.",
     "realPublished": "Publicado",
     "realDraftChanged": "Los valores heredados han cambiado. Revisa los cambios guardados antes de volver a publicar.",
     "realCurrencyReview": "La moneda de la tienda es ahora {{currency}}. Revisa todos los precios antes de guardar una nueva propuesta.",

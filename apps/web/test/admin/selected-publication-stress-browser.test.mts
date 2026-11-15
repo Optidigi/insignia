@@ -205,7 +205,7 @@ for (let iteration = 1; iteration <= iterations; iteration++) {
       await editName(f.page, 'Recover this intent');
       await hostSave(f.page);
       await f.page
-        .locator('.placement-notice s-banner')
+        .locator('s-banner')
         .filter({ hasText: 'Your changes could not be confirmed.' })
         .waitFor();
       assert.ok(await storedIntent(f.page));

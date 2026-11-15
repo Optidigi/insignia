@@ -1062,6 +1062,7 @@
     "realReplacePublishedQuestion": "Replace the live setup with this one? Shoppers can customize this product with the new setup once it is live. Later edits stay in a draft until published.",
     "publishNeedsView": "Publishing becomes available once the product has a view.",
     "realSaveFailed": "Your changes could not be confirmed. Retry the original request before saving different changes.",
+    "realDraftConflict": "This draft was saved elsewhere, for example in another tab. Your changes on this page are not saved. Reloading the current draft shows the saved version and discards them.",
     "realPublished": "Published",
     "realDraftChanged": "Inherited defaults changed. Review the saved changes before publishing again.",
     "realCurrencyReview": "The shop currency is now {{currency}}. Review every price before saving a new proposal.",

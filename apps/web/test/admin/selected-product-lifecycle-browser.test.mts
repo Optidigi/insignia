@@ -28,6 +28,8 @@ async function openPublication(page: Page) {
     .evaluate((button: HTMLElementTagNameMap['s-button']) => button.click());
   return page.locator('s-modal').filter({ hasText: 'Publish setup' });
 }
+const draftConflictText =
+  'This draft was saved elsewhere, for example in another tab. Your changes on this page are not saved. Reloading the current draft shows the saved version and discards them.';
 async function settleFrame(page: Page) {
   await page.evaluate(
     () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
@@ -141,6 +143,12 @@ test('a CAS conflict preserves local edits and requires explicit reload of the w
   await editName(f.page, 'My losing local name');
   assert.equal((await acknowledgedSave(f.page)).status(), 409);
   await f.page.getByRole('button', { name: 'Reload current draft', exact: true }).waitFor();
+  // #506: one explanation of the conflict, not the unconfirmed-request wording without a Retry.
+  await settleFrame(f.page);
+  const body = await f.page.locator('body').innerText();
+  assert.equal(body.split(draftConflictText).length - 1, 1, body);
+  assert.equal(body.includes('Retry the original request'), false);
+  assert.equal(await f.page.getByRole('button', { name: 'Retry', exact: true }).count(), 0);
   assert.equal(await f.page.getByRole('textbox', { name: /^Placement name/ }).inputValue(), 'My losing local name');
   assert.equal(reads, 0, 'Conflict must not silently replace an unsaved edit');
   assert.equal(await storedIntent(f.page), null);
@@ -149,6 +157,35 @@ test('a CAS conflict preserves local edits and requires explicit reload of the w
   await f.page.getByRole('textbox', { name: /^Placement name/ }).waitFor();
   assert.equal(await f.page.getByRole('textbox', { name: /^Placement name/ }).inputValue(), 'Winning saved name');
   assert.equal(reads, 1);
+});
+
+test('a draft saved elsewhere is explained as such before the first local save (#506)', {
+  timeout: 20000,
+}, async (t) => {
+  const f = await fixture(t);
+  let elsewhere = false;
+  const winning = structuredClone(draft);
+  required(required(required(winning.selectedSetup).product.views[0]).placements[0]).name = 'Saved in another tab';
+  await f.page.route('**/api/admin/products/111/config', async (route) => {
+    if (elsewhere && route.request().method() === 'GET') {
+      const view = f.view();
+      required(view.config).draft = winning;
+      required(view.config).draftVersion = '2';
+      return route.fulfill({ json: view });
+    }
+    return route.fallback();
+  });
+  await f.open();
+  await editName(f.page, 'Unsaved local name');
+  elsewhere = true;
+  await f.page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await f.page.getByText(draftConflictText).first().waitFor();
+  assert.equal((await f.page.locator('body').innerText()).includes('Retry the original request'), false);
+  assert.equal(await f.page.getByRole('textbox', { name: /^Placement name/ }).inputValue(), 'Unsaved local name');
+  assert.equal(f.mutations.length, 0);
+  await f.page.getByRole('button', { name: 'Reload current draft', exact: true }).click();
+  await f.page.getByRole('textbox', { name: /^Placement name/ }).waitFor();
+  assert.equal(await f.page.getByRole('textbox', { name: /^Placement name/ }).inputValue(), 'Saved in another tab');
 });
 
 for (const denied of [401, 403])
@@ -312,6 +349,52 @@ test('an older ACTIVE revision cannot settle a newer selected publication intent
   );
   assert.equal(publishes.length, 2);
   assert.deepEqual(publishes[1], publishes[0]);
+});
+
+test('the publish confirmation action stays disabled while its publication is in flight and pending (#504)', {
+  timeout: 20000,
+}, async (t) => {
+  const f = await fixture(t);
+  let answer: (() => void) | undefined;
+  const answered = new Promise<void>((resolve) => {
+    answer = resolve;
+  });
+  let publishing = false;
+  let posted: (() => void) | undefined;
+  const postReceived = new Promise<void>((resolve) => {
+    posted = resolve;
+  });
+  await f.page.route('**/api/admin/products/111/config', async (route) => {
+    const request = route.request();
+    if (request.method() === 'POST' && request.postDataJSON().action === 'publish') {
+      posted?.();
+      await answered;
+      publishing = true;
+      return route.fulfill({
+        status: 202,
+        json: { kind: 'accepted', state: 'REMOTE_PENDING', revisionId: 'new-revision' },
+      });
+    }
+    if (publishing && request.method() === 'GET') {
+      const view = f.view();
+      required(view.config).publication = { ...required(view.config).publication, state: 'REMOTE_PENDING' };
+      return route.fulfill({ json: view });
+    }
+    return route.fallback();
+  });
+  await f.open();
+  const modal = await openPublication(f.page);
+  const action = modal.locator('s-button[slot="primary-action"]');
+  await action.click();
+  await postReceived;
+  await f.page.waitForFunction(() =>
+    document.querySelector('s-modal s-button[slot="primary-action"][variant="primary"][loading]'),
+  );
+  assert.equal(await action.evaluate((button) => button.hasAttribute('disabled')), true, 'in flight');
+  answer?.();
+  await f.page.getByText('Publishing. This can take up to a minute', { exact: false }).first().waitFor();
+  assert.equal(await action.evaluate((button) => button.hasAttribute('disabled')), true, 'pending');
+  assert.equal(await action.evaluate((button) => button.hasAttribute('loading')), true, 'pending');
 });
 
 test('Shopify save state and confirmed discard restore the selected draft without dispatching a write', {

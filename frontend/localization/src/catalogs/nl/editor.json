@@ -339,6 +339,7 @@
     "realReplacePublishedQuestion": "De live configuratie vervangen door deze? Zodra de nieuwe live staat, kunnen klanten dit product ermee aanpassen. Latere wijzigingen blijven een concept totdat je ze publiceert.",
     "publishNeedsView": "Publiceren is beschikbaar zodra het product een aanzicht heeft.",
     "realSaveFailed": "Je wijzigingen konden niet worden bevestigd. Probeer het oorspronkelijke verzoek opnieuw voordat je andere wijzigingen opslaat.",
+    "realDraftConflict": "Dit concept is ergens anders opgeslagen, bijvoorbeeld in een ander tabblad. Je wijzigingen op deze pagina zijn niet opgeslagen. Als je het huidige concept opnieuw laadt, zie je de opgeslagen versie en worden je wijzigingen verwijderd.",
     "realPublished": "Gepubliceerd",
     "realDraftChanged": "Overgenomen standaardwaarden zijn gewijzigd. Controleer de opgeslagen wijzigingen voordat je opnieuw publiceert.",
     "realCurrencyReview": "De winkelvaluta is nu {{currency}}. Controleer alle prijzen voordat je een nieuw voorstel opslaat.",

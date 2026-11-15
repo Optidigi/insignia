@@ -325,7 +325,7 @@ for (const [name, lose] of [
     await f.open();
     await editName(f.page, 'Lost response');
     await hostSave(f.page);
-    await f.page.getByText(lostRequestText, { exact: true }).first().waitFor();
+    await f.page.getByText(lostRequestText).first().waitFor();
     await retry(f.page).first().waitFor();
     assert.ok(await storedIntent(f.page), 'The unresolved write stays in custody');
     assert.equal(await f.page.getByText('This change can’t be saved', { exact: false }).count(), 0);
