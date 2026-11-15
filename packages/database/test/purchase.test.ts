@@ -644,6 +644,58 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
       await core.close();
     }
   });
+  it('a recovery pass scans a bounded number of pages and closes receipts with unusable bodies, so a due one is reached (#495)', async () => {
+    const repo = createPurchaseRepository(db),
+      core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+    try {
+      const input = await observation();
+      const malformed: string[] = [];
+      for (let index = 0; index < 105; index++) malformed.push(await orderReceipt(core, input, 'orders/paid', 'Shop'));
+      const due = await orderReceipt(core, input);
+      await receivedDaysAgo(malformed, 7);
+      await receivedDaysAgo([due], 6);
+      const identity = async () =>
+        (
+          await sql<{
+            id: string;
+            state: string;
+            attempts: number;
+            last_error_class: string | null;
+            payload_sha256: string;
+          }>`SELECT id::text,state,attempts,last_error_class,payload_sha256 FROM inbox_messages WHERE id=ANY(${malformed}::uuid[]) ORDER BY received_at`.execute(
+            db,
+          )
+        ).rows;
+      const before = await identity();
+      // One pass reads at most five pages (5 x 20); every unusable body it read leaves the scan for good.
+      // (Other test files share the database, so their receipts may take some of those pages.)
+      const first = await repo.selectPurchaseRecoveryHints(20);
+      expect(first.some((hint) => hint.inboxId === due)).toBe(false);
+      const closed = (await identity()).filter((row) => row.last_error_class === 'RECEIPT_BODY_UNUSABLE');
+      expect(closed.length).toBeGreaterThan(0);
+      expect(closed.length).toBeLessThanOrEqual(100);
+      for (const row of closed)
+        expect(row).toEqual({
+          ...before.find((item) => item.id === row.id),
+          state: 'failed',
+          last_error_class: 'RECEIPT_BODY_UNUSABLE',
+        });
+      // Later passes reach the due receipt.
+      let reached = false;
+      for (let pass = 0; pass < 5 && !reached; pass++)
+        reached = (await repo.selectPurchaseRecoveryHints(20)).some((hint) => hint.inboxId === due);
+      expect(reached).toBe(true);
+      expect(
+        (await identity()).every(
+          (row) => row.state === 'failed' && row.attempts === 0 && row.last_error_class === 'RECEIPT_BODY_UNUSABLE',
+        ),
+      ).toBe(true);
+      for (const id of malformed.slice(0, 3)) expect(await repo.claimPurchaseReconciliationHint(id)).toBeNull();
+      expect((await repo.selectPurchaseRecoveryHints(1000)).some((h) => malformed.includes(h.inboxId))).toBe(false);
+    } finally {
+      await core.close();
+    }
+  });
   it('recovery closes a receipt whose lease expired on its last attempt as failed and never retries it (#496)', async () => {
     const input = await observation(),
       repo = createPurchaseRepository(db),

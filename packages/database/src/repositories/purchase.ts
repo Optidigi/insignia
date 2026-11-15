@@ -36,7 +36,10 @@ const RECEIPT_ATTEMPTS = 12;
 const due = sql`(m.next_attempt_at IS NULL OR m.next_attempt_at<=clock_timestamp())`;
 const ORDER_TOPICS = sql`d.api_version='2026-07' AND d.topic IN ('orders/create','orders/paid','orders/updated','refunds/create')`;
 /** Receipts a reconciliation hint may come from: retained order receipts of an active, current installation. */
-const hintable = sql`inbox_messages m JOIN shopify_webhook_deliveries d ON d.inbox_id=m.id JOIN shops s ON s.shop_id=m.shop_id AND s.current_generation=m.installation_generation JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE m.source='shopify' AND m.retention_class='shopify-webhook' AND m.erasure_state='retained' AND m.purge_after>clock_timestamp() AND isfinite(m.purge_after) AND i.deactivated_at IS NULL AND m.state<>'processed' AND d.queue_handoff_state<>'exhausted' AND ${ORDER_TOPICS}`;
+const RECOVERY_PAGES = 5;
+const hintable = sql`inbox_messages m JOIN shopify_webhook_deliveries d ON d.inbox_id=m.id JOIN shops s ON s.shop_id=m.shop_id AND s.current_generation=m.installation_generation JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE m.source='shopify' AND m.retention_class='shopify-webhook' AND m.erasure_state='retained' AND m.purge_after>clock_timestamp() AND isfinite(m.purge_after) AND i.deactivated_at IS NULL AND m.state<>'processed' AND d.queue_handoff_state<>'exhausted' AND m.last_error_class IS DISTINCT FROM 'RECEIPT_BODY_UNUSABLE' AND ${ORDER_TOPICS}`;
+/** Not processed under a live lease, budget left, due, and its queue handoff confirmed. */
+const recoverable = sql`(m.state IN ('pending','failed') OR (m.state='leased' AND m.lease_until<=clock_timestamp())) AND m.attempts<${RECEIPT_ATTEMPTS} AND ${due} AND d.queue_handoff_state='confirmed'`;
 export type PurchaseScope = { shopId: string; installationGeneration: string; kind: 'merchant' };
 export class PurchaseStateError extends Error {
   constructor(public readonly code: 'NOT_FOUND' | 'CONFLICT' | 'INVALID' | 'LOCKED' | 'EXPIRED' | 'NOT_READY') {
@@ -178,11 +181,12 @@ function canonicalWebhookId(value: unknown): value is string {
   return typeof value === 'string' && /^[1-9][0-9]{0,19}$/.test(value) && BigInt(value) <= 18446744073709551615n;
 }
 export function createPurchaseRepository(db: Kysely<Database>) {
-  async function hint(
+  /** null: the receipt is not (or no longer) hintable; 'unusable': it is, but its stored body can never yield a hint. */
+  async function readHint(
     executor: Kysely<Database>,
     id: string,
     lock = false,
-  ): Promise<PurchaseReconciliationHint | null> {
+  ): Promise<PurchaseReconciliationHint | 'unusable' | null> {
     const row = (
       await sql<{
         id: string;
@@ -200,12 +204,12 @@ export function createPurchaseRepository(db: Kysely<Database>) {
         executor,
       )
     ).rows[0];
+    if (!row) return null;
     if (
-      !row ||
       row.payload.length > 8 * 1024 * 1024 ||
       createHash('sha256').update(row.payload).digest('hex') !== row.payload_sha256
     )
-      return null;
+      return 'unusable';
     let body: Record<string, unknown>;
     try {
       body = JSON.parse(row.payload.toString('utf8'), (key: string, value: unknown, context?: { source?: string }) => {
@@ -219,18 +223,18 @@ export function createPurchaseRepository(db: Kysely<Database>) {
         return value;
       });
     } catch {
-      return null;
+      return 'unusable';
     }
-    if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return 'unusable';
     const raw = row.topic === 'refunds/create' ? body.order_id : body.id;
     const numeric = raw;
-    if (!canonicalWebhookId(numeric)) return null;
+    if (!canonicalWebhookId(numeric)) return 'unusable';
     // A routing header cannot turn a signed Shop/privacy body into an order processing purpose.
     const resourceId = body.admin_graphql_api_id;
     if (row.topic === 'refunds/create') {
       const refundId = body.id;
-      if (!canonicalWebhookId(refundId) || resourceId !== `gid://shopify/Refund/${refundId}`) return null;
-    } else if (resourceId !== `gid://shopify/Order/${numeric}`) return null;
+      if (!canonicalWebhookId(refundId) || resourceId !== `gid://shopify/Refund/${refundId}`) return 'unusable';
+    } else if (resourceId !== `gid://shopify/Order/${numeric}`) return 'unusable';
     return {
       inboxId: row.id,
       shopId: row.shop_id,
@@ -242,6 +246,11 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       attempts: row.attempts,
       nextAttemptAt: row.next_attempt_at?.toISOString() ?? null,
     };
+  }
+
+  async function hint(executor: Kysely<Database>, id: string, lock = false) {
+    const found = await readHint(executor, id, lock);
+    return found === 'unusable' ? null : found;
   }
 
   async function get(scope: Scope, id: string, executor: Kysely<Database> = db): Promise<PurchaseRecord | null> {
@@ -675,19 +684,29 @@ export function createPurchaseRepository(db: Kysely<Database>) {
         db,
       );
       // The selection applies every condition hint() can express in SQL, so receipts it would refuse take no
-      // slots; the scan continues past the few it still refuses (body checks) until it has `limit` hints (#495).
+      // slots (#495). A body hint() refuses is fixed (only erasure rewrites a payload), so such a receipt is
+      // closed and leaves the scan for good; each pass still reads at most RECOVERY_PAGES pages.
       const hints: PurchaseReconciliationHint[] = [];
       let after: string | null = null;
-      while (hints.length < limit) {
+      for (let page = 0; page < RECOVERY_PAGES && hints.length < limit; page++) {
         const rows: { id: string }[] = (
           await sql<{
             id: string;
-          }>`SELECT m.id::text FROM ${hintable} AND (m.state IN ('pending','failed') OR (m.state='leased' AND m.lease_until<=clock_timestamp())) AND m.attempts<${RECEIPT_ATTEMPTS} AND ${due} AND d.queue_handoff_state='confirmed' ${after ? sql`AND (m.received_at,m.id)>((SELECT received_at FROM inbox_messages WHERE id=${after}::uuid),${after}::uuid)` : sql``} ORDER BY m.received_at,m.id LIMIT ${limit}`.execute(
+          }>`SELECT m.id::text FROM ${hintable} AND ${recoverable} ${after ? sql`AND (m.received_at,m.id)>((SELECT received_at FROM inbox_messages WHERE id=${after}::uuid),${after}::uuid)` : sql``} ORDER BY m.received_at,m.id LIMIT ${limit}`.execute(
             db,
           )
         ).rows;
-        const found = await Promise.all(rows.map((r) => hint(db, r.id)));
-        hints.push(...found.filter((h): h is PurchaseReconciliationHint => h !== null).slice(0, limit - hints.length));
+        const found = await Promise.all(rows.map((r) => readHint(db, r.id)));
+        const unusable = rows.filter((_, index) => found[index] === 'unusable').map((r) => r.id);
+        if (unusable.length)
+          await sql`UPDATE inbox_messages m SET state='failed',last_error_class='RECEIPT_BODY_UNUSABLE',lease_owner=NULL,lease_until=NULL,next_attempt_at=NULL FROM shopify_webhook_deliveries d WHERE d.inbox_id=m.id AND m.id=ANY(${unusable}::uuid[]) AND m.erasure_state='retained' AND ${recoverable}`.execute(
+            db,
+          );
+        hints.push(
+          ...found
+            .filter((h): h is PurchaseReconciliationHint => h !== null && h !== 'unusable')
+            .slice(0, limit - hints.length),
+        );
         after = rows.at(-1)?.id ?? null;
         if (rows.length < limit || !after) break;
       }
