@@ -37,6 +37,8 @@ import cartRepairModules from '../../deployment/m5-runtime/native-cart-repair-mo
 import cartRepairBinding from '../../deployment/m5-runtime/native-cart-repair-release-binding.json' with {
   type: 'json',
 };
+import designerModules from '../../deployment/m5-runtime/native-designer-module-baseline.json' with { type: 'json' };
+import designerBinding from '../../deployment/m5-runtime/native-designer-release-binding.json' with { type: 'json' };
 import fixedModules from '../../deployment/m5-runtime/native-fixed-module-baseline.json' with { type: 'json' };
 import fixedCandidate from '../../deployment/m5-runtime/native-fixed-release-binding.json' with { type: 'json' };
 import historicalModules from '../../deployment/m5-runtime/native-function-module-baseline.json' with { type: 'json' };
@@ -54,8 +56,6 @@ import merchantBatchModules from '../../deployment/m5-runtime/native-merchant-ba
 import merchantBatchBinding from '../../deployment/m5-runtime/native-merchant-batch-release-binding.json' with {
   type: 'json',
 };
-import designerModules from '../../deployment/m5-runtime/native-designer-module-baseline.json' with { type: 'json' };
-import designerBinding from '../../deployment/m5-runtime/native-designer-release-binding.json' with { type: 'json' };
 import parityModules from '../../deployment/m5-runtime/native-parity-module-baseline.json' with { type: 'json' };
 import parityCandidate from '../../deployment/m5-runtime/native-parity-release-binding.json' with { type: 'json' };
 import performanceModules from '../../deployment/m5-runtime/native-performance-module-baseline.json' with {
