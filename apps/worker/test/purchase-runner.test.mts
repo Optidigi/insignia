@@ -140,13 +140,13 @@ test('the purchase runner refuses to start when the JSON parser cannot supply ex
     parse(text, reviver && ((key, value) => reviver(key, value)));
   try {
     assert.throws(
-      () => createPurchaseRunner({ core: {} as DurableCore, orders: { read: async () => orderFixture() } }),
+      () => createPurchaseRunner({ core: {} as DurableCore, orders: { read: async () => orderFixture({}) } }),
       /PURCHASE_RUNNER_JSON_SOURCE_UNSUPPORTED/,
     );
   } finally {
     JSON.parse = parse;
   }
   assert.doesNotThrow(() =>
-    createPurchaseRunner({ core: {} as DurableCore, orders: { read: async () => orderFixture() } }),
+    createPurchaseRunner({ core: {} as DurableCore, orders: { read: async () => orderFixture({}) } }),
   );
 });
