@@ -23,6 +23,10 @@ import {
 import { type ThemeSetupStatus, themeSetupStatus, unknownThemeSetup } from '../shared/storefront-setup';
 import MerchantHome from './MerchantHome';
 
+/** Quiet retries of Home's first read while a fresh install's access is still being set up. */
+const GUIDANCE_RETRIES = 2;
+const GUIDANCE_RETRY_MS = 2000;
+
 /** A 403 is a missing permission (app scope or staff access), not a lost session or a transient failure. */
 function guidanceFailureFrom(error: unknown): 'failed' | 'busy' | 'restricted' {
   if (isShopifyBusy(error)) return 'busy';
@@ -104,7 +108,7 @@ function MerchantHomeContainer() {
   }
   useEffect(() => {
     mounted.current = true;
-    async function loadGuidance() {
+    async function loadGuidance(attempt = 0) {
       try {
         const value = await preferences.read();
         if (!mounted.current) return;
@@ -113,7 +117,20 @@ function MerchantHomeContainer() {
         setGuidanceEditable(value.canEdit === true);
         setGuidanceFailure(null);
       } catch (error) {
-        if (mounted.current) setGuidanceFailure(guidanceFailureFrom(error));
+        if (!mounted.current) return;
+        const failure = guidanceFailureFrom(error);
+        const status = error && typeof error === 'object' && 'status' in error ? error.status : undefined;
+        // Right after an install the store's access is still being set up for a few seconds: retry quietly
+        // before saying Home is unavailable. A permission or session answer is final.
+        if (failure !== 'restricted' && status !== 401 && attempt < GUIDANCE_RETRIES) {
+          const timer = setTimeout(() => {
+            timers.delete(timer);
+            if (mounted.current) void loadGuidance(attempt + 1);
+          }, GUIDANCE_RETRY_MS);
+          timers.add(timer);
+          return;
+        }
+        setGuidanceFailure(failure);
       }
     }
     let departed = false;

@@ -100,6 +100,8 @@ async function openMerchantPage(
     locale?: string;
     /** Every admin read answers 403 "Read permission required", as for a fresh install without product access. */
     readDenied?: boolean;
+    /** The first N preference reads answer 503, as while a fresh install's offline token is still being set up. */
+    preferencesUnavailable?: number;
   },
 ): Promise<Page> {
   const { source, server, browser } = await browserFixture(t);
@@ -125,7 +127,12 @@ async function openMerchantPage(
   await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
   let guidance = { dismissed: false, completedSteps: scenario.acknowledged ?? [] };
   let guidanceVersion = 0;
+  let unavailable = scenario.preferencesUnavailable ?? 0;
   await page.route('**/api/admin/preferences', (route) => {
+    if (route.request().method() === 'GET' && unavailable > 0) {
+      unavailable--;
+      return route.fulfill({ status: 503, json: { error: 'Store preferences unavailable' } });
+    }
     if (route.request().method() === 'POST') {
       const command = route.request().postDataJSON();
       scenario.saves?.push(command);
@@ -367,4 +374,12 @@ test('without product access Home explains the missing permission instead of ask
   const action = page.getByRole('link', { name: 'Check app permissions' });
   assert.equal(await action.count(), 1);
   assert.match((await action.getAttribute('href')) ?? '', /\/admin\/settings\/permissions$/);
+});
+
+test('right after install a briefly unavailable preferences read is retried before Home gives up', {
+  timeout: 30000,
+}, async (t) => {
+  const page = await openMerchantPage(t, '/admin/home', { embed: 'active', preferencesUnavailable: 2 });
+  await page.getByRole('heading', { name: 'Get started with Insignia' }).waitFor({ timeout: 15000 });
+  assert.equal(await page.getByText('Open Insignia in Shopify', { exact: true }).count(), 0);
 });

@@ -17,6 +17,11 @@ export interface OfflineAcquisitionPort {
   dispatchAcquisition(input: Attempt): Promise<boolean>;
   completeAcquisition(input: Attempt & { pair: ExpiringOfflineTokenPair }): Promise<'installed' | 'stale' | 'inactive'>;
   rejectAcquisition(input: Attempt): Promise<boolean>;
+  /**
+   * The exchange ended without a known outcome: end its in-flight lease now so later requests report it as
+   * unresolved at once instead of waiting as for an exchange still running. The attempt stays dispatched.
+   */
+  settleUnresolved(input: Attempt): Promise<void>;
 }
 /** Only a proved no-effect exchange rejection releases the durable dispatch fence. */
 export class OfflineAcquisitionRejectedError extends Error {
@@ -43,10 +48,9 @@ export async function bootstrapExpiringOfflineCredentials(input: {
   try {
     pair = await input.exchange(reservation.shopDomain);
   } catch (error) {
-    if (error instanceof OfflineAcquisitionRejectedError) {
-      return (await input.credentials.rejectAcquisition(attempt)) ? 'rejected' : 'unresolved';
-    }
-    return 'unresolved';
+    if (error instanceof OfflineAcquisitionRejectedError && (await input.credentials.rejectAcquisition(attempt)))
+      return 'rejected';
+    return unresolved(input.credentials, attempt);
   }
   try {
     validateExpiringOfflineTokenPair(pair, (input.now ?? (() => new Date()))());
@@ -54,6 +58,14 @@ export async function bootstrapExpiringOfflineCredentials(input: {
     return result === 'installed' ? 'installed' : 'inactive';
   } catch {
     // A malformed success or lost persistence acknowledgment cannot justify another issuance.
-    return 'unresolved';
+    return unresolved(input.credentials, attempt);
   }
+}
+async function unresolved(credentials: OfflineAcquisitionPort, attempt: Attempt): Promise<'unresolved'> {
+  try {
+    await credentials.settleUnresolved(attempt);
+  } catch {
+    /* The lease then lapses by itself; either way no second issuance is reserved. */
+  }
+  return 'unresolved';
 }

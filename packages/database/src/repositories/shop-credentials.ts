@@ -243,7 +243,15 @@ export function createShopCredentialRepository(database: Kysely<Database>, keys?
         if (!installation || !(await acquisitionAuthority(tx, input))) return { kind: 'inactive' };
         const now = await databaseNow(tx);
         const pending = await currentAcquisition(tx, input);
-        if (pending?.state === 'dispatched') return { kind: 'unresolved' };
+        // A dispatched exchange of this same authorization still inside its lease is in flight (concurrent first
+        // requests after an install): report busy so callers carry on and retry. Only a lapsed or superseded
+        // dispatch is unresolved; neither case ever reserves a second issuance.
+        if (pending?.state === 'dispatched')
+          return pending.reserved_until > now &&
+            pending.authorization_generation === input.authorizationGeneration &&
+            Number(pending.authorization_epoch) === input.authorizationEpoch
+            ? { kind: 'busy' }
+            : { kind: 'unresolved' };
         if (pending && pending.reserved_until > now) return { kind: 'busy' };
         if (pending)
           await tx
@@ -349,6 +357,21 @@ export function createShopCredentialRepository(database: Kysely<Database>, keys?
           .where('attempt_id', '=', row.attempt_id)
           .execute();
         return 'installed';
+      });
+    },
+
+    async settleUnresolved(input: AcquisitionAttempt): Promise<void> {
+      await database.transaction().execute(async (tx) => {
+        const now = await databaseNow(tx);
+        await tx
+          .updateTable('shop_credential_acquisitions')
+          .set({ reserved_until: now })
+          .where('attempt_id', '=', input.attemptId)
+          .where('shop_id', '=', input.shopId)
+          .where('installation_generation', '=', input.installationGeneration)
+          .where('state', '=', 'dispatched')
+          .where('reserved_until', '>', now)
+          .execute();
       });
     },
 

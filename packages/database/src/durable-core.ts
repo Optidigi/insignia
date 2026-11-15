@@ -393,6 +393,8 @@ export interface DurableCore {
       input: AcquisitionAttempt & { pair: ExpiringOfflinePair },
     ): Promise<'installed' | 'stale' | 'inactive'>;
     rejectAcquisition(input: AcquisitionAttempt): Promise<boolean>;
+    /** Ends a dispatched attempt's in-flight lease after an unknown outcome; it stays dispatched (unresolved). */
+    settleUnresolved(input: AcquisitionAttempt): Promise<void>;
     install(input: CredentialIdentity & { pair: ExpiringOfflinePair }): Promise<string>;
     acquire(
       input: CredentialIdentity & { minimumRemainingMs: number; claimLeaseMs: number },
