@@ -22,6 +22,7 @@ export {
   type PurchaseRepository,
   type PurchaseScope,
   PurchaseStateError,
+  webhookIdParsingSupported,
 } from './repositories/purchase.js';
 export type { PurchaseDiscoveryClaim } from './repositories/purchase-cursors.js';
 export type {

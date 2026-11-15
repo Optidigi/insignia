@@ -1,5 +1,5 @@
 import { type PurchasePorts, reconcilePurchase, type VerifiedOrder } from '@insignia/application';
-import type { DurableCore } from '@insignia/database';
+import { type DurableCore, webhookIdParsingSupported } from '@insignia/database';
 import type { ShopifyOrderChangesPage, ShopifyOrderChangesTarget } from '@insignia/shopify';
 
 /** Reads Shopify independently. A signed webhook supplies only a scoped lookup hint. */
@@ -13,6 +13,8 @@ export function createPurchaseRunner(input: {
   };
   onError?: (errorClass: 'PURCHASE_DISCOVERY_UNAVAILABLE' | 'PURCHASE_RECONCILIATION_UNAVAILABLE') => void;
 }) {
+  // Receipt hints need exact 64-bit ids; a runtime that cannot read them must not start (or close receipts).
+  if (!webhookIdParsingSupported()) throw new Error('PURCHASE_RUNNER_JSON_SOURCE_UNSUPPORTED');
   const orders = {
     ...input.orders,
     async read(target: { shopId: string; installationGeneration: string; orderId: string }) {

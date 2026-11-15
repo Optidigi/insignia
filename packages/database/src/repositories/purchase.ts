@@ -34,6 +34,12 @@ export type PurchaseReconciliationHint = {
  */
 const RECEIPT_ATTEMPTS = 12;
 const due = sql`(m.next_attempt_at IS NULL OR m.next_attempt_at<=clock_timestamp())`;
+const ORDER_TOPICS = sql`d.api_version='2026-07' AND d.topic IN ('orders/create','orders/paid','orders/updated','refunds/create')`;
+/** Receipts a reconciliation hint may come from: retained order receipts of an active, current installation. */
+const RECOVERY_PAGES = 5;
+const hintable = sql`inbox_messages m JOIN shopify_webhook_deliveries d ON d.inbox_id=m.id JOIN shops s ON s.shop_id=m.shop_id AND s.current_generation=m.installation_generation JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE m.source='shopify' AND m.retention_class='shopify-webhook' AND m.erasure_state='retained' AND m.purge_after>clock_timestamp() AND isfinite(m.purge_after) AND i.deactivated_at IS NULL AND m.state<>'processed' AND d.queue_handoff_state<>'exhausted' AND m.last_error_class IS DISTINCT FROM 'RECEIPT_BODY_UNUSABLE' AND ${ORDER_TOPICS}`;
+/** Not processed under a live lease, budget left, due, and its queue handoff confirmed. */
+const recoverable = sql`(m.state IN ('pending','failed') OR (m.state='leased' AND m.lease_until<=clock_timestamp())) AND m.attempts<${RECEIPT_ATTEMPTS} AND ${due} AND d.queue_handoff_state='confirmed'`;
 export type PurchaseScope = { shopId: string; installationGeneration: string; kind: 'merchant' };
 export class PurchaseStateError extends Error {
   constructor(public readonly code: 'NOT_FOUND' | 'CONFLICT' | 'INVALID' | 'LOCKED' | 'EXPIRED' | 'NOT_READY') {
@@ -174,12 +180,39 @@ export function purchaseDesigns(record: Pick<PurchaseRecord, 'bindings'>) {
 function canonicalWebhookId(value: unknown): value is string {
   return typeof value === 'string' && /^[1-9][0-9]{0,19}$/.test(value) && BigInt(value) <= 18446744073709551615n;
 }
+const WEBHOOK_ID_SOURCE_UNAVAILABLE = 'WEBHOOK_ID_SOURCE_UNAVAILABLE';
+function parseWebhookBody(text: string) {
+  return JSON.parse(text, (key: string, value: unknown, context?: { source?: string }) => {
+    // Node 24 preserves the numeric lexeme here, before any rounded Number is consumed.
+    // Object-valued/string identifiers bypass this primitive-only extraction and are checked by the caller.
+    if ((key === 'id' || key === 'order_id') && typeof value === 'number') {
+      const source = context?.source;
+      if (source === undefined) throw new Error(WEBHOOK_ID_SOURCE_UNAVAILABLE);
+      if (!canonicalWebhookId(source)) throw new Error('INVALID_WEBHOOK_ID_LITERAL');
+      return source;
+    }
+    return value;
+  });
+}
+/**
+ * Whether this runtime's JSON parser exposes numeric source text, which reading a webhook's 64-bit ids exactly
+ * requires. Without it no order receipt can yield a hint; a purchase runner must refuse to start.
+ */
+export function webhookIdParsingSupported() {
+  try {
+    const body = parseWebhookBody('{"id":18446744073709551615,"order_id":9007199254740993}');
+    return body.id === '18446744073709551615' && body.order_id === '9007199254740993';
+  } catch {
+    return false;
+  }
+}
 export function createPurchaseRepository(db: Kysely<Database>) {
-  async function hint(
+  /** null: the receipt is not (or no longer) hintable; 'unusable': it is, but its stored body can never yield a hint. */
+  async function readHint(
     executor: Kysely<Database>,
     id: string,
     lock = false,
-  ): Promise<PurchaseReconciliationHint | null> {
+  ): Promise<PurchaseReconciliationHint | 'unusable' | null> {
     const row = (
       await sql<{
         id: string;
@@ -193,41 +226,34 @@ export function createPurchaseRepository(db: Kysely<Database>) {
         attempts: number;
         next_attempt_at: Date | null;
         queue_handoff_state: string;
-      }>`SELECT m.id::text,m.shop_id,m.installation_generation::text,m.payload,m.payload_sha256,d.topic,d.api_version,m.state,m.attempts,m.next_attempt_at,d.queue_handoff_state FROM inbox_messages m JOIN shopify_webhook_deliveries d ON d.inbox_id=m.id JOIN shops s ON s.shop_id=m.shop_id AND s.current_generation=m.installation_generation JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE m.id=${id}::uuid AND m.source='shopify' AND m.retention_class='shopify-webhook' AND m.erasure_state='retained' AND m.purge_after>clock_timestamp() AND isfinite(m.purge_after) AND i.deactivated_at IS NULL AND m.state<>'processed' AND m.attempts<${lock ? RECEIPT_ATTEMPTS + 1 : RECEIPT_ATTEMPTS} AND d.queue_handoff_state<>'exhausted' AND d.api_version='2026-07' AND d.topic IN ('orders/create','orders/paid','orders/updated','refunds/create') ${lock ? sql`FOR UPDATE OF m` : sql``}`.execute(
+      }>`SELECT m.id::text,m.shop_id,m.installation_generation::text,m.payload,m.payload_sha256,d.topic,d.api_version,m.state,m.attempts,m.next_attempt_at,d.queue_handoff_state FROM ${hintable} AND m.id=${id}::uuid AND m.attempts<${lock ? RECEIPT_ATTEMPTS + 1 : RECEIPT_ATTEMPTS} ${lock ? sql`FOR UPDATE OF m` : sql``}`.execute(
         executor,
       )
     ).rows[0];
+    if (!row) return null;
     if (
-      !row ||
       row.payload.length > 8 * 1024 * 1024 ||
       createHash('sha256').update(row.payload).digest('hex') !== row.payload_sha256
     )
-      return null;
+      return 'unusable';
     let body: Record<string, unknown>;
     try {
-      body = JSON.parse(row.payload.toString('utf8'), (key: string, value: unknown, context?: { source?: string }) => {
-        // Node 24 preserves the numeric lexeme here, before any rounded Number is consumed.
-        // Object-valued/string identifiers bypass this primitive-only extraction and are checked below.
-        if ((key === 'id' || key === 'order_id') && typeof value === 'number') {
-          const source = context?.source;
-          if (!canonicalWebhookId(source)) throw new Error('INVALID_WEBHOOK_ID_LITERAL');
-          return source;
-        }
-        return value;
-      });
-    } catch {
-      return null;
+      body = parseWebhookBody(row.payload.toString('utf8'));
+    } catch (error) {
+      // Without the parser's source text no id can be read exactly; that says nothing about this body.
+      if (error instanceof Error && error.message === WEBHOOK_ID_SOURCE_UNAVAILABLE) return null;
+      return 'unusable';
     }
-    if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return 'unusable';
     const raw = row.topic === 'refunds/create' ? body.order_id : body.id;
     const numeric = raw;
-    if (!canonicalWebhookId(numeric)) return null;
+    if (!canonicalWebhookId(numeric)) return 'unusable';
     // A routing header cannot turn a signed Shop/privacy body into an order processing purpose.
     const resourceId = body.admin_graphql_api_id;
     if (row.topic === 'refunds/create') {
       const refundId = body.id;
-      if (!canonicalWebhookId(refundId) || resourceId !== `gid://shopify/Refund/${refundId}`) return null;
-    } else if (resourceId !== `gid://shopify/Order/${numeric}`) return null;
+      if (!canonicalWebhookId(refundId) || resourceId !== `gid://shopify/Refund/${refundId}`) return 'unusable';
+    } else if (resourceId !== `gid://shopify/Order/${numeric}`) return 'unusable';
     return {
       inboxId: row.id,
       shopId: row.shop_id,
@@ -239,6 +265,11 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       attempts: row.attempts,
       nextAttemptAt: row.next_attempt_at?.toISOString() ?? null,
     };
+  }
+
+  async function hint(executor: Kysely<Database>, id: string, lock = false) {
+    const found = await readHint(executor, id, lock);
+    return found === 'unusable' ? null : found;
   }
 
   async function get(scope: Scope, id: string, executor: Kysely<Database> = db): Promise<PurchaseRecord | null> {
@@ -666,13 +697,39 @@ export function createPurchaseRepository(db: Kysely<Database>) {
     },
     async selectPurchaseRecoveryHints(limit = 100) {
       if (!Number.isInteger(limit) || limit < 1 || limit > 1000) fail('INVALID');
-      const ids = await sql<{
-        id: string;
-      }>`SELECT m.id::text FROM inbox_messages m JOIN shopify_webhook_deliveries d ON d.inbox_id=m.id WHERE (m.state IN ('pending','failed') OR (m.state='leased' AND m.lease_until<=clock_timestamp())) AND m.attempts<${RECEIPT_ATTEMPTS} AND ${due} AND m.erasure_state='retained' AND m.purge_after>clock_timestamp() AND d.queue_handoff_state='confirmed' AND d.api_version='2026-07' AND d.topic IN ('orders/create','orders/paid','orders/updated','refunds/create') ORDER BY m.received_at LIMIT ${limit}`.execute(
+      // A worker that stopped during the last allowed attempt leaves an expired lease nothing may reclaim:
+      // close it as failed, keeping its attempts and identity (#496).
+      await sql`UPDATE inbox_messages m SET state='failed',last_error_class='ATTEMPTS_EXHAUSTED_AFTER_LEASE',lease_owner=NULL,lease_until=NULL,next_attempt_at=NULL FROM shopify_webhook_deliveries d WHERE d.inbox_id=m.id AND m.state='leased' AND m.lease_until<=clock_timestamp() AND m.attempts>=${RECEIPT_ATTEMPTS} AND ${ORDER_TOPICS}`.execute(
         db,
       );
-      const hints = await Promise.all(ids.rows.map((r) => hint(db, r.id)));
-      return hints.filter((h): h is PurchaseReconciliationHint => h !== null);
+      // The selection applies every condition hint() can express in SQL, so receipts it would refuse take no
+      // slots (#495). A body hint() refuses is fixed (only erasure rewrites a payload), so such a receipt is
+      // closed and leaves the scan for good; each pass still reads at most RECOVERY_PAGES pages.
+      const hints: PurchaseReconciliationHint[] = [];
+      let after: string | null = null;
+      for (let page = 0; page < RECOVERY_PAGES && hints.length < limit; page++) {
+        const rows: { id: string }[] = (
+          await sql<{
+            id: string;
+          }>`SELECT m.id::text FROM ${hintable} AND ${recoverable} ${after ? sql`AND (m.received_at,m.id)>((SELECT received_at FROM inbox_messages WHERE id=${after}::uuid),${after}::uuid)` : sql``} ORDER BY m.received_at,m.id LIMIT ${limit}`.execute(
+            db,
+          )
+        ).rows;
+        const found = await Promise.all(rows.map((r) => readHint(db, r.id)));
+        const unusable = rows.filter((_, index) => found[index] === 'unusable').map((r) => r.id);
+        if (unusable.length)
+          await sql`UPDATE inbox_messages m SET state='failed',last_error_class='RECEIPT_BODY_UNUSABLE',lease_owner=NULL,lease_until=NULL,next_attempt_at=NULL FROM shopify_webhook_deliveries d WHERE d.inbox_id=m.id AND m.id=ANY(${unusable}::uuid[]) AND m.erasure_state='retained' AND ${recoverable}`.execute(
+            db,
+          );
+        hints.push(
+          ...found
+            .filter((h): h is PurchaseReconciliationHint => h !== null && h !== 'unusable')
+            .slice(0, limit - hints.length),
+        );
+        after = rows.at(-1)?.id ?? null;
+        if (rows.length < limit || !after) break;
+      }
+      return hints;
     },
     async claimPurchaseReconciliationHint(inboxId: string) {
       return db.transaction().execute(async (tx) => {

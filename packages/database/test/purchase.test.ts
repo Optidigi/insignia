@@ -11,7 +11,7 @@ import { sha256CanonicalJson } from '../src/hash/canonical.js';
 import { createDurableCore } from '../src/index.js';
 import { PgAcceptedQuoteRepository } from '../src/repositories/accepted-quote.js';
 import { createArtworkRepository } from '../src/repositories/artwork.js';
-import { createPurchaseRepository } from '../src/repositories/purchase.js';
+import { createPurchaseRepository, webhookIdParsingSupported } from '../src/repositories/purchase.js';
 import { createTestShop, openTestDatabase } from './support/postgres.js';
 import { purchaseFixture } from './support/purchase-fixture.js';
 
@@ -448,6 +448,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
     core: ReturnType<typeof createDurableCore>,
     input: PurchaseObservation,
     topic = 'orders/paid',
+    resource = 'Order',
+    numericId = false,
   ) {
     const domain = `${randomUUID()}.myshopify.com`,
       orderNumber = input.order.orderId.split('/').at(-1)!;
@@ -461,7 +463,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
       eventId: null,
       name: null,
       rawBody: Buffer.from(
-        JSON.stringify({ id: orderNumber, admin_graphql_api_id: `gid://shopify/Order/${orderNumber}` }),
+        // Shopify sends a numeric id; its exact text needs the parser's numeric source.
+        numericId
+          ? `{"id":${orderNumber},"admin_graphql_api_id":"gid://shopify/${resource}/${orderNumber}"}`
+          : JSON.stringify({ id: orderNumber, admin_graphql_api_id: `gid://shopify/${resource}/${orderNumber}` }),
       ),
     });
     await core.webhooks.withQueueHandoff(receipt.id, async () => 'enqueued');
@@ -604,6 +609,178 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
       });
       expect(await selected(repo, id)).toBe(false);
       expect(await repo.claimPurchaseReconciliationHint(id)).toBeNull();
+    } finally {
+      await core.close();
+    }
+  });
+  /** Test clock: places the receipts at fixed, increasing receive times days ago, ahead of other tests' receipts. */
+  async function receivedDaysAgo(ids: string[], days: number) {
+    for (const [index, id] of ids.entries())
+      await sql`UPDATE inbox_messages SET received_at=clock_timestamp()-make_interval(days=>${days})+make_interval(secs=>${index}) WHERE id=${id}::uuid`.execute(
+        db,
+      );
+  }
+  it('a due receipt is recovered behind more than a pass of receipts the hint rejects (#495)', async () => {
+    const repo = createPurchaseRepository(db),
+      core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+    try {
+      // Rejected by a condition the selection can express: the installation was deactivated.
+      const uninstalled = await observation();
+      const stale: string[] = [];
+      for (let index = 0; index < 21; index++) stale.push(await orderReceipt(core, uninstalled));
+      await sql`UPDATE installation_generations SET deactivated_at=clock_timestamp() WHERE shop_id=${uninstalled.order.shopId}`.execute(
+        db,
+      );
+      // Rejected only by the hint itself: a signed body naming another resource.
+      const input = await observation();
+      const malformed: string[] = [];
+      for (let index = 0; index < 21; index++) malformed.push(await orderReceipt(core, input, 'orders/paid', 'Shop'));
+      const due = await orderReceipt(core, input);
+      await receivedDaysAgo([...stale, ...malformed], 6);
+      await receivedDaysAgo([due], 5);
+      for (const id of [...stale, ...malformed]) expect(await repo.getPurchaseReconciliationHint(id)).toBeNull();
+      const hints = await repo.selectPurchaseRecoveryHints(20);
+      expect(hints[0]?.inboxId).toBe(due);
+      const claim = await repo.claimPurchaseReconciliationHint(due);
+      requirePurchase(await repo.reconcile({ ...input, inboxId: due, claimToken: claim!.claimToken }));
+      expect((await receiptRow(due))?.state).toBe('processed');
+    } finally {
+      await core.close();
+    }
+  });
+  it('a recovery pass scans a bounded number of pages and closes receipts with unusable bodies, so a due one is reached (#495)', async () => {
+    const repo = createPurchaseRepository(db),
+      core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+    try {
+      const input = await observation();
+      const malformed: string[] = [];
+      for (let index = 0; index < 105; index++) malformed.push(await orderReceipt(core, input, 'orders/paid', 'Shop'));
+      const due = await orderReceipt(core, input);
+      await receivedDaysAgo(malformed, 7);
+      await receivedDaysAgo([due], 6);
+      const identity = async () =>
+        (
+          await sql<{
+            id: string;
+            state: string;
+            attempts: number;
+            last_error_class: string | null;
+            payload_sha256: string;
+          }>`SELECT id::text,state,attempts,last_error_class,payload_sha256 FROM inbox_messages WHERE id=ANY(${malformed}::uuid[]) ORDER BY received_at`.execute(
+            db,
+          )
+        ).rows;
+      const before = await identity();
+      // One pass reads at most five pages (5 x 20); every unusable body it read leaves the scan for good.
+      // (Other test files share the database, so their receipts may take some of those pages.)
+      const first = await repo.selectPurchaseRecoveryHints(20);
+      expect(first.some((hint) => hint.inboxId === due)).toBe(false);
+      const closed = (await identity()).filter((row) => row.last_error_class === 'RECEIPT_BODY_UNUSABLE');
+      expect(closed.length).toBeGreaterThan(0);
+      expect(closed.length).toBeLessThanOrEqual(100);
+      for (const row of closed)
+        expect(row).toEqual({
+          ...before.find((item) => item.id === row.id),
+          state: 'failed',
+          last_error_class: 'RECEIPT_BODY_UNUSABLE',
+        });
+      // Later passes reach the due receipt.
+      let reached = false;
+      for (let pass = 0; pass < 5 && !reached; pass++)
+        reached = (await repo.selectPurchaseRecoveryHints(20)).some((hint) => hint.inboxId === due);
+      expect(reached).toBe(true);
+      expect(
+        (await identity()).every(
+          (row) => row.state === 'failed' && row.attempts === 0 && row.last_error_class === 'RECEIPT_BODY_UNUSABLE',
+        ),
+      ).toBe(true);
+      for (const id of malformed.slice(0, 3)) expect(await repo.claimPurchaseReconciliationHint(id)).toBeNull();
+      expect((await repo.selectPurchaseRecoveryHints(1000)).some((h) => malformed.includes(h.inboxId))).toBe(false);
+    } finally {
+      await core.close();
+    }
+  });
+  it('a parser without numeric source text closes no receipt as unusable (#495 review)', async () => {
+    const input = await observation(),
+      repo = createPurchaseRepository(db),
+      core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+    const parse = JSON.parse;
+    try {
+      const id = await orderReceipt(core, input, 'orders/paid', 'Order', true);
+      await receivedDaysAgo([id], 8);
+      // Simulates a runtime whose reviver receives no `context` (no `context.source`).
+      JSON.parse = (text: string, reviver?: (this: unknown, key: string, value: unknown) => unknown) =>
+        parse(text, reviver && ((key, value) => reviver(key, value)));
+      expect(webhookIdParsingSupported()).toBe(false);
+      expect(await repo.selectPurchaseRecoveryHints(20)).not.toContainEqual(expect.objectContaining({ inboxId: id }));
+      expect(await receiptRow(id)).toEqual({ state: 'pending', attempts: 0, last_error_class: null });
+      JSON.parse = parse;
+      expect(webhookIdParsingSupported()).toBe(true);
+      expect((await repo.selectPurchaseRecoveryHints(20))[0]?.inboxId).toBe(id);
+      const claim = await repo.claimPurchaseReconciliationHint(id);
+      requirePurchase(await repo.reconcile({ ...input, inboxId: id, claimToken: claim!.claimToken }));
+    } finally {
+      JSON.parse = parse;
+      await core.close();
+    }
+  });
+  it('recovery closes a receipt whose lease expired on its last attempt as failed and never retries it (#496)', async () => {
+    const input = await observation(),
+      repo = createPurchaseRepository(db),
+      core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+    try {
+      const id = await orderReceipt(core, input, 'orders/create');
+      for (let attempt = 1; attempt <= 11; attempt++) {
+        await failAttempt(repo, id);
+        await retryDue(id);
+      }
+      const identity = async () =>
+        (
+          await sql<{
+            shop_id: string;
+            installation_generation: string;
+            payload_sha256: string;
+            received_at: Date;
+          }>`SELECT shop_id,installation_generation::text,payload_sha256,received_at FROM inbox_messages WHERE id=${id}::uuid`.execute(
+            db,
+          )
+        ).rows[0];
+      const before = await identity();
+      // The worker claims the 12th attempt and crashes: no success and no failure is recorded.
+      expect((await repo.claimPurchaseReconciliationHint(id))?.attempts).toBe(12);
+      await repo.selectPurchaseRecoveryHints(1000);
+      expect((await receiptRow(id))?.state).toBe('leased'); // An unexpired lease is still the worker's.
+      await sql`UPDATE inbox_messages SET lease_until=clock_timestamp()-interval '1 second' WHERE id=${id}::uuid`.execute(
+        db,
+      );
+      expect(await selected(repo, id)).toBe(false);
+      expect(await receiptRow(id)).toEqual({
+        state: 'failed',
+        attempts: 12,
+        last_error_class: 'ATTEMPTS_EXHAUSTED_AFTER_LEASE',
+      });
+      expect(await identity()).toEqual(before);
+      const lease = await sql<{
+        lease_owner: string | null;
+        next_attempt_at: Date | null;
+      }>`SELECT lease_owner,next_attempt_at FROM inbox_messages WHERE id=${id}::uuid`.execute(db);
+      expect(lease.rows[0]).toEqual({ lease_owner: null, next_attempt_at: null });
+      expect(await repo.claimPurchaseReconciliationHint(id)).toBeNull();
+      expect(await repo.getPurchaseReconciliationHint(id)).toBeNull();
+      await repo.selectPurchaseRecoveryHints(1000);
+      expect(await receiptRow(id)).toEqual({
+        state: 'failed',
+        attempts: 12,
+        last_error_class: 'ATTEMPTS_EXHAUSTED_AFTER_LEASE',
+      });
+      // #488/#490: a failed receipt still alerts after erasure until discovery records its order.
+      await sql`UPDATE inbox_messages SET purge_after=clock_timestamp()+interval '20 milliseconds' WHERE id=${id}::uuid`.execute(
+        db,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 40));
+      expect((await core.webhooks.eraseExpiredPayloads(100)).blockedUnsupportedIds).toContain(id);
+      requirePurchase(await repo.reconcile(input));
+      expect((await core.webhooks.eraseExpiredPayloads(100)).blockedUnsupportedIds).not.toContain(id);
     } finally {
       await core.close();
     }
