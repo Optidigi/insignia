@@ -7,7 +7,7 @@ Active VPS management custody is `%h/.local/share/insignia/runtime/`. Some live 
 ## Current state
 
 As of 15 November 2026 (rewrite-dev on host alias `prod`). [Delivery state](../../docs/delivery/state.md#deployed-identities) holds the exact image digests and custody locators.
-- **Release profile:** `native-merchant-batch-a03b41ba`, set as `INSIGNIA_RELEASE_PROFILE` in web and worker and, with its matching code manifest, in the verifier. It binds version `1211378860033` in [native-merchant-batch-release-binding.json](native-merchant-batch-release-binding.json) (40 versions) and the 14-module [baseline](native-merchant-batch-module-baseline.json); see [Merchant-batch candidate](#merchant-batch-candidate-development-transition).
+- **Release profile:** `native-designer-d2002a28`, set as `INSIGNIA_RELEASE_PROFILE` in web and worker and, with its matching code manifest, in the verifier. It binds version `1222232834049` in [native-designer-release-binding.json](native-designer-release-binding.json) (41 versions) and the 14-module [baseline](native-designer-module-baseline.json); see [Designer candidate](#designer-candidate-development-transition).
 - **Functions:** source `aa3b6166`, unchanged since the cart-line v3 cutover; pins in [Cart-line v3](#cart-line-v3-candidate-development-transition).
 - **Schema 69**, equal to the 69 migrations in `packages/database/migrations` (65–66 deploys D–E, 67 deploy F, 68 deploy G, 69 deploy H). Expected digests are in [Deployed identities](../../docs/delivery/state.md#deployed-identities).
 - **`INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON`** in web is `{"appKey":…}` only since 13 November 2026 ([Expected Function configuration](#expected-function-configuration)). Worker and verifier never carried it.
@@ -324,6 +324,10 @@ The earlier read-only observation of `stitchs-vat-verification-20261004.myshopif
 ## Past transitions
 
 Each section below records one past transition: what it changed and the operator steps it needed then. They are history, not current instructions; [Current state](#current-state) and [Deploy next](#deploy-next) are current. Newest first.
+
+### Designer candidate development transition
+
+Standing owner grant, 13 November 2026, and the owner's go of 15 November 2026 for the QA issue batch (deploy K): ship the Designer changes merged up to main `d2002a28` (#509: #499, #501, #502, #503) to rewrite-dev as one theme-only app version. `native-designer-d2002a28` binds version `1222232834049` in [native-designer-release-binding.json](native-designer-release-binding.json) (41 versions) and the 14-module [baseline](native-designer-module-baseline.json) (canonical hash `6bade0652e0ebbca8099e71adc1a5874b8277245a0419c8707b05937d63f67cc`). It was created once at `2026-11-15T15:02:25Z` (CLI 4.9.4) from the frozen `native-merchant-batch-a03b41ba` staging with only `extensions/insignia-theme/assets` replaced by the foundation build of `d2002a28` (run 43726377630). Blocks, snippets, locales, every non-theme module and both Function modules are unchanged. Released `15:40:23Z` after Phase B (verifier, web, worker on binding-head `413fe864` images with the new profile; no migration, grant or other environment change).
 
 ### Merchant-batch candidate development transition
 
