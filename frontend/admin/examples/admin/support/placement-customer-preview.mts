@@ -57,7 +57,10 @@ export function buildArtworkPreviewSnapshot(
     product.variantPhotos?.groupingOptionIds.length &&
     views.some((view) => view.placements.length && !view.imageUrl)
   ) {
-    throw new CustomerPreviewError('assigned-images-required');
+    // With an appearance chosen, its missing view images are the gap; choosing another appearance would not help.
+    throw new CustomerPreviewError(
+      options.appearanceGroupKey ? 'images-for-placement-views-required' : 'assigned-images-required',
+    );
   }
   // Without an active choice, these are the explicitly configured shared view images.
   // Never select a variant assignment by its ordering, title or image shape.

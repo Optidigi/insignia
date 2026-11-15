@@ -1043,6 +1043,7 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.realCurrencyReview': { currency: string };
   'editor:placementWorkflowPreview.realDimensionsRequired': object;
   'editor:placementWorkflowPreview.realDraftChanged': object;
+  'editor:placementWorkflowPreview.realDraftConflict': object;
   'editor:placementWorkflowPreview.realDraftSaved': object;
   'editor:placementWorkflowPreview.realHistoricalAppearanceReview': object;
   'editor:placementWorkflowPreview.realHistoricalPricingReview': object;

@@ -1098,6 +1098,7 @@
     "realReplacePublishedQuestion": "Remplacer la configuration en ligne par celle-ci ? Une fois en ligne, les clients pourront personnaliser ce produit avec la nouvelle configuration. Les modifications suivantes resteront dans un brouillon jusqu’à leur publication.",
     "publishNeedsView": "La publication sera disponible dès que le produit aura une vue.",
     "realSaveFailed": "Vos modifications n’ont pas pu être confirmées. Réessayez la demande initiale avant d’enregistrer d’autres modifications.",
+    "realDraftConflict": "Ce brouillon a été enregistré ailleurs, par exemple dans un autre onglet. Vos modifications sur cette page ne sont pas enregistrées. Recharger le brouillon actuel affiche la version enregistrée et supprime vos modifications.",
     "realPublished": "Publié",
     "realDraftChanged": "Les valeurs héritées ont changé. Vérifiez les modifications enregistrées avant de publier à nouveau.",
     "realCurrencyReview": "La devise de la boutique est maintenant {{currency}}. Vérifiez tous les prix avant d’enregistrer une nouvelle proposition.",

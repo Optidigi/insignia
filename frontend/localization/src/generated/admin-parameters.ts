@@ -1068,6 +1068,7 @@ export const adminParameterContracts = {
   'editor:placementWorkflowPreview.realCurrencyReview': { currency: 'string' },
   'editor:placementWorkflowPreview.realDimensionsRequired': {},
   'editor:placementWorkflowPreview.realDraftChanged': {},
+  'editor:placementWorkflowPreview.realDraftConflict': {},
   'editor:placementWorkflowPreview.realDraftSaved': {},
   'editor:placementWorkflowPreview.realHistoricalAppearanceReview': {},
   'editor:placementWorkflowPreview.realHistoricalPricingReview': {},

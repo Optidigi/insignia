@@ -1062,6 +1062,7 @@
     "realReplacePublishedQuestion": "Die live geschaltete Einrichtung durch diese ersetzen? Sobald die neue Einrichtung live ist, kann die Kundschaft dieses Produkt damit anpassen. Spätere Änderungen bleiben bis zur Veröffentlichung im Entwurf.",
     "publishNeedsView": "Das Veröffentlichen ist verfügbar, sobald das Produkt eine Ansicht hat.",
     "realSaveFailed": "Ihre Änderungen konnten nicht bestätigt werden. Wiederholen Sie die ursprüngliche Anfrage, bevor Sie andere Änderungen speichern.",
+    "realDraftConflict": "Dieser Entwurf wurde an anderer Stelle gespeichert, zum Beispiel in einem anderen Tab. Ihre Änderungen auf dieser Seite sind nicht gespeichert. Wenn Sie den aktuellen Entwurf neu laden, wird die gespeicherte Version angezeigt und Ihre Änderungen werden verworfen.",
     "realPublished": "Veröffentlicht",
     "realDraftChanged": "Übernommene Standardwerte haben sich geändert. Prüfen Sie die gespeicherten Änderungen vor der Veröffentlichung.",
     "realCurrencyReview": "Die Shopwährung ist jetzt {{currency}}. Prüfen Sie alle Preise, bevor Sie einen neuen Vorschlag speichern.",

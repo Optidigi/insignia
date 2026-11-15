@@ -204,10 +204,7 @@ for (let iteration = 1; iteration <= iterations; iteration++) {
       await f.page.getByRole('textbox', { name: 'Center X', exact: true }).fill('60');
       await editName(f.page, 'Recover this intent');
       await hostSave(f.page);
-      await f.page
-        .locator('.placement-notice s-banner')
-        .filter({ hasText: 'Your changes could not be confirmed.' })
-        .waitFor();
+      await f.page.locator('s-banner').filter({ hasText: 'Your changes could not be confirmed.' }).waitFor();
       assert.ok(await storedIntent(f.page));
       await f.page.reload();
       await f.page.locator('.placement-editor').waitFor({ state: 'visible' });

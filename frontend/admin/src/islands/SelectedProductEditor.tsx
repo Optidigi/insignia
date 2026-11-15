@@ -379,7 +379,7 @@ function placementNoticeText(notice: PlacementNotice, product: PlacementProduct,
     case 'draft-changed':
       return t('editor:placementWorkflowPreview.realDraftChanged');
     case 'storage-save-failed':
-      return t(production ? 'editor:placementWorkflowPreview.realSaveFailed' : 'editor:placementWorkflowPreview.notices.storageSaveFailed');
+      return t('editor:placementWorkflowPreview.notices.storageSaveFailed');
     case 'draft-saved':
       return t(production ? 'editor:placementWorkflowPreview.realDraftSaved' : 'editor:placementWorkflowPreview.notices.draftSaved');
     case 'publish-failed':
@@ -2340,8 +2340,8 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     writeBusyRef.current = true;
     setWriteBusy(true);
     try { const confirmed = await adapter.save(candidate); if (confirmed) candidate = confirmed; } catch (error) {
-      // A server rejection is explained by the host's own banner; it is not an unconfirmed write.
-      setNotice(configRejectionFrom(error) ? null : { kind: 'message', reason: 'storage-save-failed' });
+      // In production the host's banner explains every failed save (unconfirmed, conflict or rejection); one message.
+      setNotice(configRejectionFrom(error) || production ? null : { kind: 'message', reason: 'storage-save-failed' });
       return false;
     } finally { writeBusyRef.current = false; setWriteBusy(false); }
     setProduct(candidate);
@@ -4176,7 +4176,13 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
           onClose={() => dispatchDialog({ type: 'dialog-closed', id: publishReview.id })}
           actions={
             publishReview.issues.length ? null : (
-              <s-button slot="primary-action" variant="primary" onClick={confirmPublish}>
+              <s-button
+                slot="primary-action"
+                variant="primary"
+                disabled={writeBusy || adapter.pending()}
+                loading={writeBusy || adapter.pending()}
+                onClick={confirmPublish}
+              >
                 {translateUi(production ? 'editor:placementWorkflowPreview.realPublish' : 'editor:placementWorkflowPreview.publishPreview')}
               </s-button>
             )

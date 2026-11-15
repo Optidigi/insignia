@@ -10,7 +10,7 @@ import {
 import { calibratedDimensions } from '@insignia/visualizer/geometry';
 import { withAdminLocale, useAdminLocale } from '../shared/admin-i18n';
 import { useAdminPageReady } from '../shared/admin-page-ready';
-import { authenticatedJson, isUnansweredRequest } from '../shared/admin-request';
+import { authenticatedJson, isShopifyBusy, isUnansweredRequest } from '../shared/admin-request';
 import type { ConfigView } from '../shared/admin-view';
 import {
   configRejectionFrom,
@@ -365,6 +365,9 @@ function SelectedProductContainer({ productId }: { productId: string }) {
       setRemote(failedRemote(owned, error, 'failed'));
     }
   }
+  function isDraftConflict(error: unknown): boolean {
+    return !!error && typeof error === 'object' && 'status' in error && error.status === 409 && !isShopifyBusy(error);
+  }
   /** A write that is still unresolved stays pending; a server rejection is final; anything else is `otherwise`. */
   function failedRemote(owned: Client, error: unknown, otherwise: 'failed' | 'conflict'): Remote {
     if (owned.hasPending()) return 'pending';
@@ -517,7 +520,8 @@ function SelectedProductContainer({ productId }: { productId: string }) {
               setRemote('idle');
               return confirmed;
             } catch (error) {
-              if (client.current === owned) setRemote(failedRemote(owned, error, 'conflict'));
+              // Only the server's CAS answer (or the client's own changed-draft check) means another save won.
+              if (client.current === owned) setRemote(failedRemote(owned, error, isDraftConflict(error) ? 'conflict' : 'failed'));
               throw error;
             }
           },
@@ -628,7 +632,9 @@ function SelectedProductContainer({ productId }: { productId: string }) {
                     ? 'editor:placementWorkflowPreview.realPublicationFailed'
                     : publicationProgressing
                       ? 'editor:placementWorkflowPreview.realPublicationProgress'
-                      : 'editor:placementWorkflowPreview.realSaveFailed',
+                      : remote === 'conflict'
+                        ? 'editor:placementWorkflowPreview.realDraftConflict'
+                        : 'editor:placementWorkflowPreview.realSaveFailed',
               )}
           {!rejected && (view.config?.publication.reason || view.config?.publishEligibility.reason) && (
             <s-paragraph>{view.config.publication.reason ?? view.config.publishEligibility.reason}</s-paragraph>
