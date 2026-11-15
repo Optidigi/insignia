@@ -1590,6 +1590,9 @@ export interface AdminMessageTable {
   'home:unavailable.action': object;
   'home:unavailable.body': object;
   'home:unavailable.heading': object;
+  'home:unavailable.permissionAction': object;
+  'home:unavailable.permissionBody': object;
+  'home:unavailable.permissionHeading': object;
   'home:unavailable.sessionLost': object;
   'home:welcome.body': object;
   'home:welcome.heading': object;

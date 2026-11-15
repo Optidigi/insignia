@@ -22,7 +22,10 @@
     "heading": "Ouvrez Insignia dans Shopify",
     "body": "Ouvrez l’application depuis l’interface d’administration Shopify pour continuer.",
     "action": "Ouvrir dans Shopify",
-    "sessionLost": "Votre session d’administration Shopify a expiré. Ouvrez l’application depuis Shopify pour continuer."
+    "sessionLost": "Votre session d’administration Shopify a expiré. Ouvrez l’application depuis Shopify pour continuer.",
+    "permissionHeading": "Insignia a besoin d’accéder à vos produits",
+    "permissionBody": "Approuvez l’accès d’Insignia dans Shopify et vérifiez que votre compte employé peut consulter et modifier les produits. Rechargez ensuite cette page.",
+    "permissionAction": "Vérifier les autorisations de l’app"
   },
   "failure": {
     "productsHeading": "Impossible de charger les produits",

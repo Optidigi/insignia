@@ -98,6 +98,8 @@ async function openMerchantPage(
     acknowledged?: GuideStep[];
     orders?: 'none' | 'test-only';
     locale?: string;
+    /** Every admin read answers 403 "Read permission required", as for a fresh install without product access. */
+    readDenied?: boolean;
   },
 ): Promise<Page> {
   const { source, server, browser } = await browserFixture(t);
@@ -155,6 +157,11 @@ async function openMerchantPage(
   await page.route(/\/api\/purchases\/v1\?/, (route) =>
     route.fulfill({ json: ordersPage(scenario.orders === 'test-only' ? [testOrder] : []) }),
   );
+  // Registered last, so it answers before every route above.
+  if (scenario.readDenied)
+    await page.route(/\/api\/(admin|purchases)\//, (route) =>
+      route.fulfill({ status: 403, json: { error: 'Read permission required' } }),
+    );
   await page.goto(`${server.base}${path}${scenario.locale ? `?locale=${scenario.locale}` : ''}`);
   return page;
 }
@@ -349,4 +356,15 @@ test('an unanswered setup status never ticks the product step beyond what the fi
   });
   await page.getByText('0 of 3 complete', { exact: true }).waitFor();
   assert.equal(await stepCheckbox(page, 'Mark product setup as complete').isChecked(), false);
+});
+
+test('without product access Home explains the missing permission instead of asking to reopen the app', {
+  timeout: 30000,
+}, async (t) => {
+  const page = await openMerchantPage(t, '/admin/home', { embed: 'active', readDenied: true });
+  await page.getByRole('heading', { name: 'Insignia needs access to your products' }).first().waitFor();
+  assert.equal(await page.getByText('Open Insignia in Shopify', { exact: true }).count(), 0);
+  const action = page.getByRole('link', { name: 'Check app permissions' });
+  assert.equal(await action.count(), 1);
+  assert.match((await action.getAttribute('href')) ?? '', /\/admin\/settings\/permissions$/);
 });
