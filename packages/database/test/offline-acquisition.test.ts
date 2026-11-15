@@ -53,8 +53,21 @@ describe('durable offline credential acquisition', () => {
       await first.close();
       firstClosed = true;
       restarted = core();
-      expect(await restarted.credentials.reserveAcquisition(input)).toEqual({ kind: 'unresolved' });
+      // Within its lease the dispatched exchange may still answer: busy, never a second reservation.
+      expect(await restarted.credentials.reserveAcquisition(input)).toEqual({ kind: 'busy' });
       expect(await peer.credentials.dispatchAcquisition(attempt)).toBe(false);
+      const db = await openTestDatabase();
+      try {
+        await db
+          .updateTable('shop_credential_acquisitions')
+          .set({ reserved_until: new Date(0) })
+          .where('attempt_id', '=', winner.attemptId)
+          .execute();
+      } finally {
+        await db.destroy();
+      }
+      // Once the lease lapses without completion the outcome is unknown and stays unresolved.
+      expect(await restarted.credentials.reserveAcquisition(input)).toEqual({ kind: 'unresolved' });
     } finally {
       await Promise.all([firstClosed ? undefined : first.close(), peer.close(), restarted?.close()]);
     }
