@@ -84,6 +84,8 @@ import reviewCartBinding from '../../deployment/m5-runtime/native-review-cart-re
 };
 import reviewNavModules from '../../deployment/m5-runtime/native-review-nav-module-baseline.json' with { type: 'json' };
 import reviewNavBinding from '../../deployment/m5-runtime/native-review-nav-release-binding.json' with { type: 'json' };
+import scopesModules from '../../deployment/m5-runtime/native-scopes-module-baseline.json' with { type: 'json' };
+import scopesBinding from '../../deployment/m5-runtime/native-scopes-release-binding.json' with { type: 'json' };
 import selectedOnlyModules from '../../deployment/m5-runtime/native-selected-fixed-module-baseline.json' with {
   type: 'json',
 };
@@ -434,6 +436,26 @@ test('functions renew candidate preserves identities and changes only theme and 
       };
       assert.deepEqual(unversioned(config), unversioned(oldConfig));
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
+  }
+});
+test('scopes candidate changes only the app_access scopes', () => {
+  assert.equal(scopesModules.length, 14);
+  assert.equal(scopesBinding.moduleHash, '9429bdba56281054010f3534a38922af5e80f31b98fbe8933ea9dc9f4a4b948f');
+  assert.equal(scopesBinding.versionId, '1222703742977');
+  assert.deepEqual(new Set(scopesBinding.versionIds), new Set([...designerBinding.versionIds, '1222703742977']));
+  const prior = new Map(designerModules.map((m) => [m.handle, m]));
+  assert.equal(prior.size, 14);
+  for (const module of scopesModules) {
+    const old = required(prior.get(module.handle));
+    if (module.type === 'app_access') {
+      assert.deepEqual({ ...module, config: undefined }, { ...old, config: undefined });
+      assert.deepEqual(module.config, {
+        ...old.config,
+        scopes:
+          'read_markets,read_orders,read_publications,write_app_proxy,write_cart_transforms,write_products,write_validations',
+        optional_scopes: ['read_product_listings'],
+      });
+    } else assert.deepEqual(module, old);
   }
 });
 test('designer candidate changes only theme assets', () => {
