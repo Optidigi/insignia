@@ -58,6 +58,8 @@ import merchantBatchModules from '../../deployment/m5-runtime/native-merchant-ba
 import merchantBatchBinding from '../../deployment/m5-runtime/native-merchant-batch-release-binding.json' with {
   type: 'json',
 };
+import designerModules from '../../deployment/m5-runtime/native-designer-module-baseline.json' with { type: 'json' };
+import designerBinding from '../../deployment/m5-runtime/native-designer-release-binding.json' with { type: 'json' };
 import parityModules from '../../deployment/m5-runtime/native-parity-module-baseline.json' with { type: 'json' };
 import parityBinding from '../../deployment/m5-runtime/native-parity-release-binding.json' with { type: 'json' };
 import performanceModules from '../../deployment/m5-runtime/native-performance-module-baseline.json' with {
@@ -432,6 +434,31 @@ test('functions renew candidate preserves identities and changes only theme and 
       };
       assert.deepEqual(unversioned(config), unversioned(oldConfig));
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
+  }
+});
+test('designer candidate changes only theme assets', () => {
+  assert.equal(designerModules.length, 14);
+  assert.equal(designerBinding.moduleHash, '6bade0652e0ebbca8099e71adc1a5874b8277245a0419c8707b05937d63f67cc');
+  assert.equal(designerBinding.versionId, '1222232834049');
+  assert.deepEqual(new Set(designerBinding.versionIds), new Set([...merchantBatchBinding.versionIds, '1222232834049']));
+  assert.deepEqual(
+    designerModules.map((m) => m.handle),
+    designerModules.map((m) => m.handle).sort(),
+  );
+  const prior = new Map(merchantBatchModules.map((m) => [m.handle, m]));
+  assert.equal(prior.size, 14);
+  for (const module of designerModules) {
+    const old = required(prior.get(module.handle));
+    if (module.type === 'theme_app_extension') {
+      assert.deepEqual({ ...module, config: undefined }, { ...old, config: undefined });
+      type ThemeConfig = { theme_extension: { files: Record<string, unknown> } };
+      const files = (module.config as unknown as ThemeConfig).theme_extension.files;
+      const oldFiles = (old.config as unknown as ThemeConfig).theme_extension.files;
+      assert.deepEqual(files.blocks, oldFiles.blocks);
+      assert.deepEqual(files.snippets, oldFiles.snippets);
+      assert.deepEqual(files.locales, oldFiles.locales);
+      assert.notDeepEqual(files.assets, oldFiles.assets);
+    } else assert.deepEqual(module, old);
   }
 });
 test('merchant-batch candidate changes only theme assets', () => {
