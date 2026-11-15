@@ -484,6 +484,20 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
     assert.equal(waiting.attempts, 1);
     assert.ok(Date.parse(required(waiting.nextAttemptAt)) > Date.now());
     assert.equal(await runner.processInbox(delayed), 'deferred');
+    // #496: the queue LOGIN's recovery pass closes a lease that expired on the last attempt as failed.
+    await owner.query(
+      "UPDATE inbox_messages SET state='leased',attempts=12,lease_owner='crashed',lease_until=clock_timestamp()-interval '1 second' WHERE id=$1",
+      [delayed],
+    );
+    assert.equal(await runner.recover(), 0);
+    assert.deepEqual(
+      required(
+        await owner.query('SELECT state,attempts,last_error_class,lease_owner FROM inbox_messages WHERE id=$1', [
+          delayed,
+        ]),
+      ).rows[0],
+      { state: 'failed', attempts: 12, last_error_class: 'ATTEMPTS_EXHAUSTED_AFTER_LEASE', lease_owner: null },
+    );
     assert.equal(await required(runtime).purchases.get({ ...scope, shopId: other.shopId }, first.purchaseId), null);
     assert.equal(
       await required(runtime).purchases.getOffer({

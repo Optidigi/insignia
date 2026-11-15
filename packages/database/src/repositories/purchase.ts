@@ -34,6 +34,9 @@ export type PurchaseReconciliationHint = {
  */
 const RECEIPT_ATTEMPTS = 12;
 const due = sql`(m.next_attempt_at IS NULL OR m.next_attempt_at<=clock_timestamp())`;
+const ORDER_TOPICS = sql`d.api_version='2026-07' AND d.topic IN ('orders/create','orders/paid','orders/updated','refunds/create')`;
+/** Receipts a reconciliation hint may come from: retained order receipts of an active, current installation. */
+const hintable = sql`inbox_messages m JOIN shopify_webhook_deliveries d ON d.inbox_id=m.id JOIN shops s ON s.shop_id=m.shop_id AND s.current_generation=m.installation_generation JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE m.source='shopify' AND m.retention_class='shopify-webhook' AND m.erasure_state='retained' AND m.purge_after>clock_timestamp() AND isfinite(m.purge_after) AND i.deactivated_at IS NULL AND m.state<>'processed' AND d.queue_handoff_state<>'exhausted' AND ${ORDER_TOPICS}`;
 export type PurchaseScope = { shopId: string; installationGeneration: string; kind: 'merchant' };
 export class PurchaseStateError extends Error {
   constructor(public readonly code: 'NOT_FOUND' | 'CONFLICT' | 'INVALID' | 'LOCKED' | 'EXPIRED' | 'NOT_READY') {
@@ -193,7 +196,7 @@ export function createPurchaseRepository(db: Kysely<Database>) {
         attempts: number;
         next_attempt_at: Date | null;
         queue_handoff_state: string;
-      }>`SELECT m.id::text,m.shop_id,m.installation_generation::text,m.payload,m.payload_sha256,d.topic,d.api_version,m.state,m.attempts,m.next_attempt_at,d.queue_handoff_state FROM inbox_messages m JOIN shopify_webhook_deliveries d ON d.inbox_id=m.id JOIN shops s ON s.shop_id=m.shop_id AND s.current_generation=m.installation_generation JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE m.id=${id}::uuid AND m.source='shopify' AND m.retention_class='shopify-webhook' AND m.erasure_state='retained' AND m.purge_after>clock_timestamp() AND isfinite(m.purge_after) AND i.deactivated_at IS NULL AND m.state<>'processed' AND m.attempts<${lock ? RECEIPT_ATTEMPTS + 1 : RECEIPT_ATTEMPTS} AND d.queue_handoff_state<>'exhausted' AND d.api_version='2026-07' AND d.topic IN ('orders/create','orders/paid','orders/updated','refunds/create') ${lock ? sql`FOR UPDATE OF m` : sql``}`.execute(
+      }>`SELECT m.id::text,m.shop_id,m.installation_generation::text,m.payload,m.payload_sha256,d.topic,d.api_version,m.state,m.attempts,m.next_attempt_at,d.queue_handoff_state FROM ${hintable} AND m.id=${id}::uuid AND m.attempts<${lock ? RECEIPT_ATTEMPTS + 1 : RECEIPT_ATTEMPTS} ${lock ? sql`FOR UPDATE OF m` : sql``}`.execute(
         executor,
       )
     ).rows[0];
@@ -666,13 +669,29 @@ export function createPurchaseRepository(db: Kysely<Database>) {
     },
     async selectPurchaseRecoveryHints(limit = 100) {
       if (!Number.isInteger(limit) || limit < 1 || limit > 1000) fail('INVALID');
-      const ids = await sql<{
-        id: string;
-      }>`SELECT m.id::text FROM inbox_messages m JOIN shopify_webhook_deliveries d ON d.inbox_id=m.id WHERE (m.state IN ('pending','failed') OR (m.state='leased' AND m.lease_until<=clock_timestamp())) AND m.attempts<${RECEIPT_ATTEMPTS} AND ${due} AND m.erasure_state='retained' AND m.purge_after>clock_timestamp() AND d.queue_handoff_state='confirmed' AND d.api_version='2026-07' AND d.topic IN ('orders/create','orders/paid','orders/updated','refunds/create') ORDER BY m.received_at LIMIT ${limit}`.execute(
+      // A worker that stopped during the last allowed attempt leaves an expired lease nothing may reclaim:
+      // close it as failed, keeping its attempts and identity (#496).
+      await sql`UPDATE inbox_messages m SET state='failed',last_error_class='ATTEMPTS_EXHAUSTED_AFTER_LEASE',lease_owner=NULL,lease_until=NULL,next_attempt_at=NULL FROM shopify_webhook_deliveries d WHERE d.inbox_id=m.id AND m.state='leased' AND m.lease_until<=clock_timestamp() AND m.attempts>=${RECEIPT_ATTEMPTS} AND ${ORDER_TOPICS}`.execute(
         db,
       );
-      const hints = await Promise.all(ids.rows.map((r) => hint(db, r.id)));
-      return hints.filter((h): h is PurchaseReconciliationHint => h !== null);
+      // The selection applies every condition hint() can express in SQL, so receipts it would refuse take no
+      // slots; the scan continues past the few it still refuses (body checks) until it has `limit` hints (#495).
+      const hints: PurchaseReconciliationHint[] = [];
+      let after: string | null = null;
+      while (hints.length < limit) {
+        const rows: { id: string }[] = (
+          await sql<{
+            id: string;
+          }>`SELECT m.id::text FROM ${hintable} AND (m.state IN ('pending','failed') OR (m.state='leased' AND m.lease_until<=clock_timestamp())) AND m.attempts<${RECEIPT_ATTEMPTS} AND ${due} AND d.queue_handoff_state='confirmed' ${after ? sql`AND (m.received_at,m.id)>((SELECT received_at FROM inbox_messages WHERE id=${after}::uuid),${after}::uuid)` : sql``} ORDER BY m.received_at,m.id LIMIT ${limit}`.execute(
+            db,
+          )
+        ).rows;
+        const found = await Promise.all(rows.map((r) => hint(db, r.id)));
+        hints.push(...found.filter((h): h is PurchaseReconciliationHint => h !== null).slice(0, limit - hints.length));
+        after = rows.at(-1)?.id ?? null;
+        if (rows.length < limit || !after) break;
+      }
+      return hints;
     },
     async claimPurchaseReconciliationHint(inboxId: string) {
       return db.transaction().execute(async (tx) => {

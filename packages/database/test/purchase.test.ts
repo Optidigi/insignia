@@ -448,6 +448,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
     core: ReturnType<typeof createDurableCore>,
     input: PurchaseObservation,
     topic = 'orders/paid',
+    resource = 'Order',
   ) {
     const domain = `${randomUUID()}.myshopify.com`,
       orderNumber = input.order.orderId.split('/').at(-1)!;
@@ -461,7 +462,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
       eventId: null,
       name: null,
       rawBody: Buffer.from(
-        JSON.stringify({ id: orderNumber, admin_graphql_api_id: `gid://shopify/Order/${orderNumber}` }),
+        JSON.stringify({ id: orderNumber, admin_graphql_api_id: `gid://shopify/${resource}/${orderNumber}` }),
       ),
     });
     await core.webhooks.withQueueHandoff(receipt.id, async () => 'enqueued');
@@ -604,6 +605,102 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
       });
       expect(await selected(repo, id)).toBe(false);
       expect(await repo.claimPurchaseReconciliationHint(id)).toBeNull();
+    } finally {
+      await core.close();
+    }
+  });
+  /** Test clock: places the receipts at fixed, increasing receive times days ago, ahead of other tests' receipts. */
+  async function receivedDaysAgo(ids: string[], days: number) {
+    for (const [index, id] of ids.entries())
+      await sql`UPDATE inbox_messages SET received_at=clock_timestamp()-make_interval(days=>${days})+make_interval(secs=>${index}) WHERE id=${id}::uuid`.execute(
+        db,
+      );
+  }
+  it('a due receipt is recovered behind more than a pass of receipts the hint rejects (#495)', async () => {
+    const repo = createPurchaseRepository(db),
+      core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+    try {
+      // Rejected by a condition the selection can express: the installation was deactivated.
+      const uninstalled = await observation();
+      const stale: string[] = [];
+      for (let index = 0; index < 21; index++) stale.push(await orderReceipt(core, uninstalled));
+      await sql`UPDATE installation_generations SET deactivated_at=clock_timestamp() WHERE shop_id=${uninstalled.order.shopId}`.execute(
+        db,
+      );
+      // Rejected only by the hint itself: a signed body naming another resource.
+      const input = await observation();
+      const malformed: string[] = [];
+      for (let index = 0; index < 21; index++) malformed.push(await orderReceipt(core, input, 'orders/paid', 'Shop'));
+      const due = await orderReceipt(core, input);
+      await receivedDaysAgo([...stale, ...malformed], 6);
+      await receivedDaysAgo([due], 5);
+      for (const id of [...stale, ...malformed]) expect(await repo.getPurchaseReconciliationHint(id)).toBeNull();
+      const hints = await repo.selectPurchaseRecoveryHints(20);
+      expect(hints[0]?.inboxId).toBe(due);
+      const claim = await repo.claimPurchaseReconciliationHint(due);
+      requirePurchase(await repo.reconcile({ ...input, inboxId: due, claimToken: claim!.claimToken }));
+      expect((await receiptRow(due))?.state).toBe('processed');
+    } finally {
+      await core.close();
+    }
+  });
+  it('recovery closes a receipt whose lease expired on its last attempt as failed and never retries it (#496)', async () => {
+    const input = await observation(),
+      repo = createPurchaseRepository(db),
+      core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+    try {
+      const id = await orderReceipt(core, input, 'orders/create');
+      for (let attempt = 1; attempt <= 11; attempt++) {
+        await failAttempt(repo, id);
+        await retryDue(id);
+      }
+      const identity = async () =>
+        (
+          await sql<{
+            shop_id: string;
+            installation_generation: string;
+            payload_sha256: string;
+            received_at: Date;
+          }>`SELECT shop_id,installation_generation::text,payload_sha256,received_at FROM inbox_messages WHERE id=${id}::uuid`.execute(
+            db,
+          )
+        ).rows[0];
+      const before = await identity();
+      // The worker claims the 12th attempt and crashes: no success and no failure is recorded.
+      expect((await repo.claimPurchaseReconciliationHint(id))?.attempts).toBe(12);
+      await repo.selectPurchaseRecoveryHints(1000);
+      expect((await receiptRow(id))?.state).toBe('leased'); // An unexpired lease is still the worker's.
+      await sql`UPDATE inbox_messages SET lease_until=clock_timestamp()-interval '1 second' WHERE id=${id}::uuid`.execute(
+        db,
+      );
+      expect(await selected(repo, id)).toBe(false);
+      expect(await receiptRow(id)).toEqual({
+        state: 'failed',
+        attempts: 12,
+        last_error_class: 'ATTEMPTS_EXHAUSTED_AFTER_LEASE',
+      });
+      expect(await identity()).toEqual(before);
+      const lease = await sql<{
+        lease_owner: string | null;
+        next_attempt_at: Date | null;
+      }>`SELECT lease_owner,next_attempt_at FROM inbox_messages WHERE id=${id}::uuid`.execute(db);
+      expect(lease.rows[0]).toEqual({ lease_owner: null, next_attempt_at: null });
+      expect(await repo.claimPurchaseReconciliationHint(id)).toBeNull();
+      expect(await repo.getPurchaseReconciliationHint(id)).toBeNull();
+      await repo.selectPurchaseRecoveryHints(1000);
+      expect(await receiptRow(id)).toEqual({
+        state: 'failed',
+        attempts: 12,
+        last_error_class: 'ATTEMPTS_EXHAUSTED_AFTER_LEASE',
+      });
+      // #488/#490: a failed receipt still alerts after erasure until discovery records its order.
+      await sql`UPDATE inbox_messages SET purge_after=clock_timestamp()+interval '20 milliseconds' WHERE id=${id}::uuid`.execute(
+        db,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 40));
+      expect((await core.webhooks.eraseExpiredPayloads(100)).blockedUnsupportedIds).toContain(id);
+      requirePurchase(await repo.reconcile(input));
+      expect((await core.webhooks.eraseExpiredPayloads(100)).blockedUnsupportedIds).not.toContain(id);
     } finally {
       await core.close();
     }
