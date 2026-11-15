@@ -142,6 +142,7 @@ function Frame({ initial }: { initial: Initial }) {
   const [hostError, setHostError] = useState(0);
   const [requestClose, setRequestClose] = useState(0);
   const [entryFocus, setEntryFocus] = useState<{ keyboard: boolean }>();
+  const [productVariant, setProductVariant] = useState<{ variantId: string }>();
   const [reviewed, setReviewed] = useState(0);
   const [cartLine, setCartLine] = useState<{ design: Design }>();
   const [wording, setWording] = useState(initial.wording);
@@ -179,6 +180,7 @@ function Frame({ initial }: { initial: Initial }) {
         setVisible(true);
         setOpen(true);
         setEntryFocus({ keyboard: event.data.keyboard === true });
+        if (typeof event.data.variantId === 'string') setProductVariant({ variantId: event.data.variantId });
       }
       if (event.data.type === 'insignia:designer:suspend') setVisible(false);
       if (event.data.type === 'insignia:designer:request-close') {
@@ -249,6 +251,7 @@ function Frame({ initial }: { initial: Initial }) {
           quoteReview={quote}
           requestCloseSignal={requestClose}
           entryFocusSignal={entryFocus}
+          productVariantSignal={productVariant}
           hostErrorSignal={hostError}
           cartReviewedSignal={reviewed}
           observedCartLine={cartLine}

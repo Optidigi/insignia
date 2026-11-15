@@ -477,6 +477,7 @@
       "customer_review_pricePerItem": "Prezzo per articolo",
       "customer_review_baseItem": "Articolo di base",
       "customer_review_artworkRequiredBeforeProduction": "Grafica richiesta prima della produzione",
+      "customer_review_artworkLaterNextStep": "Grafica in seguito: passaggio successivo",
       "customer_review_previewDisclaimer": "Avviso sull'anteprima",
       "customer_review_editPositionArtwork": "Modifica la grafica per la posizione",
       "customer_review_methodSize": "Tecnica e dimensione",

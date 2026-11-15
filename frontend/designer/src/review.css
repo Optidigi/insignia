@@ -325,6 +325,10 @@
   color: var(--muted);
   font-size: 12px;
 }
+.review-group-detail {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .review-group-total {
   font-size: 13px;
   font-variant-numeric: tabular-nums;

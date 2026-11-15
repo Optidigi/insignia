@@ -49,6 +49,12 @@ const config = {
   ],
   methods: [{ id: 'print', label: 'Print', surcharge: 0 }],
 };
+/** A second colour so the product page's selected variant can choose the Designer's starting colour (#499). */
+const twoColours = {
+  ...config,
+  colors: [...config.colors, { ...config.colors[0], id: 'navy', name: 'Navy' }],
+  variantMatrix: [...config.variantMatrix, { rowId: 'navy', columnId: 'small', variantId: '102', available: true }],
+};
 const placed = {
   initialPrints: [{ id: 'chest', method: 'print', size: 0, artworkId: 'asset' }],
   initialArtworks: [
@@ -91,11 +97,11 @@ const buildSources = () =>
 async function openProductPage(
   t: TestContext,
   engine: BrowserType,
-  options: { artwork?: boolean; hidden?: boolean; resume?: boolean },
+  options: { artwork?: boolean; hidden?: boolean; resume?: boolean; productVariant?: string },
 ) {
   const [host, frameSource] = await buildSources();
   const frameOptions = JSON.stringify({
-    config,
+    config: options.productVariant ? twoColours : config,
     locale: 'en',
     ...(options.artwork || options.resume ? placed : {}),
     ...(options.resume ? { resumeDraft: { id: 'draft', prints: placed.initialPrints, quantities: {} } } : {}),
@@ -104,8 +110,9 @@ async function openProductPage(
   const html = `<!doctype html><html><body><p>Shopify product page</p><a href="#top" id="before">Page link</a><button id="trigger" type="button">Customize this product</button><a href="#end" id="after">Later page link</a><script type="module">
  import {createDesignerFrame} from '/host.js';
  window.designerClosed=0;
+ window.productVariant=${JSON.stringify(options.productVariant ?? null)};
  const ports={artwork:{upload:()=>new Promise(()=>{})},cart:{commit:()=>new Promise(()=>{})}};
- const create=()=>createDesignerFrame({...${frameOptions},ports,onClose(){window.designerClosed++}});
+ const create=()=>createDesignerFrame({...${frameOptions},ports,productPageVariant:()=>window.productVariant??undefined,onClose(){window.designerClosed++}});
  ${options.hidden ? 'window.liveFrame=create();' : ''}
  document.getElementById('trigger').addEventListener('click',()=>{if(window.liveFrame)window.liveFrame.open();else window.liveFrame=create()});
  </script></body></html>`;
@@ -327,6 +334,91 @@ for (const engine of [chromium, firefox]) {
     });
     const after = await focusState(page);
     assert.equal(after.host === 'iframe' && after.inFrame, true, 'focus stays inside the Designer after Keep editing');
+  });
+
+  test(`${engine.name()}: advancing a step by keyboard moves focus to the new step's content (#502)`, async (t) => {
+    const page = await openProductPage(t, engine, { artwork: true });
+    await openWithKeyboard(page);
+    const frame = page.frameLocator('dialog > iframe');
+    await frame.getByRole('button', { name: 'Choose quantities', exact: true }).focus();
+    await page.keyboard.press('Enter');
+    await frame.getByRole('textbox', { name: 'White Small quantity' }).waitFor();
+    await page.waitForFunction(
+      () =>
+        document.querySelector<HTMLIFrameElement>('dialog > iframe')?.contentDocument?.activeElement?.id ===
+        'design-controls',
+    );
+    await page.keyboard.press('Tab');
+    assert.equal(
+      await frame
+        .getByRole('textbox', { name: 'White Small quantity' })
+        .evaluate((input) => input === document.activeElement),
+      true,
+      `Tab after Choose quantities reaches the first quantity: ${JSON.stringify(await focusState(page))}`,
+    );
+    await page.keyboard.type('2');
+    await frame
+      .getByRole('region', { name: 'Design controls' })
+      .getByRole('button', { name: 'Review', exact: true })
+      .focus();
+    await page.keyboard.press('Enter');
+    await frame.getByRole('heading', { name: 'Review', exact: true }).waitFor();
+    await page.waitForFunction(
+      () =>
+        document.querySelector<HTMLIFrameElement>('dialog > iframe')?.contentDocument?.activeElement?.id ===
+        'design-controls',
+    );
+    await page.keyboard.press('Tab');
+    const next = await focusState(page);
+    assert.equal(next.inApp, true);
+    assert.notEqual(next.name, 'Add to cart', 'review content comes before the footer action');
+  });
+
+  test(`${engine.name()}: a fresh design starts on the product page's colour with empty quantities (#499)`, async (t) => {
+    const page = await openProductPage(t, engine, { productVariant: '102' });
+    await openWithKeyboard(page);
+    const frame = page.frameLocator('dialog > iframe');
+    await frame.getByRole('button', { name: 'Choose Navy', exact: true }).waitFor();
+    await page.waitForFunction(() =>
+      document
+        .querySelector<HTMLIFrameElement>('dialog > iframe')
+        ?.contentDocument?.querySelector('[aria-label="Choose Navy"][aria-pressed="true"]'),
+    );
+    // A colour chosen in the Designer survives closing and reopening while the product page is unchanged.
+    await frame.getByRole('button', { name: 'Choose White', exact: true }).click();
+    await frame.getByRole('button', { name: 'Close customizer', exact: true }).click();
+    await waitForClosed(page, 1);
+    await openWithKeyboard(page);
+    await page.waitForFunction(() =>
+      document
+        .querySelector<HTMLIFrameElement>('dialog > iframe')
+        ?.contentDocument?.querySelector('[aria-label="Choose White"][aria-pressed="true"]'),
+    );
+    // A new product-page choice applies to the still untouched design.
+    for (const [variant, closed] of [
+      ['101', 2],
+      ['102', 3],
+    ] as const) {
+      await frame.getByRole('button', { name: 'Close customizer', exact: true }).click();
+      await waitForClosed(page, closed);
+      await page.evaluate((value) => Reflect.set(window, 'productVariant', value), variant);
+      await openWithKeyboard(page);
+    }
+    await page.waitForFunction(() =>
+      document
+        .querySelector<HTMLIFrameElement>('dialog > iframe')
+        ?.contentDocument?.querySelector('[aria-label="Choose Navy"][aria-pressed="true"]'),
+    );
+  });
+
+  test(`${engine.name()}: the product page's colour never replaces a design that has artwork (#499)`, async (t) => {
+    const page = await openProductPage(t, engine, { artwork: true, productVariant: '102' });
+    await openWithKeyboard(page);
+    await page.waitForFunction(() =>
+      document
+        .querySelector<HTMLIFrameElement>('dialog > iframe')
+        ?.contentDocument?.querySelector('[aria-label="Choose White"][aria-pressed="true"]'),
+    );
   });
 
   test(`${engine.name()}: the close button still closes the opened Designer and returns focus to the trigger`, async (t) => {

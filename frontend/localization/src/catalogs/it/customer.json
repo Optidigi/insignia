@@ -194,6 +194,7 @@
     "pricePerItem": "Prezzo per articolo",
     "baseItem": "Articolo",
     "artworkRequiredBeforeProduction": "La grafica è richiesta prima della produzione.",
+    "artworkLaterNextStep": "Dopo l'ordine, il negozio ti contatterà per ricevere il file.",
     "previewDisclaimer": "L'aspetto e la posizione della grafica nell'anteprima possono variare leggermente.",
     "editPositionArtwork": "Modifica la grafica per {{positionName}}",
     "methodSize": "{{methodLabel}} · {{sizeLabel}}",

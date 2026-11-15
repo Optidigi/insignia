@@ -31,6 +31,8 @@ export async function mountLiveDesigner(input: {
   onClose(): void;
   onError(): void;
   isCurrent(): boolean;
+  /** The product page's currently selected variant, read each time the Designer opens (#499). */
+  productPageVariant?(): string | undefined;
 }) {
   if (input.initiallyHidden && input.repair) throw new Error('Background cart recovery is unavailable');
   const api = createBuyerApi({
@@ -223,6 +225,7 @@ export async function mountLiveDesigner(input: {
     const frame = createDesignerFrame({
       modal,
       initiallyHidden,
+      ...(input.productPageVariant ? { productPageVariant: input.productPageVariant } : {}),
       ...(mapped ? { config: mapped.config } : {}),
       title: mapped ? source.title : undefined,
       onInitializationRetry: () => retryInitialization((signal) => show(group, reset, targetProduct, signal)),

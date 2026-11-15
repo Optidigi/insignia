@@ -474,6 +474,7 @@
       "customer_review_pricePerItem": "Preis pro Artikel",
       "customer_review_baseItem": "Grundartikel",
       "customer_review_artworkRequiredBeforeProduction": "Motiv vor der Produktion erforderlich",
+      "customer_review_artworkLaterNextStep": "Motiv später: nächster Schritt",
       "customer_review_previewDisclaimer": "Hinweis zur Vorschau",
       "customer_review_editPositionArtwork": "Motiv für Position bearbeiten",
       "customer_review_methodSize": "Veredelungsverfahren und -größe",

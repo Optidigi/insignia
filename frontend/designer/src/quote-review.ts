@@ -7,8 +7,11 @@ export type DesignerQuoteReview = {
   customizedQuantity: number;
   /** Host navigation identity only; never purchase authority. */
   currentGroupId?: string;
-  /** `label` is the product's title; without one the Designer words a fallback in its current language (#424). */
-  groups: { id: string; label?: string; quantity: number; totalMinor?: string; editable?: boolean }[];
+  /**
+   * `label` is the product's title; without one the Designer words a fallback in its current language (#424).
+   * `detail` names the garments of a design of the current product, so same-product designs differ (#503).
+   */
+  groups: { id: string; label?: string; detail?: string; quantity: number; totalMinor?: string; editable?: boolean }[];
 };
 /** Format server minor-unit strings without converting authoritative amounts to floating point. */
 export function quoteReviewMoney(minor: string, currency: string, exponent: number, locale: string): string {

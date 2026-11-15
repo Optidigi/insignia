@@ -144,6 +144,8 @@ export type DesignerEvent =
   | { type: 'validation-cleared' }
   | { type: 'view-selected'; view: View }
   | { type: 'color-selected'; color: ColorId }
+  /** The product page's selected colour when the Designer opens; only a fresh, untouched design follows it (#499). */
+  | { type: 'product-page-color-hinted'; color: ColorId }
   | { type: 'color-added'; color: ColorId }
   | {
       type: 'color-row-removed';
@@ -320,6 +322,8 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
       return { ...state, view: event.view };
     case 'color-selected':
       return selectColor(state, event.color);
+    case 'product-page-color-hinted':
+      return isUntouchedDesign(state) ? selectColor(state, event.color) : state;
     case 'color-added':
       if (!state.rules.colorIds.includes(event.color)) return state;
       return {
@@ -576,6 +580,20 @@ export function designerReducer(state: DesignerState, event: DesignerEvent): Des
         ? { ...state, recovery: noRecovery }
         : state;
   }
+}
+
+/** Nothing chosen yet beyond the colour: no artwork, quantities, cart line, resumed draft or open decision. */
+function isUntouchedDesign(state: DesignerState): boolean {
+  return (
+    state.step === 0 &&
+    state.prints.length === 0 &&
+    Object.keys(state.quantities).length === 0 &&
+    state.colorRows.length === 1 &&
+    state.editing === null &&
+    state.baseline === null &&
+    state.modal.kind === 'closed' &&
+    state.commit.kind === 'idle'
+  );
 }
 
 function selectColor(state: DesignerState, color: ColorId): DesignerState {

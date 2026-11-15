@@ -218,6 +218,7 @@ export const customerWordingLabels = {
   'customer:review.baseItem': 'settings:translations.fields.customer_review_baseItem',
   'customer:review.artworkRequiredBeforeProduction':
     'settings:translations.fields.customer_review_artworkRequiredBeforeProduction',
+  'customer:review.artworkLaterNextStep': 'settings:translations.fields.customer_review_artworkLaterNextStep',
   'customer:review.previewDisclaimer': 'settings:translations.fields.customer_review_previewDisclaimer',
   'customer:review.editPositionArtwork': 'settings:translations.fields.customer_review_editPositionArtwork',
   'customer:review.methodSize': 'settings:translations.fields.customer_review_methodSize',
