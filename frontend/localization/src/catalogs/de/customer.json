@@ -191,6 +191,7 @@
     "pricePerItem": "Preis pro Artikel",
     "baseItem": "Artikel",
     "artworkRequiredBeforeProduction": "Vor der Produktion ist ein Motiv erforderlich.",
+    "artworkLaterNextStep": "Nach Ihrer Bestellung meldet sich der Shop bei Ihnen, um die Datei anzufordern.",
     "previewDisclaimer": "Aussehen und Platzierung in der Vorschau können leicht abweichen.",
     "editPositionArtwork": "Motiv für {{positionName}} bearbeiten",
     "methodSize": "{{methodLabel}} · {{sizeLabel}}",

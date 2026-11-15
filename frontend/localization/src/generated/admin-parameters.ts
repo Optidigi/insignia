@@ -2602,6 +2602,7 @@ export const adminParameterContracts = {
   'settings:translations.fields.customer_resume_startNew': {},
   'settings:translations.fields.customer_resume_title': {},
   'settings:translations.fields.customer_review_artwork': {},
+  'settings:translations.fields.customer_review_artworkLaterNextStep': {},
   'settings:translations.fields.customer_review_artworkRequiredBeforeProduction': {},
   'settings:translations.fields.customer_review_artworkToFollow': {},
   'settings:translations.fields.customer_review_baseItem': {},

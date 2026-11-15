@@ -204,6 +204,7 @@ export class InsigniaBuyer extends HTMLElement {
         this.getAttribute('store-name') ?? source.title ?? source.selectedSetup?.product.title ?? 'Customization',
       storage: sessionStorage,
       repair: this.hasAttribute('repair'),
+      productPageVariant: () => this.productPageVariant(),
       isCurrent: () => generation === this.generation,
       onClose: () => {
         this.querySelector<HTMLButtonElement>('button[slot="trigger"]')?.focus();
@@ -253,6 +254,26 @@ export class InsigniaBuyer extends HTMLElement {
     };
     this.stopBusy = stopBusy;
     return stopBusy;
+  }
+  /**
+   * The variant selected in this product's form, read when the Designer opens. Only a starting hint for a fresh
+   * design (#499): the Designer maps it to a colour it offers, and quotes still decide everything.
+   */
+  private productPageVariant(): string | undefined {
+    const productId = this.getAttribute('product-id');
+    const forms = [
+      ...(this.closest('.shopify-section, section, product-info, main') ?? document).querySelectorAll<HTMLFormElement>(
+        'form[action*="/cart/add"]',
+      ),
+    ];
+    for (const form of forms) {
+      const product = form.querySelector<HTMLInputElement>('input[name="product-id"]')?.value;
+      if (product && productId && product !== productId) continue;
+      const value = form.querySelector<HTMLInputElement | HTMLSelectElement>('[name="id"]')?.value ?? '';
+      if (/^[1-9][0-9]{0,19}$/.test(value)) return value;
+    }
+    const fromUrl = new URLSearchParams(location.search).get('variant') ?? '';
+    return /^[1-9][0-9]{0,19}$/.test(fromUrl) ? fromUrl : undefined;
   }
   /** Shows an existing Designer again; true when nothing else is to be opened. */
   private async reopen(frame: NonNullable<InsigniaBuyer['liveFrame']>, generation: number) {

@@ -474,6 +474,7 @@
       "customer_review_pricePerItem": "Price per item",
       "customer_review_baseItem": "Base item",
       "customer_review_artworkRequiredBeforeProduction": "Artwork required before production",
+      "customer_review_artworkLaterNextStep": "Artwork later: next step",
       "customer_review_previewDisclaimer": "Preview disclaimer",
       "customer_review_editPositionArtwork": "Edit position artwork",
       "customer_review_methodSize": "Method size",

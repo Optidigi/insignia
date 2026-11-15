@@ -98,6 +98,21 @@ export function createLiveDesignerPorts(input: {
   });
   const artwork = createArtworkUpload({ api: api.artwork, put: fetchImpl });
   let source = input.source;
+  /**
+   * Designs of this product differ by their garments: name those ("Wit / L") so the buyer can tell the rows apart
+   * before choosing one (#503). Other products keep their title only.
+   */
+  function variantDetail(group: DesiredGroup | undefined): { detail?: string } {
+    if (!group || group.productId !== source.productId) return {};
+    const bare = (id: string) => id.replace(/^gid:\/\/shopify\/ProductVariant\//, '');
+    const labels = group.variants.flatMap((variant) => {
+      const label = source.variants.find((candidate) => bare(candidate.id) === bare(variant.variantId))?.label.trim();
+      return label ? [label] : [];
+    });
+    if (!labels.length) return {};
+    const shown = labels.slice(0, 3).join(', ');
+    return { detail: labels.length > 3 ? `${shown} +${labels.length - 3}` : shown };
+  }
   const designs = new Map<string, DesiredGroup>();
   const completed = new Map<string, CartReceipt>();
   const acceptedAttempts = new Map<string, AcceptedCart>();
@@ -341,6 +356,7 @@ export function createLiveDesignerPorts(input: {
                 ? (source.title ?? source.selectedSetup?.product.title)
                 : undefined),
           ),
+          ...variantDetail(candidate),
           quantity: candidate.variants.reduce((total, variant) => total + variant.quantity, 0),
         });
       }
@@ -462,6 +478,7 @@ export function createLiveDesignerPorts(input: {
             id: group.canonicalIdentitySha256 ?? `${group.productId}-${index}`,
             editable: !!group.selection,
             ...labelled(labels.get(group.productId)),
+            ...variantDetail(group.selection),
             quantity: group.quantity,
             totalMinor: group.totalMinor,
           })),
@@ -824,6 +841,7 @@ export function createLiveDesignerPorts(input: {
         proposal?.groups.map((group) => ({
           id: group.canonicalIdentitySha256 ?? group.productId,
           ...labelled(labels.get(group.productId)),
+          ...variantDetail(group.selection),
           quantity: group.quantity,
           totalMinor: group.totalMinor,
         })) ?? [],

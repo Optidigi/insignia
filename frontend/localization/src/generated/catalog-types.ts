@@ -2562,6 +2562,7 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_resume_startNew': object;
   'settings:translations.fields.customer_resume_title': object;
   'settings:translations.fields.customer_review_artwork': object;
+  'settings:translations.fields.customer_review_artworkLaterNextStep': object;
   'settings:translations.fields.customer_review_artworkRequiredBeforeProduction': object;
   'settings:translations.fields.customer_review_artworkToFollow': object;
   'settings:translations.fields.customer_review_baseItem': object;
@@ -2939,6 +2940,7 @@ export interface CustomerMessageTable {
   'customer:resume.startNew': object;
   'customer:resume.title': object;
   'customer:review.artwork': object;
+  'customer:review.artworkLaterNextStep': object;
   'customer:review.artworkRequiredBeforeProduction': object;
   'customer:review.artworkToFollow': object;
   'customer:review.baseItem': object;

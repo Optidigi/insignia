@@ -74,6 +74,8 @@ if (typeof document !== 'undefined') {
 
 export function createDesignerFrame(input: {
   modal?: ReturnType<typeof createDesignerModal>;
+  /** The product page's selected variant at the moment the Designer opens; a hint for a fresh design (#499). */
+  productPageVariant?(): string | undefined;
   config?: ProductConfig;
   initiallyHidden?: boolean;
   title?: string;
@@ -204,7 +206,7 @@ export function createDesignerFrame(input: {
     // The shown Designer takes focus: the frame element first, then a control inside it.
     if (!frame.hidden && modal.dialog.open) {
       frame.focus();
-      send('insignia:designer:open', { keyboard: keyboardInput });
+      send('insignia:designer:open', openMessage());
     }
   }
   frame.addEventListener('load', () => {
@@ -214,6 +216,15 @@ export function createDesignerFrame(input: {
   });
   let applied: CartRequest | undefined;
   let completion: CartReceipt | undefined;
+  function openMessage() {
+    let variantId: string | undefined;
+    try {
+      variantId = input.productPageVariant?.();
+    } catch {
+      /* A theme without a readable product form gives no hint. */
+    }
+    return { keyboard: keyboardInput, ...(variantId ? { variantId } : {}) };
+  }
   function send(type: string, data: Record<string, unknown> = {}) {
     frame.contentWindow?.postMessage({ type, channel, ...data }, window.location.origin);
   }
@@ -417,7 +428,7 @@ export function createDesignerFrame(input: {
       if (destroyed || failed) return false;
       frame.hidden = false;
       modal.show();
-      if (ready) send('insignia:designer:open', { keyboard: keyboardInput });
+      if (ready) send('insignia:designer:open', openMessage());
       if (initialized) frame.focus();
       return true;
     },

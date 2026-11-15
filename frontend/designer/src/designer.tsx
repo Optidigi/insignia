@@ -82,6 +82,11 @@ export interface DesignerProps {
    * dialog already owns it: the visible skip link when opened by keyboard, the Designer itself when by pointer.
    */
   entryFocusSignal?: { keyboard: boolean };
+  /**
+   * The product page's selected variant when the Designer opens; each new object applies once. A fresh, untouched
+   * design starts on that variant's colour; sizes and quantities stay empty (#499).
+   */
+  productVariantSignal?: { variantId: string };
   hostErrorSignal?: number;
   cartReviewedSignal?: number;
   /** The host observed this design's cart line change outside the Designer; each new object applies once. */
@@ -191,6 +196,7 @@ function DesignerSession({
   hostErrorSignal,
   requestCloseSignal,
   entryFocusSignal,
+  productVariantSignal,
   cartReviewedSignal,
   observedCartLine,
   initialPrints = [],
@@ -446,6 +452,17 @@ function DesignerSession({
     // A pointer open must not pop the skip link over the header; Tab from the Designer still reaches it first.
     (entryFocusSignal.keyboard ? skipLinkRef.current : appRef.current)?.focus({ preventScroll: true });
   }, [entryFocusSignal]);
+  const hintedVariant = useRef<string>();
+  useEffect(() => {
+    // Only a new product-page choice: a colour picked in the Designer survives closing and reopening.
+    if (!productVariantSignal || productVariantSignal.variantId === hintedVariant.current) return;
+    hintedVariant.current = productVariantSignal.variantId;
+    const bare = (id: string) => id.replace(/^gid:\/\/shopify\/ProductVariant\//, '');
+    const color = config.variantMatrix?.find(
+      (cell) => bare(cell.variantId) === bare(productVariantSignal.variantId),
+    )?.rowId;
+    if (color) dispatch({ type: 'product-page-color-hinted', color });
+  }, [productVariantSignal]);
   const reviewIntent = designerIntentKey(workflow);
   const beforeQuantities = step === 0;
   const eagerReviewStarted = useRef(false);
@@ -1013,6 +1030,8 @@ function DesignerSession({
       return;
     }
     dispatch({ type: 'step-advanced' });
+    // The footer button stays where it was; move focus to the new step so Tab reaches its content first (#502).
+    window.requestAnimationFrame(() => panelRef.current?.focus({ preventScroll: true }));
   }
   function addToCart() {
     if (artworkOnly) return;

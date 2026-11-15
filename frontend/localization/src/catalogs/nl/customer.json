@@ -191,6 +191,7 @@
     "pricePerItem": "Prijs per artikel",
     "baseItem": "Basisartikel",
     "artworkRequiredBeforeProduction": "Ontwerp nodig voordat de productie kan beginnen.",
+    "artworkLaterNextStep": "Na je bestelling neemt de winkel contact met je op voor het bestand.",
     "previewDisclaimer": "Het uiterlijk en de plaatsing kunnen in het voorbeeld iets afwijken.",
     "editPositionArtwork": "Ontwerp voor {{positionName}} bewerken",
     "methodSize": "{{methodLabel}} · {{sizeLabel}}",

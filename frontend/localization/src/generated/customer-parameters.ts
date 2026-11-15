@@ -233,6 +233,7 @@ export const customerParameterContracts = {
   'customer:resume.startNew': {},
   'customer:resume.title': {},
   'customer:review.artwork': {},
+  'customer:review.artworkLaterNextStep': {},
   'customer:review.artworkRequiredBeforeProduction': {},
   'customer:review.artworkToFollow': {},
   'customer:review.baseItem': {},

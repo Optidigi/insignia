@@ -211,6 +211,7 @@ export function ReviewPanel({
                       {group.label || t('customer:review.customizedProduct')}
                     </strong>
                     <span className="review-group-meta">
+                      {group.detail && <bdi className="review-group-detail">{group.detail}</bdi>}
                       <span>{t('customer:review.itemCount', { count: group.quantity })}</span>
                       {current && <span>{t('customer:review.currentDesign')}</span>}
                     </span>
@@ -244,7 +245,9 @@ export function ReviewPanel({
         </section>
       )}
       {prints.some((print) => print.artworkId === 'later') && (
-        <p className="review-artwork-note">{t('customer:review.artworkRequiredBeforeProduction')}</p>
+        <p className="review-artwork-note">
+          {t('customer:review.artworkRequiredBeforeProduction')} {t('customer:review.artworkLaterNextStep')}
+        </p>
       )}
       <p className="preview-disclaimer">{t('customer:review.previewDisclaimer')}</p>
     </>

@@ -2742,6 +2742,30 @@ test('a failed selected stylesheet stays behind startup recovery until a styled 
   });
 });
 
+test("design totals name the garments of this product's designs so same-product rows differ (#503)", async () => {
+  await withRetainedBuyer(
+    async ({ host, mutations }) => {
+      await reviewRetained(host);
+      const totals = host.getByRole('region', { name: 'Design totals', exact: true });
+      await totals.waitFor();
+      await totals.locator('.review-group-detail').first().waitFor();
+      const rows = await totals.locator('li').evaluateAll((items) =>
+        items.map((item) => ({
+          name: item.querySelector('.review-group-name')?.textContent?.trim(),
+          detail: item.querySelector('.review-group-detail')?.textContent?.trim() ?? null,
+        })),
+      );
+      rows.sort((left, right) => String(left.name).localeCompare(String(right.name)));
+      assert.deepEqual(rows, [
+        { name: 'Other synthetic shirt', detail: null },
+        { name: 'Synthetic shirt', detail: 'Blue / M' },
+      ]);
+      assert.equal(mutations(), 0);
+    },
+    { multipleProducts: true },
+  );
+});
+
 test('switching a dirty cart design offers the baseline cancel/discard decision and never mutates the cart', async () => {
   await withRetainedBuyer(
     async ({ page, trigger, host, mutations, accepts }) => {
