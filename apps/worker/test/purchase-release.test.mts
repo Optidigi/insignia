@@ -40,8 +40,6 @@ function fixture() {
     appClientId: 'synthetic-client',
     activeVersionRef: '1166090010625',
     origin: {
-      shopId: 'tenant',
-      installationGeneration: '1',
       creatorAppId: 'gid://shopify/App/77',
       supportedFrom: new Date(start - 60000).toISOString(),
     },
@@ -172,11 +170,13 @@ test('unqualified admission touches no credentials, tenant or collector capabili
   );
   assert.equal(createPurchaseReleasePreparation({ core: fail, collector: fail, qualification: null }), undefined);
 });
-test('credential expiry, foreign origin and changed authorization reject without allowing an order read', async () => {
+test('credential expiry, an inactive installation and changed authorization reject without allowing an order read', async () => {
   for (const state of ['expired', 'foreign', 'changed', 'installation', 'epoch', 'late']) {
     const f = fixture();
     if (state === 'expired') f.expires = start + 30000;
-    if (state === 'foreign') f.input.qualification.origin.shopId = 'foreign';
+    // A store with no active installation (unknown, uninstalled or replaced) never reaches collection.
+    if (state === 'foreign')
+      f.input.core.tenants = { ...f.input.core.tenants, getActiveAuthorizationScope: async () => null };
     if (['changed', 'installation', 'epoch', 'late'].includes(state))
       f.input.collector.collect = async (q) => {
         f.collected.push(q);

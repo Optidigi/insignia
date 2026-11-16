@@ -121,15 +121,26 @@ export async function readVerifierStartup(path: string) {
   try {
     const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes),
       value = record(JSON.parse(text) as unknown);
-    assert.deepEqual(Object.keys(value).sort(), ['appendPassword', 'clientSecret', 'databaseUrl']);
-    assert.equal(text.match(/"(?:[^"\\]|\\[\s\S])*"/g)?.length, 6);
+    assert.deepEqual(Object.keys(value).sort(), [
+      'appendPassword',
+      'clientSecret',
+      'credentialKeyBase64',
+      'credentialKeyId',
+      'databaseUrl',
+    ]);
+    assert.equal(text.match(/"(?:[^"\\]|\\[\s\S])*"/g)?.length, 10);
     assert(
       typeof value.appendPassword === 'string' &&
         typeof value.clientSecret === 'string' &&
+        typeof value.credentialKeyBase64 === 'string' &&
+        typeof value.credentialKeyId === 'string' &&
         typeof value.databaseUrl === 'string',
     );
     assert.match(value.appendPassword, /^[a-f0-9]{64}$/);
     assert.match(value.clientSecret, /^[^\r\n\0]{1,4096}$/);
+    // The offline-token wrapping key the web and worker hold, so the verifier can read a store's own token.
+    assert.match(value.credentialKeyId, /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63}$/);
+    assert.match(value.credentialKeyBase64, /^[A-Za-z0-9+/]{43}=$/);
     const database = new URL(value.databaseUrl);
     assert.ok(['postgres:', 'postgresql:'].includes(database.protocol));
     assert.equal(database.username, 'insignia_runtime');
@@ -138,7 +149,13 @@ export async function readVerifierStartup(path: string) {
     assert.equal(database.port, '5432');
     assert.equal(database.pathname, '/insignia_rewrite');
     assert.deepEqual([...database.searchParams], [['sslmode', 'disable']]);
-    return { appendPassword: value.appendPassword, clientSecret: value.clientSecret, databaseUrl: value.databaseUrl };
+    return {
+      appendPassword: value.appendPassword,
+      clientSecret: value.clientSecret,
+      credentialKeyBase64: value.credentialKeyBase64,
+      credentialKeyId: value.credentialKeyId,
+      databaseUrl: value.databaseUrl,
+    };
   } finally {
     bytes.fill(0);
   }

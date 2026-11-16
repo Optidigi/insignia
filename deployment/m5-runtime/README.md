@@ -16,6 +16,8 @@ As of 15 November 2026 (rewrite-dev on host alias `prod`). [Delivery state](../.
   - Web images up to `bf512171` are not rollback targets (#374): they cannot start a session for a visitor with a trusted address on schema 61 and later.
   - Do not roll back the worker alone to an image from before #371 while sessions above the old quotas exist.
   - Database restores and down migrations are never an automatic rollback.
+- **Any installed store (#520):** nothing is pinned to rewrite-dev. The verifier verifies the store a request names, reading it with that store's own offline token (its startup file carries the credential wrapping key; see the [verifier README](../release-verifier/README.md)). The worker admits orders from any store with its own release record and Functions.
+- **`INSIGNIA_STORE_SETUP_ENABLED=1`** in web (#520): a store's first publish deploys its cart transform and validation when it has neither and no fresh release record, and creates its first non-expiring signing key, both with the publishing staff member's verified session. Partial or foreign Function deployments, revoked or retired keys and an owner's pending rotation are left to the owner. Unset (or any other value), web does neither; remove it to stop automatic setup.
 - **Owner signing runs:** rotation and the one-step emergency revoke (#375) are in [Signing wrapping-key (KEK) custody](#signing-wrapping-key-kek-custody).
 
 ## Deploy next

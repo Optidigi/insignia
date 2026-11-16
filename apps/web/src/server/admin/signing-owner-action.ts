@@ -52,6 +52,7 @@ import {
   qualifySigningProvisionPlan,
   qualifySigningRuntimeIdentity,
   reserveSigningProvisionRun,
+  SHOP_DOMAIN,
 } from './signing-provision.ts';
 
 const bindingFields = [
@@ -168,7 +169,7 @@ export function createSigningOwnerAction(
       ? qualifySigningEmergencyPlan({ ...config.plan, authorizationEpoch: binding.authorizationEpoch })
       : null;
   const plan = emergency ?? qualifySigningProvisionPlan(config.plan as SigningProvisionPlan);
-  assert.equal(binding.shop, 'insignia-rewrite-dev.myshopify.com');
+  assert.match(binding.shop, SHOP_DOMAIN);
   assert.match(binding.shopId, /^gid:\/\/shopify\/Shop\/[1-9][0-9]*$/);
   assert.match(binding.installationId, /^gid:\/\/shopify\/AppInstallation\/[1-9][0-9]*$/);
   assert.ok(typeof binding.tenantShopId === 'string' && binding.tenantShopId.length > 0);

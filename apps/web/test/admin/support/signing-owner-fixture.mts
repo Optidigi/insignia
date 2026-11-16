@@ -18,7 +18,7 @@ export const acceptedRuntimeIdentity = {
 
 const _require = createRequire(new URL('../../../package.json', import.meta.url));
 const clockStart = Date.parse('2026-10-11T12:00:00.000Z');
-export async function fixture({ initial = clockStart } = {}) {
+export async function fixture({ initial = clockStart, shop = 'insignia-rewrite-dev.myshopify.com' } = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'insignia-signing-control-'));
   const scope = {
     shopId: 'synthetic-shop',
@@ -86,7 +86,7 @@ export async function fixture({ initial = clockStart } = {}) {
   const identity: SigningProvisionPorts['identity'] = {
     async verify() {
       return {
-        shop: 'insignia-rewrite-dev.myshopify.com',
+        shop,
         staffId: '1',
         sessionId: 'synthetic-session',
         expiresAtMs: initial + 60000,
@@ -94,7 +94,7 @@ export async function fixture({ initial = clockStart } = {}) {
     },
     async exchangeOnline() {
       return {
-        shop: 'insignia-rewrite-dev.myshopify.com',
+        shop,
         staffId: '1',
         accessToken: 'SYNTHETIC_ONLINE_SECRET',
         expiresAtMs: initial + 120000,
@@ -104,7 +104,7 @@ export async function fixture({ initial = clockStart } = {}) {
     },
     async readInstallation() {
       return {
-        shop: 'insignia-rewrite-dev.myshopify.com',
+        shop,
         shopId: 'gid://shopify/Shop/123',
         installationId: 'gid://shopify/AppInstallation/321',
         ianaTimezone: 'Asia/Tokyo',
@@ -172,7 +172,7 @@ export async function fixture({ initial = clockStart } = {}) {
       async getManagedInstallationState() {
         return {
           active: true,
-          shopDomain: 'insignia-rewrite-dev.myshopify.com',
+          shopDomain: shop,
           shopId: scope.shopId,
           currentGeneration: scope.installationGeneration,
           shopifyShopId: '123',
@@ -180,7 +180,7 @@ export async function fixture({ initial = clockStart } = {}) {
         };
       },
       async getActiveAuthorizationScope() {
-        return { ...scope, shopDomain: 'insignia-rewrite-dev.myshopify.com', shopifyShopId: '123' };
+        return { ...scope, shopDomain: shop, shopifyShopId: '123' };
       },
     },
     trustedReleaseRecords: {

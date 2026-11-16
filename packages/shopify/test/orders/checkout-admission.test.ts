@@ -81,8 +81,6 @@ function fixture() {
     appId: '123',
     appClientId: scope.appClientId,
     origin: {
-      shopId: scope.shopId,
-      installationGeneration: '1',
       creatorAppId: 'gid://shopify/App/77',
       supportedFrom: '2026-10-13T11:00:00.000Z',
     },
@@ -177,6 +175,37 @@ describe('current checkout purchase admission', () => {
       expect(await createShopifyCheckoutPurchaseAdmission(config).admit({ order })).toBeNull();
     },
   );
+  it("admits an order from any store through that store's own installation, credentials and release scope", async () => {
+    const { config, order, active, expectedBuild, attestation } = fixture();
+    // That store's own release record carries its scope.
+    Object.assign(expectedBuild, { shopId: 'another-tenant' });
+    attestation.shopId = 'another-tenant';
+    order.shopId = 'another-tenant';
+    active.shopId = 'another-tenant';
+    active.shopDomain = 'another.myshopify.com';
+    config.credentials.acquire.mockImplementation(async () => ({
+      kind: 'usable',
+      shopDomain: 'another.myshopify.com',
+      accessToken: 'synthetic-admission-token',
+      accessExpiresAt: new Date(+now + 60_000),
+    }));
+    expect(await createShopifyCheckoutPurchaseAdmission(config).admit({ order })).not.toBeNull();
+    expect(config.tenants.getActiveProviderScope).toHaveBeenCalledWith({
+      shopId: 'another-tenant',
+      installationGeneration: '1',
+    });
+    expect(config.release.read).toHaveBeenCalledWith({ scope: { ...scope, shopId: 'another-tenant' }, now });
+    expect(String(required(config.fetchImpl.mock.calls[0])[0])).toBe(
+      'https://another.myshopify.com/admin/api/2026-07/graphql.json',
+    );
+  });
+  it("rejects an order whose installation is not the store's active one", async () => {
+    const { config, order } = fixture();
+    order.installationGeneration = '2';
+    expect(await createShopifyCheckoutPurchaseAdmission(config).admit({ order })).toBeNull();
+    expect(config.release.read).not.toHaveBeenCalled();
+    expect(config.fetchImpl).not.toHaveBeenCalled();
+  });
   it('rejects an installation that changes during the authenticated provider read', async () => {
     const { config, order, active, provider } = fixture();
     config.fetchImpl.mockImplementation(async () => {

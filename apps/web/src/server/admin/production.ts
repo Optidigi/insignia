@@ -55,6 +55,7 @@ import {
 import { createMerchantBillingReader } from './billing.js';
 import { type CatalogListInput, filteredCatalogPage } from './catalog-query.js';
 import type { AdminActor, AdminServices, CatalogProduct } from './contracts.js';
+import { ensureStoreFunctions } from './function-automatic.js';
 import { createMerchantMediaService, MerchantMediaError } from './merchant-media.js';
 import { createMerchantPublicationCapture } from './merchant-previews.js';
 import { createMethodLibrary } from './methods.js';
@@ -65,6 +66,7 @@ import {
   createDemandDrivenReleaseReader,
   type ReleaseVerificationCollector,
 } from './release-evidence.js';
+import { createAutomaticSigningProvision } from './signing-automatic.js';
 import { createSigningOwnerAction, type SigningOwnerConfiguration } from './signing-owner-action.js';
 
 type DurableCoreReleaseReader = ReturnType<typeof createDemandDrivenReleaseReader>;
@@ -123,6 +125,10 @@ function featurePolicy(env: NodeJS.ProcessEnv): { catalog: EntitlementPolicyConf
   return { catalog, features };
 }
 
+/** The reviewed input-query fingerprints of this source's Functions, used where no release record applies. */
+const LEGACY_TRANSFORM_QUERY_SHA256 = '02ab5bcee805fba94dff9309a2e55cb1998651ca42fdba8564872ba891fd16ac';
+const LEGACY_VALIDATION_QUERY_SHA256 = '5867e61f07dbb4d6417df401b5ffbc47f0175eca1d00f7792621150713b18d7e';
+
 /** Production composition binds every request to an online staff grant and current M3 installation. */
 export function createProductionAdminServices(
   env: NodeJS.ProcessEnv = process.env,
@@ -143,6 +149,8 @@ export function createProductionAdminServices(
   const appOrigin = required(env, 'APP_URL');
   const appId = env.INSIGNIA_SHOPIFY_APP_ID;
   const appGid = appId && /^[1-9][0-9]*$/.test(appId) ? 'gid://shopify/App/' + appId : null;
+  // A store's first publish deploys its Functions and creates its signing key (off: owner setup only).
+  const storeSetup = env.INSIGNIA_STORE_SETUP_ENABLED === '1';
   const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host, fetchImpl: fetch });
   const offlineBootstrap = env.INSIGNIA_M7_BUYER_ENABLED === '1';
   const credentialKeys = offlineBootstrap ? loadCredentialKeys(env) : undefined;
@@ -246,6 +254,79 @@ export function createProductionAdminServices(
     if (evidence) verified.set(actor, evidence);
     else verified.delete(actor);
     return evidence !== null;
+  }
+  /** True when the store's cart transform and validation are deployed, deploying both if it has
+   * neither. A fresh release record already attests them, so it costs no provider read then. */
+  const functionSetups = new Map<string, Promise<boolean>>();
+  /** Concurrent publishes on one store share one Functions check, so they never create twice. */
+  function storeFunctionsReady(actor: AdminActor): Promise<boolean> {
+    const key = `${actor.tenantShopId}:${actor.installationGeneration}`;
+    let pending = functionSetups.get(key);
+    if (!pending) {
+      pending = checkStoreFunctions(actor).finally(() => functionSetups.delete(key));
+      functionSetups.set(key, pending);
+    }
+    return pending;
+  }
+  async function checkStoreFunctions(actor: AdminActor): Promise<boolean> {
+    if (!storeSetup || !releaseCollector || !appId || !actor.canEdit) return true;
+    await active(actor);
+    const online = grant(actor);
+    const fresh = await core.trustedReleaseRecords.read({
+      scope: { shopId: actor.tenantShopId, installationGeneration: actor.installationGeneration, appClientId: apiKey },
+      expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
+      now: new Date(),
+    });
+    if (fresh) return true;
+    const tenant = {
+      shopId: actor.tenantShopId,
+      installationGeneration: actor.installationGeneration,
+      appId,
+      shopifyShopId: actor.shopId,
+    };
+    const transport = createPublicationAdminHttpTransport({
+      credentials: {
+        async acquire(input) {
+          if (input.shopId !== tenant.shopId || input.installationGeneration !== tenant.installationGeneration)
+            return { kind: 'inactive' as const };
+          try {
+            await active(actor);
+            grant(actor);
+          } catch {
+            return { kind: 'inactive' as const };
+          }
+          return {
+            kind: 'usable' as const,
+            shopDomain: online.shop,
+            accessToken: online.accessToken,
+            accessExpiresAt: new Date(online.expiresAtMs),
+          };
+        },
+      },
+    });
+    try {
+      const state = await ensureStoreFunctions({
+        tenant,
+        // Live Admin does not return input queries (observation v2); the release record stays the gate.
+        expected: {
+          appKey: apiKey,
+          observationVersion: 2,
+          transformInputQuerySha256: LEGACY_TRANSFORM_QUERY_SHA256,
+          validationInputQuerySha256: LEGACY_VALIDATION_QUERY_SHA256,
+        },
+        transport,
+        clock: () => new Date(),
+        async verifyAuthority() {
+          await active(actor);
+          const current = grant(actor);
+          return new Date(Math.min(Date.now() + 25_000, current.expiresAtMs - 30_000, actor.expiresAtMs));
+        },
+      });
+      // An unreadable state is left to verification, which reads with the store's own token.
+      return state === 'PRESENT' || state === 'CREATED' || state === 'UNREAD';
+    } catch {
+      return false;
+    }
   }
   function publicationAuthorityFresh(actor: AdminActor) {
     if (!releaseCollector) return true;
@@ -558,9 +639,25 @@ export function createProductionAdminServices(
       // Existing ready installations still use the ordinary M4 admission gates.
       // A private startup allocation allows initial setup; no browser plan or
       // status GET can select or dispatch it. Tokens live only with this actor.
+      // A store's first publish deploys its checkout Functions, which verification then observes.
+      if (!(await storeFunctionsReady(actor)))
+        return { ready: false, reason: 'Publication setup is unavailable. Contact support.' };
       if (!(await verifyPublicationRelease(actor)))
         return { ready: false, reason: 'Publication verification is unavailable. Contact support.' };
-      if (!signingOwner) return { ready: true, reason: null };
+      // The owner's armed plan applies to its own store; every other store uses automatic provisioning.
+      if (!signingOwner || signingOwnerConfiguration?.binding.tenantShopId !== actor.tenantShopId) {
+        if (!automaticSigning) return { ready: true, reason: null };
+        await active(actor);
+        grant(actor);
+        const token = requestTokens.get(actor);
+        const timezone = merchantTimezones.get(actor);
+        if (!token || !timezone) throw new Error('Publication authorization unavailable');
+        const state = await automaticSigning.ensure(actor, token, timezone);
+        await active(actor);
+        return state === 'READY' || state === 'PROVISIONED'
+          ? { ready: true, reason: null }
+          : { ready: false, reason: 'Publication preparation is unavailable. Contact support.' };
+      }
       await active(actor);
       grant(actor);
       const token = requestTokens.get(actor);
@@ -574,8 +671,8 @@ export function createProductionAdminServices(
     },
   });
   if (signingOwnerConfiguration && !appId) throw new Error('Signing configuration unavailable');
-  const signingOwner = signingOwnerConfiguration
-    ? createSigningOwnerAction(signingOwnerConfiguration, {
+  const signingPorts = appId
+    ? {
         releaseProfile: releaseProfile.name,
         app: signingApplication,
         core,
@@ -614,8 +711,14 @@ export function createProductionAdminServices(
               functions.read(input, expectedFunctionOwnership(apiKey, expected)),
           };
         },
-      })
+      }
     : undefined;
+  const signingOwner =
+    signingOwnerConfiguration && signingPorts
+      ? createSigningOwnerAction(signingOwnerConfiguration, signingPorts)
+      : undefined;
+  // Every other store gets its first, non-expiring key on its first publish.
+  const automaticSigning = storeSetup && signingPorts ? createAutomaticSigningProvision(signingPorts) : undefined;
   return {
     billing,
     async setupStatus(actor) {
@@ -884,8 +987,8 @@ export function createProductionAdminServices(
           ? expectedFunctionOwnership(apiKey, evidence.expectedBuild)
           : {
               appKey: apiKey,
-              transformInputQuerySha256: '02ab5bcee805fba94dff9309a2e55cb1998651ca42fdba8564872ba891fd16ac',
-              validationInputQuerySha256: '5867e61f07dbb4d6417df401b5ffbc47f0175eca1d00f7792621150713b18d7e',
+              transformInputQuerySha256: LEGACY_TRANSFORM_QUERY_SHA256,
+              validationInputQuerySha256: LEGACY_VALIDATION_QUERY_SHA256,
             },
       );
       const publicConfig = await createPublicationAdminAdapter({ transport }).read({

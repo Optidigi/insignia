@@ -1,6 +1,9 @@
 ---
 Astro.response.headers.set('Cache-Control', 'private, no-store');
-Astro.response.headers.set('Content-Security-Policy', "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src https: data: blob:; connect-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
+Astro.response.headers.set(
+  'Content-Security-Policy',
+  "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src https: data: blob:; connect-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
+);
 Astro.response.headers.set('Referrer-Policy', 'no-referrer');
 ---
 <!doctype html>

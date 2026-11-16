@@ -49,6 +49,8 @@ test('verifier startup accepts only private exact-role configuration, never arbi
         'postgres://insignia_runtime:synthetic@insignia-rewrite-m5-019-database:5432/insignia_rewrite?sslmode=disable',
       clientSecret: 'synthetic',
       appendPassword: 'a'.repeat(64),
+      credentialKeyBase64: Buffer.alloc(32, 9).toString('base64'),
+      credentialKeyId: 'synthetic-key',
     };
     await writeFile(path, JSON.stringify(config), { mode: 0o600 });
     assert.deepEqual(await readVerifierStartup(path), config);
@@ -56,6 +58,8 @@ test('verifier startup accepts only private exact-role configuration, never arbi
       { ...config, databaseUrl: config.databaseUrl.replace('insignia_runtime', 'insignia_rewrite') },
       { ...config, databaseUrl: config.databaseUrl.replace('insignia-rewrite-m5-019-database', 'example.com') },
       { ...config, arbitrarySource: 'self-asserted' },
+      { ...config, credentialKeyBase64: 'short' },
+      { ...config, credentialKeyId: undefined },
     ]) {
       await writeFile(path, JSON.stringify(value));
       await assert.rejects(readVerifierStartup(path));

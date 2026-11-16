@@ -10,10 +10,10 @@ import type { AdminCredentialSource } from '../contextual-pricing.js';
 import { createFunctionOwnershipReconciler, expectedFunctionOwnership } from '../function-ownership.js';
 import { createPublicationAdminHttpTransport } from '../publication-admin.js';
 
-/** Trusted native qualification, never derived from a source label or browser input. */
+/** Trusted native qualification, never derived from a source label or browser input. It names the
+ * checkout channel and the first supported order time; it applies to every store, whose own active
+ * installation, release evidence and Function ownership are checked per order below. */
 export type QualifiedCheckoutOrigin = Readonly<{
-  shopId: string;
-  installationGeneration: string;
   creatorAppId: string;
   supportedFrom: string;
 }>;
@@ -48,8 +48,6 @@ export function createShopifyCheckoutPurchaseAdmission(config: CheckoutAdmission
           created = Date.parse(order.createdAt);
         if (
           !origin ||
-          origin.shopId !== order.shopId ||
-          origin.installationGeneration !== order.installationGeneration ||
           !/^gid:\/\/shopify\/App\/[1-9][0-9]{0,19}$/.test(origin.creatorAppId) ||
           order.checkoutOrigin?.creatorAppId !== origin.creatorAppId ||
           order.checkoutOrigin.sourceName !== 'web' ||

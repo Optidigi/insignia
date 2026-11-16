@@ -204,7 +204,10 @@ async function run(mode: string) {
       idempotencyKey: `publish-${mode}`,
     });
     if (mode === 'setup-waiting') {
-      assert.equal(published.kind, 'forbidden');
+      // A refused preparation is a coded rejection with no effect, never an access denial.
+      assert.equal(published.kind, 'invalid');
+      assert.equal(published.kind === 'invalid' && published.code, 'PUBLICATION_UNAVAILABLE');
+      assert.equal(published.kind === 'invalid' && published.noEffect, true);
       assert.equal(preparations, 1);
       assert.equal(
         captures,
@@ -266,7 +269,7 @@ async function run(mode: string) {
       draftVersion: saved.draftVersion,
       idempotencyKey: `publish-${mode}`,
     });
-    assert.equal(replay.kind, mode === 'pending' ? 'forbidden' : 'accepted');
+    assert.equal(replay.kind, mode === 'pending' ? 'invalid' : 'accepted');
     assert.equal(remoteWrites, beforeReplayWrites, 'Revoked entitlement replay must not write remotely');
     assert.equal(preparations, 1, 'Immutable-request replay does not repeat preparation');
     assert.equal(captures, 1, 'Immutable-request replay does not recapture images');

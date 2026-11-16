@@ -33,9 +33,8 @@ test('observed native origin binds only the closed release profile and validated
   const qualified = resolve();
   assert(qualified);
   assert.equal(qualified.activeVersionRef, '1166710865921');
+  // The checkout channel and first supported order time; no store is pinned.
   assert.deepEqual(qualified.origin, {
-    shopId: 'db771bea-c585-4954-9f88-70771c9a0c89',
-    installationGeneration: '1',
     creatorAppId: 'gid://shopify/App/580111',
     supportedFrom: '2026-10-14T20:03:04Z',
   });
