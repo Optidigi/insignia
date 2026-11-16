@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { type MerchantPreferencesView, MerchantPreferencesCommandSchema } from '@insignia/contracts';
 import { createMerchantPreferencesClient } from '../../src/shared/merchant-preferences-client.ts';
 
-const initial = (): MerchantPreferencesView => ({ version: 'merchant-preferences-v1', authority: 'a'.repeat(64), shop: 'example.myshopify.com', guidanceVersion: '0', wordingVersion: '0', guidance: { dismissed: false, completedSteps: [] }, overlays: { en: { locale: 'en', messages: {} } } });
+const initial = (): MerchantPreferencesView => ({ version: 'merchant-preferences-v1', authority: 'a'.repeat(64), shop: 'example.myshopify.com', guidanceVersion: '0', wordingVersion: '0', notificationsVersion: '0', guidance: { dismissed: false, completedSteps: [] }, overlays: { en: { locale: 'en', messages: {} } }, notifications: { customerArtworkEmail: true } });
 function journal() {
   const values = new Map<string, string>();
   return { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value); }, removeItem: (key: string) => { values.delete(key); } };
@@ -100,4 +100,38 @@ test('#451: a Shopify BUSY 409 keeps the pending intent and its wording; it is n
   await reloaded.read();
   assert.deepEqual(keys, ['busy-guidance-key', 'busy-guidance-key']);
   assert.equal(storage.getItem('insignia:pending-preferences:v1:example.myshopify.com:guidance'), null);
+});
+
+test('the customer email choice saves as its own section with its own version, key and journal entry', async () => {
+  let view = initial();
+  const storage = journal();
+  const writes: { key: string | null; command: unknown }[] = [];
+  let lose = true;
+  const request = async (_path: string, init?: RequestInit): Promise<unknown> => {
+    if (!init?.method) return structuredClone(view);
+    const command = MerchantPreferencesCommandSchema.parse(JSON.parse(String(init.body)));
+    writes.push({ key: new Headers(init.headers).get('Idempotency-Key'), command });
+    if (command.action !== 'notifications') throw new Error('Unexpected section');
+    if (command.expectedVersion !== view.notificationsVersion) throw Object.assign(new Error('changed'), { status: 409 });
+    if (writes.length === 1) view = { ...view, notificationsVersion: '1', notifications: command.notifications };
+    if (lose) { lose = false; throw new Error('Response lost after commit'); }
+    return { kind: 'saved', preferences: structuredClone(view) };
+  };
+  const first = createMerchantPreferencesClient(request, storage, () => 'original-notifications-key');
+  await first.read();
+  await assert.rejects(() => first.saveNotifications({ customerArtworkEmail: false }), /lost/);
+  // A new page resumes the exact original intent; its replay meets the already-advanced version and is a known conflict.
+  const reloaded = createMerchantPreferencesClient(request, storage, () => 'must-not-replace-original-key');
+  assert.equal((await reloaded.read()).notifications.customerArtworkEmail, false);
+  assert.deepEqual(writes.map((write) => write.key), ['original-notifications-key', 'original-notifications-key']);
+  assert.deepEqual(writes[0]?.command, {
+    action: 'notifications',
+    authority: 'a'.repeat(64),
+    expectedVersion: '0',
+    notifications: { customerArtworkEmail: false },
+  });
+  assert.equal(storage.getItem('insignia:pending-preferences:v1:example.myshopify.com:notifications'), null);
+  // The guidance and wording sections are untouched by a notifications save.
+  assert.equal(view.guidanceVersion, '0');
+  assert.equal(view.wordingVersion, '0');
 });

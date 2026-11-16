@@ -228,6 +228,10 @@ export function createCustomerArtworkRepository(db: Kysely<Database>) {
     },
     async pendingNotifications(limit: number) {
       if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) unavailable();
+      // A store that turned automatic customer email off: its waiting notices are settled, never sent.
+      await sql`UPDATE customer_artwork_notifications n SET state='SUPPRESSED',settled_at=clock_timestamp() FROM merchant_preferences p,shops s WHERE p.shop_id=n.shop_id AND p.customer_artwork_email=false AND s.shop_id=n.shop_id AND s.current_generation=n.installation_generation AND n.state IN ('PENDING','NO_EFFECT')`.execute(
+        db,
+      );
       const candidates = (
         await sql<{
           notification_id: string;
@@ -294,6 +298,22 @@ export function createCustomerArtworkRepository(db: Kysely<Database>) {
           shopId: notice.shop_id,
           installationGeneration: notice.installation_generation,
         };
+        // Fence against the merchant turning automatic email off while this notice was being prepared:
+        // the preference update takes the row lock, so either it commits first and is seen here, or it
+        // waits until this claim commits (that notice was already being sent).
+        const preference = (
+          await sql<{
+            customer_artwork_email: boolean;
+          }>`SELECT customer_artwork_email FROM merchant_preferences WHERE shop_id=${notice.shop_id} FOR SHARE`.execute(
+            tx,
+          )
+        ).rows[0];
+        if (preference?.customer_artwork_email === false) {
+          await sql`UPDATE customer_artwork_notifications SET state='SUPPRESSED',settled_at=clock_timestamp() WHERE notification_id=${notificationId}::uuid AND state IN ('PENDING','NO_EFFECT')`.execute(
+            tx,
+          );
+          return false;
+        }
         const record = await lockedPurchase(tx, scope, notice.purchase_id);
         const access = await grant(tx, capabilityHash);
         if (

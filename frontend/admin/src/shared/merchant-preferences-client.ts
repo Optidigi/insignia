@@ -1,6 +1,7 @@
 import {
   type MerchantCustomerWordingOverlays,
   type MerchantGuidance,
+  type MerchantNotifications,
   type MerchantPreferencesCommand,
   MerchantPreferencesCommandSchema,
   type MerchantPreferencesView,
@@ -11,9 +12,16 @@ import { authenticatedJson, isShopifyBusy } from './admin-request.ts';
 type Request = (path: string, init?: RequestInit) => Promise<unknown>;
 type Journal = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 type Pending = { key: string; command: MerchantPreferencesCommand };
+type Section = MerchantPreferencesCommand['action'];
+const sections = ['guidance', 'wording', 'notifications'] as const satisfies readonly Section[];
 const endpoint = '/api/admin/preferences';
-const journalKey = (shop: string, section: 'guidance' | 'wording') =>
-  `insignia:pending-preferences:v1:${shop}:${section}`;
+const journalKey = (shop: string, section: Section) => `insignia:pending-preferences:v1:${shop}:${section}`;
+const sectionVersion = (view: MerchantPreferencesView, section: Section) =>
+  section === 'guidance'
+    ? view.guidanceVersion
+    : section === 'wording'
+      ? view.wordingVersion
+      : view.notificationsVersion;
 const isObject = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
 
@@ -26,19 +34,19 @@ export function createMerchantPreferencesClient(
   freshKey: () => string = () => crypto.randomUUID(),
 ) {
   let current: MerchantPreferencesView | null = null;
-  const pending: Partial<Record<'guidance' | 'wording', Pending>> = {};
+  const pending: Partial<Record<Section, Pending>> = {};
   let serial: Promise<unknown> = Promise.resolve();
   function queued<T>(work: () => Promise<T>): Promise<T> {
     const result = serial.then(work, work);
     serial = result.catch(() => undefined);
     return result;
   }
-  function clear(section: 'guidance' | 'wording') {
+  function clear(section: Section) {
     if (current) journal?.removeItem(journalKey(current.shop, section));
     delete pending[section];
   }
   function restore(view: MerchantPreferencesView) {
-    for (const section of ['guidance', 'wording'] as const) {
+    for (const section of sections) {
       const raw = journal?.getItem(journalKey(view.shop, section));
       if (!raw) continue;
       const value: unknown = JSON.parse(raw);
@@ -74,8 +82,7 @@ export function createMerchantPreferencesClient(
       const status = isObject(error) ? error.status : undefined;
       if (status === 400 || status === 409 || status === 422) clear(section);
       if (status === 401 || status === 403) {
-        clear('guidance');
-        clear('wording');
+        for (const section of sections) clear(section);
         current = null;
       }
       if (status === 409)
@@ -85,15 +92,13 @@ export function createMerchantPreferencesClient(
   }
   async function load(): Promise<MerchantPreferencesView> {
     const view = MerchantPreferencesViewSchema.parse(await request(endpoint));
-    if (current && (view.shop !== current.shop || view.authority !== current.authority)) {
-      clear('guidance');
-      clear('wording');
-    }
+    if (current && (view.shop !== current.shop || view.authority !== current.authority))
+      for (const section of sections) clear(section);
     current = view;
     restore(view);
     // Resume only the exact original saved intent, with its original key and authority.
     // A rejected CAS has a known outcome; read the latest store state afterwards.
-    for (const section of ['guidance', 'wording'] as const) {
+    for (const section of sections) {
       const operation = pending[section];
       if (!operation) continue;
       try {
@@ -105,8 +110,8 @@ export function createMerchantPreferencesClient(
     return (current = MerchantPreferencesViewSchema.parse(await request(endpoint)));
   }
   async function save(
-    section: 'guidance' | 'wording',
-    value: MerchantGuidance | MerchantCustomerWordingOverlays,
+    section: Section,
+    value: MerchantGuidance | MerchantCustomerWordingOverlays | MerchantNotifications,
     observedVersion: string | undefined,
   ): Promise<MerchantPreferencesView> {
     if (!current) await load();
@@ -115,23 +120,15 @@ export function createMerchantPreferencesClient(
     if (prior) {
       await send(prior);
       // The original receipt is now known; a new explicit save follows that version.
-      observedVersion = section === 'guidance' ? current?.guidanceVersion : current?.wordingVersion;
+      observedVersion = current ? sectionVersion(current, section) : undefined;
     }
-    const command = MerchantPreferencesCommandSchema.parse(
-      section === 'guidance'
-        ? {
-            action: section,
-            authority: current.authority,
-            expectedVersion: observedVersion ?? current.guidanceVersion,
-            guidance: value,
-          }
-        : {
-            action: section,
-            authority: current.authority,
-            expectedVersion: observedVersion ?? current.wordingVersion,
-            overlays: value,
-          },
-    );
+    const field = section === 'guidance' ? 'guidance' : section === 'wording' ? 'overlays' : 'notifications';
+    const command = MerchantPreferencesCommandSchema.parse({
+      action: section,
+      authority: current.authority,
+      expectedVersion: observedVersion ?? sectionVersion(current, section),
+      [field]: value,
+    });
     const operation = { key: freshKey(), command };
     // Persist before dispatch. If custody is unavailable, do not create an unresumable write.
     if (!journal) throw new Error('Pending store preference custody unavailable');
@@ -148,6 +145,10 @@ export function createMerchantPreferencesClient(
     saveWording: (overlays: MerchantCustomerWordingOverlays) => {
       const observedVersion = current?.wordingVersion;
       return queued(() => save('wording', overlays, observedVersion));
+    },
+    saveNotifications: (notifications: MerchantNotifications) => {
+      const observedVersion = current?.notificationsVersion;
+      return queued(() => save('notifications', notifications, observedVersion));
     },
   };
 }

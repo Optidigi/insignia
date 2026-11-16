@@ -625,5 +625,17 @@
     "automatic": "Shopify-Sprache verwenden",
     "failure": "Die Sprache konnte nicht geändert werden. Versuchen Sie es erneut.",
     "preferences": "Einstellungen"
+  },
+  "customerEmail": {
+    "heading": "Kunden-E-Mails",
+    "label": "Kunden per E-Mail an fehlende Motive erinnern",
+    "details": "Wenn für eine bezahlte Bestellung noch ein Motiv fehlt, sendet Insignia dem Kunden einen sicheren Upload-Link per E-Mail. Deaktivieren Sie dies, wenn Sie Kunden selbst kontaktieren möchten: Öffnen Sie die Bestellung und kopieren Sie den Upload-Link für Kunden.",
+    "readOnly": "Wenn für eine bezahlte Bestellung noch ein Motiv fehlt, sendet Insignia dem Kunden einen sicheren Upload-Link per E-Mail. Nur Mitarbeiter, die Insignia bearbeiten dürfen, können dies ändern.",
+    "unavailable": "Diese Einstellung konnte nicht geladen werden. Laden Sie die Seite neu und versuchen Sie es erneut.",
+    "notice": {
+      "save-failed": "Ihre Änderung konnte nicht gespeichert werden. Versuchen Sie es erneut.",
+      "busy": "Shopify ist gerade ausgelastet, daher wurde nichts geändert. Warten Sie einige Sekunden und versuchen Sie es erneut.",
+      "changed-elsewhere": "Diese Einstellung wurde an anderer Stelle geändert. Die aktuelle Einstellung wird angezeigt."
+    }
   }
 }

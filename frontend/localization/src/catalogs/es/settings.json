@@ -628,5 +628,17 @@
     "automatic": "Usar el idioma de Shopify",
     "failure": "No se ha podido cambiar el idioma. Inténtalo de nuevo.",
     "preferences": "Preferencias"
+  },
+  "customerEmail": {
+    "heading": "Correos a clientes",
+    "label": "Enviar un correo a los clientes cuando falte el diseño",
+    "details": "Cuando a un pedido pagado aún le falta el diseño, Insignia envía al cliente un enlace de carga seguro por correo. Desactívalo si prefieres contactar tú con los clientes: abre el pedido y copia el enlace de carga del cliente.",
+    "readOnly": "Cuando a un pedido pagado aún le falta el diseño, Insignia envía al cliente un enlace de carga seguro por correo. Solo el personal que puede editar Insignia puede cambiarlo.",
+    "unavailable": "No se ha podido cargar este ajuste. Vuelve a cargar la página para intentarlo de nuevo.",
+    "notice": {
+      "save-failed": "No se ha podido guardar el cambio. Inténtalo de nuevo.",
+      "busy": "Shopify está ocupado en este momento, así que no se cambió nada. Espera unos segundos y vuelve a intentarlo.",
+      "changed-elsewhere": "Este ajuste se ha cambiado en otro lugar. Se muestra el ajuste actual."
+    }
   }
 }

@@ -625,5 +625,17 @@
     "automatic": "Taal van Shopify gebruiken",
     "failure": "De taal kon niet worden gewijzigd. Probeer het opnieuw.",
     "preferences": "Voorkeuren"
+  },
+  "customerEmail": {
+    "heading": "E-mails aan klanten",
+    "label": "Klanten mailen als er een ontwerp ontbreekt",
+    "details": "Als er voor een betaalde bestelling nog een ontwerp ontbreekt, mailt Insignia de klant een beveiligde uploadlink. Zet dit uit als je klanten liever zelf benadert: open de bestelling en kopieer de uploadlink voor de klant.",
+    "readOnly": "Als er voor een betaalde bestelling nog een ontwerp ontbreekt, mailt Insignia de klant een beveiligde uploadlink. Alleen medewerkers die Insignia mogen bewerken, kunnen dit wijzigen.",
+    "unavailable": "Deze instelling kon niet worden geladen. Laad de pagina opnieuw om het nog eens te proberen.",
+    "notice": {
+      "save-failed": "Je wijziging kon niet worden opgeslagen. Probeer het opnieuw.",
+      "busy": "Shopify is op dit moment druk, dus er is niets gewijzigd. Wacht een paar seconden en probeer het opnieuw.",
+      "changed-elsewhere": "Deze instelling is ergens anders gewijzigd. De huidige instelling wordt getoond."
+    }
   }
 }
