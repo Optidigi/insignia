@@ -4,7 +4,10 @@ import type { ActiveQuoteTenant } from '@insignia/application';
 import type { PrimaryMarketSnapshot } from '@insignia/shopify';
 import {
   createLeanPrimaryMarketAdmission,
+  EUROZONE_COUNTRIES,
+  type EurQualification,
   parseEurNetherlandsQualification,
+  parseEurQualification,
 } from '../src/server/buyer/lean-primary-market.ts';
 
 const generation = '11111111-1111-4111-8111-111111111111';
@@ -47,7 +50,10 @@ const snapshot: PrimaryMarketSnapshot = {
   observedAt: '2026-11-05T11:00:00Z',
   freshUntil: '2026-11-05T11:05:00Z',
 };
-const setup = (observed = snapshot, qualification = parseEurNetherlandsQualification(JSON.stringify(profile))) =>
+const setup = (
+  observed = snapshot,
+  qualification: EurQualification | null = parseEurNetherlandsQualification(JSON.stringify(profile)),
+) =>
   createLeanPrimaryMarketAdmission({
     scope: { shopId: 'tenant', installationGeneration: '1' },
     active: async () => authority,
@@ -158,4 +164,125 @@ test('EUR at a shop the qualification profile does not cover is an unsupported m
     () => withProfile({ primaryMarketGid: 'gid://shopify/Market/99' }).assertSupported(target),
     drifted,
   );
+});
+
+// Release-level EUR qualification (owner decision D4, 16 Nov 2026): any EUR shop, eurozone buyers.
+const v2 = {
+  ...expectedRelease,
+  version: 'eur-qualification-v2',
+  countries: [...EUROZONE_COUNTRIES],
+  qualifiedAt: '2026-11-05T10:00:00Z',
+  evidenceRef: 'qualification/eur-release-reviewed',
+};
+const setupV2 = (observed = snapshot, change: Record<string, unknown> = {}) =>
+  setup(observed, parseEurQualification(JSON.stringify({ ...v2, ...change })));
+const unsupportedMarket = { name: 'BuyerRejectedError', code: 'UNSUPPORTED_MARKET' };
+const outage = (error: unknown) => error instanceof Error && error.name !== 'BuyerRejectedError';
+
+test('v2 parsing is exact: known keys, two-letter uppercase countries, non-empty, no duplicates', () => {
+  assert.equal(parseEurQualification(undefined), null);
+  assert.equal(parseEurQualification(''), null);
+  const parsed = parseEurQualification(JSON.stringify(v2));
+  assert.equal(parsed?.version, 'eur-qualification-v2');
+  assert.deepEqual(parsed && 'countries' in parsed ? [...parsed.countries] : [], [...EUROZONE_COUNTRIES]);
+  for (const change of [
+    { countries: [] },
+    { countries: ['nl'] },
+    { countries: ['NLD'] },
+    { countries: ['NL', 'NL'] },
+    { countries: 'NL' },
+    { countries: [1] },
+    { activeVersionRef: 'x' },
+    { functionsSourceCommit: 'abc' },
+    { qualifiedAt: '2026-11-05' },
+    { evidenceRef: '' },
+    { unexpected: true },
+  ])
+    assert.throws(() => parseEurQualification(JSON.stringify({ ...v2, ...change })), /profile/, JSON.stringify(change));
+  const { countries: _countries, ...withoutCountries } = v2;
+  assert.throws(() => parseEurQualification(JSON.stringify(withoutCountries)), /profile/);
+  // v1 still parses unchanged through the same entry point.
+  assert.deepEqual(
+    parseEurQualification(JSON.stringify(profile)),
+    parseEurNetherlandsQualification(JSON.stringify(profile)),
+  );
+});
+
+test('v2 admits any EUR shop to qualified eurozone buyers, with no shop binding', async () => {
+  await setupV2().assertSupported(target);
+  await setupV2({ ...snapshot, countryCodes: ['DE', 'NL'] }).assertSupported({ ...target, country: 'DE' });
+  // The profile names no shop: another EUR shop is admitted by its own tenant authority and Market reads.
+  const other = {
+    shopId: 'other',
+    shopifyShopId: '456',
+    installationGeneration: '3',
+    authorizationGeneration: generation,
+    authorizationEpoch: 0,
+  };
+  await createLeanPrimaryMarketAdmission({
+    scope: { shopId: 'other', installationGeneration: '3' },
+    active: async () => other,
+    observe: async () => ({
+      ...snapshot,
+      shopId: 'other',
+      installationGeneration: '3',
+      shopifyShopId: '456',
+      countryCodes: ['FR'],
+    }),
+    clock: () => new Date('2026-11-05T11:01:00Z'),
+    eurQualification: parseEurQualification(JSON.stringify(v2)),
+    expectedRelease,
+  }).assertSupported({
+    ...target,
+    country: 'FR',
+    tenant: {
+      shopId: 'other',
+      shopifyShopGid: 'gid://shopify/Shop/456',
+      installationGeneration: '3',
+      authorizationGeneration: generation,
+      authorizationEpoch: 0,
+    },
+  });
+});
+
+test('v2 refuses buyers outside its countries or the shop primary Market, and non-EUR shops', async () => {
+  await assert.rejects(() => setupV2().assertSupported({ ...target, country: 'US' }), unsupportedMarket);
+  await assert.rejects(
+    () => setupV2(snapshot, { countries: ['NL'] }).assertSupported({ ...target, country: 'DE' }),
+    unsupportedMarket,
+  );
+  // A listed country outside the shop's own primary Market is still unsupported.
+  await assert.rejects(() => setupV2().assertSupported({ ...target, country: 'DE' }), unsupportedMarket);
+  await assert.rejects(() => setupV2().assertSupported({ ...target, shopCurrency: 'USD' }), unsupportedMarket);
+  await assert.rejects(
+    () => setupV2().assertSupported({ ...target, currency: 'GBP', shopCurrency: 'GBP' }),
+    unsupportedMarket,
+  );
+});
+
+test('v2 bound to another release is an outage, not a refusal; independent reads still apply', async () => {
+  await assert.rejects(() => setupV2(snapshot, { activeVersionRef: '99999' }).assertSupported(target), outage);
+  await assert.rejects(
+    () => setupV2(snapshot, { functionsSourceCommit: 'b'.repeat(40) }).assertSupported(target),
+    outage,
+  );
+  await assert.rejects(
+    () => setupV2(snapshot, { qualifiedAt: '2026-11-06T10:00:00Z' }).assertSupported(target),
+    outage,
+  );
+  for (const change of [
+    { shopCurrency: 'USD' },
+    { primaryMarketId: 'gid://shopify/Market/99' },
+    { freshUntil: '2026-11-05T11:01:00Z' },
+  ])
+    await assert.rejects(() => setupV2({ ...snapshot, ...change }).assertSupported(target), /context/);
+});
+
+test('the USD path is unchanged under a v2 profile', async () => {
+  await setupV2({ ...snapshot, shopCurrency: 'USD', countryCodes: ['US'] }).assertSupported({
+    ...target,
+    currency: 'USD',
+    shopCurrency: 'USD',
+    country: 'US',
+  });
 });

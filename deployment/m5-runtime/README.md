@@ -347,15 +347,23 @@ The owner allocation must name credentials/resources, permitted role/password/pr
 
 Use the current checklist for exact temporary-copy/data deadlines and recovery targets; this runbook neither extends them nor claims cleanup is scheduled. Preserve permanent configuration custody while enforcing the actual credential/data lifetime.
 
-## EUR/Netherlands admission
+## EUR admission
 
-The selected integration supports USD shops and qualified EUR/Netherlands shops, each using its own shop currency. EUR remains disabled unless the private `INSIGNIA_EUR_NL_QUALIFICATION` JSON profile is supplied after actual qualification. The profile version is `eur-nl-qualification-v1`; it binds the closed reviewed release (`activeVersionRef`, `functionsSourceCommit`), `shopId`, `shopifyShopGid`, `installationGeneration`, `authorizationGeneration`, `authorizationEpoch`, `primaryMarketGid`, UTC `qualifiedAt` and an `evidenceRef`. Populate these from the actual allocated shop/installation/Market and reviewed evidence, not a copied example or currency-name flag. A changed release/Function source, installation/authorization epoch or Market requires a matching qualified profile.
+The selected integration supports USD shops and EUR shops, each using its own shop currency. EUR stays disabled unless the private `INSIGNIA_EUR_NL_QUALIFICATION` web env variable holds a qualification profile (the variable name is historical). Supplying a profile is a private deployment operation after an actual native qualification of the release; its presence alone is not proof.
 
-Admission still independently reads current primary-Market membership and shop currency, checks before/after tenant authority and finite provider freshness, and retains normal quote, signature, Function/release and contextual-price checks. EUR must equal shop currency and the buyer country must be NL. Same-shop multi-currency, FX, GBP and broader Markets are outside this profile. Supplying a profile is a private qualified deployment operation; configuration presence alone is not native proof.
+**Release-level profile `eur-qualification-v2` (preferred; owner decision D4, 16 Nov 2026).** Qualify the exact release once on a real EUR store (Designer, quote, cart, Functions, test checkout), then EUR is sold by **any** shop whose shop currency is EUR, to buyers whose country is in `countries` and in the shop's own primary Market. No per-merchant step. Exact keys:
 
-The 5 November read-only development-web inspection showed no EUR qualification profile configured. The owner's final allocation is the existing `insignia-rewrite-dev.myshopify.com` development store. Its bounded read-only observation found USD/United States with primary US Market 106410115355. Keep that store and currency unchanged. An unchanged USD shop cannot prove the EUR/Netherlands own-currency path; native EUR qualification and enablement remain deferred until a concrete suitable resource is allocated. Do not flip the store currency, create another shop, start billing or make a payment to manufacture that proof.
+```json
+{"version":"eur-qualification-v2","activeVersionRef":"<Active app version id>","functionsSourceCommit":"<40-hex Function source commit>","countries":["AT","BE","HR","CY","EE","FI","FR","DE","GR","IE","IT","LV","LT","LU","MT","NL","PT","SK","SI","ES"],"qualifiedAt":"<UTC, e.g. 2026-11-16T22:00:00Z>","evidenceRef":"<reviewed evidence id>"}
+```
 
-The earlier read-only observation of `stitchs-vat-verification-20261004.myshopify.com` is historical context, not the current EUR allocation. It found EUR/Netherlands and the protected original VAT installation 998524223812. Preserve `UNRESOLVED_NO_RETRY`: installed/active provider state and zero recorded authoritative uninstall deliveries do not settle its unknown-dispatch uninstall. No uninstall retry, reinstall or credential bootstrap is authorized by that observation. Exact release/Function, tenant/Market and quote/cart/checkout/purchase proof is still required before any EUR profile is supplied.
+`countries` is explicit, non-empty, two-letter uppercase ISO codes without duplicates (the euro area is the default list). `activeVersionRef` and `functionsSourceCommit` must equal the running release profile: after any app/theme release or Function change, write a new profile from a new qualification, or every EUR quote fails closed as an outage (not a buyer refusal). A buyer outside `countries`, a buyer outside the shop's primary Market, or a non-EUR shop gets `UNSUPPORTED_MARKET`.
+
+**Legacy profile `eur-nl-qualification-v1`.** Still accepted unchanged: one shop (`shopId`, `shopifyShopGid`, installation and authorization generation/epoch, `primaryMarketGid`), Netherlands buyers only. Production used it for the review store `insignia-review-eu` on 16 Nov 2026 while the release was being qualified; replace it with v2.
+
+Either way, admission still independently reads current primary-Market membership and shop currency, checks tenant authority before and after the provider read and the read's freshness, and keeps the normal quote, signature, Function/release and contextual-price checks. EUR must equal the shop currency. Same-shop multi-currency, FX, GBP and other currencies are out of scope.
+
+The protected VAT installation (`stitchs-vat-verification-20261004`) stays `UNRESOLVED_NO_RETRY` and is never an EUR test resource.
 
 ## Past transitions
 

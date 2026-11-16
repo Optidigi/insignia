@@ -33,7 +33,7 @@ import { createProductionQuoteReadiness } from '../production-readiness.ts';
 import { createQuoteAuthorityPorts } from '../quote-composition.ts';
 import type { SignerClient } from '../signer-client.ts';
 import { proposalStage } from './diagnostics.ts';
-import { createLeanPrimaryMarketAdmission, parseEurNetherlandsQualification } from './lean-primary-market.ts';
+import { createLeanPrimaryMarketAdmission, parseEurQualification } from './lean-primary-market.ts';
 import { createBuyerServices } from './service.ts';
 import { assertOutsideSigningFence, fenceGuarded, fenceGuardedFetch, runSigningFence } from './signing-fence.ts';
 import { createVisitorKey } from './visitor-address.ts';
@@ -104,7 +104,7 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
   )
     throw new Error('Buyer production configuration incomplete');
   const clock = input.clock ?? (() => new Date());
-  const eurQualification = parseEurNetherlandsQualification(input.env.INSIGNIA_EUR_NL_QUALIFICATION);
+  const eurQualification = parseEurQualification(input.env.INSIGNIA_EUR_NL_QUALIFICATION);
   // Every Shopify Admin/Storefront request; none may leave while a signing fence holds the shop lock.
   const fetchImpl = fenceGuardedFetch((target, options) =>
     (input.fetchImpl ?? fetch)(target, { ...options, redirect: 'error' }),
