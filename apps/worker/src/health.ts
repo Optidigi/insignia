@@ -103,11 +103,12 @@ export function createWorkerHealthServer(input: {
         throw error;
       }
     },
-    async listen(port: number): Promise<string> {
+    async listen(port: number, host: '127.0.0.1' | '0.0.0.0' = '127.0.0.1'): Promise<string> {
       if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('Invalid local port');
+      if (host !== '127.0.0.1' && host !== '0.0.0.0') throw new Error('Invalid health host');
       await new Promise<void>((resolve, reject) => {
         server.once('error', reject);
-        server.listen(port, '127.0.0.1', () => {
+        server.listen(port, host, () => {
           server.off('error', reject);
           resolve();
         });

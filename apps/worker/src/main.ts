@@ -7,7 +7,7 @@ import {
   readShopifyOrderChanges,
   resolveRuntimeReleaseProfile,
 } from '@insignia/shopify';
-import { loadCredentialKeys } from './config.js';
+import { loadCredentialKeys, resolveWorkerHealthHost } from './config.js';
 import { createWorkerDatabase } from './database.js';
 import { runLocalDiagnostic } from './diagnostic.js';
 import { createDurableWorkerHandlers, credentialLifecycle } from './handlers.js';
@@ -38,6 +38,7 @@ if (process.argv.includes('--diagnostic')) {
   const portArgument = process.argv.find((value) => value.startsWith('--port='));
   const port = portArgument ? Number(portArgument.slice('--port='.length)) : 4301;
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('Invalid worker port');
+  const healthHost = resolveWorkerHealthHost(process.env);
   const { core, queue } = createWorkerDatabase(connectionString, keys);
   const usage = createWorkerUsageRuntime({ env: process.env, core });
   const transport = createShopifyOfflineRefreshTransport({ clientId, clientSecret });
@@ -106,6 +107,7 @@ if (process.argv.includes('--diagnostic')) {
     queue,
     handlers: createDurableWorkerHandlers(core, transport, purchaseRunner),
     port,
+    host: healthHost,
   });
   console.log(JSON.stringify({ url: running.url, durableReady: running.durableReady }));
   const lifecycle = createUninstallEnrollmentReconciliation({

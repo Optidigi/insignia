@@ -6,6 +6,8 @@ export async function startWorkerProcess(input: {
   queue: PgBossRuntime;
   handlers: WorkerHandlers;
   port: number;
+  /** Defaults to loopback; see resolveWorkerHealthHost. */
+  host?: '127.0.0.1' | '0.0.0.0';
   artworkReadiness?: () => { ready: boolean };
 }) {
   let stopping = false;
@@ -18,7 +20,7 @@ export async function startWorkerProcess(input: {
   try {
     await input.queue.start();
     await input.queue.work(input.handlers);
-    const url = await server.listen(input.port);
+    const url = await server.listen(input.port, input.host);
     return {
       url,
       get durableReady() {

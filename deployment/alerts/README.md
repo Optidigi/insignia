@@ -1,6 +1,6 @@
 # Restricted operational alerts
 
-The relay permits only `Insignia Alerts <insignia-alerts@optidigi.nl>` to `insignia@optidigi.nl`. [Delivery state](../../docs/delivery/state.md) owns installed wiring, observed drills/email delivery, outstanding authentication evidence and permitted next actions. Source and local tests do not establish provider deployment or application readiness; do not repeat consumed drills or verification messages.
+The relay permits only `Insignia Alerts <alerts@insigniacustomizer.com>` to `insignia@optidigi.nl`. [Delivery state](../../docs/delivery/state.md) owns installed wiring, observed drills/email delivery, outstanding authentication evidence and permitted next actions. Source and local tests do not establish provider deployment or application readiness; do not repeat consumed drills or verification messages.
 
 Run local behavioral checks from the repository root:
 
@@ -129,6 +129,12 @@ files (maximum4096 bytes), using trustworthy maintenance observations:
 * `deletion.json`: `{ "observedAt": <Unix ms>, "overdueCount": <aggregate> }`;
   derive from actual privacy deadlines, including outstanding object/payload work.
 
+**Availability probe.** The worker serves `/ready` on port 4301 on its own loopback by default.
+For the heartbeat producer (host networking), run the worker with `INSIGNIA_WORKER_HEALTH_HOST=0.0.0.0`
+and publish the port on the host loopback only (`ports: ["127.0.0.1:9464:4301"]`); the producer's
+`availabilityProbe` is then `http://127.0.0.1:9464/ready`. Only `127.0.0.1` (default) and `0.0.0.0`
+are accepted; never publish the port on a public interface.
+
 Processing/deletion snapshots expire after120 seconds. Missing, malformed, future
 or stale evidence is unknown. Backup age above the configured policy is a problem.
 The producer probes, reads these local aggregates and sends one heartbeat per
@@ -190,6 +196,29 @@ unknown even when local backup and database aggregates are healthy. Numeric remo
 backlog joins the local/database deletion aggregate. This consumes protected local
 receipts only; the collector makes no remote calls. Qualify native completion/prune source
 custody and the actual independent destination before admission.
+
+**Owner-run backups (external marker).** When backups are run by the owner's own tooling instead
+of Insignia's backup store (owner decision 16 Nov 2026: one backup job for all apps, Insignia's data
+in `/srv/insignia`), configure the snapshot with
+`"backupSource": {"kind": "external-marker", "markerFile": "/run/insignia/backup-marker/insignia-backup.json"}`
+and **omit** `backupStore`, `replicaRequired`, `replicaJournalDirectory` and `replicaRemoteIdentity`
+(mixing them is refused at startup); see
+[heartbeat-snapshot.external-marker.example.json](heartbeat-snapshot.external-marker.example.json).
+The owner's backup job, **only after a backup of `/srv/insignia` completed and was verified**,
+atomically replaces the marker (write a temporary file in the same directory, then rename) with exactly:
+
+```json
+{"version":1,"completedAt":1794850000000,"target":"owner-offsite"}
+```
+
+`completedAt` is that backup's completion time in Unix milliseconds; `target` is a short label
+(1–64 of `A–Z a–z 0–9 . _ -`). The marker is a regular file (no symlink), owned by UID 1000,
+mode 0600, at most 512 bytes, in a directory mounted read-only into the snapshot container. A failed
+attempt must not touch it. A missing, malformed or future marker reports the backup as unknown; a
+marker older than the heartbeat's `backupMaxAgeSeconds` reports a backup problem. The marker proves
+only that the owner's job reported a verified completion, not restorability: restore rehearsals stay
+separate. In this mode the deletion aggregate has no backup-store component (the owner's tooling owns
+backup retention).
 
 Snapshot files are atomically replaced mode0600 in an owned0700 directory. No
 exporter starts or external grants are applied merely by adding these templates.

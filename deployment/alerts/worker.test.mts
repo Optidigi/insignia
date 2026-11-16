@@ -122,7 +122,7 @@ test('claims durably before send, deduplicates across concurrency/restart, and r
   assert.equal((await readJson(await f.request('/v1/alerts', alert()))).state, 'submitted');
   assert.equal((await f.request('/v1/alerts', { ...alert(), count: 3 })).status, 409);
   assert.equal(f.messages[0]?.to, 'insignia@optidigi.nl');
-  assert.deepEqual(f.messages[0]?.from, { email: 'insignia-alerts@optidigi.nl', name: 'Insignia Alerts' });
+  assert.deepEqual(f.messages[0]?.from, { email: 'alerts@insigniacustomizer.com', name: 'Insignia Alerts' });
 });
 
 test('exposes acknowledged provider references to the authenticated operator for delivery reconciliation', async () => {
