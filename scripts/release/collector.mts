@@ -67,7 +67,8 @@ function keysResult(value: unknown): asserts value is Record<string, unknown> {
 
 const APP = '1443cf6d03d39edae7c101a943c5c684';
 /** Grants the app requests as optional (`optional_scopes`) that its features do not depend on. */
-export const OPTIONAL_GRANTS: readonly string[] = ['read_product_listings'];
+// read_all_orders: a store keeps verifying until its staff accepts the newly required scope.
+export const OPTIONAL_GRANTS: readonly string[] = ['read_product_listings', 'read_all_orders'];
 const bindingFields = [
   'shop',
   'tenantShopId',

@@ -12,6 +12,8 @@ import a11yQuantityModules from '../../deployment/m5-runtime/native-a11y-quantit
 import a11yQuantityBinding from '../../deployment/m5-runtime/native-a11y-quantity-release-binding.json' with {
   type: 'json',
 };
+import allOrdersModules from '../../deployment/m5-runtime/native-allorders-module-baseline.json' with { type: 'json' };
+import allOrdersBinding from '../../deployment/m5-runtime/native-allorders-release-binding.json' with { type: 'json' };
 import behaviorModules from '../../deployment/m5-runtime/native-behavior-module-baseline.json' with { type: 'json' };
 import behaviorBinding from '../../deployment/m5-runtime/native-behavior-release-binding.json' with { type: 'json' };
 import buyerFixesModules from '../../deployment/m5-runtime/native-buyer-fixes-module-baseline.json' with {
@@ -436,6 +438,25 @@ test('functions renew candidate preserves identities and changes only theme and 
       };
       assert.deepEqual(unversioned(config), unversioned(oldConfig));
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
+  }
+});
+test('read_all_orders candidate adds only that required scope', () => {
+  assert.equal(allOrdersModules.length, 14);
+  assert.equal(allOrdersBinding.moduleHash, 'd9d8706fb161139d2390141f4a00605a19c496035662b0717af8302218ace8bb');
+  assert.equal(allOrdersBinding.versionId, '1225110192129');
+  assert.deepEqual(new Set(allOrdersBinding.versionIds), new Set([...scopesBinding.versionIds, '1225110192129']));
+  const prior = new Map(scopesModules.map((m) => [m.handle, m]));
+  assert.equal(prior.size, 14);
+  for (const module of allOrdersModules) {
+    const old = required(prior.get(module.handle));
+    if (module.type === 'app_access') {
+      assert.deepEqual({ ...module, config: undefined }, { ...old, config: undefined });
+      assert.deepEqual(module.config, {
+        ...old.config,
+        scopes:
+          'read_all_orders,read_markets,read_orders,read_publications,write_app_proxy,write_cart_transforms,write_products,write_validations',
+      });
+    } else assert.deepEqual(module, old);
   }
 });
 test('scopes candidate changes only the app_access scopes', () => {
