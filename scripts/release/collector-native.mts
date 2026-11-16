@@ -3,12 +3,25 @@ import { object, required, text as stringValue } from './validation.mts';
 export interface OwnerPrivatePacket {
   appendPassword: string;
   clientSecret: string;
+  /** Unwraps the store's stored offline token; the same wrapping key the web and worker hold. */
+  credentialKeyBase64: string;
+  credentialKeyId: string;
   databaseUrl: string;
   recordId: string;
 }
+export const OWNER_PACKET_FIELDS = [
+  'appendPassword',
+  'clientSecret',
+  'credentialKeyBase64',
+  'credentialKeyId',
+  'databaseUrl',
+  'recordId',
+] as const;
+/** Private fields cleared from memory after use; recordId is not secret. */
+export const OWNER_PACKET_SECRETS = ['appendPassword', 'clientSecret', 'credentialKeyBase64', 'databaseUrl'] as const;
 function packetShape(value: unknown): asserts value is OwnerPrivatePacket {
   const packet = object(value);
-  for (const name of ['appendPassword', 'clientSecret', 'databaseUrl', 'recordId']) stringValue(packet[name]);
+  for (const name of OWNER_PACKET_FIELDS) stringValue(packet[name]);
 }
 
 /** NOT_RUN source. One fixed private owner process, outside the ordinary web.
@@ -29,23 +42,25 @@ import { createOwnerHttps } from './owner-https.mts';
 import { VERIFIER_STATE } from './paths.mts';
 import { readPrivatePacket } from './private-pipe.mts';
 import { releaseProfile } from './profiles.mts';
+import { APP_CLIENT_ID, currentTenantBinding } from './tenant-binding.mts';
 
 const NATIVE_PARENT = VERIFIER_STATE;
 export const ownerPhaseForRecord = (recordId: string) => join(NATIVE_PARENT, recordPhaseName(recordId));
-const SHOP = 'insignia-rewrite-dev.myshopify.com';
-const APP = '1443cf6d03d39edae7c101a943c5c684';
-/** Import-safe private packet seam. Four flat string fields only; the textual
+/** Import-safe private packet seam. Six flat string fields only; the textual
  * token count also rejects duplicate JSON properties before credentials are used. */
 export function parseOwnerPrivatePacket(text: string): OwnerPrivatePacket {
   assert.ok(typeof text === 'string' && Buffer.byteLength(text) <= 16384);
   const packet: unknown = JSON.parse(text);
   packetShape(packet);
-  assert.deepEqual(Object.keys(packet).sort(), ['appendPassword', 'clientSecret', 'databaseUrl', 'recordId']);
+  assert.deepEqual(Object.keys(packet).sort(), [...OWNER_PACKET_FIELDS]);
   assert.ok(Object.values(packet).every((value) => typeof value === 'string'));
-  assert.equal(text.match(/"(?:[^"\\]|\\[\s\S])*"/g)?.length, 8);
+  assert.equal(text.match(/"(?:[^"\\]|\\[\s\S])*"/g)?.length, OWNER_PACKET_FIELDS.length * 2);
   recordPhaseName(packet.recordId);
   assert.match(packet.appendPassword, /^[0-9a-f]{64}$/);
   assert.match(packet.clientSecret, /^[^\r\n\0]{1,4096}$/);
+  assert.match(packet.credentialKeyId, /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63}$/);
+  assert.match(packet.credentialKeyBase64, /^[A-Za-z0-9+/]{43}=$/);
+  assert.equal(Buffer.from(packet.credentialKeyBase64, 'base64').toString('base64'), packet.credentialKeyBase64);
   const address = new URL(packet.databaseUrl);
   assert.ok(
     ['postgres:', 'postgresql:'].includes(address.protocol) &&
@@ -102,14 +117,13 @@ async function main() {
       bytes.fill(0);
       for (const chunk of chunks) chunk.fill(0);
     }
-    const verificationRequest =
-      process.env.INSIGNIA_RELEASE_VERIFICATION_FD === '3'
-        ? parseReleaseVerificationRequest(
-            JSON.parse((await readPrivatePacket(createReadStream('', { fd: 3, autoClose: true }))).toString('utf8')),
-            profile.versionId,
-          )
-        : undefined;
-    const deadline = Math.min(Date.now() + 300000, verificationRequest?.deadlineMs ?? Infinity);
+    // The request names the store to verify; without one there is nothing to collect.
+    assert.equal(process.env.INSIGNIA_RELEASE_VERIFICATION_FD, '3');
+    const verificationRequest = parseReleaseVerificationRequest(
+      JSON.parse((await readPrivatePacket(createReadStream('', { fd: 3, autoClose: true }))).toString('utf8')),
+      profile.versionId,
+    );
+    const deadline = Math.min(Date.now() + 300000, verificationRequest.deadlineMs);
     const currentTime = () => {
       const time = Date.now();
       assert.ok(time < deadline);
@@ -121,24 +135,58 @@ async function main() {
       await import(pathToFileURL(require.resolve('@insignia/database')).href);
     const {
       createFunctionOwnershipReconciler,
+      createShopifyOfflineRefreshTransport,
       FUNCTION_OWNERSHIP_QUERY,
     }: typeof import('../../packages/shopify/dist/index.js') = await import(
       pathToFileURL(require.resolve('@insignia/shopify')).href
     );
-    core = createDurableCore(
+    const { createAdminReadCredentialSource }: typeof import('../../packages/application/dist/index.js') = await import(
+      pathToFileURL(require.resolve('@insignia/application')).href
+    );
+    const wrappingKey = Buffer.from(packet.credentialKeyBase64, 'base64');
+    assert.equal(wrappingKey.length, 32);
+    const database = createDurableCore(
       new Pool({
         connectionString: packet.databaseUrl,
         connectionTimeoutMillis: 30000,
         query_timeout: 30000,
         options: '-c statement_timeout=30000ms -c lock_timeout=30000ms',
       }),
+      { credentialKeys: { currentKeyId: packet.credentialKeyId, keys: { [packet.credentialKeyId]: wrappingKey } } },
     );
+    core = database;
+    // The store comes from the request, its identity from the active installation records.
+    const target = await currentTenantBinding(database.tenants, verificationRequest.binding);
+    assert.deepEqual(target.binding, verificationRequest.binding);
     management = createManagementProcess({ deadline, profileName });
     const provider = createOwnerHttps({
+      shop: target.shop,
       request: privateHttpsRequest,
       functionQuery: FUNCTION_OWNERSHIP_QUERY,
       deadline,
       profileName,
+    });
+    // The store's own offline token, through the same claim-fenced refresh lifecycle as the
+    // worker, so a client store outside the app's organization verifies the same way.
+    const offline = createAdminReadCredentialSource({
+      tenants: database.tenants,
+      credentials: {
+        install: () => Promise.reject(new Error('Credential installation is not a verifier operation')),
+        acquire: (input) => database.credentials.acquire(input),
+        replaceClaim: (input) => database.credentials.replaceClaim(input),
+        async releaseClaim(input) {
+          await database.credentials.releaseClaim(input);
+        },
+        async markReauthRequired(input) {
+          return (await database.credentials.markReauthRequired(input)) ? 'marked' : 'stale';
+        },
+      },
+      refresh: createShopifyOfflineRefreshTransport({
+        clientId: APP_CLIENT_ID,
+        clientSecret: packet.clientSecret,
+        fetchImpl: provider.refreshFetch,
+        timeoutMs: 30000,
+      }),
     });
     const result = await collectFreshTrustedRelease(
       {
@@ -150,36 +198,27 @@ async function main() {
         now: currentTime,
         management,
         async readTenant() {
-          const managed = await required(core).tenants.getManagedInstallationState(SHOP);
-          assert.ok(managed?.active);
-          const scope = await required(core).tenants.getActiveAuthorizationScope({
-            shopId: managed.shopId,
-            installationGeneration: managed.currentGeneration,
-          });
-          assert.ok(scope && scope.shopDomain === SHOP && scope.shopifyShopId === managed.shopifyShopId);
-          if (verificationRequest)
-            assert.deepEqual(
-              {
-                shopId: managed.shopId,
-                installationGeneration: managed.currentGeneration,
-                appClientId: APP,
-                authorizationGeneration: scope.authorizationGeneration,
-                authorizationEpoch: scope.authorizationEpoch,
-                externalInstallationId: managed.externalInstallationId,
-              },
-              verificationRequest.binding,
-            );
+          const current = await currentTenantBinding(database.tenants, verificationRequest.binding);
+          assert.deepEqual(current.binding, verificationRequest.binding);
+          assert.equal(current.shop, target.shop);
           return {
-            shop: SHOP,
-            tenantShopId: managed.shopId,
-            installationGeneration: managed.currentGeneration,
-            shopId: `gid://shopify/Shop/${managed.shopifyShopId}`,
-            externalInstallationId: managed.externalInstallationId,
-            authorizationGeneration: scope.authorizationGeneration,
-            authorizationEpoch: scope.authorizationEpoch,
+            shop: current.shop,
+            tenantShopId: current.binding.shopId,
+            installationGeneration: current.binding.installationGeneration,
+            shopId: `gid://shopify/Shop/${current.shopifyShopId}`,
+            externalInstallationId: current.binding.externalInstallationId,
+            authorizationGeneration: current.binding.authorizationGeneration,
+            authorizationEpoch: current.binding.authorizationEpoch,
           };
         },
-        acquireToken: () => provider.acquireToken(required(packet).clientSecret),
+        async acquireToken() {
+          const credential = await offline.acquire({
+            shopId: target.binding.shopId,
+            installationGeneration: target.binding.installationGeneration,
+          });
+          assert.ok(credential.kind === 'usable' && credential.shopDomain === target.shop);
+          return credential.accessToken;
+        },
         readInstallation: (token) => provider.readInstallation(token),
         async readFunctions(token, binding) {
           const tenant = {
@@ -196,7 +235,7 @@ async function main() {
               },
             },
           }).read(tenant, {
-            appKey: APP,
+            appKey: APP_CLIENT_ID,
             observationVersion: 2,
             transformInputQuerySha256: profile.functions.transform.inputQuerySha256,
             validationInputQuerySha256: profile.functions.validation.inputQuerySha256,
@@ -223,7 +262,7 @@ async function main() {
     process.exitCode = 1;
   } finally {
     if (packet) {
-      for (const name of ['clientSecret', 'appendPassword', 'databaseUrl']) Reflect.set(packet, name, undefined);
+      for (const name of OWNER_PACKET_SECRETS) Reflect.set(packet, name, undefined);
     }
     for (const chunk of chunks) chunk.fill(0);
     management?.shutdown();

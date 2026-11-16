@@ -59,7 +59,8 @@ try {
     });
     for (const signal of ['SIGTERM', 'SIGINT'] as const) process.once(signal, () => worker.kill(signal));
     await writePrivatePacket(input, packet);
-    for (const name of ['clientSecret', 'appendPassword', 'databaseUrl']) Reflect.set(startup, name, undefined);
+    for (const name of ['clientSecret', 'appendPassword', 'databaseUrl', 'credentialKeyBase64'])
+      Reflect.set(startup, name, undefined);
     process.exitCode = await stopped;
   } finally {
     packet.fill(0);

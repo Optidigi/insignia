@@ -1231,6 +1231,8 @@
       "leanPricingInvalid": "Cada precio debe ser un importe final por artículo y no puede ser negativo. Corrige el precio y vuelve a guardar.",
       "geometryInvalid": "Una posición no cabe en su vista, o hace referencia a una vista o variante que ya no existe. Ajusta el área y vuelve a guardar.",
       "publicationIncomplete": "Esta configuración aún no está lista para publicarse: {{reason}}",
+      "planFeatureRequired": "Tu plan de Insignia no incluye todo lo que usa esta configuración. Revisa tu plan en Facturación y vuelve a publicar.",
+      "publicationUnavailable": "Ahora mismo no se puede publicar en esta tienda, así que no se ha publicado nada. Vuelve a intentarlo en unos minutos. Si sigue ocurriendo, contacta con soporte.",
       "shopCurrencyChanged": "La moneda de la tienda cambió después de crear este borrador. Recarga la página para revisar tus precios en la nueva moneda. Al recargar se descartan los cambios que no hayas guardado.",
       "methodLinksChanged": "Las técnicas vinculadas a este producto cambiaron después de crear este borrador. Recarga la página para revisarlas. Al recargar se descartan los cambios que no hayas guardado.",
       "productIdentityChanged": "Este borrador pertenece a otro producto. Recarga la página para abrir el borrador correcto. Al recargar se descartan los cambios que no hayas guardado.",

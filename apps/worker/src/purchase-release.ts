@@ -22,7 +22,6 @@ export function createPurchaseReleasePreparation(input: {
   if (!qualification) return undefined;
   const profile = resolveRuntimeReleaseProfile(input.releaseProfile);
   if (qualification.activeVersionRef !== profile.activeVersionRef) return undefined;
-  const origin = Object.freeze({ ...qualification.origin });
   const appClientId = qualification.appClientId;
   const now = input.clock ?? (() => new Date());
   const inFlight = new Map<string, Promise<string | null>>();
@@ -49,7 +48,6 @@ export function createPurchaseReleasePreparation(input: {
       function require(value: unknown): asserts value {
         if (!value) throw new Error('PURCHASE_RELEASE_UNAVAILABLE');
       }
-      require(target.shopId === origin.shopId && target.installationGeneration === origin.installationGeneration);
       const auth = await bounded(() => input.core.tenants.getActiveAuthorizationScope(target));
       require(auth && auth.shopId === target.shopId && auth.installationGeneration === target.installationGeneration);
       const managed = await bounded(() => input.core.tenants.getManagedInstallationState(auth.shopDomain));

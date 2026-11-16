@@ -10,7 +10,7 @@ import {
   hash,
   journaledOperation,
   reserveSigningRun,
-  SHOP,
+  SHOP_DOMAIN,
   type SigningProvisionPorts,
   type SigningRunJournal,
   sameScope,
@@ -141,10 +141,12 @@ export async function applySigningEmergency(
     const start = ports.now().getTime();
     assert.ok(Number.isFinite(start));
     const identity = await operation('VERIFY_IDENTITY', () => ports.identity.verify(idToken));
-    assert.equal(identity.shop, SHOP);
+    // The store is the one the verified session token names; every later read must agree with it.
+    const shop = identity.shop;
+    assert.match(shop, SHOP_DOMAIN);
     assert.ok(identity.staffId && identity.sessionId && identity.expiresAtMs > start);
     const grant = await operation('EXCHANGE_ONLINE', () => ports.identity.exchangeOnline(idToken, identity));
-    assert.equal(grant.shop, SHOP);
+    assert.equal(grant.shop, shop);
     assert.equal(grant.staffId, identity.staffId);
     assert.ok(grant.appScopes.includes('write_products') && grant.userScopes.includes('write_products'));
     const deadline = Math.min(start + 30000, identity.expiresAtMs, grant.expiresAtMs - 30000);
@@ -154,9 +156,9 @@ export async function applySigningEmergency(
     }
     live();
     const provider = await operation('READ_INSTALLATION_OPEN', () => ports.identity.readInstallation(grant));
-    assert.equal(provider.shop, SHOP);
+    assert.equal(provider.shop, shop);
     assert.ok(provider.grantedScopes.includes('write_products'));
-    const managedRead = await ports.core.tenants.getManagedInstallationState(SHOP);
+    const managedRead = await ports.core.tenants.getManagedInstallationState(shop);
     assert.ok(managedRead?.active);
     const managed = managedRead;
     assert.equal(`gid://shopify/Shop/${managed.shopifyShopId}`, provider.shopId);
@@ -165,7 +167,7 @@ export async function applySigningEmergency(
       shopId: managed.shopId,
       installationGeneration: managed.currentGeneration,
     });
-    assert.ok(active && active.shopDomain === SHOP && active.shopifyShopId === managed.shopifyShopId);
+    assert.ok(active && active.shopDomain === shop && active.shopifyShopId === managed.shopifyShopId);
     // The plan's epoch, or the one its own bump produced in an earlier run (checked by the bump).
     assert.ok(
       active.authorizationEpoch === plan.authorizationEpoch ||
@@ -186,7 +188,7 @@ export async function applySigningEmergency(
     };
     async function currentScope() {
       live();
-      const state = await ports.core.tenants.getManagedInstallationState(SHOP);
+      const state = await ports.core.tenants.getManagedInstallationState(shop);
       assert.ok(
         state?.active &&
           state.shopId === managed.shopId &&

@@ -65,6 +65,7 @@ import {
   createDemandDrivenReleaseReader,
   type ReleaseVerificationCollector,
 } from './release-evidence.js';
+import { createAutomaticSigningProvision } from './signing-automatic.js';
 import { createSigningOwnerAction, type SigningOwnerConfiguration } from './signing-owner-action.js';
 
 type DurableCoreReleaseReader = ReturnType<typeof createDemandDrivenReleaseReader>;
@@ -560,7 +561,20 @@ export function createProductionAdminServices(
       // status GET can select or dispatch it. Tokens live only with this actor.
       if (!(await verifyPublicationRelease(actor)))
         return { ready: false, reason: 'Publication verification is unavailable. Contact support.' };
-      if (!signingOwner) return { ready: true, reason: null };
+      // The owner's armed plan applies to its own store; every other store uses automatic provisioning.
+      if (!signingOwner || signingOwnerConfiguration?.binding.tenantShopId !== actor.tenantShopId) {
+        if (!automaticSigning) return { ready: true, reason: null };
+        await active(actor);
+        grant(actor);
+        const token = requestTokens.get(actor);
+        const timezone = merchantTimezones.get(actor);
+        if (!token || !timezone) throw new Error('Publication authorization unavailable');
+        const state = await automaticSigning.ensure(actor, token, timezone);
+        await active(actor);
+        return state === 'READY' || state === 'PROVISIONED'
+          ? { ready: true, reason: null }
+          : { ready: false, reason: 'Publication preparation is unavailable. Contact support.' };
+      }
       await active(actor);
       grant(actor);
       const token = requestTokens.get(actor);
@@ -574,8 +588,8 @@ export function createProductionAdminServices(
     },
   });
   if (signingOwnerConfiguration && !appId) throw new Error('Signing configuration unavailable');
-  const signingOwner = signingOwnerConfiguration
-    ? createSigningOwnerAction(signingOwnerConfiguration, {
+  const signingPorts = appId
+    ? {
         releaseProfile: releaseProfile.name,
         app: signingApplication,
         core,
@@ -614,8 +628,14 @@ export function createProductionAdminServices(
               functions.read(input, expectedFunctionOwnership(apiKey, expected)),
           };
         },
-      })
+      }
     : undefined;
+  const signingOwner =
+    signingOwnerConfiguration && signingPorts
+      ? createSigningOwnerAction(signingOwnerConfiguration, signingPorts)
+      : undefined;
+  // Every other store gets its first, non-expiring key on its first publish.
+  const automaticSigning = signingPorts ? createAutomaticSigningProvision(signingPorts) : undefined;
   return {
     billing,
     async setupStatus(actor) {

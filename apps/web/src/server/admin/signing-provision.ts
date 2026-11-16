@@ -220,7 +220,8 @@ export function journaledOperation<O extends string>(journal: Pick<SigningRunJou
 
 const APP = binding.appClientId;
 export const APP_ID = binding.appId;
-export const SHOP = 'insignia-rewrite-dev.myshopify.com';
+/** A store domain as Shopify issues it; the verified session token names the store. */
+export const SHOP_DOMAIN = /^[a-z0-9][a-z0-9-]{0,62}\.myshopify\.com$/;
 export function sameScope(actual: SigningApplication.KeyScope | null, expected: SigningApplication.KeyScope) {
   assert.ok(actual);
   for (const field of ['shopId', 'installationGeneration', 'authorizationGeneration', 'authorizationEpoch'] as const)
@@ -257,10 +258,12 @@ export async function provisionSigningKey(
     const start = ports.now().getTime();
     assert.ok(Number.isFinite(start));
     const identity = await operation('VERIFY_IDENTITY', () => ports.identity.verify(idToken));
-    assert.equal(identity.shop, SHOP);
+    // The store is the one the verified session token names; every later read must agree with it.
+    const shop = identity.shop;
+    assert.match(shop, SHOP_DOMAIN);
     assert.ok(identity.staffId && identity.sessionId && identity.expiresAtMs > start);
     const grant = await operation('EXCHANGE_ONLINE', () => ports.identity.exchangeOnline(idToken, identity));
-    assert.equal(grant.shop, SHOP);
+    assert.equal(grant.shop, shop);
     assert.equal(grant.staffId, identity.staffId);
     assert.ok(grant.appScopes.includes('write_products') && grant.userScopes.includes('write_products'));
     for (const scope of ['read_cart_transforms', 'read_validations'])
@@ -272,10 +275,10 @@ export async function provisionSigningKey(
     }
     live();
     const provider = await operation('READ_INSTALLATION_OPEN', () => ports.identity.readInstallation(grant));
-    assert.equal(provider.shop, SHOP);
+    assert.equal(provider.shop, shop);
     for (const scope of ['write_products', 'read_cart_transforms', 'read_validations'])
       assert.ok(provider.grantedScopes.includes(scope));
-    const managedRead = await ports.core.tenants.getManagedInstallationState(SHOP);
+    const managedRead = await ports.core.tenants.getManagedInstallationState(shop);
     assert.ok(managedRead?.active);
     const managed = managedRead;
     assert.equal(`gid://shopify/Shop/${managed.shopifyShopId}`, provider.shopId);
@@ -284,7 +287,7 @@ export async function provisionSigningKey(
       shopId: managed.shopId,
       installationGeneration: managed.currentGeneration,
     });
-    assert.ok(active && active.shopDomain === SHOP && active.shopifyShopId === managed.shopifyShopId);
+    assert.ok(active && active.shopDomain === shop && active.shopifyShopId === managed.shopifyShopId);
     const scope = {
       shopId: active.shopId,
       installationGeneration: active.installationGeneration,
@@ -299,7 +302,7 @@ export async function provisionSigningKey(
     };
     async function currentScope() {
       live();
-      const state = await ports.core.tenants.getManagedInstallationState(SHOP);
+      const state = await ports.core.tenants.getManagedInstallationState(shop);
       assert.ok(
         state?.active &&
           state.shopId === managed.shopId &&

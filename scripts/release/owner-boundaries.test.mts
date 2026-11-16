@@ -111,21 +111,23 @@ test('missing durable acknowledgement stops the SDK before its first read', asyn
   assert.equal(f.calls.length, 0);
 });
 
-test('fixed Admin TLS capability cannot dispatch a foreign document or retry client credentials', async () => {
-  const exactScopes =
-    'write_products,read_publications,read_product_listings,read_cart_transforms,read_validations,write_cart_transforms,write_validations';
-  // Actual post-consent OAuth readback compresses the read scopes covered by writes.
-  const canonicalScopes =
-    'read_product_listings,read_publications,write_cart_transforms,write_products,write_validations';
-  for (const scope of [
-    canonicalScopes,
-    exactScopes,
-    exactScopes.replace(',write_validations', ''),
-    `${exactScopes},write_orders`,
-  ]) {
+test('fixed Admin TLS capability talks only to the named store and refreshes its offline token once', async () => {
+  assert.throws(() =>
+    createOwnerHttps({
+      shop: 'https://evil.example',
+      deadline: 300000,
+      now: () => 0,
+      functionQuery: 'query Fixed { shop { id } }',
+      request: () => {
+        throw new Error('no request');
+      },
+    }),
+  );
+  for (const status of [200, 401]) {
     const requests: { endpoint: string; options: RequestOptions; body: string }[] = [],
       query = 'query SyntheticOriginalFunctionDocument { shop { id } }';
     const provider = createOwnerHttps({
+      shop: 'insignia-live-demo.myshopify.com',
       deadline: 300000,
       now: () => 0,
       functionQuery: query,
@@ -133,35 +135,48 @@ test('fixed Admin TLS capability cannot dispatch a foreign document or retry cli
         const request = new SyntheticOwnerRequest();
         request.destroy = () => {};
         request.end = (bytes) => {
-          const body = bytes.toString();
-          requests.push({ endpoint, options, body });
+          requests.push({ endpoint, options, body: bytes.toString() });
           queueMicrotask(() => {
             const response = new SyntheticOwnerResponse();
-            response.statusCode = 200;
+            response.statusCode = status;
             response.headers = { 'content-type': 'application/json' };
             response.complete = true;
             response.destroy = () => {};
             callback(response);
-            response.emit(
-              'data',
-              Buffer.from(
-                JSON.stringify({
-                  access_token: 'SYNTHETIC_OWNER_TOKEN',
-                  scope,
-                  expires_in: 3600,
-                }),
-              ),
-            );
+            response.emit('data', Buffer.from(JSON.stringify(status === 200 ? { access_token: 'T' } : { error: 'x' })));
             response.emit('end');
           });
         };
         return request;
       },
     });
-    if (scope === exactScopes || scope === canonicalScopes)
-      assert.equal(await provider.acquireToken('SYNTHETIC_PRIVATE_CLIENT_SECRET'), 'SYNTHETIC_OWNER_TOKEN');
-    else await assert.rejects(provider.acquireToken('SYNTHETIC_PRIVATE_CLIENT_SECRET'));
-    await assert.rejects(provider.acquireToken('SYNTHETIC_PRIVATE_CLIENT_SECRET'));
+    const body = new URLSearchParams({
+      client_id: 'C',
+      client_secret: 'SYNTHETIC_PRIVATE_CLIENT_SECRET',
+      grant_type: 'refresh_token',
+      refresh_token: 'R',
+    }).toString();
+    // Another store's endpoint and any other grant are refused before a request.
+    await assert.rejects(
+      provider.refreshFetch('https://insignia-rewrite-dev.myshopify.com/admin/oauth/access_token', {
+        method: 'POST',
+        body,
+      }),
+    );
+    const response = await provider.refreshFetch('https://insignia-live-demo.myshopify.com/admin/oauth/access_token', {
+      method: 'POST',
+      body,
+    });
+    // The status reaches the shared refresh parser, which owns its classification.
+    assert.equal(response.status, status);
+    assert.equal(response.headers.get('content-type'), 'application/json');
+    // One refresh per collection; a second is refused without a request.
+    await assert.rejects(
+      provider.refreshFetch('https://insignia-live-demo.myshopify.com/admin/oauth/access_token', {
+        method: 'POST',
+        body,
+      }),
+    );
     await assert.rejects(
       provider.functions('SYNTHETIC_OWNER_TOKEN', {
         operation: 'function_ownership',
@@ -170,13 +185,27 @@ test('fixed Admin TLS capability cannot dispatch a foreign document or retry cli
       }),
     );
     assert.equal(requests.length, 1);
-    assert.equal(required(requests[0]).endpoint, 'https://insignia-rewrite-dev.myshopify.com/admin/oauth/access_token');
+    assert.equal(required(requests[0]).endpoint, 'https://insignia-live-demo.myshopify.com/admin/oauth/access_token');
+    assert.equal(required(requests[0]).body, body);
     assert.equal(required(requests[0]).options.rejectUnauthorized, true);
     assert.equal(required(requests[0]).options.minVersion, 'TLSv1.2');
-    assert.ok(
-      INSTALLATION_BOUNDARY.includes('currentAppInstallation { id app { id apiKey } accessScopes { handle } }'),
-    );
   }
+  const foreignGrant = createOwnerHttps({
+    shop: 'insignia-live-demo.myshopify.com',
+    deadline: 300000,
+    now: () => 0,
+    functionQuery: 'query Fixed { shop { id } }',
+    request: () => {
+      throw new Error('no request');
+    },
+  });
+  await assert.rejects(
+    foreignGrant.refreshFetch('https://insignia-live-demo.myshopify.com/admin/oauth/access_token', {
+      method: 'POST',
+      body: new URLSearchParams({ client_id: 'C', client_secret: 'S', grant_type: 'client_credentials' }).toString(),
+    }),
+  );
+  assert.ok(INSTALLATION_BOUNDARY.includes('currentAppInstallation { id app { id apiKey } accessScopes { handle } }'));
 });
 
 test('closed child protocol never acknowledges a refused reservation or exports inherited Node preloads', async () => {
@@ -238,6 +267,7 @@ test('installation boundary accepts the original optional GraphQL envelope metad
     errors: [],
   };
   const provider = createOwnerHttps({
+    shop: 'insignia-rewrite-dev.myshopify.com',
     deadline: 300000,
     now: () => 0,
     functionQuery: 'query Synthetic {}',
@@ -272,9 +302,19 @@ test('private owner packet accepts only qualified runtime loopback or fixed cont
     databaseUrl: 'postgresql://insignia_runtime:SYNTHETIC_PASSWORD@127.0.0.1:55484/synthetic_rewrite?sslmode=disable',
     clientSecret: 'SYNTHETIC_PRIVATE_SECRET',
     appendPassword: 'b'.repeat(64),
+    credentialKeyId: 'synthetic-key',
+    credentialKeyBase64: Buffer.alloc(32, 7).toString('base64'),
     recordId: '11111111-1111-4111-8111-111111111111',
   };
   assert.deepEqual(nativeEntry.parseOwnerPrivatePacket(JSON.stringify(packet)), packet);
+  // The offline-token wrapping key must be one canonical 32-byte key with a plain id.
+  for (const key of [
+    { credentialKeyBase64: Buffer.alloc(31, 7).toString('base64') },
+    { credentialKeyBase64: `${Buffer.alloc(32, 7).toString('base64').slice(0, -2)}B=` },
+    { credentialKeyId: '../key' },
+    { credentialKeyId: undefined },
+  ])
+    assert.throws(() => nativeEntry.parseOwnerPrivatePacket(JSON.stringify({ ...packet, ...key })));
   const containerUrl =
     'postgresql://insignia_runtime:SYNTHETIC_PASSWORD@insignia-rewrite-m5-019-database:5432/insignia_rewrite?sslmode=disable';
   assert.equal(

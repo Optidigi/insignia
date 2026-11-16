@@ -7,6 +7,7 @@ import { basename, dirname, isAbsolute, join } from 'node:path';
 import type { ReleaseAppendInput } from './append.mts';
 import { qualifyReleaseAppendInput } from './append.mts';
 import { releaseProfile } from './profiles.mts';
+import { SHOP_DOMAIN } from './tenant-binding.mts';
 
 type Profile = ReturnType<typeof releaseProfile>;
 export type CollectorBinding = {
@@ -65,7 +66,6 @@ function keysResult(value: unknown): asserts value is Record<string, unknown> {
 }
 
 const APP = '1443cf6d03d39edae7c101a943c5c684';
-const SHOP = 'insignia-rewrite-dev.myshopify.com';
 const bindingFields = [
   'shop',
   'tenantShopId',
@@ -88,7 +88,7 @@ function binding(value: unknown): CollectorBinding {
   keys(value, bindingFields);
   for (const key of bindingFields) if (key !== 'authorizationEpoch') text(value[key]);
   assert(typeof value.authorizationEpoch === 'number');
-  assert.equal(value.shop, SHOP);
+  assert.match(text(value.shop), SHOP_DOMAIN);
   assert.match(text(value.tenantShopId), /^[A-Za-z0-9_-]{1,128}$/);
   assert.match(text(value.installationGeneration), /^[1-9][0-9]*$/);
   assert.match(text(value.shopId), /^gid:\/\/shopify\/Shop\/[1-9][0-9]*$/);

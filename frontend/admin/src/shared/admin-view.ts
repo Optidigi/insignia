@@ -86,5 +86,4 @@ export type CommandOutcome =
       noEffect?: true;
       message: string;
       validationIssues?: { path: string; message: string }[];
-    }
-  | { kind: 'forbidden'; message: string };
+    };

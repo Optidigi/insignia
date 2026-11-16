@@ -1136,6 +1136,8 @@
       "leanPricingInvalid": "Chaque prix doit être un montant final par article, sans valeur négative. Corrigez le prix, puis enregistrez à nouveau.",
       "geometryInvalid": "Un emplacement ne tient pas dans sa vue, ou fait référence à une vue ou à une variante qui n’existe plus. Ajustez la zone, puis enregistrez à nouveau.",
       "publicationIncomplete": "Cette configuration n’est pas encore prête à être publiée : {{reason}}",
+      "planFeatureRequired": "Votre forfait Insignia n’inclut pas tout ce qu’utilise cette configuration. Vérifiez votre forfait dans Facturation, puis publiez à nouveau.",
+      "publicationUnavailable": "La publication n’est pas disponible pour cette boutique pour le moment, donc rien n’a été publié. Réessayez dans quelques minutes. Si le problème persiste, contactez le support.",
       "shopCurrencyChanged": "La devise de la boutique a changé après la création de ce brouillon. Rechargez la page pour vérifier vos prix dans la nouvelle devise. Le rechargement abandonne les modifications non enregistrées.",
       "methodLinksChanged": "Les techniques liées à ce produit ont changé après la création de ce brouillon. Rechargez la page pour les vérifier. Le rechargement abandonne les modifications non enregistrées.",
       "productIdentityChanged": "Ce brouillon appartient à un autre produit. Rechargez la page pour ouvrir le bon brouillon. Le rechargement abandonne les modifications non enregistrées.",

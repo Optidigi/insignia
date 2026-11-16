@@ -565,7 +565,7 @@ for (const ending of [
       assert.equal(required(pendingView.config).publication.revisionId, waiting.revisionId);
       assert.equal(required(pendingView.config).publication.activeRevisionId, changed.revisionId);
       eligible = false;
-      assert.equal((await publish('m5-018-release-blocked')).status, 403);
+      assert.equal((await publish('m5-018-release-blocked')).status, 422);
       assert.equal(mutationCount, 4);
       assert.equal(required(await core.configs.getConfig(shopId, configId)).effectiveRevisionId, changed.revisionId);
     } finally {

@@ -19,10 +19,11 @@ export type NativePurchaseQualification = Readonly<{
 /** No unscoped default; the production entrypoint supplies the observed origin explicitly. */
 export const nativePurchaseQualification: NativePurchaseQualification | null = null;
 
-/** Bounded rewrite-dev qualification from the independently read native test order
- * and altered-member checkout rejection. This asserts no historical localization
- * or Function execution. Server app identity still needs independent release and
- * current Function ownership checks on every admission. */
+/** Native qualification from the independently read rewrite-dev test order and altered-member
+ * checkout rejection: the Online Store checkout channel and the first supported order time. It
+ * applies to every store; each order still needs that store's active installation, independent
+ * release evidence and current Function ownership. It asserts no historical localization or
+ * Function execution. */
 export function resolveNativePurchaseQualification(input: {
   appId: string;
   appClientId: string;
@@ -69,8 +70,6 @@ export function resolveNativePurchaseQualification(input: {
     return null;
   return Object.freeze({
     origin: Object.freeze({
-      shopId: 'db771bea-c585-4954-9f88-70771c9a0c89',
-      installationGeneration: '1',
       creatorAppId: 'gid://shopify/App/580111',
       supportedFrom: '2026-10-14T20:03:04Z',
     }),

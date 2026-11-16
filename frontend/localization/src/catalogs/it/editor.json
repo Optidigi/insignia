@@ -1136,6 +1136,8 @@
       "leanPricingInvalid": "Ogni prezzo deve essere un importo finale per articolo e non può essere negativo. Correggi il prezzo e salva di nuovo.",
       "geometryInvalid": "Una posizione non rientra nella sua vista oppure fa riferimento a una vista o a una variante che non esiste più. Modifica l'area e salva di nuovo.",
       "publicationIncomplete": "Questa configurazione non è ancora pronta per la pubblicazione: {{reason}}",
+      "planFeatureRequired": "Il tuo piano Insignia non include tutto ciò che usa questa configurazione. Controlla il piano in Fatturazione, poi pubblica di nuovo.",
+      "publicationUnavailable": "Al momento non è possibile pubblicare per questo negozio, quindi non è stato pubblicato nulla. Riprova tra qualche minuto. Se il problema continua, contatta l’assistenza.",
       "shopCurrencyChanged": "La valuta del negozio è cambiata dopo la creazione di questa bozza. Ricarica la pagina per controllare i prezzi nella nuova valuta. Ricaricando si perdono le modifiche non salvate.",
       "methodLinksChanged": "Le tecniche collegate a questo prodotto sono cambiate dopo la creazione di questa bozza. Ricarica la pagina per controllarle. Ricaricando si perdono le modifiche non salvate.",
       "productIdentityChanged": "Questa bozza appartiene a un altro prodotto. Ricarica la pagina per aprire la bozza giusta. Ricaricando si perdono le modifiche non salvate.",

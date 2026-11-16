@@ -27,7 +27,7 @@ type Outcome =
   | { kind: 'accepted'; state: ReturnType<typeof projectActivationPublicationState>; revisionId: string }
   | { kind: 'resend'; revisionId?: string; minimumValidityMs: number; message: string }
   | {
-      kind: 'conflict' | 'forbidden';
+      kind: 'conflict';
       noEffect?: true;
       message: string;
     }
@@ -799,7 +799,12 @@ export function createMerchantConfigService(input: {
           };
         const eligibility = await eligible(snapshot);
         if (!eligibility.allowed)
-          return { kind: 'forbidden', message: eligibility.reason ?? 'Publication feature unavailable' };
+          return {
+            kind: 'invalid',
+            code: 'PLAN_FEATURE_REQUIRED',
+            noEffect: true,
+            message: eligibility.reason ?? 'Publication feature unavailable',
+          };
         if (!input.capturePublicationPreviews) throw new Error('Complete customer previews are unavailable');
         const beforeCapture = continuing();
         if (beforeCapture) return beforeCapture;
@@ -834,7 +839,9 @@ export function createMerchantConfigService(input: {
             if (!preparation.ready)
               return (
                 continuing() ?? {
-                  kind: 'forbidden',
+                  kind: 'invalid',
+                  code: 'PUBLICATION_UNAVAILABLE',
+                  noEffect: true,
                   message: preparation.reason ?? 'Publication preparation unavailable',
                 }
               );
@@ -948,7 +955,11 @@ export function createMerchantConfigService(input: {
         throw new Error('Invalid durable publish result');
       const sourceScope = await core.configs.getRevisionSourceScope(actor.tenantShopId, revisionId);
       if (!sourceScope || sourceScope.installationGeneration !== actor.installationGeneration)
-        return { kind: 'forbidden', message: 'Publication belongs to a prior installation' };
+        return {
+          kind: 'invalid',
+          code: 'PUBLICATION_UNAVAILABLE',
+          message: 'Publication belongs to a prior installation',
+        };
       const existing = await core.configs.getCurrentPublication(actor.tenantShopId, data.configId);
       if (existing && existing.operationId !== revisionId && existing.phase !== 'active')
         return { kind: 'conflict', message: 'A newer publication request exists' };
@@ -1015,7 +1026,11 @@ export function createMerchantConfigService(input: {
       });
       const currentEligibility = await eligible(immutableDraft);
       if (!currentEligibility.allowed)
-        return { kind: 'forbidden', message: currentEligibility.reason ?? 'Publication feature unavailable' };
+        return {
+          kind: 'invalid',
+          code: 'PLAN_FEATURE_REQUIRED',
+          message: currentEligibility.reason ?? 'Publication feature unavailable',
+        };
       await current(actor);
       const publication = input.publication(actor);
       const prepared = await publication.prepare({
@@ -1036,7 +1051,11 @@ export function createMerchantConfigService(input: {
           await current(actor);
           const eligibility = await eligible(immutableDraft);
           if (!eligibility.allowed)
-            return { kind: 'forbidden', message: eligibility.reason ?? 'Publication feature unavailable' };
+            return {
+              kind: 'invalid',
+              code: 'PLAN_FEATURE_REQUIRED',
+              message: eligibility.reason ?? 'Publication feature unavailable',
+            };
         }
         // The stop points: between persisted steps, before each advance that can write to a provider.
         const beforePublicationStep = continuing(revisionId);

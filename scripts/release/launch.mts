@@ -48,7 +48,7 @@ export { readPrivatePacket } from './private-pipe.mts';
 
 import { parseReleaseVerificationRequest } from '../../apps/web/src/server/admin/release-verification.ts';
 import { recordPhaseName } from './collector.mts';
-import { ownerPhaseForRecord, parseOwnerPrivatePacket } from './collector-native.mts';
+import { OWNER_PACKET_SECRETS, ownerPhaseForRecord, parseOwnerPrivatePacket } from './collector-native.mts';
 
 const ROOT = VERIFIER_STATE;
 const PREFIX = 'm5-trusted-release-collector-native-run-20261011';
@@ -613,7 +613,7 @@ async function launch(
   await privateDirectory(ROOT);
   const packet = parseOwnerPrivatePacket(new TextDecoder('utf-8', { fatal: true }).decode(packetBytes));
   const recordId = packet.recordId;
-  for (const name of ['databaseUrl', 'clientSecret', 'appendPassword']) Reflect.set(packet, name, undefined);
+  for (const name of OWNER_PACKET_SECRETS) Reflect.set(packet, name, undefined);
   const lock = join(ROOT, 'm5-trusted-release-launch-exclusive');
   await mkdir(lock, { mode: 0o700 }); // Crashed/active launcher never silently reclaimed.
   try {

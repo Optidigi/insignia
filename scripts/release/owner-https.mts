@@ -12,56 +12,51 @@ export type OwnerRequest = (
 ) => OwnerRequestHandle;
 
 import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
-import { pathToFileURL } from 'node:url';
 import { releaseProfile } from './profiles.mts';
+import { SHOP_DOMAIN } from './tenant-binding.mts';
 
-const require = createRequire(new URL('../../apps/web/package.json', import.meta.url));
-const { canonicalAdminAccessScopes }: typeof import('../../packages/shopify/dist/index.js') = await import(
-  pathToFileURL(require.resolve('@insignia/shopify')).href
-);
-
-const ORIGIN = 'https://insignia-rewrite-dev.myshopify.com';
-const ADMIN = `${ORIGIN}/admin/api/2026-07/graphql.json`;
-const OAUTH = `${ORIGIN}/admin/oauth/access_token`;
-const CLIENT = '1443cf6d03d39edae7c101a943c5c684';
 export const INSTALLATION_BOUNDARY = `query M5027InstallationBoundary {
   shop { id myshopifyDomain }
   currentAppInstallation { id app { id apiKey } accessScopes { handle } }
 }`;
 // Compare capabilities: OAuth omits redundant reads after their write scope is granted.
 // The installation connection separately returns the complete effective scope set.
-/** Fixed TLS endpoint/documents; request is the captured original node:https
- * capability. The native entry denies every global fetch/HTTP fallback. */
+/** Fixed TLS endpoints/documents on the one store being verified; request is the captured
+ * original node:https capability. The native entry denies every global fetch/HTTP fallback. */
 export function createOwnerHttps({
+  shop,
   request,
   functionQuery,
   now = Date.now,
   deadline,
   profileName,
 }: {
+  shop: string;
   request: OwnerRequest;
   functionQuery: string;
   now?: () => number;
   deadline: number;
   profileName?: string;
 }) {
-  const GRANTS = releaseProfile(profileName).grants;
+  releaseProfile(profileName);
+  assert.ok(typeof shop === 'string' && SHOP_DOMAIN.test(shop));
+  const ADMIN = `https://${shop}/admin/api/2026-07/graphql.json`;
+  const OAUTH = `https://${shop}/admin/oauth/access_token`;
   let oauthCalls = 0,
     adminCalls = 0;
   assert.ok(typeof request === 'function' && typeof functionQuery === 'string');
-  async function json(
+  async function exchange(
     endpoint: string,
     body: string,
     headers: Record<string, string>,
     maximum: number,
-  ): Promise<unknown> {
+  ): Promise<{ status: number; contentType: string; bytes: Buffer }> {
     assert.ok([ADMIN, OAUTH].includes(endpoint));
     const budget = Math.min(30000, deadline - now());
     assert.ok(budget > 0);
     const bytes = Buffer.from(body);
     try {
-      return await new Promise<unknown>((resolve, reject) => {
+      return await new Promise<{ status: number; contentType: string; bytes: Buffer }>((resolve, reject) => {
         let settled = false,
           size = 0,
           timer: ReturnType<typeof setTimeout> | undefined,
@@ -74,11 +69,14 @@ export function createOwnerHttps({
           const collected = Buffer.concat(chunks);
           for (const chunk of chunks) chunk.fill(0);
           try {
-            assert.ok(!error && response?.complete && response.statusCode === 200);
-            assert.match(response.headers['content-type'] ?? '', /^application\/json(?:\s*;.*)?$/i);
+            assert.ok(!error && response?.complete && typeof response.statusCode === 'number');
             assert.ok([undefined, 'identity'].includes(response.headers['content-encoding']));
             assert.ok(!response.headers.location);
-            resolve(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(collected)));
+            resolve({
+              status: response.statusCode,
+              contentType: response.headers['content-type'] ?? '',
+              bytes: Buffer.from(collected),
+            });
           } catch {
             reject(new Error('Owner read unavailable'));
           } finally {
@@ -124,6 +122,23 @@ export function createOwnerHttps({
       bytes.fill(0);
     }
   }
+  async function json(
+    endpoint: string,
+    body: string,
+    headers: Record<string, string>,
+    maximum: number,
+  ): Promise<unknown> {
+    const { status, contentType, bytes } = await exchange(endpoint, body, headers, maximum);
+    try {
+      assert.equal(status, 200);
+      assert.match(contentType, /^application\/json(?:\s*;.*)?$/i);
+      return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+    } catch {
+      throw new Error('Owner read unavailable');
+    } finally {
+      bytes.fill(0);
+    }
+  }
   async function admin(token: string, query: string, variables: Record<string, unknown>) {
     assert.ok(typeof token === 'string' && /^[^\s]{1,4096}$/.test(token));
     assert.ok(++adminCalls <= 3 && [INSTALLATION_BOUNDARY, functionQuery].includes(query));
@@ -136,41 +151,29 @@ export function createOwnerHttps({
     );
   }
   return {
-    async acquireToken(secret: string) {
+    /** Fetch for the shared offline-token refresh: one form POST to this store's OAuth endpoint.
+     * The refresh lifecycle itself (claim, rotation, re-wrap) stays in the database owner. */
+    async refreshFetch(url: string | URL | Request, init?: RequestInit): Promise<Response> {
+      assert.equal(String(url), OAUTH);
+      assert.ok(init?.method === 'POST' && typeof init.body === 'string');
+      const form = new URLSearchParams(init.body);
+      assert.deepEqual([...form.keys()].sort(), ['client_id', 'client_secret', 'grant_type', 'refresh_token']);
+      assert.equal(form.get('grant_type'), 'refresh_token');
       assert.equal(++oauthCalls, 1);
-      assert.ok(typeof secret === 'string' && /^[^\r\n\0]{1,4096}$/.test(secret));
-      const value = object(
-        await json(
-          OAUTH,
-          new URLSearchParams({
-            grant_type: 'client_credentials',
-            client_id: CLIENT,
-            client_secret: secret,
-          }).toString(),
-          { 'content-type': 'application/x-www-form-urlencoded' },
-          16384,
-        ),
+      const { status, contentType, bytes } = await exchange(
+        OAUTH,
+        init.body,
+        { 'content-type': 'application/x-www-form-urlencoded' },
+        16384,
       );
-      assert.deepEqual(Object.keys(value).sort(), ['access_token', 'expires_in', 'scope']);
-      assert.ok(typeof value.access_token === 'string' && /^[^\s]{1,4096}$/.test(value.access_token));
-      assert.ok(
-        Number.isSafeInteger(value.expires_in) &&
-          typeof value.expires_in === 'number' &&
-          value.expires_in >= Math.ceil((deadline - now()) / 1000) + 5 &&
-          value.expires_in <= 86400,
-      );
-      assert.equal(typeof value.scope, 'string');
-      assert.deepEqual(
-        canonicalAdminAccessScopes(
-          text(value.scope)
-            .split(',')
-            .map((v) => v.trim()),
-        ),
-        canonicalAdminAccessScopes(GRANTS),
-      );
-      const token = text(value.access_token);
-      value.access_token = undefined;
-      return token;
+      try {
+        return new Response(status === 204 ? null : new Uint8Array(bytes), {
+          status,
+          headers: contentType ? { 'content-type': contentType } : {},
+        });
+      } finally {
+        bytes.fill(0);
+      }
     },
     async readInstallation(token: string) {
       const result = object(await admin(token, INSTALLATION_BOUNDARY, {}));

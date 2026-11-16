@@ -25,7 +25,8 @@ export function createReleaseVerificationServer({
   now = Date.now,
   profileName,
 }: {
-  readBinding(): Promise<unknown>;
+  /** The current binding of the store the request names; it rejects an inactive or unknown one. */
+  readBinding(requested: ReleaseVerificationRequest['binding']): Promise<unknown>;
   /** The SELECT-only trusted release records: a record fresh at `now`, else null. */
   records: {
     read(request: {
@@ -42,7 +43,7 @@ export function createReleaseVerificationServer({
   const collecting = new Map<string, Promise<CollectorCompletion>>();
   async function current(request: ReleaseVerificationRequest) {
     assert.ok(now() < request.deadlineMs, 'request_expired');
-    assert.deepEqual(await readBinding(), request.binding, 'request_scope_changed');
+    assert.deepEqual(await readBinding(request.binding), request.binding, 'request_scope_changed');
     assert.ok(now() < request.deadlineMs, 'request_expired');
   }
   const server = createServer(async (request, response) => {

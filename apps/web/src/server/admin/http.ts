@@ -141,8 +141,6 @@ function outcome(services: AdminServices, action: ConfigRejectionAction, result:
     case 'invalid':
       services.recordConfigRejection?.({ action, code: result.code });
       return adminJson(422, result);
-    case 'forbidden':
-      return adminJson(403, result);
   }
 }
 

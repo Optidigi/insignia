@@ -837,9 +837,11 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.configRejection.mediaNotOwned': object;
   'editor:placementWorkflowPreview.configRejection.mediaUrlNotCanonical': object;
   'editor:placementWorkflowPreview.configRejection.methodLinksChanged': object;
+  'editor:placementWorkflowPreview.configRejection.planFeatureRequired': object;
   'editor:placementWorkflowPreview.configRejection.priceAmountInvalid': object;
   'editor:placementWorkflowPreview.configRejection.productIdentityChanged': object;
   'editor:placementWorkflowPreview.configRejection.publicationIncomplete': { reason: string };
+  'editor:placementWorkflowPreview.configRejection.publicationUnavailable': object;
   'editor:placementWorkflowPreview.configRejection.reloadAndDiscard': object;
   'editor:placementWorkflowPreview.configRejection.shopCurrencyChanged': object;
   'editor:placementWorkflowPreview.configRejection.sizeInvalid': object;

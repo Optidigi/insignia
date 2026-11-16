@@ -733,7 +733,7 @@ test('durable editor CAS, exact-key replay, independent products, immutable geom
           idempotencyKey: 'publish-key-01',
         })
       ).kind,
-      'forbidden',
+      'invalid',
       'an old-generation immutable intent must not resume in the new installation',
     );
   } finally {

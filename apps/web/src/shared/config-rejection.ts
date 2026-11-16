@@ -32,5 +32,8 @@ export const CONFIG_REJECTION_CODES = [
   'PUBLICATION_INCOMPLETE',
   'PRODUCTION_DIMENSIONS_REQUIRED',
   'METHOD_REVIEW_REQUIRED',
+  // Publication refused for the store as a whole; nothing was published. A 403 means only lost access.
+  'PLAN_FEATURE_REQUIRED',
+  'PUBLICATION_UNAVAILABLE',
 ] as const;
 export type ConfigRejectionCode = (typeof CONFIG_REJECTION_CODES)[number];
