@@ -7,7 +7,7 @@
   "exclusiveNamespace": true,
   "source": {
     "endpoint": "https://REPLACE_WITH_SOURCE_ACCOUNT_ID.r2.cloudflarestorage.com/",
-    "bucket": "insignia-public",
+    "bucket": "insignia-production",
     "prefix": "replace-with-qualified-source-prefix"
   },
   "store": "/var/lib/insignia-backup",
