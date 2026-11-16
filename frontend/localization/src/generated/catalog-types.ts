@@ -1521,6 +1521,7 @@ export interface AdminMessageTable {
   'home:guidance.test.action': object;
   'home:guidance.test.blocked': object;
   'home:guidance.test.description': object;
+  'home:guidance.test.markDone': object;
   'home:loading.activity': object;
   'home:loading.home': object;
   'home:loading.orders': object;

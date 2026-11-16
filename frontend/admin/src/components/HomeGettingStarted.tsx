@@ -151,6 +151,14 @@ export default function HomeGettingStarted({
               const locked = observed.includes(step.id);
               const active = activeStep === step.id;
               const detailId = `${contentId}-${step.id}`;
+              // Same acknowledgement as the step's checkbox, as an explicit action.
+              const markDone = () => {
+                if (completed.length === 2) pendingFocus.current = 'guide';
+                onCompleteStep?.(step.id, true);
+                setActiveStep(homeGuidanceStepIds.find((id) => id !== step.id && !completed.includes(id)));
+              };
+              // Only the merchant can say the customer test is done; the test itself stays available afterwards.
+              const offerMarkDone = step.id === 'test' && !testBlocked && !complete && !locked && !!onCompleteStep;
               return (
                 <li key={step.id}>
                   {index > 0 && <s-divider />}
@@ -223,6 +231,9 @@ export default function HomeGettingStarted({
                                 >
                                   {actionLabel}
                                 </s-button>
+                              )}
+                              {offerMarkDone && (
+                                <s-button onClick={markDone}>{t('home:guidance.test.markDone')}</s-button>
                               )}
                             </div>
                           </s-stack>

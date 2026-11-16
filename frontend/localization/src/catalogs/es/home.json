@@ -149,7 +149,8 @@
     "test": {
       "description": "Previsualiza un producto publicado, añade un diseño y comprueba el carrito.",
       "action": "Probar un producto",
-      "blocked": "Publica un producto personalizable y termina la configuración del tema antes de hacer la prueba."
+      "blocked": "Publica un producto personalizable y termina la configuración del tema antes de hacer la prueba.",
+      "markDone": "Marcar como hecho"
     },
     "hideAction": "Ocultar",
     "showAction": "Mostrar",
