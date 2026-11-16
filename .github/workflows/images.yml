@@ -1,0 +1,74 @@
+name: Release image custody
+
+# Durable image custody (owner decision D6). After a successful runtime qualification run on main,
+# copy that run's exact qualified image archives to private GHCR, tagged with the commit SHA.
+# Nothing is rebuilt: the pushed manifest digest must equal the archive's manifest digest, so a pull
+# is byte-identical to the qualified image. Runs only from the default branch's workflow file.
+on:
+  workflow_run:
+    workflows: [Runtime and deployment qualification]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  images:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      packages: write
+    steps:
+      - name: Download the qualified image archives of that run
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pattern: '{m5-web-image,m5-024-worker-image,release-verifier,operations-runtime}-${{ github.event.workflow_run.id }}-*'
+          path: ${{ runner.temp }}/images
+      - name: Push archives to GHCR with preserved digests
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          dir="$RUNNER_TEMP/images"
+          {
+            echo "### Release images for $SOURCE_SHA"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+          # A docs-only route builds no images; then there is nothing to keep.
+          if ! find "$dir" -name '*-image.tar' -print -quit 2>/dev/null | grep -q .; then
+            echo "No image archives in run ${{ github.event.workflow_run.id }} (status-only route); nothing pushed." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          skopeo --version
+          printf '%s' "$GHCR_TOKEN" | skopeo login --username "$GITHUB_ACTOR" --password-stdin ghcr.io
+          {
+            echo "| Image | Tag | Manifest digest |"
+            echo "| --- | --- | --- |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          push() {
+            local name="$1" file="$2" archive expected pushed ref
+            archive=$(find "$dir" -path "*/$file" -print)
+            test "$(printf '%s\n' "$archive" | grep -c .)" = 1
+            # Each archive is an OCI layout holding exactly one image manifest: the qualified identity.
+            expected=$(tar -xOf "$archive" index.json | jq -er 'select(.manifests | length == 1) | .manifests[0].digest')
+            ref="ghcr.io/$owner/insignia-$name:$SOURCE_SHA"
+            skopeo copy --preserve-digests --retry-times 2 "oci-archive:$archive" "docker://$ref"
+            pushed="sha256:$(skopeo inspect --raw "docker://$ref" | sha256sum | cut -d' ' -f1)"
+            if [ "$pushed" != "$expected" ]; then
+              echo "::error::insignia-$name pushed $pushed, archive holds $expected"
+              exit 1
+            fi
+            echo "| insignia-$name | $SOURCE_SHA | $expected |" >> "$GITHUB_STEP_SUMMARY"
+          }
+          push web web-image.tar
+          push worker worker-image.tar
+          push verifier verifier-image.tar
+          push heartbeat heartbeat-image.tar
+          skopeo logout ghcr.io
