@@ -13,7 +13,12 @@ export function createAdminReadCredentialSource(config: {
   now?: () => Date;
   /** Refresh when the access token has less than this left; a caller holding it longer passes more. */
   minimumRemainingMs?: number;
+  /** How long a refresh claim holds; it must outlast the refresh request and storing its result. */
+  claimLeaseMs?: number;
 }) {
+  const claimLeaseMs = config.claimLeaseMs ?? 30_000;
+  if (!Number.isSafeInteger(claimLeaseMs) || claimLeaseMs < 30_000 || claimLeaseMs > 300_000)
+    throw new TypeError('Credential claim lease is invalid');
   const minimumRemainingMs = config.minimumRemainingMs ?? 30_000;
   if (!Number.isSafeInteger(minimumRemainingMs) || minimumRemainingMs < 30_000 || minimumRemainingMs > 600_000)
     throw new TypeError('Credential remaining validity is invalid');
@@ -31,7 +36,7 @@ export function createAdminReadCredentialSource(config: {
       const acquired = await refreshExpiringOfflineCredentials(
         config.credentials,
         config.refresh,
-        { ...input, minimumRemainingMs, claimLeaseMs: 30_000 },
+        { ...input, minimumRemainingMs, claimLeaseMs },
         config.now,
       );
       if (acquired.kind === 'missing' || acquired.kind === 'inactive' || acquired.kind === 'reauth_required')

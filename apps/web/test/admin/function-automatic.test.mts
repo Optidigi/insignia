@@ -5,10 +5,10 @@ import type { PublicationAdminTransport } from '@insignia/shopify';
 import { ensureStoreFunctions } from '../../src/server/admin/function-automatic.ts';
 
 const tenant = {
-  shopId: 'live-demo-tenant',
+  shopId: 'second-store-tenant',
   installationGeneration: '3',
   shopifyShopId: 'gid://shopify/Shop/101',
-  appId: '429028933633',
+  appId: '123',
 };
 const expected = {
   appKey: 'synthetic-client',
@@ -108,4 +108,13 @@ test('expired authority stops before any write', async () => {
   });
   assert.equal(state, 'STOPPED');
   assert.deepEqual(s.writes, []);
+});
+
+test('an unreadable store is left to verification, with no write', async () => {
+  const transport: PublicationAdminTransport = {
+    async execute() {
+      return { status: 403, body: {} };
+    },
+  };
+  assert.equal(await run(transport), 'UNREAD');
 });

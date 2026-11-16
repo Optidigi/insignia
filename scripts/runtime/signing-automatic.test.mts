@@ -8,7 +8,7 @@ import {
 import { fixture } from '../../apps/web/test/admin/support/signing-owner-fixture.mts';
 import * as app from '../../packages/application/dist/index.js';
 
-const shop = 'insignia-live-demo.myshopify.com';
+const shop = 'synthetic-second-store.myshopify.com';
 const clockStart = Date.parse('2026-10-11T12:00:00.000Z');
 const today = app.localDay(new Date(clockStart), 'Asia/Tokyo').ordinal;
 function actor(overrides: Partial<AdminActor> = {}): AdminActor {

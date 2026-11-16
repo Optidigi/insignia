@@ -127,7 +127,7 @@ test('fixed Admin TLS capability talks only to the named store and refreshes its
     const requests: { endpoint: string; options: RequestOptions; body: string }[] = [],
       query = 'query SyntheticOriginalFunctionDocument { shop { id } }';
     const provider = createOwnerHttps({
-      shop: 'insignia-live-demo.myshopify.com',
+      shop: 'synthetic-second-store.myshopify.com',
       deadline: 300000,
       now: () => 0,
       functionQuery: query,
@@ -163,7 +163,7 @@ test('fixed Admin TLS capability talks only to the named store and refreshes its
         body,
       }),
     );
-    const response = await provider.refreshFetch('https://insignia-live-demo.myshopify.com/admin/oauth/access_token', {
+    const response = await provider.refreshFetch('https://synthetic-second-store.myshopify.com/admin/oauth/access_token', {
       method: 'POST',
       body,
     });
@@ -172,7 +172,7 @@ test('fixed Admin TLS capability talks only to the named store and refreshes its
     assert.equal(response.headers.get('content-type'), 'application/json');
     // One refresh per collection; a second is refused without a request.
     await assert.rejects(
-      provider.refreshFetch('https://insignia-live-demo.myshopify.com/admin/oauth/access_token', {
+      provider.refreshFetch('https://synthetic-second-store.myshopify.com/admin/oauth/access_token', {
         method: 'POST',
         body,
       }),
@@ -185,13 +185,13 @@ test('fixed Admin TLS capability talks only to the named store and refreshes its
       }),
     );
     assert.equal(requests.length, 1);
-    assert.equal(required(requests[0]).endpoint, 'https://insignia-live-demo.myshopify.com/admin/oauth/access_token');
+    assert.equal(required(requests[0]).endpoint, 'https://synthetic-second-store.myshopify.com/admin/oauth/access_token');
     assert.equal(required(requests[0]).body, body);
     assert.equal(required(requests[0]).options.rejectUnauthorized, true);
     assert.equal(required(requests[0]).options.minVersion, 'TLSv1.2');
   }
   const foreignGrant = createOwnerHttps({
-    shop: 'insignia-live-demo.myshopify.com',
+    shop: 'synthetic-second-store.myshopify.com',
     deadline: 300000,
     now: () => 0,
     functionQuery: 'query Fixed { shop { id } }',
@@ -200,7 +200,7 @@ test('fixed Admin TLS capability talks only to the named store and refreshes its
     },
   });
   await assert.rejects(
-    foreignGrant.refreshFetch('https://insignia-live-demo.myshopify.com/admin/oauth/access_token', {
+    foreignGrant.refreshFetch('https://synthetic-second-store.myshopify.com/admin/oauth/access_token', {
       method: 'POST',
       body: new URLSearchParams({ client_id: 'C', client_secret: 'S', grant_type: 'client_credentials' }).toString(),
     }),

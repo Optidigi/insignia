@@ -229,8 +229,7 @@ for (const releaseMode of [
             createHash('sha256').update(publicKey).digest('hex'),
             { v: 1 },
             'synthetic',
-            // The store already has its key, so publication preparation does not provision one.
-            'active',
+            'pending',
           ],
         );
       if (releaseMode !== 'missing') {

@@ -3,16 +3,16 @@ import test from 'node:test';
 import { currentTenantBinding } from './tenant-binding.mts';
 
 const scope = {
-  shopId: 'tenant-live-demo',
-  shopDomain: 'insignia-live-demo.myshopify.com',
+  shopId: 'tenant-second-store',
+  shopDomain: 'synthetic-second-store.myshopify.com',
   shopifyShopId: '70928236603',
   installationGeneration: '1',
   authorizationGeneration: '33333333-3333-4333-8333-333333333333',
   authorizationEpoch: 2,
 };
 const managed = {
-  shopId: 'tenant-live-demo',
-  shopDomain: 'insignia-live-demo.myshopify.com',
+  shopId: 'tenant-second-store',
+  shopDomain: 'synthetic-second-store.myshopify.com',
   shopifyShopId: '70928236603',
   currentGeneration: '1',
   externalInstallationId: 'gid://shopify/AppInstallation/987',
@@ -38,14 +38,14 @@ function tenants(overrides: { scope?: unknown; managed?: unknown } = {}) {
 test('any store with an active installation gets its binding from the database, not the request', async () => {
   const fake = tenants();
   const result = await currentTenantBinding(fake.port as never, {
-    shopId: 'tenant-live-demo',
+    shopId: 'tenant-second-store',
     installationGeneration: '1',
   });
   assert.deepEqual(result, {
-    shop: 'insignia-live-demo.myshopify.com',
+    shop: 'synthetic-second-store.myshopify.com',
     shopifyShopId: '70928236603',
     binding: {
-      shopId: 'tenant-live-demo',
+      shopId: 'tenant-second-store',
       installationGeneration: '1',
       appClientId: '1443cf6d03d39edae7c101a943c5c684',
       authorizationGeneration: '33333333-3333-4333-8333-333333333333',
@@ -54,13 +54,13 @@ test('any store with an active installation gets its binding from the database, 
     },
   });
   assert.deepEqual(fake.reads, [
-    { shopId: 'tenant-live-demo', installationGeneration: '1' },
-    'insignia-live-demo.myshopify.com',
+    { shopId: 'tenant-second-store', installationGeneration: '1' },
+    'synthetic-second-store.myshopify.com',
   ]);
 });
 
 test('an unknown, inactive, replaced or inconsistent installation has no binding', async () => {
-  const requested = { shopId: 'tenant-live-demo', installationGeneration: '1' };
+  const requested = { shopId: 'tenant-second-store', installationGeneration: '1' };
   for (const overrides of [
     { scope: null },
     { scope: { ...scope, shopId: 'another-tenant' } },

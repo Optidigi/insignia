@@ -7,7 +7,7 @@ import {
   provisionOwnedFunctions,
 } from '@insignia/shopify';
 
-export type AutomaticFunctionState = 'PRESENT' | 'CREATED' | 'STOPPED' | 'OWNER_ACTION_REQUIRED';
+export type AutomaticFunctionState = 'PRESENT' | 'CREATED' | 'STOPPED' | 'OWNER_ACTION_REQUIRED' | 'UNREAD';
 
 /** One run's in-memory journal; the store's own Function deployments are the durable truth. */
 function memoryJournal(): FunctionSetupJournal {
@@ -37,11 +37,18 @@ export async function ensureStoreFunctions(input: {
   /** Rechecks the installation and staff grant; returns how long both stay current (at most 30 s). */
   verifyAuthority: () => Promise<Date>;
 }): Promise<AutomaticFunctionState> {
-  const owned = await createFunctionOwnershipReconciler({ transport: input.transport, clock: input.clock }).read(
-    input.tenant,
-    input.expected,
-  );
+  let owned: Awaited<ReturnType<ReturnType<typeof createFunctionOwnershipReconciler>['read']>>;
+  try {
+    owned = await createFunctionOwnershipReconciler({ transport: input.transport, clock: input.clock }).read(
+      input.tenant,
+      input.expected,
+    );
+  } catch {
+    // Unreadable with this staff member's token: nothing is known, so nothing is created here.
+    return 'UNREAD';
+  }
   if (owned.transform === 'present' && owned.validation === 'present') return 'PRESENT';
+  if (owned.transform === 'unknown' || owned.validation === 'unknown') return 'UNREAD';
   if (owned.transform !== 'missing' || owned.validation !== 'missing') return 'OWNER_ACTION_REQUIRED';
   const transform = owned.observation?.transform?.functionId;
   const validation = owned.observation?.validation?.functionId;

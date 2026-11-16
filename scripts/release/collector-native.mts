@@ -173,6 +173,8 @@ async function main() {
       tenants: database.tenants,
       // The token must outlive the whole collection, so it is refreshed up front when it would not.
       minimumRemainingMs: Math.min(600_000, Math.max(30_000, deadline - Date.now() + 10_000)),
+      // Longer than the refresh request (at most 30 s) plus the time kept to store its result.
+      claimLeaseMs: 90_000,
       credentials: {
         install: () => Promise.reject(new Error('Credential installation is not a verifier operation')),
         acquire: (input) => database.credentials.acquire(input),

@@ -149,6 +149,8 @@ export function createProductionAdminServices(
   const appOrigin = required(env, 'APP_URL');
   const appId = env.INSIGNIA_SHOPIFY_APP_ID;
   const appGid = appId && /^[1-9][0-9]*$/.test(appId) ? 'gid://shopify/App/' + appId : null;
+  // A store's first publish deploys its Functions and creates its signing key (off: owner setup only).
+  const storeSetup = env.INSIGNIA_STORE_SETUP_ENABLED === '1';
   const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host, fetchImpl: fetch });
   const offlineBootstrap = env.INSIGNIA_M7_BUYER_ENABLED === '1';
   const credentialKeys = offlineBootstrap ? loadCredentialKeys(env) : undefined;
@@ -255,8 +257,19 @@ export function createProductionAdminServices(
   }
   /** True when the store's cart transform and validation are deployed, deploying both if it has
    * neither. A fresh release record already attests them, so it costs no provider read then. */
-  async function storeFunctionsReady(actor: AdminActor): Promise<boolean> {
-    if (!releaseCollector || !appId) return true;
+  const functionSetups = new Map<string, Promise<boolean>>();
+  /** Concurrent publishes on one store share one Functions check, so they never create twice. */
+  function storeFunctionsReady(actor: AdminActor): Promise<boolean> {
+    const key = `${actor.tenantShopId}:${actor.installationGeneration}`;
+    let pending = functionSetups.get(key);
+    if (!pending) {
+      pending = checkStoreFunctions(actor).finally(() => functionSetups.delete(key));
+      functionSetups.set(key, pending);
+    }
+    return pending;
+  }
+  async function checkStoreFunctions(actor: AdminActor): Promise<boolean> {
+    if (!storeSetup || !releaseCollector || !appId || !actor.canEdit) return true;
     await active(actor);
     const online = grant(actor);
     const fresh = await core.trustedReleaseRecords.read({
@@ -309,7 +322,8 @@ export function createProductionAdminServices(
           return new Date(Math.min(Date.now() + 25_000, current.expiresAtMs - 30_000, actor.expiresAtMs));
         },
       });
-      return state === 'PRESENT' || state === 'CREATED';
+      // An unreadable state is left to verification, which reads with the store's own token.
+      return state === 'PRESENT' || state === 'CREATED' || state === 'UNREAD';
     } catch {
       return false;
     }
@@ -704,7 +718,7 @@ export function createProductionAdminServices(
       ? createSigningOwnerAction(signingOwnerConfiguration, signingPorts)
       : undefined;
   // Every other store gets its first, non-expiring key on its first publish.
-  const automaticSigning = signingPorts ? createAutomaticSigningProvision(signingPorts) : undefined;
+  const automaticSigning = storeSetup && signingPorts ? createAutomaticSigningProvision(signingPorts) : undefined;
   return {
     billing,
     async setupStatus(actor) {
