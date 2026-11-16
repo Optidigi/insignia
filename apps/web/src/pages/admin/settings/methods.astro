@@ -9,10 +9,11 @@ const rules = {
 };
 for (const [name, rule] of Object.entries(rules)) {
   const values = Astro.url.searchParams.getAll(name);
-  if (values.length === 1 && values[0] && values[0].length <= (name === 'host' ? 1024 : 128) && rule.test(values[0])) query.set(name, values[0]);
+  if (values.length === 1 && values[0] && values[0].length <= (name === 'host' ? 1024 : 128) && rule.test(values[0]))
+    query.set(name, values[0]);
 }
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 Astro.response.headers.set('Referrer-Policy', 'no-referrer');
 Astro.response.headers.set('Location', '/admin/methods' + (query.size ? `?${query}` : ''));
-return new Response(null, {status:302, headers:Astro.response.headers});
+return new Response(null, { status: 302, headers: Astro.response.headers });
 ---

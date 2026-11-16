@@ -89,14 +89,14 @@ test('another staff session or store cannot provision a key for this publish', a
   }
 });
 
-test('an existing active key that no longer covers today is left to the owner rotation', async () => {
+test('an active key that no longer covers today is left to the owner', async () => {
   const { f, automatic } = await setup();
   try {
     assert.equal(await automatic.ensure(actor(), 'SYNTHETIC_ID_TOKEN', 'Asia/Tokyo'), 'PROVISIONED');
     const key = f.rows[0];
     assert.ok(key);
     key.lastDay = today + 1;
-    assert.equal(await automatic.ensure(actor(), 'SYNTHETIC_ID_TOKEN', 'Asia/Tokyo'), 'ROTATION_REQUIRED');
+    assert.equal(await automatic.ensure(actor(), 'SYNTHETIC_ID_TOKEN', 'Asia/Tokyo'), 'OWNER_ACTION_REQUIRED');
     assert.equal(f.provisioned.length, 1);
   } finally {
     await f.close();
@@ -138,5 +138,34 @@ test('a stopped run is resumed with its pending key, never a second seed', async
     );
   } finally {
     await f.close();
+  }
+});
+
+test('a store whose keys the owner revoked or is rotating gets no automatic key', async () => {
+  const { f, automatic } = await setup();
+  try {
+    assert.equal(await automatic.ensure(actor(), 'SYNTHETIC_ID_TOKEN', 'Asia/Tokyo'), 'PROVISIONED');
+    const key = f.rows[0];
+    assert.ok(key);
+    key.state = 'revoked';
+    assert.equal(await automatic.ensure(actor(), 'SYNTHETIC_ID_TOKEN', 'Asia/Tokyo'), 'OWNER_ACTION_REQUIRED');
+    assert.equal(f.provisioned.length, 1);
+  } finally {
+    await f.close();
+  }
+  const owner = await setup();
+  try {
+    // An owner's rotation plan left a pending key with a bounded window: not this flow's to resume.
+    await owner.f.ports.signer.provision({
+      version: 1,
+      scope: owner.f.scope,
+      keyId: 2,
+      firstDay: today - 1,
+      lastDay: today + 30,
+    });
+    assert.equal(await owner.automatic.ensure(actor(), 'SYNTHETIC_ID_TOKEN', 'Asia/Tokyo'), 'OWNER_ACTION_REQUIRED');
+    assert.equal(owner.f.provisioned.length, 1);
+  } finally {
+    await owner.f.close();
   }
 });

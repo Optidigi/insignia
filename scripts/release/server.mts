@@ -41,6 +41,17 @@ export function createReleaseVerificationServer({
 }) {
   const expectedVersion = releaseProfile(profileName).versionId;
   const collecting = new Map<string, Promise<CollectorCompletion>>();
+  // The launcher holds one exclusive lock and one SDK session: collections for different stores
+  // run one after another instead of the second being refused while the first runs.
+  let queue: Promise<unknown> = Promise.resolve();
+  const collectInTurn = (input: ReleaseVerificationRequest) => {
+    const turn = queue.then(async () => {
+      assert.ok(now() < input.deadlineMs, 'request_expired');
+      return collect(input);
+    });
+    queue = turn.catch(() => {});
+    return turn;
+  };
   async function current(request: ReleaseVerificationRequest) {
     assert.ok(now() < request.deadlineMs, 'request_expired');
     assert.deepEqual(await readBinding(request.binding), request.binding, 'request_scope_changed');
@@ -84,7 +95,7 @@ export function createReleaseVerificationServer({
       const key = JSON.stringify(Object.entries(input.binding).sort(([a], [b]) => a.localeCompare(b)));
       let active = collecting.get(key);
       if (!active) {
-        active = collect(input);
+        active = collectInTurn(input);
         collecting.set(key, active);
       }
       let result: CollectorCompletion;

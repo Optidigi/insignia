@@ -13,7 +13,7 @@ import {
 /** Owner decision, 11 November 2026: signing keys do not expire routinely. */
 export const NON_EXPIRING_LAST_DAY = 0x7fffffff;
 
-export type AutomaticSigningState = 'READY' | 'PROVISIONED' | 'STOPPED' | 'ROTATION_REQUIRED';
+export type AutomaticSigningState = 'READY' | 'PROVISIONED' | 'STOPPED' | 'OWNER_ACTION_REQUIRED';
 
 /** One run's in-memory journal. The durable truth is the key row and the published config: a stopped
  * run leaves at most a pending key, which the next run resumes with the same plan (#334). */
@@ -49,27 +49,30 @@ export function memorySigningJournal(plan: SigningProvisionPlan): SigningProvisi
 
 /**
  * Gives a store its first signing key when it first publishes. A store with an active key that
- * covers today needs nothing. A store without any active key gets a non-expiring key through the
+ * covers today needs nothing. A store that has never had a key gets one non-expiring key through the
  * maintained provisioning flow (signer creates it, the public config is published and read back,
- * then the key activates), bound to the publishing staff member's own verified session. Rotation of
- * an existing key stays an owner operation and is never started here.
+ * then the key activates), bound to the publishing staff member's own verified session; a run that
+ * stopped is resumed with its own pending key. Everything else (an active key that no longer covers
+ * today, keys the owner revoked or retired, an owner's pending rotation) stays an owner operation.
  */
 export function createAutomaticSigningProvision(ports: Omit<SigningProvisionPorts, 'journal'>) {
   const running = new Map<string, Promise<AutomaticSigningState>>();
   async function run(actor: AdminActor, idToken: string, ianaTimezone: string): Promise<AutomaticSigningState> {
     const scope = await ports.core.signingKeys.getActiveScope(actor.tenantShopId, actor.installationGeneration);
-    assert.ok(scope, 'Signing installation unavailable');
+    if (!scope) return 'STOPPED';
     const rows = await ports.core.signingKeys.list(scope);
     const day = ports.app.localDay(ports.now(), ianaTimezone).ordinal;
     const active = rows.find((row) => row.state === 'active');
-    if (active) return active.firstDay <= day && active.lastDay >= day + 2 ? 'READY' : 'ROTATION_REQUIRED';
-    // A stopped earlier run left its pending key: resume with exactly its plan.
-    const pending = rows.find((row) => row.state === 'pending');
+    if (active) return active.firstDay <= day && active.lastDay >= day + 2 ? 'READY' : 'OWNER_ACTION_REQUIRED';
+    const [only] = rows;
+    // Only this flow's own stopped run (one pending, non-expiring key) is resumed, with exactly its plan.
+    const resumable = rows.length === 1 && only?.state === 'pending' && only.lastDay === NON_EXPIRING_LAST_DAY;
+    if (rows.length && !resumable) return 'OWNER_ACTION_REQUIRED';
     const plan = qualifySigningProvisionPlan(
-      pending
-        ? { keyId: pending.id, firstDay: pending.firstDay, lastDay: pending.lastDay }
+      resumable && only
+        ? { keyId: only.id, firstDay: only.firstDay, lastDay: only.lastDay }
         : {
-            keyId: Math.max(0, ...rows.map((row) => row.id)) + 1,
+            keyId: 1,
             // A day of slack keeps the key valid if the staff member's and the store's calendars differ.
             firstDay: Math.max(0, day - 1),
             lastDay: NON_EXPIRING_LAST_DAY,
@@ -105,7 +108,10 @@ export function createAutomaticSigningProvision(ports: Omit<SigningProvisionPort
       const key = `${actor.tenantShopId}:${actor.installationGeneration}`;
       let pending = running.get(key);
       if (!pending) {
-        pending = run(actor, idToken, ianaTimezone).finally(() => running.delete(key));
+        // Any failure before or during provisioning is a refusal with no key, never a server error.
+        pending = run(actor, idToken, ianaTimezone)
+          .catch((): AutomaticSigningState => 'STOPPED')
+          .finally(() => running.delete(key));
         running.set(key, pending);
       }
       return pending;

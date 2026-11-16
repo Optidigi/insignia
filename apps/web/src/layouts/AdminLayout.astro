@@ -1,8 +1,8 @@
 ---
 import '../../../../frontend/admin/src/styles/admin-editor.css';
+import { type AdminMessageKey, createAdminTranslator } from '@insignia/ui-localization/admin';
 import AdminNavigation from '../../../../frontend/admin/src/components/AdminNavigation.astro';
 import AdminPageSkeleton from '../../../../frontend/admin/src/components/AdminPageSkeleton';
-import { createAdminTranslator, type AdminMessageKey } from '@insignia/ui-localization/admin';
 
 interface Props {
   title?: string;
@@ -11,7 +11,13 @@ interface Props {
   ready?: boolean;
 }
 const { title, apiKey, ready = false } = Astro.props;
-const titleKey = Astro.props.titleKey ?? (title === 'Products' ? 'admin-shell:titles.products' : title === 'Product configuration' ? 'admin-shell:titles.configuration' : 'admin-shell:titles.settings');
+const titleKey =
+  Astro.props.titleKey ??
+  (title === 'Products'
+    ? 'admin-shell:titles.products'
+    : title === 'Product configuration'
+      ? 'admin-shell:titles.configuration'
+      : 'admin-shell:titles.settings');
 const requestedLocale = Astro.url.searchParams.get('locale');
 const localization = createAdminTranslator(requestedLocale);
 const { t } = localization;

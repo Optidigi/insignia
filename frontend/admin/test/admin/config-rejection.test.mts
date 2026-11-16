@@ -51,7 +51,13 @@ test('only rejections caused by state that moved after the draft was made ask fo
   const reloading = CONFIG_REJECTION_CODES.filter((code) => configRejectionNeedsReload({ code, reason: '', path: null }));
   assert.deepEqual(
     [...reloading].sort(),
-    ['MEDIA_URL_NOT_CANONICAL', 'METHOD_LINKS_CHANGED', 'PRODUCT_IDENTITY_CHANGED', 'SHOP_CURRENCY_CHANGED'],
+    [
+      'INSTALLATION_CHANGED',
+      'MEDIA_URL_NOT_CANONICAL',
+      'METHOD_LINKS_CHANGED',
+      'PRODUCT_IDENTITY_CHANGED',
+      'SHOP_CURRENCY_CHANGED',
+    ],
   );
   assert.equal(configRejectionNeedsReload({ code: null, reason: '', path: null }), false);
 });

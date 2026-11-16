@@ -858,6 +858,7 @@ export const adminParameterContracts = {
   'editor:placementWorkflowPreview.configRejection.draftSchemaInvalid.view': {},
   'editor:placementWorkflowPreview.configRejection.generic': { reason: 'string' },
   'editor:placementWorkflowPreview.configRejection.geometryInvalid': {},
+  'editor:placementWorkflowPreview.configRejection.installationChanged': {},
   'editor:placementWorkflowPreview.configRejection.leanPricingInvalid': {},
   'editor:placementWorkflowPreview.configRejection.mediaNotOwned': {},
   'editor:placementWorkflowPreview.configRejection.mediaUrlNotCanonical': {},

@@ -66,6 +66,8 @@ function keysResult(value: unknown): asserts value is Record<string, unknown> {
 }
 
 const APP = '1443cf6d03d39edae7c101a943c5c684';
+/** Grants the app requests as optional (`optional_scopes`) that its features do not depend on. */
+export const OPTIONAL_GRANTS: readonly string[] = ['read_product_listings'];
 const bindingFields = [
   'shop',
   'tenantShopId',
@@ -114,8 +116,12 @@ function installation(value: unknown, expected: CollectorBinding, profile: Profi
   assert.equal(value.appId, '429028933633');
   assert.equal(value.appClientId, APP);
   array(value.grants);
-  assert.equal(value.grants.length, GRANTS.length);
-  assert.deepEqual([...value.grants].sort(), [...GRANTS].sort());
+  // Every required grant, nothing beyond the reviewed set; an optional grant may be absent
+  // (a store installed after it became optional never granted it).
+  const granted = new Set(value.grants);
+  assert.equal(granted.size, value.grants.length);
+  for (const grant of GRANTS) assert.ok(granted.has(grant) || OPTIONAL_GRANTS.includes(grant));
+  for (const grant of granted) assert.ok(GRANTS.includes(text(grant)));
 }
 function managementOpening(value: unknown, profile: Profile): asserts value is ManagementOpening {
   const VERSION_IDS = profile.versionIds;

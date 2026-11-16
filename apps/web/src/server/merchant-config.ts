@@ -957,7 +957,7 @@ export function createMerchantConfigService(input: {
       if (!sourceScope || sourceScope.installationGeneration !== actor.installationGeneration)
         return {
           kind: 'invalid',
-          code: 'PUBLICATION_UNAVAILABLE',
+          code: 'INSTALLATION_CHANGED',
           message: 'Publication belongs to a prior installation',
         };
       const existing = await core.configs.getCurrentPublication(actor.tenantShopId, data.configId);

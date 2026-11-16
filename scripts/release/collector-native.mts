@@ -97,7 +97,8 @@ async function main() {
   syncBuiltinESMExports();
   let core: DurableCore | undefined,
     management: ReturnType<typeof createManagementProcess> | undefined,
-    packet: OwnerPrivatePacket | undefined;
+    packet: OwnerPrivatePacket | undefined,
+    wrappingKey: Buffer | undefined;
   const chunks: Buffer[] = [];
   try {
     const profileName = process.argv[2];
@@ -143,7 +144,7 @@ async function main() {
     const { createAdminReadCredentialSource }: typeof import('../../packages/application/dist/index.js') = await import(
       pathToFileURL(require.resolve('@insignia/application')).href
     );
-    const wrappingKey = Buffer.from(packet.credentialKeyBase64, 'base64');
+    wrappingKey = Buffer.from(packet.credentialKeyBase64, 'base64');
     assert.equal(wrappingKey.length, 32);
     const database = createDurableCore(
       new Pool({
@@ -170,6 +171,8 @@ async function main() {
     // worker, so a client store outside the app's organization verifies the same way.
     const offline = createAdminReadCredentialSource({
       tenants: database.tenants,
+      // The token must outlive the whole collection, so it is refreshed up front when it would not.
+      minimumRemainingMs: Math.min(600_000, Math.max(30_000, deadline - Date.now() + 10_000)),
       credentials: {
         install: () => Promise.reject(new Error('Credential installation is not a verifier operation')),
         acquire: (input) => database.credentials.acquire(input),
@@ -216,7 +219,11 @@ async function main() {
             shopId: target.binding.shopId,
             installationGeneration: target.binding.installationGeneration,
           });
-          assert.ok(credential.kind === 'usable' && credential.shopDomain === target.shop);
+          assert.ok(
+            credential.kind === 'usable' &&
+              credential.shopDomain === target.shop &&
+              credential.accessExpiresAt.getTime() > deadline,
+          );
           return credential.accessToken;
         },
         readInstallation: (token) => provider.readInstallation(token),
@@ -271,6 +278,7 @@ async function main() {
     } catch {
       /* No error/credential output, no replay. */
     }
+    wrappingKey?.fill(0);
   }
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) await main();

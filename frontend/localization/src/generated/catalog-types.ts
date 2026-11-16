@@ -833,6 +833,7 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.configRejection.draftSchemaInvalid.view': object;
   'editor:placementWorkflowPreview.configRejection.generic': { reason: string };
   'editor:placementWorkflowPreview.configRejection.geometryInvalid': object;
+  'editor:placementWorkflowPreview.configRejection.installationChanged': object;
   'editor:placementWorkflowPreview.configRejection.leanPricingInvalid': object;
   'editor:placementWorkflowPreview.configRejection.mediaNotOwned': object;
   'editor:placementWorkflowPreview.configRejection.mediaUrlNotCanonical': object;

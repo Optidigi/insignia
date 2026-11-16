@@ -1138,6 +1138,7 @@
       "publicationIncomplete": "Cette configuration n’est pas encore prête à être publiée : {{reason}}",
       "planFeatureRequired": "Votre forfait Insignia n’inclut pas tout ce qu’utilise cette configuration. Vérifiez votre forfait dans Facturation, puis publiez à nouveau.",
       "publicationUnavailable": "La publication n’est pas disponible pour cette boutique pour le moment, donc rien n’a été publié. Réessayez dans quelques minutes. Si le problème persiste, contactez le support.",
+      "installationChanged": "Insignia a été réinstallé après le début de cette publication, donc rien n’a été publié. Rechargez la page, puis publiez à nouveau.",
       "shopCurrencyChanged": "La devise de la boutique a changé après la création de ce brouillon. Rechargez la page pour vérifier vos prix dans la nouvelle devise. Le rechargement abandonne les modifications non enregistrées.",
       "methodLinksChanged": "Les techniques liées à ce produit ont changé après la création de ce brouillon. Rechargez la page pour les vérifier. Le rechargement abandonne les modifications non enregistrées.",
       "productIdentityChanged": "Ce brouillon appartient à un autre produit. Rechargez la page pour ouvrir le bon brouillon. Le rechargement abandonne les modifications non enregistrées.",

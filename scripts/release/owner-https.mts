@@ -15,6 +15,9 @@ import assert from 'node:assert/strict';
 import { releaseProfile } from './profiles.mts';
 import { SHOP_DOMAIN } from './tenant-binding.mts';
 
+/** Time a token refresh leaves before the collection deadline to store the rotated pair. */
+export const REFRESH_SETTLE_MS = 15000;
+
 export const INSTALLATION_BOUNDARY = `query M5027InstallationBoundary {
   shop { id myshopifyDomain }
   currentAppInstallation { id app { id apiKey } accessScopes { handle } }
@@ -50,9 +53,10 @@ export function createOwnerHttps({
     body: string,
     headers: Record<string, string>,
     maximum: number,
+    reserveMs = 0,
   ): Promise<{ status: number; contentType: string; bytes: Buffer }> {
     assert.ok([ADMIN, OAUTH].includes(endpoint));
-    const budget = Math.min(30000, deadline - now());
+    const budget = Math.min(30000, deadline - now() - reserveMs);
     assert.ok(budget > 0);
     const bytes = Buffer.from(body);
     try {
@@ -160,11 +164,14 @@ export function createOwnerHttps({
       assert.deepEqual([...form.keys()].sort(), ['client_id', 'client_secret', 'grant_type', 'refresh_token']);
       assert.equal(form.get('grant_type'), 'refresh_token');
       assert.equal(++oauthCalls, 1);
+      // A refresh rotates the store's token pair: the reply must arrive with time left to store the
+      // new pair before the launcher's hard deadline, or the store could lose its working token.
       const { status, contentType, bytes } = await exchange(
         OAUTH,
         init.body,
         { 'content-type': 'application/x-www-form-urlencoded' },
         16384,
+        REFRESH_SETTLE_MS,
       );
       try {
         return new Response(status === 204 ? null : new Uint8Array(bytes), {

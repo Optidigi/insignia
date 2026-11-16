@@ -10,8 +10,7 @@ const csp =
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 Astro.response.headers.set('Content-Security-Policy', csp);
 Astro.response.headers.set('Referrer-Policy', 'no-referrer');
-if (!apiKey || !/^[A-Za-z0-9_-]{1,128}$/.test(apiKey))
-  return Astro.rewrite('/admin/unavailable');
+if (!apiKey || !/^[A-Za-z0-9_-]{1,128}$/.test(apiKey)) return Astro.rewrite('/admin/unavailable');
 ---
 <AdminLayout titleKey="admin-shell:titles.methods" apiKey={apiKey}>
 <MethodsContainer locale={Astro.url.searchParams.get('locale')} client:polaris />

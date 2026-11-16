@@ -1102,6 +1102,7 @@
       "publicationIncomplete": "Diese Konfiguration ist noch nicht bereit zur Veröffentlichung: {{reason}}",
       "planFeatureRequired": "Ihr Insignia-Tarif umfasst nicht alles, was diese Konfiguration verwendet. Prüfen Sie Ihren Tarif unter Abrechnung und veröffentlichen Sie dann erneut.",
       "publicationUnavailable": "Veröffentlichen ist für diesen Shop gerade nicht möglich, daher wurde nichts veröffentlicht. Versuchen Sie es in einigen Minuten erneut. Wenn das Problem bleibt, wenden Sie sich an den Support.",
+      "installationChanged": "Insignia wurde neu installiert, nachdem diese Veröffentlichung begonnen hatte, daher wurde nichts veröffentlicht. Laden Sie die Seite neu und veröffentlichen Sie dann erneut.",
       "shopCurrencyChanged": "Die Shopwährung hat sich geändert, nachdem dieser Entwurf erstellt wurde. Laden Sie die Seite neu, um Ihre Preise in der neuen Währung zu prüfen. Beim Neuladen gehen die nicht gespeicherten Änderungen verloren.",
       "methodLinksChanged": "Die mit diesem Produkt verknüpften Veredelungsverfahren haben sich geändert, nachdem dieser Entwurf erstellt wurde. Laden Sie die Seite neu, um sie zu prüfen. Beim Neuladen gehen die nicht gespeicherten Änderungen verloren.",
       "productIdentityChanged": "Dieser Entwurf gehört zu einem anderen Produkt. Laden Sie die Seite neu, um den richtigen Entwurf zu öffnen. Beim Neuladen gehen die nicht gespeicherten Änderungen verloren.",

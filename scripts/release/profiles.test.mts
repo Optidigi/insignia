@@ -1287,6 +1287,8 @@ for (const profile of [
     async () => {
       for (const state of [
         'active',
+        'without_optional_grant',
+        'widened_grant',
         'inactive',
         'missing_grant',
         ...(proxy ? ['missing_proxy_grant'] : []),
@@ -1404,10 +1406,13 @@ for (const profile of [
                 : state === 'missing_proxy_grant'
                   ? [...value.grants, 'read_orders']
                   : [
-                      ...value.grants,
+                      ...value.grants.filter(
+                        (grant) => state !== 'without_optional_grant' || grant !== 'read_product_listings',
+                      ),
                       'read_orders',
                       ...(proxy ? ['read_app_proxy', 'write_app_proxy'] : []),
                       ...(lean && state !== 'missing_markets_grant' ? ['read_markets'] : []),
+                      ...(state === 'widened_grant' ? ['write_orders'] : []),
                     ],
           };
         };
@@ -1425,9 +1430,11 @@ for (const profile of [
           const result = await collectFreshTrustedRelease(f.config, f.ports, profile);
           assert.equal(
             result.classification,
-            state === 'active' ? 'TRUSTED_RELEASE_COLLECT_APPEND_ACK' : 'TRUSTED_RELEASE_COLLECT_STOPPED',
+            ['active', 'without_optional_grant'].includes(state)
+              ? 'TRUSTED_RELEASE_COLLECT_APPEND_ACK'
+              : 'TRUSTED_RELEASE_COLLECT_STOPPED',
           );
-          assert.equal(appended, state === 'active' ? 1 : 0);
+          assert.equal(appended, ['active', 'without_optional_grant'].includes(state) ? 1 : 0);
           if (state === 'inactive') assert.equal(authenticated, 0);
         } finally {
           releaseClose?.();

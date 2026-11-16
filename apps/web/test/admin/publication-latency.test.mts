@@ -540,6 +540,7 @@ test('#468: a publication cannot be resent after a reinstall', { skip: !database
     });
     const refused = await f.publish('m5-468-reinstall');
     assert.equal(refused.status, 422, await refused.clone().text());
+    assert.equal((await refused.clone().json()).code, 'INSTALLATION_CHANGED');
     assert.equal(writesSoFar(f), 2, 'nothing was written under the new installation');
   } finally {
     await core.close();
