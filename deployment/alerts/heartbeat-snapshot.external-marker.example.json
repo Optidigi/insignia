@@ -1,0 +1,9 @@
+{
+  "databaseStartupFile": "/run/insignia/monitor-database.json",
+  "backupSource": {
+    "kind": "external-marker",
+    "markerFile": "/run/insignia/backup-marker/insignia-backup.json"
+  },
+  "outputDirectory": "/run/insignia/aggregates",
+  "stalledAfterSeconds": 900
+}

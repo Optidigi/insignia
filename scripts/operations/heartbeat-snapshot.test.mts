@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { collectDatabaseSnapshot, readBackupState } from './heartbeat-snapshot.mts';
+import { collectDatabaseSnapshot, readBackupMarker, readBackupState } from './heartbeat-snapshot.mts';
 
 const now = Date.parse('2026-10-18T12:00:00Z');
 test('exports only coarse counts under a read-only transaction and validates returned bounds', async () => {
@@ -320,6 +320,90 @@ test('runtime deletion health requires fresh remote retention even when local ba
       remoteIdentity: { ...target, prefix: 'wrong-target' },
     });
     assert.equal((await run()).overdueCount, null);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('an owner backup marker proves freshness only when exact, private and not in the future', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'heartbeat-marker-'));
+  try {
+    const marker = join(directory, 'insignia-backup.json');
+    const write = (value: unknown, mode = 0o600) =>
+      writeFile(marker, JSON.stringify(value), { mode }).then(() => chmod(marker, mode));
+    await write({ version: 1, completedAt: now - 3600_000, target: 'owner-offsite_1' });
+    assert.deepEqual(await readBackupMarker(marker, now), { completedAt: now - 3600_000, overdueCount: 0 });
+    // A stale marker is passed through unchanged; the heartbeat's backupMaxAgeSeconds judges its age.
+    await write({ version: 1, completedAt: now - 30 * 86400_000, target: 'owner-offsite' });
+    assert.equal((await readBackupMarker(marker, now)).completedAt, now - 30 * 86400_000);
+    for (const bad of [
+      { version: 1, completedAt: now + 1, target: 'owner' },
+      { version: 2, completedAt: now, target: 'owner' },
+      { version: 1, completedAt: String(now), target: 'owner' },
+      { version: 1, completedAt: now, target: '' },
+      { version: 1, completedAt: now, target: 'has space' },
+      { version: 1, completedAt: now, target: 'owner', extra: true },
+      { version: 1, completedAt: now },
+    ]) {
+      await write(bad);
+      await assert.rejects(readBackupMarker(marker, now));
+    }
+    await write({ version: 1, completedAt: now, target: 'owner' }, 0o644);
+    await assert.rejects(readBackupMarker(marker, now), /Private bounded file required/);
+    await rm(marker);
+    await assert.rejects(readBackupMarker(marker, now));
+    const real = join(directory, 'real.json');
+    await writeFile(real, JSON.stringify({ version: 1, completedAt: now, target: 'owner' }), { mode: 0o600 });
+    await symlink(real, marker);
+    await assert.rejects(readBackupMarker(marker, now));
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('runtime exporter with an owner marker reports its completion and no backup-store deletion work', async () => {
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const directory = await mkdtemp(join(tmpdir(), 'heartbeat-marker-runtime-'));
+  try {
+    const startup = join(directory, 'startup.json');
+    const config = join(directory, 'config.json');
+    const marker = join(directory, 'insignia-backup.json');
+    const completedAt = Date.now() - 60_000;
+    await writeFile(marker, JSON.stringify({ version: 1, completedAt, target: 'owner' }), { mode: 0o600 });
+    await writeFile(
+      startup,
+      JSON.stringify({ databaseUrl: 'postgresql://testmonitor:test-only-password@127.0.0.1:1/absent' }),
+      { mode: 0o600 },
+    );
+    const run = async (extra: Record<string, unknown>) => {
+      await writeFile(
+        config,
+        JSON.stringify({
+          outputDirectory: directory,
+          databaseStartupFile: startup,
+          backupSource: { kind: 'external-marker', markerFile: marker },
+          stalledAfterSeconds: 900,
+          ...extra,
+        }),
+        { mode: 0o600 },
+      );
+      return promisify(execFile)(process.execPath, ['scripts/operations/heartbeat-snapshot.mts'], {
+        env: { ...process.env, INSIGNIA_HEARTBEAT_SNAPSHOT_CONFIG: config },
+        timeout: 10_000,
+      });
+    };
+    const { stdout, stderr } = await run({});
+    // The database is unreachable here, so the snapshot is incomplete, but the marker still counts.
+    assert.equal(stdout, 'heartbeat_snapshot_incomplete\n');
+    assert.equal(stderr, '');
+    assert.equal(JSON.parse(await readFile(join(directory, 'backup.json'), 'utf8')).completedAt, completedAt);
+    assert.equal(JSON.parse(await readFile(join(directory, 'deletion.json'), 'utf8')).overdueCount, null);
+    // Mixing the marker with Insignia's own backup store is refused at startup.
+    await assert.rejects(run({ backupStore: join(directory, 'store') }));
+    await rm(marker);
+    await run({});
+    assert.equal(JSON.parse(await readFile(join(directory, 'backup.json'), 'utf8')).completedAt, null);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

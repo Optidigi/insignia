@@ -281,6 +281,29 @@ export async function readBackupState(directory: string, now = Date.now(), optio
   };
 }
 
+/**
+ * Owner-run backups (decision D5): the owner's own backup job, not Insignia's backup store, proves
+ * freshness by atomically replacing one private marker after a verified successful backup of
+ * /srv/insignia. Exactly {version:1, completedAt:<Unix ms>, target:<short opaque label>}. Missing,
+ * malformed or future markers throw, so the snapshot reports unknown and never fabricates freshness;
+ * age against backupMaxAgeSeconds is judged by the heartbeat producer.
+ */
+export async function readBackupMarker(path: string, now = Date.now()) {
+  const marker = await privateFile(path, 512);
+  if (
+    Object.keys(marker).sort().join(',') !== 'completedAt,target,version' ||
+    marker.version !== 1 ||
+    typeof marker.completedAt !== 'number' ||
+    !Number.isSafeInteger(marker.completedAt) ||
+    marker.completedAt <= 0 ||
+    marker.completedAt > now ||
+    typeof marker.target !== 'string' ||
+    !/^[A-Za-z0-9._-]{1,64}$/.test(marker.target)
+  )
+    throw new Error('Invalid backup marker');
+  return { completedAt: marker.completedAt, overdueCount: 0 };
+}
+
 async function writeSnapshot(directory: string, kind: string, snapshot: unknown) {
   const temporary = join(directory, `.heartbeat-${randomUUID()}.tmp`);
   const file = await open(
@@ -304,11 +327,20 @@ async function run() {
     throw Error('Stalled processing policy required');
   if (rawConfig.replicaRequired !== undefined && typeof rawConfig.replicaRequired !== 'boolean')
     throw Error('Replica policy required');
+  // Either Insignia's own backup store (with its optional replica) or the owner's external marker, never both.
+  const backupSource = rawConfig.backupSource === undefined ? undefined : record(rawConfig.backupSource);
+  if (backupSource) {
+    if (Object.keys(backupSource).sort().join(',') !== 'kind,markerFile' || backupSource.kind !== 'external-marker')
+      throw Error('Backup source required');
+    for (const key of ['backupStore', 'replicaRequired', 'replicaJournalDirectory', 'replicaRemoteIdentity'])
+      if (rawConfig[key] !== undefined) throw Error('One backup source required');
+  }
+  const markerFile = backupSource ? string(backupSource.markerFile) : undefined;
   const config = {
     ...rawConfig,
     outputDirectory: string(rawConfig.outputDirectory),
     databaseStartupFile: string(rawConfig.databaseStartupFile),
-    backupStore: string(rawConfig.backupStore),
+    backupStore: markerFile ? '' : string(rawConfig.backupStore),
     stalledAfterSeconds: typeof rawConfig.stalledAfterSeconds === 'number' ? rawConfig.stalledAfterSeconds : 900,
     replicaRequired: rawConfig.replicaRequired === true,
     ...(rawConfig.replicaJournalDirectory === undefined
@@ -339,7 +371,9 @@ async function run() {
     let backup: Awaited<ReturnType<typeof readBackupState>> | null,
       database: Awaited<ReturnType<typeof collectDatabaseSnapshot>> | null;
     try {
-      backup = await readBackupState(config.backupStore, now, config);
+      backup = markerFile
+        ? await readBackupMarker(markerFile, now)
+        : await readBackupState(config.backupStore, now, config);
     } catch {
       backup = null;
     }

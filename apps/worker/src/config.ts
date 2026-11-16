@@ -38,3 +38,13 @@ export function loadCredentialKeys(environment: Record<string, string | undefine
   }
   return { currentKeyId, keys };
 }
+
+/** Health listener host. Loopback by default; `0.0.0.0` only so a container can publish
+ * `/ready` to the host loopback for the heartbeat producer (deployment publishes `127.0.0.1:9464:4301`). */
+export type WorkerHealthHost = '127.0.0.1' | '0.0.0.0';
+export function resolveWorkerHealthHost(environment: Record<string, string | undefined>): WorkerHealthHost {
+  const value = environment.INSIGNIA_WORKER_HEALTH_HOST;
+  if (value === undefined || value === '' || value === '127.0.0.1') return '127.0.0.1';
+  if (value === '0.0.0.0') return value;
+  throw new Error('Invalid worker health host');
+}

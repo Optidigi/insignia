@@ -1,4 +1,7 @@
-# Configuration template only. No account/route/secret is committed.
+# Template only. The deployed configuration is private: it adds account_id and the HTTPS route
+# (a custom domain on insigniacustomizer.com). No account, route or secret is committed.
+# Sender alerts@insigniacustomizer.com (onboarded for Cloudflare Email Sending); the fixed
+# recipient below must be a verified Email Routing destination address.
 name = "insignia-alerts"
 main = "worker.mts"
 compatibility_date = "2026-10-18"

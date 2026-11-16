@@ -34,3 +34,19 @@ test('liveness stays separate from durable readiness; loopback metrics expose bo
   }
   await assert.rejects(fetch(`${url}/live`));
 });
+
+test('the health listener can bind all interfaces for a host-published readiness probe, and nothing else', async () => {
+  const server = createWorkerHealthServer({
+    observability: createObservability(),
+    isDurableReady: () => true,
+    probeDurableReady: async () => true,
+  });
+  await assert.rejects(server.listen(0, 'localhost' as never), /Invalid health host/);
+  const url = await server.listen(0, '0.0.0.0');
+  try {
+    assert.match(url, /^http:\/\/127\.0\.0\.1:\d+$/);
+    assert.equal((await fetch(`${url}/ready`)).status, 200);
+  } finally {
+    await server.close();
+  }
+});
