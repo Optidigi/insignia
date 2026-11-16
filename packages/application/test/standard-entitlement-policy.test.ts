@@ -47,7 +47,7 @@ test('current runtime policy equals the one recurring-only Standard candidate an
 });
 
 test('exact private Standard plan enables all released features without metered obligations in trial and paid cycles', () => {
-  expect(projectEntitlement(source('insignia-standard-20261015', true), candidate, context)).toMatchObject({
+  expect(projectEntitlement(source('insignia-standard', true), candidate, context)).toMatchObject({
     recognizedPolicyId: 'lean-v1-standard-all-features',
     trial: true,
     features: ['m5.configure', 'm5.required', 'm5.logo-later', 'm5.production-options', 'm5.pricing'],
@@ -56,7 +56,7 @@ test('exact private Standard plan enables all released features without metered 
     qualifyingUsageDisposition: 'NOT_METERED',
   });
   // A paid cycle is also flat-only; neither period creates a usage obligation.
-  expect(projectEntitlement(source('insignia-standard-20261015'), candidate, context)).toMatchObject({
+  expect(projectEntitlement(source('insignia-standard'), candidate, context)).toMatchObject({
     recognizedPolicyId: 'lean-v1-standard-all-features',
     trial: false,
     qualifyingUsageDisposition: 'NOT_METERED',
@@ -66,7 +66,7 @@ test('exact private Standard plan enables all released features without metered 
 test('candidate recognizes the plan for any shop with its own bound read', () => {
   const otherShop = { ...identity, shopId: 'gid://shopify/Shop/999', tenantShopId: 'other-tenant' };
   expect(
-    projectEntitlement({ ...source('insignia-standard-20261015', true), ...otherShop }, candidate, {
+    projectEntitlement({ ...source('insignia-standard', true), ...otherShop }, candidate, {
       ...otherShop,
       now,
     }),
@@ -74,7 +74,7 @@ test('candidate recognizes the plan for any shop with its own bound read', () =>
 });
 
 test('candidate keeps shop, generation, freshness and complete subscription membership fences', () => {
-  const valid = source('insignia-standard-20261015', true);
+  const valid = source('insignia-standard', true);
   const cases: [ProviderSubscriptionSnapshot, typeof context][] = [
     [valid, { ...context, shopId: 'gid://shopify/Shop/999' }],
     [valid, { ...context, installationGeneration: '2' }],

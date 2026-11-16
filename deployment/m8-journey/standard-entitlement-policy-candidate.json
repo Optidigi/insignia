@@ -3,7 +3,7 @@
   "maxAgeMs": 65000,
   "plans": [
     {
-      "planHandle": "insignia-standard-20261015",
+      "planHandle": "insignia-standard",
       "policyId": "lean-v1-standard-all-features",
       "features": [
         "m5.configure",
