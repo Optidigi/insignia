@@ -3,7 +3,7 @@ import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { collectDatabaseSnapshot, readBackupMarker, readBackupState } from './heartbeat-snapshot.mts';
+import { collectDatabaseSnapshot, deletionSnapshot, readBackupMarker, readBackupState } from './heartbeat-snapshot.mts';
 
 const now = Date.parse('2026-10-18T12:00:00Z');
 test('exports only coarse counts under a read-only transaction and validates returned bounds', async () => {
@@ -407,4 +407,31 @@ test('runtime exporter with an owner marker reports its completion and no backup
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
+});
+
+test('with the owner backup marker, deletion follows the database alone, even before the first backup', () => {
+  const now = 1_800_000_000_000;
+  const db = { observedAt: now - 1000, overdueCount: 3 };
+  for (const backup of [null, { completedAt: null, overdueCount: 0 }])
+    assert.deepEqual(deletionSnapshot(db, backup as never, { externalMarker: true, replicaRequired: false, now }), {
+      observedAt: now - 1000,
+      overdueCount: 3,
+    });
+  assert.deepEqual(deletionSnapshot(null, null, { externalMarker: true, replicaRequired: false, now }), {
+    observedAt: now,
+    overdueCount: null,
+  });
+  // Insignia's own backup store still contributes, and an unreadable store stays unknown.
+  assert.deepEqual(deletionSnapshot(db, null, { externalMarker: false, replicaRequired: false, now }), {
+    observedAt: now,
+    overdueCount: null,
+  });
+  assert.equal(
+    deletionSnapshot(
+      db,
+      { overdueCount: 2, replicaOverdueCount: 1 },
+      { externalMarker: false, replicaRequired: true, now },
+    ).overdueCount,
+    6,
+  );
 });

@@ -37,7 +37,7 @@ services:
   snapshot:
     image: ${INSIGNIA_HEARTBEAT_IMAGE:?Set qualified immutable image digest}
     pull_policy: never
-    entrypoint: [/srv/insignia/bin/node, /srv/insignia/scripts/operations/heartbeat-snapshot.mjs, --loop]
+    entrypoint: [/srv/insignia/bin/node, /srv/insignia/scripts/operations/heartbeat-snapshot.mts, --loop]
     user: "1000:1000"
     init: true
     restart: unless-stopped

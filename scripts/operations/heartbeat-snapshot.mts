@@ -288,6 +288,27 @@ export async function readBackupState(directory: string, now = Date.now(), optio
  * malformed or future markers throw, so the snapshot reports unknown and never fabricates freshness;
  * age against backupMaxAgeSeconds is judged by the heartbeat producer.
  */
+/**
+ * Overdue deletion work. Insignia's own backup store contributes its expired artifacts, so an
+ * unreadable store makes deletion unknown. With the owner's external marker there is no backup-side
+ * deletion work: a missing or stale marker is a backup signal only and never hides the database count.
+ */
+export function deletionSnapshot(
+  database: { observedAt: number; overdueCount: number } | null,
+  backup: { overdueCount: number; replicaOverdueCount?: number | null } | null,
+  options: { externalMarker: boolean; replicaRequired: boolean; now: number },
+) {
+  if (!database) return { observedAt: options.now, overdueCount: null };
+  if (options.externalMarker)
+    return { observedAt: database.observedAt, overdueCount: boundedCount(database.overdueCount) };
+  if (!backup || (options.replicaRequired && backup.replicaOverdueCount === null))
+    return { observedAt: options.now, overdueCount: null };
+  return {
+    observedAt: database.observedAt,
+    overdueCount: boundedCount(database.overdueCount + backup.overdueCount + (backup.replicaOverdueCount ?? 0)),
+  };
+}
+
 export async function readBackupMarker(path: string, now = Date.now()) {
   const marker = await privateFile(path, 512);
   if (
@@ -397,14 +418,11 @@ async function run() {
     await writeSnapshot(
       config.outputDirectory,
       'deletion',
-      database && backup && (!config.replicaRequired || backup.replicaOverdueCount !== null)
-        ? {
-            observedAt: database.deletion.observedAt,
-            overdueCount: boundedCount(
-              database.deletion.overdueCount + backup.overdueCount + (backup.replicaOverdueCount ?? 0),
-            ),
-          }
-        : { observedAt: now, overdueCount: null },
+      deletionSnapshot(database?.deletion ?? null, backup, {
+        externalMarker: markerFile !== undefined,
+        replicaRequired: config.replicaRequired,
+        now,
+      }),
     );
     process.stdout.write(
       database &&
