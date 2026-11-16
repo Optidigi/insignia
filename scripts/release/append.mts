@@ -15,6 +15,7 @@ import type {
 } from '../../packages/application/dist/index.js';
 import type { DurableCore } from '../../packages/database/dist/index.js';
 import { releaseProfile } from './profiles.mts';
+import { SHOP_DOMAIN } from './tenant-binding.mts';
 
 type Kind = 'transform' | 'validation';
 type FunctionObservation = {
@@ -231,7 +232,7 @@ export function qualifyReleaseAppendInput(input: unknown, now: number, profileNa
   assert.equal(canonicalHash(sorted), MODULE_HASH);
   const readiness = input.readiness;
   assert.equal(readiness.version, 'm5-admin-technical-readiness-v1');
-  assert.equal(readiness.shop, 'insignia-rewrite-dev.myshopify.com');
+  assert.match(readiness.shop, SHOP_DOMAIN);
   assert.match(readiness.tenantShopId, /^[A-Za-z0-9_-]{1,128}$/);
   assert.match(readiness.installationGeneration, /^[1-9][0-9]*$/);
   assert.match(readiness.shopId, /^gid:\/\/shopify\/Shop\/[1-9][0-9]*$/);

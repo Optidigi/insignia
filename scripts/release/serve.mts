@@ -6,12 +6,13 @@ import { chmod, lstat } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { DurableCore } from '../../packages/database/dist/index.js';
-import { parseOwnerPrivatePacket } from './collector-native.mts';
+import { OWNER_PACKET_SECRETS, parseOwnerPrivatePacket } from './collector-native.mts';
 import { createQualifiedReleaseLauncher } from './launch.mts';
 import { VERIFIER_SOCKET_DIRECTORY } from './paths.mts';
 import { readPrivatePacket } from './private-pipe.mts';
 import { releaseProfile } from './profiles.mts';
 import { createReleaseVerificationServer } from './server.mts';
+import { currentTenantBinding } from './tenant-binding.mts';
 import { required } from './validation.mts';
 
 const DIRECTORY = VERIFIER_SOCKET_DIRECTORY;
@@ -52,26 +53,8 @@ async function main() {
     );
     server = createReleaseVerificationServer({
       profileName,
-      async readBinding() {
-        const managed = await required(core).tenants.getManagedInstallationState('insignia-rewrite-dev.myshopify.com');
-        assert.ok(managed?.active);
-        const scope = await required(core).tenants.getActiveAuthorizationScope({
-          shopId: managed.shopId,
-          installationGeneration: managed.currentGeneration,
-        });
-        assert.ok(
-          scope &&
-            scope.shopDomain === 'insignia-rewrite-dev.myshopify.com' &&
-            scope.shopifyShopId === managed.shopifyShopId,
-        );
-        return {
-          shopId: managed.shopId,
-          installationGeneration: managed.currentGeneration,
-          appClientId: '1443cf6d03d39edae7c101a943c5c684',
-          authorizationGeneration: scope.authorizationGeneration,
-          authorizationEpoch: scope.authorizationEpoch,
-          externalInstallationId: managed.externalInstallationId,
-        };
+      async readBinding(requested) {
+        return (await currentTenantBinding(required(core).tenants, requested)).binding;
       },
       records: required(core).trustedReleaseRecords,
       async collect(request) {
@@ -97,7 +80,7 @@ async function main() {
       required(server).close((error) => (error ? reject(error) : resolve())),
     );
     server = undefined;
-    for (const name of ['clientSecret', 'appendPassword', 'databaseUrl']) Reflect.set(packet, name, undefined);
+    for (const name of OWNER_PACKET_SECRETS) Reflect.set(packet, name, undefined);
   } catch {
     emit('{"classification":"PRIVATE_COLLECTOR_STOPPED"}\n');
     process.exitCode = 1;

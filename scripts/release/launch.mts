@@ -41,14 +41,13 @@ import {
   VERIFIER_SDK,
   VERIFIER_STATE,
 } from './paths.mts';
-import { readPrivatePacket } from './private-pipe.mts';
 import { releaseProfile } from './profiles.mts';
 
 export { readPrivatePacket } from './private-pipe.mts';
 
 import { parseReleaseVerificationRequest } from '../../apps/web/src/server/admin/release-verification.ts';
 import { recordPhaseName } from './collector.mts';
-import { ownerPhaseForRecord, parseOwnerPrivatePacket } from './collector-native.mts';
+import { OWNER_PACKET_SECRETS, ownerPhaseForRecord, parseOwnerPrivatePacket } from './collector-native.mts';
 
 const ROOT = VERIFIER_STATE;
 const PREFIX = 'm5-trusted-release-collector-native-run-20261011';
@@ -492,6 +491,8 @@ export const SOURCE_PATHS = [
     'version-inventory.test',
     'owner-https',
     'owner-boundaries.test',
+    'tenant-binding',
+    'tenant-binding.test',
   ].map((name) => `scripts/release/${name}.mts`),
   'scripts/release/append.mts',
   'scripts/release/profiles.mts',
@@ -613,7 +614,7 @@ async function launch(
   await privateDirectory(ROOT);
   const packet = parseOwnerPrivatePacket(new TextDecoder('utf-8', { fatal: true }).decode(packetBytes));
   const recordId = packet.recordId;
-  for (const name of ['databaseUrl', 'clientSecret', 'appendPassword']) Reflect.set(packet, name, undefined);
+  for (const name of OWNER_PACKET_SECRETS) Reflect.set(packet, name, undefined);
   const lock = join(ROOT, 'm5-trusted-release-launch-exclusive');
   await mkdir(lock, { mode: 0o700 }); // Crashed/active launcher never silently reclaimed.
   try {
@@ -659,28 +660,4 @@ async function launch(
     await rmdir(lock);
   }
 }
-
-async function main() {
-  const emit = process.stdout.write.bind(process.stdout);
-  process.stdout.write = () => true;
-  process.stderr.write = () => true;
-  for (const name of ['log', 'info', 'warn', 'error', 'debug', 'trace', 'dir'] as const) console[name] = () => {};
-  let packet: Buffer | undefined;
-  try {
-    assert.ok(process.argv.length <= 3, 'stdin_and_reviewed_profile_only');
-    const profileName = process.argv[2];
-    releaseProfile(profileName);
-    packet = await readPrivatePacket(process.stdin);
-    const receipt = await launchQualifiedTrustedRelease(packet, undefined, profileName);
-    emit(`${JSON.stringify(receipt)}\n`);
-    if (receipt.classification !== 'TRUSTED_RELEASE_COLLECT_APPEND_ACK') process.exitCode = 1;
-  } catch {
-    emit(
-      '{"version":"m5-owner-trusted-release-launch-v1","classification":"OWNER_PREFLIGHT_UNQUALIFIED","retryAuthorized":false}\n',
-    );
-    process.exitCode = 1;
-  } finally {
-    packet?.fill(0);
-  }
-}
-if (process.argv[1] === fileURLToPath(import.meta.url)) await main();
+// No manual entry: every collection names its store, so it runs only through the receiver (serve.mts).

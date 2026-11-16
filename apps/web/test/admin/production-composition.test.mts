@@ -893,7 +893,7 @@ for (const releaseMode of [
           : [await publishRequest()];
       let publishResponse = responses[0];
       if (lostAcknowledgement) {
-        assert.equal(required(publishResponse).status, 403);
+        assert.equal(required(publishResponse).status, 422);
         assert.equal(adminMutations, 0);
         assert.equal(
           (await pool.query('SELECT count(*)::integer n FROM signing_keys WHERE shop_id=$1', [tenantId])).rows[0].n,
@@ -905,7 +905,7 @@ for (const releaseMode of [
         assert.equal(collected, 1);
       }
       if (['demand-expired', 'demand-failure', 'demand-unrelated-completion'].includes(releaseMode)) {
-        assert.equal(required(publishResponse).status, 403);
+        assert.equal(required(publishResponse).status, 422);
         const config = await core.configs.getConfig(tenantId, created.configId);
         assert.equal(required(config).effectiveRevisionId, null);
         assert.equal(await core.configs.getCurrentPublication(tenantId, created.configId), null);

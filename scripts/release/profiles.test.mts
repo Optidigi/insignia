@@ -1287,6 +1287,8 @@ for (const profile of [
     async () => {
       for (const state of [
         'active',
+        'without_optional_grant',
+        'widened_grant',
         'inactive',
         'missing_grant',
         ...(proxy ? ['missing_proxy_grant'] : []),
@@ -1404,10 +1406,13 @@ for (const profile of [
                 : state === 'missing_proxy_grant'
                   ? [...value.grants, 'read_orders']
                   : [
-                      ...value.grants,
+                      ...value.grants.filter(
+                        (grant) => state !== 'without_optional_grant' || grant !== 'read_product_listings',
+                      ),
                       'read_orders',
                       ...(proxy ? ['read_app_proxy', 'write_app_proxy'] : []),
                       ...(lean && state !== 'missing_markets_grant' ? ['read_markets'] : []),
+                      ...(state === 'widened_grant' ? ['write_orders'] : []),
                     ],
           };
         };
@@ -1425,9 +1430,11 @@ for (const profile of [
           const result = await collectFreshTrustedRelease(f.config, f.ports, profile);
           assert.equal(
             result.classification,
-            state === 'active' ? 'TRUSTED_RELEASE_COLLECT_APPEND_ACK' : 'TRUSTED_RELEASE_COLLECT_STOPPED',
+            ['active', 'without_optional_grant'].includes(state)
+              ? 'TRUSTED_RELEASE_COLLECT_APPEND_ACK'
+              : 'TRUSTED_RELEASE_COLLECT_STOPPED',
           );
-          assert.equal(appended, state === 'active' ? 1 : 0);
+          assert.equal(appended, ['active', 'without_optional_grant'].includes(state) ? 1 : 0);
           if (state === 'inactive') assert.equal(authenticated, 0);
         } finally {
           releaseClose?.();
@@ -1437,52 +1444,6 @@ for (const profile of [
       }
     },
   );
-
-  profileTest('M8 OAuth readback requires read_orders and refuses scope widening without retry', async () => {
-    const granted =
-      (proxy ? ',read_orders,read_app_proxy,write_app_proxy' : ',read_orders') + (lean ? ',read_markets' : '');
-    for (const extra of ['', granted, `${granted},write_orders`, ...(proxy ? [',read_orders'] : [])]) {
-      let requests = 0;
-      const provider = createOwnerHttps({
-        profileName: profile,
-        functionQuery: 'query Fixed { shop { id } }',
-        now: () => 0,
-        deadline: 300000,
-        request(_url, _options, callback) {
-          requests++;
-          const req = new SyntheticOwnerRequest();
-          req.destroy = () => {};
-          req.end = () =>
-            queueMicrotask(() => {
-              const res = new SyntheticOwnerResponse();
-              res.statusCode = 200;
-              res.headers = { 'content-type': 'application/json' };
-              res.complete = true;
-              res.destroy = () => {};
-              callback(res);
-              res.emit(
-                'data',
-                Buffer.from(
-                  JSON.stringify({
-                    access_token: 'synthetic',
-                    expires_in: 3600,
-                    scope:
-                      'write_products,read_publications,read_product_listings,write_cart_transforms,write_validations' +
-                      extra,
-                  }),
-                ),
-              );
-              res.emit('end');
-            });
-          return req;
-        },
-      });
-      if (extra === granted) assert.equal(await provider.acquireToken('synthetic'), 'synthetic');
-      else await assert.rejects(provider.acquireToken('synthetic'));
-      await assert.rejects(provider.acquireToken('synthetic'));
-      assert.equal(requests, 1);
-    }
-  });
 
   profileTest(
     'selected M8 private Unix receiver accepts only its reviewed target and exact current generation',

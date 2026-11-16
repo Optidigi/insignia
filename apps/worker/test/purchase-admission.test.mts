@@ -11,8 +11,6 @@ function required<T>(value: T | undefined): T {
 const now = new Date('2026-10-13T12:00:00.000Z');
 const qualification = {
   origin: {
-    shopId: 'synthetic',
-    installationGeneration: '1',
     creatorAppId: 'gid://shopify/App/77',
     supportedFrom: '2026-10-13T11:00:00Z',
   },
@@ -184,7 +182,7 @@ test('Lean scope-only profile preserves bounded native origin while independentl
     core: durableCoreFixture({
       tenants: {
         getActiveProviderScope: async () => ({
-          shopId: qualified.origin.shopId,
+          shopId: 'any-store-tenant',
           installationGeneration: '1',
           shopDomain: 'synthetic.myshopify.com',
           shopifyShopId: '101',
@@ -210,7 +208,7 @@ test('Lean scope-only profile preserves bounded native origin while independentl
   assert.equal(
     await port.admit({
       order: orderFixture({
-        shopId: qualified.origin.shopId,
+        shopId: 'any-store-tenant',
         installationGeneration: '1',
         createdAt: '2026-10-15T12:00:00Z',
         observedAt: '2026-10-15T12:30:00Z',

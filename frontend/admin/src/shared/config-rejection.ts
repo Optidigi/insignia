@@ -25,6 +25,7 @@ const needsReload = new Set<ConfigRejectionCode>([
   'METHOD_LINKS_CHANGED',
   'PRODUCT_IDENTITY_CHANGED',
   'MEDIA_URL_NOT_CANONICAL',
+  'INSTALLATION_CHANGED',
 ]);
 
 const text = (value: unknown): string => (typeof value === 'string' ? value : '');
@@ -86,6 +87,12 @@ export function configRejectionText(rejection: ConfigRejection, t: Translate): s
       return t('editor:placementWorkflowPreview.configRejection.mediaUrlNotCanonical');
     case 'PUBLICATION_INCOMPLETE':
       return t('editor:placementWorkflowPreview.configRejection.publicationIncomplete', { reason: rejection.reason });
+    case 'PLAN_FEATURE_REQUIRED':
+      return t('editor:placementWorkflowPreview.configRejection.planFeatureRequired');
+    case 'PUBLICATION_UNAVAILABLE':
+      return t('editor:placementWorkflowPreview.configRejection.publicationUnavailable');
+    case 'INSTALLATION_CHANGED':
+      return t('editor:placementWorkflowPreview.configRejection.installationChanged');
     // Codes a merchant cannot act on by themselves, or that only a client defect can cause, keep the server's reason.
     case 'IDEMPOTENCY_KEY_REQUIRED':
     case 'INVALID_COMMAND':

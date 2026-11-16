@@ -441,7 +441,7 @@ test('#436: a first publication spends its provider calls on sequencing, not rep
     const read = () => calls.get('subscription read') ?? 0;
     setDenials(1);
     let before = read();
-    assert.equal((await publish('m5-436-denied')).status, 403);
+    assert.equal((await publish('m5-436-denied')).status, 422);
     assert.equal(read() - before, 1);
     before = read();
     const republished = await publish('m5-436-after-denial');
@@ -539,7 +539,8 @@ test('#468: a publication cannot be resent after a reinstall', { skip: !database
       expiresAtMs: Date.now() + 60000,
     });
     const refused = await f.publish('m5-468-reinstall');
-    assert.equal(refused.status, 403, await refused.clone().text());
+    assert.equal(refused.status, 422, await refused.clone().text());
+    assert.equal((await refused.clone().json()).code, 'INSTALLATION_CHANGED');
     assert.equal(writesSoFar(f), 2, 'nothing was written under the new installation');
   } finally {
     await core.close();
@@ -592,7 +593,7 @@ test('#468: a session that ends inside a step: the provider write is refused bef
   }
 });
 
-test('#468: preparation cut short by the ending session is resent, not denied; a genuine denial stays 403', {
+test('#468: preparation cut short by the ending session is resent, not denied; a genuine refusal stays a 422 rejection', {
   skip: !database,
   timeout: 120000,
 }, async () => {
@@ -622,7 +623,8 @@ test('#468: preparation cut short by the ending session is resent, not denied; a
       preparePublication: async () => ({ ready: false, reason: 'Publication verification is unavailable.' }),
     });
     const refused = await denied.publish('m5-468-denied');
-    assert.equal(refused.status, 403, 'with session time left a denial is reported, not resent');
+    assert.equal(refused.status, 422, 'with session time left a refusal is reported, not resent');
+    assert.equal((await refused.clone().json()).code, 'PUBLICATION_UNAVAILABLE');
   } finally {
     await core.close();
   }
