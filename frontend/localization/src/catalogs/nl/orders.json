@@ -73,7 +73,6 @@
     "datePlaceholder": "YYYY-MM-DD",
     "apply": "Toepassen",
     "backToPresets": "Terug naar de standaardperioden",
-    "utc": "UTC",
     "errors": {
       "bothRequired": "Selecteer zowel een startdatum als een einddatum.",
       "endBeforeStart": "De einddatum moet gelijk zijn aan of na de startdatum liggen.",

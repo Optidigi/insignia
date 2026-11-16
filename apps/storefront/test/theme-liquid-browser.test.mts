@@ -43,6 +43,8 @@ async function renderTheme(t: TestContext, mode: 'required' | 'optional' | null,
     'insignia.cart_review.expired_message': 'Customization prices expired.',
     'insignia.cart_review.context_message': 'Country or currency changed.',
     'insignia.cart_review.renew_failed_message': 'Prices could not be renewed.',
+    'insignia.cart_review.line_label': 'Customized',
+    'insignia.cart_review.line_review_label': 'Customized · needs review',
   };
   engine.registerFilter('t', (key: unknown) => {
     assert.ok(typeof key === 'string' && key in translations, `unexpected translation key ${String(key)}`);
@@ -231,6 +233,99 @@ test('cart repair ignores native quantity edits and prompts only when a line los
   extra = [];
   await page.evaluate(() => fetch('/cart/change.js', { method: 'POST', body: '{}' }));
   await message.waitFor({ state: 'hidden' });
+});
+
+test('cart page marks each customized line and offers review above checkout, not after the footer', async (t) => {
+  const html = await renderTheme(t, null);
+  const page = await browserFixture(t);
+  const designed = {
+    product_id: 111,
+    variant_id: 101,
+    quantity: 1,
+    original_price: 1745,
+    properties: { _insignia_line_v3: v3Line({ validThroughDay: utcDay() + 2 }) } as Record<string, unknown>,
+  };
+  // The same variant bought plainly, and another product: neither is marked.
+  const plain = { product_id: 111, variant_id: 101, quantity: 1, original_price: 995, properties: {} };
+  const other = { product_id: 222, variant_id: 202, quantity: 1, original_price: 500, properties: {} };
+  let items = [designed, plain, other];
+  await page.route('**/cart.js', (route) => route.fulfill({ json: { items } }));
+  await page.route('**/cart/change.js', (route) => route.fulfill({ json: {} }));
+  // Dawn-style cart page: image and title links per row, checkout in its own group, then the theme footer.
+  const rows = () =>
+    `<form action="/cart" id="cart"><table><tbody>${[
+      ['101', 'Tee'],
+      ['101', 'Tee'],
+      ['202', 'Cap'],
+    ]
+      .map(
+        ([variant, title]) =>
+          `<tr class="cart-item"><td><a href="/products/x?variant=${variant}"><img alt=""></a></td>` +
+          `<td><a href="/products/x?variant=${variant}">${title}</a><dl><dd>Color: Ice</dd></dl></td></tr>`,
+      )
+      .join('')}</tbody></table></form>`;
+  await page.evaluate(
+    ({ markup, cart }) => {
+      history.replaceState(null, '', '/cart');
+      document.body.insertAdjacentHTML(
+        'beforeend',
+        `<cart-items>${cart}</cart-items><div class="cart__footer"><div class="cart__ctas">` +
+          `<button type="submit" name="checkout" form="cart">Check out</button></div></div>` +
+          `<footer>Shop footer</footer>${markup}`,
+      );
+    },
+    { markup: html, cart: rows() },
+  );
+  const markers = page.locator('cart-items .insignia-cart-line-marker');
+  await markers.first().waitFor();
+  assert.deepEqual(await markers.allTextContents(), ['Customized']);
+  assert.equal(
+    await page
+      .locator('tr.cart-item')
+      .nth(0)
+      .locator('a', { hasText: 'Tee' })
+      .evaluate((link) => link.nextElementSibling?.textContent),
+    'Customized',
+  );
+
+  // The review entry sits right above the checkout group, before checkout and the footer in reading/tab order.
+  const trigger = page.getByRole('button', { name: 'Review customized items', exact: true });
+  await trigger.waitFor();
+  assert.equal(
+    await page.evaluate(() => document.querySelector('.cart__ctas')?.previousElementSibling?.className),
+    'insignia-cart-review',
+  );
+  assert.equal(
+    await trigger.evaluate((button) => {
+      const checkout = document.querySelector('[name="checkout"]');
+      return !!checkout && !!(button.compareDocumentPosition(checkout) & Node.DOCUMENT_POSITION_FOLLOWING);
+    }),
+    true,
+  );
+  await page.locator('[name="checkout"]').focus();
+  await page.keyboard.press('Shift+Tab');
+  assert.equal(await trigger.evaluate((button) => button === document.activeElement), true);
+
+  // A theme re-render of the cart rows drops the marker; it is restored without another cart request.
+  await page.evaluate((cart) => {
+    const list = document.querySelector('cart-items');
+    if (list) list.innerHTML = cart;
+  }, rows());
+  await markers.first().waitFor();
+  assert.deepEqual(await markers.allTextContents(), ['Customized']);
+
+  // A line that lost its signed price says so on the line itself.
+  items = [{ ...designed, original_price: 995 }, plain, other];
+  await page.evaluate(() => fetch('/cart/change.js', { method: 'POST', body: '{}' }));
+  await page.locator('cart-items .insignia-cart-line-marker', { hasText: 'needs review' }).waitFor();
+  assert.deepEqual(await markers.allTextContents(), ['Customized · needs review']);
+
+  // Without customized lines no marker or review entry remains.
+  items = [plain, other];
+  await page.evaluate(() => fetch('/cart/change.js', { method: 'POST', body: '{}' }));
+  await trigger.waitFor({ state: 'detached' });
+  assert.equal(await page.locator('.insignia-cart-line-marker').count(), 0);
+  assert.equal(await page.locator('.insignia-cart-review').count(), 0);
 });
 
 test('a leftover cart quote without designed lines is cleared unless this tab has an unresolved Insignia write', async (t) => {

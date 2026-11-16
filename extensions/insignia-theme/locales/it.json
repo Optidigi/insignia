@@ -7,7 +7,9 @@
       "renew_label": "Rinnova prezzi",
       "expired_message": "I tuoi prezzi di personalizzazione sono scaduti e non vengono applicati. Rinnovali prima del pagamento.",
       "context_message": "I prezzi sono cambiati perché il tuo paese o la tua valuta è cambiata. Verifica i tuoi articoli personalizzati per aggiornarli.",
-      "renew_failed_message": "Non è stato possibile rinnovare i prezzi. Verifica i tuoi articoli personalizzati prima del pagamento."
+      "renew_failed_message": "Non è stato possibile rinnovare i prezzi. Verifica i tuoi articoli personalizzati prima del pagamento.",
+      "line_label": "Personalizzato",
+      "line_review_label": "Personalizzato · da verificare"
     }
   }
 }

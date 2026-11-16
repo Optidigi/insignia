@@ -137,7 +137,7 @@ export function ReviewPanel({
                     )}
                     <span>
                       {row.color.nameSource === 'generic-selection'
-                        ? t('customer:options.selectionFallback')
+                        ? (config.optionPresentation?.columnOption.label ?? t('customer:options.selectionFallback'))
                         : row.color.name}
                     </span>
                   </h4>

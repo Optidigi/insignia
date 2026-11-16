@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { PurchaseView } from '@insignia/contracts';
+import { type PurchaseView, PurchaseViewSchema } from '@insignia/contracts';
 import { handlePurchaseRequest } from '../src/server/purchase/http.ts';
 import { createPurchaseServices } from '../src/server/purchase/service.ts';
 import { coreFixture, purchaseHttpFixture, purchaseRecord, required } from './http-fixtures.mts';
@@ -130,6 +130,28 @@ test('retained order labels tolerate provider failure while expired or missing m
   });
   assert.equal(required(await unavailable.get(actor, id)).purchaseId, id);
   assert.equal(required(await unavailable.get(actor, id)).orderName, null);
+});
+
+test('order detail carries the shop time zone like the list, and still reads when the zone is unavailable', async () => {
+  const record = purchaseRecord({ ...view, bindings: [], observations: [], artworkEvents: [] });
+  const detail = (timeZone: () => Promise<string>) =>
+    createPurchaseServices({
+      core: coreFixture({ purchases: { get: async () => record } }),
+      appOrigin: 'https://insignia.example',
+      authenticate: async () => actor,
+      timeZone,
+    }).get(actor, id);
+  const zoned = required(await detail(async () => 'America/New_York'));
+  assert.equal(zoned.timeZone, 'America/New_York');
+  assert.equal(PurchaseViewSchema.parse(zoned).timeZone, 'America/New_York');
+  const unzoned = required(
+    await detail(async () => {
+      throw Error('Shop settings unavailable');
+    }),
+  );
+  assert.equal(unzoned.purchaseId, id);
+  assert.equal(unzoned.timeZone, undefined);
+  assert.throws(() => PurchaseViewSchema.parse({ ...zoned, timeZone: 'not-a-zone' }));
 });
 
 test('purchase listing batches optional order names once and never performs per-purchase detail reads', async () => {

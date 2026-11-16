@@ -73,7 +73,6 @@
     "datePlaceholder": "YYYY-MM-DD",
     "apply": "Apply",
     "backToPresets": "Back to presets",
-    "utc": "UTC",
     "errors": {
       "bothRequired": "Select both a start date and an end date.",
       "endBeforeStart": "End date must be on or after start date.",

@@ -26,7 +26,7 @@ import { useAdminPageReady } from '../shared/admin-page-ready';
 import { authenticatedJson } from '../shared/admin-request';
 import { type ArtworkFilter, artworkStatus, orderMethods, parseArtworkFilter } from '../shared/artwork-status';
 import { isOrderCursorStack, orderCursorTrail, orderDetailHref } from '../shared/orders-return-path';
-import { PurchaseListViewSchema } from '../shared/purchase-presentation.ts';
+import { formatShopDateTime, PurchaseListViewSchema } from '../shared/purchase-presentation.ts';
 import { localizedPurchaseMoney } from '../shared/purchase-view.js';
 
 import { initialOrdersState, ordersReducer, type ServerQuery } from './orders-overview-state';
@@ -651,12 +651,9 @@ function OrdersOverview({ supportsServerQueries = true }: { supportsServerQuerie
                               return (
                                 <ResourceTableCell column={key} key={key}>
                                   <s-text interestFor={`order-date-${item.purchaseId}`}>
-                                    {new Intl.DateTimeFormat(locale, {
-                                      dateStyle: 'medium',
-                                      timeStyle: 'short',
-                                      timeZone,
-                                    }).format(new Date(item.orderCreatedAt))}
-                                    {page.timeZone ? '' : ` ${t('orders:date.utc')}`}
+                                    {formatShopDateTime(locale, item.orderCreatedAt, page.timeZone, (date) =>
+                                      t('orders:artworkHistory.dateUtc', { date }),
+                                    )}
                                   </s-text>
                                   <s-tooltip id={`order-date-${item.purchaseId}`}>
                                     {new Intl.DateTimeFormat(locale, {

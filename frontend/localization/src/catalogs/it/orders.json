@@ -76,7 +76,6 @@
     "datePlaceholder": "YYYY-MM-DD",
     "apply": "Applica",
     "backToPresets": "Torna agli intervalli predefiniti",
-    "utc": "UTC",
     "errors": {
       "bothRequired": "Seleziona una data di inizio e una data di fine.",
       "endBeforeStart": "La data di fine deve essere uguale o successiva alla data di inizio.",

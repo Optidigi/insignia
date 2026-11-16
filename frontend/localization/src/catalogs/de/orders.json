@@ -73,7 +73,6 @@
     "datePlaceholder": "JJJJ-MM-TT",
     "apply": "Anwenden",
     "backToPresets": "Zurück zu den Zeiträumen",
-    "utc": "UTC",
     "errors": {
       "bothRequired": "Wählen Sie ein Start- und ein Enddatum aus.",
       "endBeforeStart": "Das Enddatum muss am selben Tag oder nach dem Startdatum liegen.",

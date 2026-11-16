@@ -1927,7 +1927,6 @@ export interface AdminMessageTable {
   'orders:date.orderDate': object;
   'orders:date.to': object;
   'orders:date.today': object;
-  'orders:date.utc': object;
   'orders:designPreview.artworkVersion': object;
   'orders:designPreview.atPurchase': object;
   'orders:designPreview.currentArtwork': object;

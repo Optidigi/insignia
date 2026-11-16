@@ -1963,7 +1963,6 @@ export const adminParameterContracts = {
   'orders:date.orderDate': {},
   'orders:date.to': {},
   'orders:date.today': {},
-  'orders:date.utc': {},
   'orders:designPreview.artworkVersion': {},
   'orders:designPreview.atPurchase': {},
   'orders:designPreview.currentArtwork': {},
