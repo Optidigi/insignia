@@ -21,8 +21,96 @@ export type EurNetherlandsQualification = {
   qualifiedAt: string;
   evidenceRef: string;
 };
+/**
+ * Release-level EUR qualification (owner decision D4, 16 Nov 2026): EUR is sold by any shop whose shop
+ * currency is EUR, to buyers in the listed countries, once the exact release (theme/app version and
+ * Function source) has been qualified natively. No per-merchant operator step.
+ */
+export type EurReleaseQualification = {
+  version: 'eur-qualification-v2';
+  activeVersionRef: string;
+  functionsSourceCommit: string;
+  countries: readonly string[];
+  qualifiedAt: string;
+  evidenceRef: string;
+};
+export type EurQualification = EurNetherlandsQualification | EurReleaseQualification;
+/** The euro area as of the owner's launch decision; operators list countries explicitly in the profile. */
+export const EUROZONE_COUNTRIES = Object.freeze([
+  'AT',
+  'BE',
+  'HR',
+  'CY',
+  'EE',
+  'FI',
+  'FR',
+  'DE',
+  'GR',
+  'IE',
+  'IT',
+  'LV',
+  'LT',
+  'LU',
+  'MT',
+  'NL',
+  'PT',
+  'SK',
+  'SI',
+  'ES',
+]);
 const record = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
+const qualifiedAtValid = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(value) &&
+  Number.isFinite(Date.parse(value)) &&
+  new Date(value).toISOString().slice(0, 19) === value.slice(0, 19);
+
+function parseEurReleaseQualification(value: Record<string, unknown>): EurReleaseQualification {
+  const keys = ['version', 'activeVersionRef', 'functionsSourceCommit', 'countries', 'qualifiedAt', 'evidenceRef'];
+  const countries = value.countries;
+  if (
+    Object.keys(value).sort().join(',') !== [...keys].sort().join(',') ||
+    typeof value.activeVersionRef !== 'string' ||
+    !/^[1-9][0-9]{0,19}$/.test(value.activeVersionRef) ||
+    typeof value.functionsSourceCommit !== 'string' ||
+    !/^[a-f0-9]{40}$/.test(value.functionsSourceCommit) ||
+    !Array.isArray(countries) ||
+    !countries.length ||
+    countries.length > 60 ||
+    countries.some((country) => typeof country !== 'string' || !/^[A-Z]{2}$/.test(country)) ||
+    new Set(countries).size !== countries.length ||
+    !qualifiedAtValid(value.qualifiedAt) ||
+    typeof value.evidenceRef !== 'string' ||
+    !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/.test(value.evidenceRef)
+  )
+    throw new Error('Invalid EUR qualification profile');
+  return {
+    version: 'eur-qualification-v2',
+    activeVersionRef: value.activeVersionRef,
+    functionsSourceCommit: value.functionsSourceCommit,
+    countries: Object.freeze([...(countries as string[])]),
+    qualifiedAt: value.qualifiedAt,
+    evidenceRef: value.evidenceRef,
+  };
+}
+
+/**
+ * Operator-owned qualified evidence selector, not a currency-name enable flag. Absent means EUR is disabled.
+ * `eur-qualification-v2` (release-level, any EUR shop) is preferred; `eur-nl-qualification-v1` (one shop,
+ * Netherlands only) is still accepted unchanged.
+ */
+export function parseEurQualification(raw: string | undefined): EurQualification | null {
+  if (raw === undefined || raw === '') return null;
+  let value: unknown;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    throw new Error('Invalid EUR qualification profile');
+  }
+  if (record(value) && value.version === 'eur-qualification-v2') return parseEurReleaseQualification(value);
+  return parseEurNetherlandsQualification(raw);
+}
 
 /** Operator-owned qualified evidence selector, not a currency-name enable flag. Absent means EUR is disabled. */
 export function parseEurNetherlandsQualification(raw: string | undefined): EurNetherlandsQualification | null {
@@ -98,7 +186,7 @@ export function createLeanPrimaryMarketAdmission(input: {
   active(): Promise<LeanMarketAuthority>;
   observe(current: LeanMarketAuthority): Promise<PrimaryMarketSnapshot>;
   clock(): Date;
-  eurQualification: EurNetherlandsQualification | null;
+  eurQualification: EurQualification | null;
   expectedRelease: { activeVersionRef: string; functionsSourceCommit: string };
 }): NonNullable<QuoteAuthorityPorts['leanContext']> {
   return {
@@ -107,28 +195,42 @@ export function createLeanPrimaryMarketAdmission(input: {
         throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'Lean primary-Market context unavailable');
       const profile = input.eurQualification;
       const now = () => +input.clock();
-      // EUR is sold only to the Netherlands, and only by a shop its qualification profile covers.
-      if (
-        target.currency === 'EUR' &&
-        (!profile ||
-          target.country !== 'NL' ||
-          profile.shopId !== target.tenant.shopId ||
-          profile.shopifyShopGid !== target.tenant.shopifyShopGid)
-      )
-        throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'EUR Netherlands qualification unavailable');
-      // The covered shop's profile no longer matches its release, installation epoch or Market: an outage.
-      if (
-        target.currency === 'EUR' &&
-        (!profile ||
+      if (target.currency === 'EUR' && profile?.version === 'eur-qualification-v2') {
+        // Release-level: any shop whose shop currency is EUR (checked above and re-read below), to the
+        // qualified countries only. A different release than the one qualified is an outage, not a refusal.
+        if (!profile.countries.includes(target.country))
+          throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'EUR qualification does not cover this country');
+        if (
           profile.activeVersionRef !== input.expectedRelease.activeVersionRef ||
           profile.functionsSourceCommit !== input.expectedRelease.functionsSourceCommit ||
-          profile.installationGeneration !== target.tenant.installationGeneration ||
-          profile.authorizationGeneration !== target.tenant.authorizationGeneration ||
-          profile.authorizationEpoch !== target.tenant.authorizationEpoch ||
-          profile.primaryMarketGid !== `gid://shopify/Market/${target.marketId}` ||
-          Date.parse(profile.qualifiedAt) > now())
-      )
-        throw new Error('EUR Netherlands qualification unavailable');
+          Date.parse(profile.qualifiedAt) > now()
+        )
+          throw new Error('EUR qualification unavailable');
+      } else {
+        // Legacy v1: EUR is sold only to the Netherlands, and only by the one shop the profile covers.
+        const v1 = profile?.version === 'eur-nl-qualification-v1' ? profile : null;
+        if (
+          target.currency === 'EUR' &&
+          (!v1 ||
+            target.country !== 'NL' ||
+            v1.shopId !== target.tenant.shopId ||
+            v1.shopifyShopGid !== target.tenant.shopifyShopGid)
+        )
+          throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'EUR Netherlands qualification unavailable');
+        // The covered shop's profile no longer matches its release, installation epoch or Market: an outage.
+        if (
+          target.currency === 'EUR' &&
+          (!v1 ||
+            v1.activeVersionRef !== input.expectedRelease.activeVersionRef ||
+            v1.functionsSourceCommit !== input.expectedRelease.functionsSourceCommit ||
+            v1.installationGeneration !== target.tenant.installationGeneration ||
+            v1.authorizationGeneration !== target.tenant.authorizationGeneration ||
+            v1.authorizationEpoch !== target.tenant.authorizationEpoch ||
+            v1.primaryMarketGid !== `gid://shopify/Market/${target.marketId}` ||
+            Date.parse(v1.qualifiedAt) > now())
+        )
+          throw new Error('EUR Netherlands qualification unavailable');
+      }
       const matches = (current: LeanMarketAuthority) =>
         target.tenant.shopId === input.scope.shopId &&
         target.tenant.installationGeneration === input.scope.installationGeneration &&
