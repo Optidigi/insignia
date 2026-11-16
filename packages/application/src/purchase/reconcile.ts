@@ -49,7 +49,18 @@ function amount(value: string): bigint {
   if (!/^(0|[1-9][0-9]*)$/.test(value) || value.length > 20) fail('INVALID_PROVIDER_MONEY');
   return BigInt(value);
 }
-/** First full chronological settlement. Later refunds preserve that fact; no usage dispatch. */
+/**
+ * How long before the order's `createdAt` a payment may be stamped. Shopify processes a checkout's
+ * payment (authorization/sale) before it creates the order, so `processedAt` is normally a few
+ * seconds earlier; redirect and 3-D Secure gateways can take minutes. An hour bounds that while still
+ * rejecting stale or foreign transactions. Refunds stay strict: a refund cannot precede its order.
+ */
+export const PAYMENT_BEFORE_ORDER_TOLERANCE_MS = 60 * 60 * 1000;
+/**
+ * First full chronological settlement. Later refunds preserve that fact; no usage dispatch. A payment
+ * processed just before the order existed counts from the order's creation: the recorded time never
+ * precedes `createdAt`.
+ */
 export function firstFullyPaid(order: VerifiedOrder): string | null {
   const seen = new Set<string>();
   const payments = order.transactions.filter(
@@ -77,15 +88,17 @@ export function firstFullyPaid(order: VerifiedOrder): string | null {
     if (!transaction.transactionId || seen.has(transaction.transactionId) || transaction.currency !== order.currency)
       fail('INVALID_PAYMENT_FACT');
     seen.add(transaction.transactionId);
+    const created = validTime(order.createdAt);
+    const occurred = validTime(transaction.occurredAt!);
     if (
-      validTime(transaction.occurredAt!) < validTime(order.createdAt) ||
-      validTime(transaction.occurredAt!) > validTime(order.observedAt)
+      occurred < created - (transaction.kind === 'REFUND' ? 0 : PAYMENT_BEFORE_ORDER_TOLERANCE_MS) ||
+      occurred > validTime(order.observedAt)
     )
       fail('INVALID_PAYMENT_TIME');
     settled += (transaction.kind === 'REFUND' ? -1n : 1n) * amount(transaction.amountMinor);
     if (settled < 0n) fail('PAYMENT_HISTORY_INCOMPLETE');
     if (firstPaidAt === null && transaction.kind !== 'REFUND' && settled >= target)
-      firstPaidAt = transaction.occurredAt;
+      firstPaidAt = occurred < created ? order.createdAt : transaction.occurredAt;
   }
   return firstPaidAt;
 }

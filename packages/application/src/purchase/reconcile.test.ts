@@ -5,7 +5,7 @@ import { required } from '../../test/fixture-assertions.js';
 import type { AcceptedQuote } from '../quote/accept-quote.js';
 import { localDay } from '../quote/accept-quote.js';
 import type { HistoricalPurchaseOffer, VerifiedOrder } from './model.js';
-import { firstFullyPaid, reconcilePurchase } from './reconcile.js';
+import { firstFullyPaid, PAYMENT_BEFORE_ORDER_TOLERANCE_MS, reconcilePurchase } from './reconcile.js';
 
 function fixture() {
   const createdAt = '2026-10-20T10:00:00.000Z';
@@ -444,6 +444,39 @@ describe('verified purchase reconciliation', () => {
       },
     ];
     expect(firstFullyPaid(order)).toBe('2026-10-22T10:00:00.000Z');
+  });
+  it('counts a checkout payment processed just before the order was created from the order creation time', () => {
+    const { order } = fixture();
+    const created = Date.parse(order.createdAt);
+    const sale = (offsetMs: number, kind = 'SALE', id = 'sale') => ({
+      transactionId: id,
+      kind,
+      status: 'SUCCESS',
+      occurredAt: new Date(created + offsetMs).toISOString(),
+      amountMinor: '9100',
+      currency: 'EUR',
+    });
+    // Shopify stamps the checkout payment before it creates the order (insignia-review-eu #1001).
+    for (const offset of [-1000, -5 * 60 * 1000, -PAYMENT_BEFORE_ORDER_TOLERANCE_MS]) {
+      order.transactions = [sale(offset)];
+      expect(firstFullyPaid(order)).toBe(order.createdAt);
+    }
+    // At or after creation the actual processing time is kept.
+    order.transactions = [sale(0)];
+    expect(firstFullyPaid(order)).toBe(new Date(created).toISOString());
+    order.transactions = [sale(2000)];
+    expect(firstFullyPaid(order)).toBe(new Date(created + 2000).toISOString());
+    // Beyond the tolerance, or after the observation, the transaction is not this order's payment.
+    order.transactions = [sale(-PAYMENT_BEFORE_ORDER_TOLERANCE_MS - 1)];
+    expect(() => firstFullyPaid(order)).toThrow('INVALID_PAYMENT_TIME');
+    order.transactions = [{ ...sale(0), occurredAt: '2027-01-01T00:00:00.001Z' }];
+    expect(() => firstFullyPaid(order)).toThrow('INVALID_PAYMENT_TIME');
+    // A refund can never precede its order.
+    order.transactions = [sale(-1000), sale(-500, 'REFUND', 'refund')];
+    expect(() => firstFullyPaid(order)).toThrow('INVALID_PAYMENT_TIME');
+    // A later refund keeps the clamped first-paid time.
+    order.transactions = [sale(-1000), sale(60_000, 'REFUND', 'refund')];
+    expect(firstFullyPaid(order)).toBe(order.createdAt);
   });
   it('does not infer missing successful payment timestamps', () => {
     const { order } = fixture();
