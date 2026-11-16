@@ -61,6 +61,12 @@ Customer mode requires `CUSTOMER_ARTWORK_EMAIL_QUALIFICATION_PROFILE`: a private
 }
 ```
 
+**Scope modes.** `tenantScopes` is either the explicit list above (at most 100 reviewed installations, each bound to this deployment's app client id) or exactly the string `"all-active-installations"`. Owner decision 16 Nov 2026: the public App Store app uses `"all-active-installations"`, so new merchants need no config edit. In that mode every shop whose current installation generation is active is in scope; the grant itself is still bound to this deployment's account, origin, sender and app client id (`SHOPIFY_CLIENT_ID`), and every other field above stays required. Both modes go through one check (`inQualifiedScope`) before selecting a notice, before the protected recipient read and before dispatch: the notice's exact installation generation must be the shop's current, active one, so a reinstalled or uninstalled generation is never mailed. A merchant opts out with **Settings → Customer emails** (`merchant_preferences.customer_artwork_email`); their waiting notices settle `SUPPRESSED` and are never sent. Any other string, an empty list or an empty string rejects the profile.
+
+```json
+{ "...": "fields as above", "tenantScopes": "all-active-installations" }
+```
+
 Supplying placeholder values or simply changing the mode is not qualification. Customer delivery remains off until real credential/evidence custody exists. No new paid account, DNS record, app scope, real customer send or notification backfill follows from this template.
 
 Unreadable/missing customer email leaves the notice pending and sets a bounded five-minute retry deadline, allowing other eligible notices to proceed. It logs runtime unavailability and sends nothing. Known no-effect provider denials use recurring safe reconciliation through the original retention deadline: five-minute initial backoff, then hourly backoff after twelve actual attempts with continued operator alerts. The diagnostic attempt count remains monotonic; temporary quota/auth denials do not create a permanent twelve-attempt stop. Every recurrence repeats active installation/profile/payment/missing-slot/retention checks; uncertain dispatch is never automatically reclaimed. The monitor sees only lifecycle metadata and reports stalled/uncertain delivery plus overdue capability expiry.

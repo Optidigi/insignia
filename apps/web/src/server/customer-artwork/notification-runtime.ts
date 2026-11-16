@@ -6,7 +6,7 @@ import { loadCredentialKeys } from '../../../../worker/src/config.ts';
 import { createCloudflareCustomerArtworkSender } from '../../../../worker/src/customer-artwork-email.ts';
 import { loadCustomerArtworkEmailProfile } from '../../../../worker/src/customer-artwork-email-profile.ts';
 import { webObservability } from '../observability.ts';
-import { loadCustomerEmailQualification } from './notification-qualification.ts';
+import { inQualifiedScope, loadCustomerEmailQualification } from './notification-qualification.ts';
 import { createCustomerArtworkNotificationRunner } from './notification-runner.ts';
 import { createCustomerArtworkRuntimeView } from './view.ts';
 
@@ -88,6 +88,14 @@ export function ensureCustomerArtworkNotificationRuntime(env: NodeJS.ProcessEnv 
         profile.mode === 'customer' ? { credentialKeys: loadCredentialKeys(env) } : {},
       );
       const owned = core;
+      // Current, active installation generation of the shop (this deployment's app only).
+      const activeInstallation = async (scope: { shopId: string; installationGeneration: string }) =>
+        Boolean(
+          await owned.tenants.getActiveProviderScope({
+            shopId: scope.shopId,
+            installationGeneration: scope.installationGeneration,
+          }),
+        );
       let activeSignal: AbortSignal | undefined;
       const fetchImpl: typeof fetch = (url, init) =>
         fetch(url, {
@@ -127,13 +135,7 @@ export function ensureCustomerArtworkNotificationRuntime(env: NodeJS.ProcessEnv 
         ...(profile.mode === 'customer'
           ? {
               assertCustomerSending: async (scope) => {
-                const approved = await qualification();
-                if (
-                  !approved.tenantScopes.some(
-                    (target) =>
-                      target.shopId === scope.shopId && target.installationGeneration === scope.installationGeneration,
-                  )
-                )
+                if (!(await inQualifiedScope(await qualification(), scope, activeInstallation)))
                   throw new Error('CUSTOMER_EMAIL_RECIPIENT_UNAVAILABLE');
               },
             }
@@ -166,14 +168,12 @@ export function ensureCustomerArtworkNotificationRuntime(env: NodeJS.ProcessEnv 
           if (profile.mode === 'development')
             return selected.filter((notice) => developmentEligible?.(notice)).slice(0, limit);
           const approved = await qualification();
-          return selected
-            .filter((notice) =>
-              approved.tenantScopes.some(
-                (scope) =>
-                  scope.shopId === notice.shopId && scope.installationGeneration === notice.installationGeneration,
-              ),
-            )
-            .slice(0, limit);
+          const inScope: typeof selected = [];
+          for (const notice of selected) {
+            if (inScope.length >= limit) break;
+            if (await inQualifiedScope(approved, notice, activeInstallation)) inScope.push(notice);
+          }
+          return inScope;
         },
       };
       const delivery = createCustomerArtworkNotificationDelivery({
@@ -183,13 +183,7 @@ export function ensureCustomerArtworkNotificationRuntime(env: NodeJS.ProcessEnv 
         recipients: {
           async read(scope, orderId) {
             if (profile.mode === 'development') return 'insignia@optidigi.nl';
-            const approved = await qualification();
-            if (
-              !approved.tenantScopes.some(
-                (target) =>
-                  target.shopId === scope.shopId && target.installationGeneration === scope.installationGeneration,
-              )
-            )
+            if (!(await inQualifiedScope(await qualification(), scope, activeInstallation)))
               throw new Error('CUSTOMER_EMAIL_RECIPIENT_UNAVAILABLE');
             const email = await recipient.read({ ...scope, orderId });
             if (!email) throw new Error('CUSTOMER_EMAIL_RECIPIENT_UNAVAILABLE');

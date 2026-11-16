@@ -3,7 +3,11 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { loadCustomerEmailQualification } from '../src/server/customer-artwork/notification-qualification.ts';
+import {
+  ALL_ACTIVE_INSTALLATIONS,
+  inQualifiedScope,
+  loadCustomerEmailQualification,
+} from '../src/server/customer-artwork/notification-qualification.ts';
 import { createCustomerArtworkNotificationRunner } from '../src/server/customer-artwork/notification-runner.ts';
 import {
   developmentNoticeEligibility,
@@ -138,4 +142,68 @@ test('development eligibility is default deny, never backfills before its cut-of
   for (const bad of ['2026-11-11', 'yesterday', '2026-11-11T23:00:00Z', ''])
     assert.throws(() => developmentNoticeEligibility({ INSIGNIA_CUSTOMER_EMAIL_DEVELOPMENT_SINCE: bad }));
   assert.throws(() => developmentNoticeEligibility({ INSIGNIA_CUSTOMER_EMAIL_DEVELOPMENT_NOTICES: '["x"]' }));
+});
+
+test('a public-app grant may cover all active installations, by that exact value only', async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), 'customer-email-all-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const file = join(dir, 'qualification.json');
+  const base = {
+    version: 'customer-artwork-email-qualification-v1',
+    accountId: 'a'.repeat(32),
+    appOrigin: 'https://insignia.test',
+    sender: 'noreply@insigniacustomizer.com',
+    arbitraryRecipients: true,
+    protectedOrderEmail: true,
+    qualifiedAt: '2026-11-05T12:00:00Z',
+    providerEvidenceRef: 'owned/provider-proof',
+    recipientEvidenceRef: 'owned/recipient-proof',
+  };
+  const expected = { accountId: base.accountId, appOrigin: base.appOrigin, appClientId: 'app' };
+  const now = () => new Date('2026-11-16T12:00:00Z');
+  await writeFile(file, JSON.stringify({ ...base, tenantScopes: ALL_ACTIVE_INSTALLATIONS }), { mode: 0o600 });
+  const all = await loadCustomerEmailQualification(file, expected, now);
+  assert.equal(all.allActiveInstallations, true);
+  assert.deepEqual(all.tenantScopes, []);
+  for (const tenantScopes of ['all', 'ALL-ACTIVE-INSTALLATIONS', ' all-active-installations', '', [], null, {}]) {
+    await writeFile(file, JSON.stringify({ ...base, tenantScopes }), { mode: 0o600 });
+    await assert.rejects(loadCustomerEmailQualification(file, expected, now), /QUALIFICATION_UNAVAILABLE/);
+  }
+  // The other required evidence fields stay required in this mode.
+  const { providerEvidenceRef: _p, ...withoutEvidence } = base;
+  await writeFile(file, JSON.stringify({ ...withoutEvidence, tenantScopes: ALL_ACTIVE_INSTALLATIONS }), {
+    mode: 0o600,
+  });
+  await assert.rejects(loadCustomerEmailQualification(file, expected, now), /QUALIFICATION_UNAVAILABLE/);
+  // An explicit list still binds every entry to this app's client id.
+  await writeFile(
+    file,
+    JSON.stringify({ ...base, tenantScopes: [{ shopId: 'shop', installationGeneration: '1', appClientId: 'other' }] }),
+    { mode: 0o600 },
+  );
+  await assert.rejects(loadCustomerEmailQualification(file, expected, now), /QUALIFICATION_UNAVAILABLE/);
+});
+
+test('both grant modes send only to the current, active installation generation', async () => {
+  const active = new Set(['shop-a:2', 'shop-b:1']);
+  const isActive = async (scope: { shopId: string; installationGeneration: string }) =>
+    active.has(`${scope.shopId}:${scope.installationGeneration}`);
+  const all = { allActiveInstallations: true, tenantScopes: [] };
+  assert.equal(await inQualifiedScope(all, { shopId: 'shop-a', installationGeneration: '2' }, isActive), true);
+  assert.equal(await inQualifiedScope(all, { shopId: 'shop-b', installationGeneration: '1' }, isActive), true);
+  // Reinstalled (old generation) and uninstalled or unknown shops are out of scope.
+  assert.equal(await inQualifiedScope(all, { shopId: 'shop-a', installationGeneration: '1' }, isActive), false);
+  assert.equal(await inQualifiedScope(all, { shopId: 'shop-c', installationGeneration: '1' }, isActive), false);
+  const listed = {
+    allActiveInstallations: false,
+    tenantScopes: [{ shopId: 'shop-a', installationGeneration: '2', appClientId: 'app' }],
+  };
+  assert.equal(await inQualifiedScope(listed, { shopId: 'shop-a', installationGeneration: '2' }, isActive), true);
+  // Explicit mode: an active but unlisted installation stays out, as before.
+  assert.equal(await inQualifiedScope(listed, { shopId: 'shop-b', installationGeneration: '1' }, isActive), false);
+  // A listed generation that is no longer active is out too (same fencing as the public mode).
+  assert.equal(
+    await inQualifiedScope(listed, { shopId: 'shop-a', installationGeneration: '2' }, async () => false),
+    false,
+  );
 });
