@@ -148,7 +148,8 @@
     "test": {
       "description": "Preview a published product, add a design and check it in your cart.",
       "action": "Test a product",
-      "blocked": "Publish a customized product and finish theme setup before testing."
+      "blocked": "Publish a customized product and finish theme setup before testing.",
+      "markDone": "Mark as done"
     },
     "hideAction": "Hide",
     "showAction": "Show",

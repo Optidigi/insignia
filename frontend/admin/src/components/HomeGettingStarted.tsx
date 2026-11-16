@@ -151,6 +151,14 @@ export default function HomeGettingStarted({
               const locked = observed.includes(step.id);
               const active = activeStep === step.id;
               const detailId = `${contentId}-${step.id}`;
+              const toggleStep = () => {
+                if (!complete && completed.length === 2) pendingFocus.current = 'guide';
+                onCompleteStep?.(step.id, !complete);
+                if (!complete && active)
+                  setActiveStep(homeGuidanceStepIds.find((id) => id !== step.id && !completed.includes(id)));
+              };
+              // Only the merchant can say the customer test is done; the test itself stays available afterwards.
+              const offerMarkDone = step.id === 'test' && !testBlocked && !complete && !locked && !!onCompleteStep;
               return (
                 <li key={step.id}>
                   {index > 0 && <s-divider />}
@@ -171,14 +179,7 @@ export default function HomeGettingStarted({
                                   : 'home:guidance.markComplete',
                               { step: t(`home:guidance.stepLabels.${step.id}`) },
                             )}
-                            onChange={() => {
-                              if (!complete && completed.length === 2) pendingFocus.current = 'guide';
-                              onCompleteStep?.(step.id, !complete);
-                              if (!complete && active)
-                                setActiveStep(
-                                  homeGuidanceStepIds.find((id) => id !== step.id && !completed.includes(id)),
-                                );
-                            }}
+                            onChange={toggleStep}
                           />
                         </label>
                         <button
@@ -223,6 +224,9 @@ export default function HomeGettingStarted({
                                 >
                                   {actionLabel}
                                 </s-button>
+                              )}
+                              {offerMarkDone && (
+                                <s-button onClick={toggleStep}>{t('home:guidance.test.markDone')}</s-button>
                               )}
                             </div>
                           </s-stack>

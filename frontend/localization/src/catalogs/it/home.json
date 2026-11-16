@@ -149,7 +149,8 @@
     "test": {
       "description": "Apri l'anteprima di un prodotto pubblicato, aggiungi una personalizzazione e controlla il risultato nel carrello.",
       "action": "Prova un prodotto",
-      "blocked": "Pubblica un prodotto personalizzato e completa la configurazione del tema prima di fare una prova."
+      "blocked": "Pubblica un prodotto personalizzato e completa la configurazione del tema prima di fare una prova.",
+      "markDone": "Segna come completato"
     },
     "hideAction": "Nascondi",
     "showAction": "Mostra",

@@ -148,7 +148,8 @@
     "test": {
       "description": "Sehen Sie sich ein veröffentlichtes Produkt in der Vorschau an, fügen Sie eine Gestaltung hinzu und prüfen Sie sie in Ihrem Warenkorb.",
       "action": "Produkt testen",
-      "blocked": "Veröffentlichen Sie ein Produkt mit Produktanpassung und schließen Sie die Theme-Einrichtung ab, bevor Sie testen."
+      "blocked": "Veröffentlichen Sie ein Produkt mit Produktanpassung und schließen Sie die Theme-Einrichtung ab, bevor Sie testen.",
+      "markDone": "Als erledigt markieren"
     },
     "hideAction": "Ausblenden",
     "showAction": "Anzeigen",

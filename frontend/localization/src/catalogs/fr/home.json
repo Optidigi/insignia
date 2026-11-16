@@ -149,7 +149,8 @@
     "test": {
       "description": "Prévisualisez un produit publié, ajoutez une personnalisation, puis vérifiez-la dans votre panier.",
       "action": "Tester un produit",
-      "blocked": "Publiez un produit personnalisable et terminez la configuration du thème avant de lancer le test."
+      "blocked": "Publiez un produit personnalisable et terminez la configuration du thème avant de lancer le test.",
+      "markDone": "Marquer comme terminé"
     },
     "hideAction": "Masquer",
     "showAction": "Afficher",

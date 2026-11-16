@@ -334,6 +334,34 @@ test('saving guidance writes only the merchant acknowledgements, never observed 
   assert.deepEqual(command?.guidance.completedSteps, ['test']);
 });
 
+test('the test step offers an explicit Mark as done, and testing stays available once done', {
+  timeout: 30000,
+}, async (t) => {
+  const saves: unknown[] = [];
+  const page = await openMerchantPage(t, '/admin/home', { embed: 'active', product: 'published', saves });
+  await page.getByText('2 of 3 complete', { exact: true }).waitFor();
+  await stepCheckbox(page, 'Mark customer test as complete').click({ trial: true }); // preferences loaded
+  assert.equal(await page.getByRole('link', { name: 'Test a product' }).count(), 1);
+  await page.getByRole('button', { name: 'Mark as done', exact: true }).click();
+  await page.getByText('3 of 3 complete', { exact: true }).waitFor();
+  const [command] = saves as { guidance: { completedSteps: string[] } }[];
+  assert.deepEqual(command?.guidance.completedSteps, ['test']);
+  // The completed guide can be reopened: the test is still there, the done button is not.
+  await page.getByRole('button', { name: 'Show getting started guide' }).click();
+  await page.getByRole('button', { name: 'Test a customization' }).click();
+  await page.getByRole('link', { name: 'Test a product' }).waitFor();
+  assert.equal(await page.getByRole('button', { name: 'Mark as done', exact: true }).count(), 0);
+  assert.equal(await stepCheckbox(page, 'Mark customer test as incomplete').isChecked(), true);
+});
+
+test('Mark as done is not offered before the store can be tested', { timeout: 30000 }, async (t) => {
+  const page = await openMerchantPage(t, '/admin/home', { embed: 'available', product: 'published' });
+  await page.getByText('1 of 3 complete', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Test a customization' }).click();
+  await page.getByText('Publish a customized product and finish theme setup before testing.').waitFor();
+  assert.equal(await page.getByRole('button', { name: 'Mark as done', exact: true }).count(), 0);
+});
+
 test('Home reads publication from the database-only setup status and never pages the catalog for it', {
   timeout: 30000,
 }, async (t) => {

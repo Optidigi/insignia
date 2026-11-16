@@ -148,7 +148,8 @@
     "test": {
       "description": "Bekijk een voorbeeld van een gepubliceerd product, voeg een ontwerp toe en controleer het in je winkelwagen.",
       "action": "Product testen",
-      "blocked": "Publiceer een product met personalisatie en rond de thema-instellingen af voordat je gaat testen."
+      "blocked": "Publiceer een product met personalisatie en rond de thema-instellingen af voordat je gaat testen.",
+      "markDone": "Markeren als voltooid"
     },
     "hideAction": "Verbergen",
     "showAction": "Weergeven",

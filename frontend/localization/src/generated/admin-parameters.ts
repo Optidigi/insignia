@@ -1557,6 +1557,7 @@ export const adminParameterContracts = {
   'home:guidance.test.action': {},
   'home:guidance.test.blocked': {},
   'home:guidance.test.description': {},
+  'home:guidance.test.markDone': {},
   'home:loading.activity': {},
   'home:loading.home': {},
   'home:loading.orders': {},
