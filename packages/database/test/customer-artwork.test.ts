@@ -7,6 +7,7 @@ import { collectDatabaseSnapshot } from '../../../scripts/operations/heartbeat-s
 import { createDurableCore } from '../src/index.js';
 import { createArtworkRepository } from '../src/repositories/artwork.js';
 import { createCustomerArtworkRepository } from '../src/repositories/customer-artwork.js';
+import { createMerchantPreferencesRepository } from '../src/repositories/merchant-preferences.js';
 import { createPurchaseRepository } from '../src/repositories/purchase.js';
 import { openTestDatabase } from './support/postgres.js';
 import { purchaseFixture } from './support/purchase-fixture.js';
@@ -261,6 +262,104 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('customer purchase artwork aut
     );
     expect(await f.repo.claimNotification(notice.notificationId, hash)).toBe(false);
   });
+  it('a store that turns customer email off settles its notices as SUPPRESSED and never sends them later', async () => {
+    const f = await fixture();
+    const preferences = createMerchantPreferencesRepository(db);
+    const shop = 'customer-email-off.myshopify.com';
+    const authority = 'c'.repeat(64);
+    const fresh = await preferences.read(f.shopId, shop, authority);
+    expect(fresh.notifications).toEqual({ customerArtworkEmail: true });
+    expect(fresh.notificationsVersion).toBe('0');
+    const pay = (purchaseId: string) =>
+      sql`INSERT INTO purchase_paid_facts(purchase_id,shop_id,installation_generation,occurred_at) VALUES(${purchaseId}::uuid,${f.shopId},${f.generation}::bigint,clock_timestamp()) ON CONFLICT DO NOTHING`.execute(
+        db,
+      );
+    const state = async (notificationId: string) =>
+      (
+        await sql<{
+          state: string;
+          settled: boolean;
+          attempts: number;
+        }>`SELECT state,settled_at IS NOT NULL AS settled,attempts FROM customer_artwork_notifications WHERE notification_id=${notificationId}::uuid`.execute(
+          db,
+        )
+      ).rows[0];
+    await pay(f.purchaseId);
+    const listed = (await f.repo.pendingNotifications(100)).find((notice) => notice.purchaseId === f.purchaseId);
+    if (!listed) throw new Error('Missing planned notification');
+    // The merchant turns it off after the notice was selected but before it is claimed: the claim is fenced.
+    const off = await preferences.save(f.shopId, shop, {
+      action: 'notifications',
+      authority,
+      expectedVersion: '0',
+      notifications: { customerArtworkEmail: false },
+    });
+    expect(off?.notifications).toEqual({ customerArtworkEmail: false });
+    expect(off?.notificationsVersion).toBe('1');
+    expect(off?.guidanceVersion).toBe('0');
+    const hash = listed.notificationId.replaceAll('-', '').repeat(2);
+    await f.repo.issue(f.scope, {
+      ...f.request,
+      requestId: listed.notificationId,
+      purpose: 'paid-email',
+      capabilityHash: hash,
+    });
+    expect(await f.repo.claimNotification(listed.notificationId, hash)).toBe(false);
+    expect(await state(listed.notificationId)).toEqual({ state: 'SUPPRESSED', settled: true, attempts: 0 });
+    // A stale version does not overwrite the choice.
+    expect(
+      await preferences.save(f.shopId, shop, {
+        action: 'notifications',
+        authority,
+        expectedVersion: '0',
+        notifications: { customerArtworkEmail: true },
+      }),
+    ).toBeNull();
+    // A notice planned while it is off (another store, turned off before payment) is settled at the next scan.
+    const later = await fixture();
+    expect(
+      (
+        await preferences.save(later.shopId, 'customer-email-later.myshopify.com', {
+          action: 'notifications',
+          authority,
+          expectedVersion: '0',
+          notifications: { customerArtworkEmail: false },
+        })
+      )?.notifications,
+    ).toEqual({ customerArtworkEmail: false });
+    await sql`INSERT INTO purchase_paid_facts(purchase_id,shop_id,installation_generation,occurred_at) VALUES(${later.purchaseId}::uuid,${later.shopId},${later.generation}::bigint,clock_timestamp())`.execute(
+      db,
+    );
+    const planned = (
+      await sql<{
+        notification_id: string;
+      }>`SELECT notification_id::text FROM customer_artwork_notifications WHERE purchase_id=${later.purchaseId}::uuid`.execute(
+        db,
+      )
+    ).rows[0];
+    if (!planned) throw new Error('Missing notice planned while off');
+    expect((await later.repo.pendingNotifications(100)).some((notice) => notice.purchaseId === later.purchaseId)).toBe(
+      false,
+    );
+    expect(await state(planned.notification_id)).toEqual({ state: 'SUPPRESSED', settled: true, attempts: 0 });
+    const second = await fixture();
+    // Turning it back on does not revive suppressed notices; another store was never affected.
+    const on = await preferences.save(f.shopId, shop, {
+      action: 'notifications',
+      authority,
+      expectedVersion: '1',
+      notifications: { customerArtworkEmail: true },
+    });
+    expect(on?.notifications).toEqual({ customerArtworkEmail: true });
+    expect((await f.repo.pendingNotifications(100)).some((notice) => notice.purchaseId === f.purchaseId)).toBe(false);
+    expect(await state(listed.notificationId)).toEqual({ state: 'SUPPRESSED', settled: true, attempts: 0 });
+    await sql`INSERT INTO purchase_paid_facts(purchase_id,shop_id,installation_generation,occurred_at) VALUES(${second.purchaseId}::uuid,${second.shopId},${second.generation}::bigint,clock_timestamp())`.execute(
+      db,
+    );
+    expect(
+      (await second.repo.pendingNotifications(100)).some((notice) => notice.purchaseId === second.purchaseId),
+    ).toBe(true);
+  });
   it('does not plan missing-artwork email when the customer already filled every slot before payment', async () => {
     const f = await fixture();
     await f.repo.issue(f.scope, f.request);
@@ -356,6 +455,41 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('customer purchase artwork aut
           (row) => row.notificationId === notice.notificationId,
         ),
       ).toBe(false);
+      // The web role alone can turn the store's customer email off and settle a waiting notice (#D7).
+      const core = runtime;
+      const later = await fixture();
+      await owner.query(
+        'INSERT INTO purchase_paid_facts(purchase_id,shop_id,installation_generation,occurred_at) VALUES($1,$2,$3,clock_timestamp())',
+        [later.purchaseId, later.shopId, later.generation],
+      );
+      const waiting = (await core.customerArtwork.pendingNotifications(100)).find(
+        (row) => row.purchaseId === later.purchaseId,
+      );
+      if (!waiting) throw new Error('Missing restricted-role notice for the email setting');
+      const saved = await core.transactions.run((tx) =>
+        core.preferences.save(tx, later.shopId, 'restricted-email.myshopify.com', {
+          action: 'notifications',
+          authority: 'd'.repeat(64),
+          expectedVersion: '0',
+          notifications: { customerArtworkEmail: false },
+        }),
+      );
+      expect(saved?.notifications).toEqual({ customerArtworkEmail: false });
+      const waitingHash = waiting.notificationId.replaceAll('-', '').repeat(2);
+      await core.customerArtwork.issue(later.scope, {
+        purchaseId: later.purchaseId,
+        requestId: waiting.notificationId,
+        purpose: 'paid-email',
+        capabilityHash: waitingHash,
+      });
+      expect(await core.customerArtwork.claimNotification(waiting.notificationId, waitingHash)).toBe(false);
+      expect(
+        (
+          await owner.query('SELECT state FROM customer_artwork_notifications WHERE notification_id=$1', [
+            waiting.notificationId,
+          ])
+        ).rows[0],
+      ).toEqual({ state: 'SUPPRESSED' });
 
       for (const query of [
         "UPDATE customer_artwork_grants SET slots='[]'::jsonb",

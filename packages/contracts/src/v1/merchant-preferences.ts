@@ -33,6 +33,8 @@ export const MerchantGuidanceSchema = z
       .refine((steps) => new Set(steps).size === steps.length, 'Duplicate guidance step'),
   })
   .strict();
+/** Store-wide notification choices. Automatic customer artwork email is on unless the merchant turns it off. */
+export const MerchantNotificationsSchema = z.object({ customerArtworkEmail: z.boolean() }).strict();
 export const MerchantPreferencesViewSchema = z
   .object({
     version: z.literal('merchant-preferences-v1'),
@@ -42,8 +44,10 @@ export const MerchantPreferencesViewSchema = z
     shop: z.string().regex(/^[a-z0-9][a-z0-9-]{0,62}\.myshopify\.com$/),
     guidanceVersion: version,
     wordingVersion: version,
+    notificationsVersion: version,
     guidance: MerchantGuidanceSchema,
     overlays: MerchantCustomerWordingOverlaysSchema,
+    notifications: MerchantNotificationsSchema,
   })
   .strict();
 export const MerchantPreferencesCommandSchema = z.discriminatedUnion('action', [
@@ -63,6 +67,14 @@ export const MerchantPreferencesCommandSchema = z.discriminatedUnion('action', [
       overlays: MerchantCustomerWordingOverlaysSchema,
     })
     .strict(),
+  z
+    .object({
+      action: z.literal('notifications'),
+      authority: z.string().regex(/^[a-f0-9]{64}$/),
+      expectedVersion: version,
+      notifications: MerchantNotificationsSchema,
+    })
+    .strict(),
 ]);
 export const MerchantCustomerWordingViewSchema = z
   .object({ wordingVersion: version, overlays: MerchantCustomerWordingOverlaysSchema })
@@ -71,4 +83,5 @@ export type MerchantCustomerWordingView = z.infer<typeof MerchantCustomerWording
 export type MerchantPreferencesView = z.infer<typeof MerchantPreferencesViewSchema>;
 export type MerchantPreferencesCommand = z.infer<typeof MerchantPreferencesCommandSchema>;
 export type MerchantGuidance = z.infer<typeof MerchantGuidanceSchema>;
+export type MerchantNotifications = z.infer<typeof MerchantNotificationsSchema>;
 export type MerchantCustomerWordingOverlays = z.infer<typeof MerchantCustomerWordingOverlaysSchema>;

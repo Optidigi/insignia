@@ -628,5 +628,17 @@
     "automatic": "Usa la lingua di Shopify",
     "failure": "Non è stato possibile cambiare la lingua. Riprova.",
     "preferences": "Preferenze"
+  },
+  "customerEmail": {
+    "heading": "Email ai clienti",
+    "label": "Invia un’email ai clienti quando manca la grafica",
+    "details": "Quando a un ordine pagato manca ancora la grafica, Insignia invia al cliente via email un link di caricamento sicuro. Disattiva l’opzione se preferisci contattare tu i clienti: apri l’ordine e copia il link di caricamento cliente.",
+    "readOnly": "Quando a un ordine pagato manca ancora la grafica, Insignia invia al cliente via email un link di caricamento sicuro. Solo il personale che può modificare Insignia può cambiare questa opzione.",
+    "unavailable": "Non è stato possibile caricare questa impostazione. Ricarica la pagina per riprovare.",
+    "notice": {
+      "save-failed": "Non è stato possibile salvare la modifica. Riprova.",
+      "busy": "Shopify è occupato in questo momento, quindi non è stato modificato nulla. Attendi qualche secondo e riprova.",
+      "changed-elsewhere": "Questa impostazione è stata modificata altrove. Viene mostrata l’impostazione attuale."
+    }
   }
 }

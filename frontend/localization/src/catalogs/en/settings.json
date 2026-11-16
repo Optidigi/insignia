@@ -625,5 +625,17 @@
     "automatic": "Use Shopify language",
     "failure": "Language couldn’t be changed. Try again.",
     "preferences": "Preferences"
+  },
+  "customerEmail": {
+    "heading": "Customer emails",
+    "label": "Email customers about missing artwork",
+    "details": "When a paid order still needs artwork, Insignia emails the customer a secure upload link. Turn this off to contact customers yourself: open the order and copy the customer upload link.",
+    "readOnly": "When a paid order still needs artwork, Insignia emails the customer a secure upload link. Only staff who can edit Insignia can change this.",
+    "unavailable": "This setting couldn’t be loaded. Reload the page to try again.",
+    "notice": {
+      "save-failed": "Your change couldn’t be saved. Try again.",
+      "busy": "Shopify is busy right now, so nothing was changed. Wait a few seconds and try again.",
+      "changed-elsewhere": "This setting was changed somewhere else. The current setting is shown."
+    }
   }
 }

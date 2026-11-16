@@ -18,6 +18,13 @@ export interface MerchantPreferences {
   read(actor: AdminActor): Promise<MerchantPreferencesView>;
   save(actor: AdminActor, input: MerchantPreferencesCommand, key: string): Promise<PreferencesOutcome>;
 }
+type Section = MerchantPreferencesCommand['action'];
+const sectionVersion = (view: MerchantPreferencesView, section: Section) =>
+  section === 'guidance'
+    ? view.guidanceVersion
+    : section === 'wording'
+      ? view.wordingVersion
+      : view.notificationsVersion;
 const conflict = (): PreferencesOutcome => ({
   kind: 'conflict',
   message: 'Store preferences changed. Reload before saving again.',
@@ -79,22 +86,17 @@ export function createMerchantPreferences(core: DurableCore): MerchantPreference
             const saved = await core.preferences.save(tx, actor.tenantShopId, actor.shop, command);
             return JSON.stringify(
               saved
-                ? {
-                    kind: 'saved',
-                    section: command.action,
-                    version: command.action === 'guidance' ? saved.guidanceVersion : saved.wordingVersion,
-                  }
+                ? { kind: 'saved', section: command.action, version: sectionVersion(saved, command.action) }
                 : conflict(),
             );
           },
         );
         const result = JSON.parse(executed.resultRef) as
-          | { kind: 'saved'; section: 'guidance' | 'wording'; version: string }
+          | { kind: 'saved'; section: Section; version: string }
           | { kind: 'conflict'; message: string };
         if (result.kind === 'conflict') return result;
         const current = await core.preferences.read(tx, actor.tenantShopId, actor.shop, authority);
-        const version = result.section === 'guidance' ? current.guidanceVersion : current.wordingVersion;
-        return version === result.version
+        return sectionVersion(current, result.section) === result.version
           ? {
               kind: 'saved',
               preferences: { ...current, canEdit: actor.canEdit, canReadPrivacy: canReadPurchaseRecords(actor) },

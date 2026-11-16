@@ -7,14 +7,21 @@ import {
 import { sql } from 'kysely';
 import type { DatabaseExecutor } from '../client/database.js';
 
-type Row = { guidance_version: string; wording_version: string; guidance: unknown; overlays: unknown };
+type Row = {
+  guidance_version: string;
+  wording_version: string;
+  notifications_version: string;
+  guidance: unknown;
+  overlays: unknown;
+  customer_artwork_email: boolean;
+};
 const emptyGuidance = { dismissed: false, completedSteps: [] };
 const emptyOverlays = { en: { locale: 'en', messages: {} } };
-/** Mutable store-wide guidance/wording; product revision text is owned elsewhere. */
+/** Mutable store-wide guidance, wording and notification choices; product revision text is owned elsewhere. */
 export function createMerchantPreferencesRepository(db: DatabaseExecutor) {
   async function read(shopId: string, shop: string, authority: string): Promise<MerchantPreferencesView> {
     const row = (
-      await sql<Row>`SELECT guidance_version::text,wording_version::text,guidance,overlays FROM merchant_preferences WHERE shop_id=${shopId}`.execute(
+      await sql<Row>`SELECT guidance_version::text,wording_version::text,notifications_version::text,guidance,overlays,customer_artwork_email FROM merchant_preferences WHERE shop_id=${shopId}`.execute(
         db,
       )
     ).rows[0];
@@ -24,8 +31,11 @@ export function createMerchantPreferencesRepository(db: DatabaseExecutor) {
       shop,
       guidanceVersion: row?.guidance_version ?? '0',
       wordingVersion: row?.wording_version ?? '0',
+      notificationsVersion: row?.notifications_version ?? '0',
       guidance: row?.guidance ?? emptyGuidance,
       overlays: row?.overlays ?? emptyOverlays,
+      // No row yet: the store has never changed it, so automatic customer email is on.
+      notifications: { customerArtworkEmail: row?.customer_artwork_email ?? true },
     });
   }
   return {
@@ -58,9 +68,14 @@ export function createMerchantPreferencesRepository(db: DatabaseExecutor) {
           ? await sql`UPDATE merchant_preferences SET guidance=${JSON.stringify(command.guidance)}::jsonb,guidance_version=guidance_version+1,updated_at=clock_timestamp() WHERE shop_id=${shopId} AND guidance_version=${command.expectedVersion}::bigint RETURNING shop_id`.execute(
               db,
             )
-          : await sql`UPDATE merchant_preferences SET overlays=${JSON.stringify(command.overlays)}::jsonb,wording_version=wording_version+1,updated_at=clock_timestamp() WHERE shop_id=${shopId} AND wording_version=${command.expectedVersion}::bigint RETURNING shop_id`.execute(
-              db,
-            );
+          : command.action === 'wording'
+            ? await sql`UPDATE merchant_preferences SET overlays=${JSON.stringify(command.overlays)}::jsonb,wording_version=wording_version+1,updated_at=clock_timestamp() WHERE shop_id=${shopId} AND wording_version=${command.expectedVersion}::bigint RETURNING shop_id`.execute(
+                db,
+              )
+            : // The row lock serializes with a notice claim, which reads this choice FOR SHARE.
+              await sql`UPDATE merchant_preferences SET customer_artwork_email=${command.notifications.customerArtworkEmail},notifications_version=notifications_version+1,updated_at=clock_timestamp() WHERE shop_id=${shopId} AND notifications_version=${command.expectedVersion}::bigint RETURNING shop_id`.execute(
+                db,
+              );
       return result.rows.length ? read(shopId, shop, command.authority) : null;
     },
   };

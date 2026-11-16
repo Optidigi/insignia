@@ -51,6 +51,8 @@ describe('merchant preferences wire boundary', () => {
       shop: 'example.myshopify.com',
       guidanceVersion: '0',
       wordingVersion: '4',
+      notificationsVersion: '0',
+      notifications: { customerArtworkEmail: true },
       guidance: { dismissed: false, completedSteps: [] },
       overlays: { en: { locale: 'en', messages: {} } },
     };

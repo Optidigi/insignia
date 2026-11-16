@@ -9,6 +9,8 @@ const view = {
   shop: 'synthetic.myshopify.com',
   guidanceVersion: '0',
   wordingVersion: '0',
+  notificationsVersion: '0',
+  notifications: { customerArtworkEmail: true },
   guidance: { dismissed: false, completedSteps: [] },
   overlays: { en: { locale: 'en', messages: {} } },
 };

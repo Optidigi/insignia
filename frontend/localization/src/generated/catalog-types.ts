@@ -2138,6 +2138,14 @@ export interface AdminMessageTable {
   'products:table.product': object;
   'products:table.region': object;
   'products:table.variants': object;
+  'settings:customerEmail.details': object;
+  'settings:customerEmail.heading': object;
+  'settings:customerEmail.label': object;
+  'settings:customerEmail.notice.busy': object;
+  'settings:customerEmail.notice.changed-elsewhere': object;
+  'settings:customerEmail.notice.save-failed': object;
+  'settings:customerEmail.readOnly': object;
+  'settings:customerEmail.unavailable': object;
   'settings:destinations.billing.description': object;
   'settings:destinations.billing.title': object;
   'settings:destinations.permissions.description': object;

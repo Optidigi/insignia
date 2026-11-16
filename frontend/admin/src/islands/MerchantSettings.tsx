@@ -1,4 +1,3 @@
-import { MerchantPreferencesViewSchema } from '@insignia/contracts';
 import {
   createLanguagePreferenceState,
   LANGUAGE_OPTIONS,
@@ -17,7 +16,16 @@ import {
   writeAdminLanguagePreference,
 } from '../shared/admin-i18n.js';
 import { useAdminPageReady } from '../shared/admin-page-ready.js';
-import { authenticatedJson } from '../shared/admin-request.js';
+import { isShopifyBusy } from '../shared/admin-request.js';
+import {
+  customerEmailSettingChecked,
+  customerEmailSettingReducer,
+  initialCustomerEmailSettingState,
+} from '../shared/customer-email-setting-state.js';
+import {
+  createMerchantPreferencesClient,
+  MerchantPreferencesConflictError,
+} from '../shared/merchant-preferences-client.js';
 
 const destinations = [
   {
@@ -45,19 +53,83 @@ const automaticLanguageValue = 'automatic';
 
 function MerchantSettings({ real = false }: { real?: boolean }) {
   const [canReadPrivacy, setCanReadPrivacy] = useState(false);
-  useEffect(() => {
+  const preferences = useRef<ReturnType<typeof createMerchantPreferencesClient> | null>(null);
+  const [emailState, dispatchEmail] = useReducer(customerEmailSettingReducer, undefined, () =>
+    initialCustomerEmailSettingState(),
+  );
+  const emailGeneration = useRef(0);
+  const emailOperation = useRef(0);
+  const emailField = useRef<HTMLElementTagNameMap['s-switch']>(null);
+  const restoreEmailFocus = useRef(false);
+  const mounted = useRef(true);
+  useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    [],
+  );
+  function loadPreferences() {
     if (!real) return;
-    const controller = new AbortController();
-    void authenticatedJson<unknown>('/api/admin/preferences', { signal: controller.signal })
-      .then((value) => {
-        const preferences = MerchantPreferencesViewSchema.parse(value);
-        if (!controller.signal.aborted) setCanReadPrivacy(preferences.canReadPrivacy === true);
+    preferences.current ??= createMerchantPreferencesClient();
+    const generation = ++emailGeneration.current;
+    dispatchEmail({ type: 'load-started', generation });
+    // The same read also resumes a store-preference save that a previous visit left unconfirmed.
+    void preferences.current
+      .read()
+      .then((view) => {
+        if (!mounted.current) return;
+        setCanReadPrivacy(view.canReadPrivacy === true);
+        dispatchEmail({
+          type: 'loaded',
+          generation,
+          enabled: view.notifications.customerArtworkEmail,
+          canEdit: view.canEdit === true,
+        });
       })
       .catch(() => {
-        if (!controller.signal.aborted) setCanReadPrivacy(false);
+        if (!mounted.current) return;
+        setCanReadPrivacy(false);
+        dispatchEmail({ type: 'load-failed', generation });
       });
-    return () => controller.abort();
-  }, [real]);
+  }
+  useEffect(loadPreferences, [real]);
+  async function chooseCustomerEmail(enabled: boolean) {
+    const client = preferences.current;
+    if (!client || emailState.phase !== 'ready' || !emailState.canEdit || emailState.enabled === enabled) return;
+    restoreEmailFocus.current = document.activeElement === emailField.current;
+    const operation = ++emailOperation.current;
+    dispatchEmail({ type: 'change-requested', operation, enabled });
+    try {
+      const view = await client.saveNotifications({ customerArtworkEmail: enabled });
+      if (mounted.current)
+        dispatchEmail({ type: 'save-succeeded', operation, enabled: view.notifications.customerArtworkEmail });
+    } catch (error) {
+      if (!mounted.current) return;
+      if (error instanceof MerchantPreferencesConflictError) {
+        dispatchEmail({ type: 'save-conflicted', operation });
+        loadPreferences();
+        return;
+      }
+      dispatchEmail({ type: 'save-failed', operation, reason: isShopifyBusy(error) ? 'busy' : 'failed' });
+    }
+  }
+  const emailChecked = customerEmailSettingChecked(emailState);
+  const emailSaving = emailState.phase === 'saving';
+  const emailNotice = emailState.phase === 'ready' || emailState.phase === 'loading' ? emailState.notice : null;
+  useLayoutEffect(() => {
+    if (emailSaving || !restoreEmailFocus.current) return;
+    restoreEmailFocus.current = false;
+    // Same as the language field: re-enabling must not leave focus on the document.
+    const frame = requestAnimationFrame(() => {
+      if (
+        !document.activeElement ||
+        document.activeElement === document.body ||
+        document.activeElement === document.documentElement
+      )
+        emailField.current?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [emailSaving]);
   const rows =
     real && canReadPrivacy
       ? [
@@ -163,6 +235,34 @@ function MerchantSettings({ real = false }: { real?: boolean }) {
           ))}
         </s-select>
       </s-section>
+      {real && (
+        <s-section heading={translateUi('settings:customerEmail.heading')}>
+          {emailState.phase === 'unavailable' ? (
+            <s-paragraph>{translateUi('settings:customerEmail.unavailable')}</s-paragraph>
+          ) : (
+            <s-stack gap="base">
+              <s-switch
+                id="customer-artwork-email"
+                ref={emailField}
+                label={translateUi('settings:customerEmail.label')}
+                details={translateUi(
+                  emailState.phase === 'ready' && !emailState.canEdit
+                    ? 'settings:customerEmail.readOnly'
+                    : 'settings:customerEmail.details',
+                )}
+                checked={emailChecked === true}
+                disabled={emailChecked === null || emailSaving || (emailState.phase === 'ready' && !emailState.canEdit)}
+                onChange={(event) => void chooseCustomerEmail(event.currentTarget.checked)}
+              />
+              {emailNotice && (
+                <s-banner tone={emailNotice === 'changed-elsewhere' ? 'info' : 'warning'}>
+                  <s-paragraph>{translateUi(`settings:customerEmail.notice.${emailNotice}`)}</s-paragraph>
+                </s-banner>
+              )}
+            </s-stack>
+          )}
+        </s-section>
+      )}
       <s-section accessibilityLabel={translateUi('settings:merchantSettings.settings')} padding="none">
         <s-box padding="small-400">
           {rows.map((row, index) => (
