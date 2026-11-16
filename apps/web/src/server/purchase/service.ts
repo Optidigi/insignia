@@ -166,7 +166,11 @@ export function createPurchaseServices(input: {
       firstPaidAt: purchase.firstPaidAt,
       financialStatus: latest?.financialStatus ?? 'UNKNOWN',
       cancelledAt: latest?.cancelledAt ?? null,
-      exceptions: [...new Set(purchase.observations.map((o) => o.exception).filter((e): e is string => !!e))],
+      // Review state is the newest observation's verdict (observations arrive newest first). Each
+      // observation re-checks the whole order against what was recorded at creation, so lasting problems
+      // (edits, missing markers, unreconciled payments) are re-flagged by every later observation, while
+      // a problem a later observation no longer finds, such as a payment fact fixed by #539, clears.
+      exceptions: latest?.exception ? [latest.exception] : [],
       canUploadArtwork: actor.canUploadArtwork,
       canShareCustomerArtwork:
         actor.canUploadArtwork &&

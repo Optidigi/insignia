@@ -281,3 +281,42 @@ test('search reconciles one bounded label batch and refuses to claim complete re
   });
   await assert.rejects(() => incomplete.list(actor, { limit: 10, before: null, q: '#1001' }), /SEARCH_INCOMPLETE/);
 });
+
+test('needs-review follows the newest observation: an earlier exception a later clean observation cleared is not shown', async () => {
+  const observation = (at: string, exception: string | null) => ({
+    sourceUpdatedAt: at,
+    observedAt: at,
+    financialStatus: 'PAID',
+    cancelledAt: null,
+    exception,
+  });
+  const listed = async (observations: ReturnType<typeof observation>[]) => {
+    const record = purchaseRecord({ ...view, bindings: [], observations: observations as never, artworkEvents: [] });
+    const services = createPurchaseServices({
+      core: coreFixture({ purchases: { list: async () => [record] } }),
+      appOrigin: 'https://insignia.example',
+      authenticate: async () => actor,
+      orderNames: async () => ({}),
+      orderPresentation: async () => {
+        throw Error('No per-row lookup');
+      },
+    });
+    return required((await services.list(actor, { limit: 10, before: null })).items[0]).exceptions;
+  };
+  // Newest first, as the repository returns them.
+  assert.deepEqual(
+    await listed([
+      observation('2026-11-16T22:20:57Z', null),
+      observation('2026-11-16T21:46:46Z', 'INVALID_PAYMENT_TIME'),
+    ]),
+    [],
+  );
+  assert.deepEqual(
+    await listed([
+      observation('2026-11-16T22:20:57Z', 'UNSUPPORTED_ORDER_EDIT'),
+      observation('2026-11-16T21:46:46Z', null),
+    ]),
+    ['UNSUPPORTED_ORDER_EDIT'],
+  );
+  assert.deepEqual(await listed([]), []);
+});
