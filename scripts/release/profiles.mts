@@ -7,6 +7,8 @@ import a11yQuantityModules from '../../deployment/m5-runtime/native-a11y-quantit
 import a11yQuantityBinding from '../../deployment/m5-runtime/native-a11y-quantity-release-binding.json' with {
   type: 'json',
 };
+import allOrdersModules from '../../deployment/m5-runtime/native-allorders-module-baseline.json' with { type: 'json' };
+import allOrdersBinding from '../../deployment/m5-runtime/native-allorders-release-binding.json' with { type: 'json' };
 import behaviorModules from '../../deployment/m5-runtime/native-behavior-module-baseline.json' with { type: 'json' };
 import behaviorCandidate from '../../deployment/m5-runtime/native-behavior-release-binding.json' with { type: 'json' };
 import buyerFixesModules from '../../deployment/m5-runtime/native-buyer-fixes-module-baseline.json' with {
@@ -182,6 +184,16 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  // Same theme, Functions and modules as scopes; only read_all_orders joins the required app_access scopes.
+  'native-allorders-c0bb261a': {
+    versionId: allOrdersBinding.versionId,
+    versionTag: allOrdersBinding.versionTag,
+    versionIds: allOrdersBinding.versionIds,
+    moduleHash: allOrdersBinding.moduleHash,
+    modules: allOrdersModules,
+    grants: [...grants, 'read_orders', 'read_all_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   // Same theme and Functions as designer; only the app_access scopes change (spec §6.1 baseline required).
   'native-scopes-e896db0a': {
     versionId: scopesBinding.versionId,
