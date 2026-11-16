@@ -21,6 +21,35 @@ const credentials = (acquire: OfflineCredentialLifecyclePort['acquire']): Offlin
 });
 
 describe('M3 Admin credential bridge', () => {
+  test('passes a caller validity window through, within what the credential store accepts', async () => {
+    const getActiveProviderScope = vi.fn(async () => scope);
+    const acquire = vi.fn(async () => ({
+      kind: 'usable' as const,
+      accessToken: 'synthetic-token',
+      accessExpiresAt: new Date('2026-10-01T00:00:00Z'),
+    }));
+    const source = createAdminReadCredentialSource({
+      tenants: { getActiveProviderScope },
+      credentials: credentials(acquire),
+      refresh,
+      minimumRemainingMs: 300_000,
+      claimLeaseMs: 90_000,
+    });
+    await source.acquire(input);
+    expect(acquire).toHaveBeenCalledWith(
+      expect.objectContaining({ minimumRemainingMs: 300_000, claimLeaseMs: 90_000 }),
+    );
+    // The credential store refuses a window over 300 s, so the bridge refuses it up front.
+    for (const minimumRemainingMs of [300_001, 310_000, 29_999])
+      expect(() =>
+        createAdminReadCredentialSource({
+          tenants: { getActiveProviderScope },
+          credentials: credentials(acquire),
+          refresh,
+          minimumRemainingMs,
+        }),
+      ).toThrow(TypeError);
+  });
   test('joins the active M3 scope to its fenced usable token and rechecks before returning', async () => {
     const getActiveProviderScope = vi.fn(async () => scope);
     const acquire = vi.fn(async () => ({
