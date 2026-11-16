@@ -305,6 +305,32 @@ Bumping the epoch without revoking the leaked key is not enough: the following r
 
 An HSM- or KMS-held KEK remains a recommendation for a later change.
 
+## Image custody (GHCR)
+
+CI artifacts expire after three days, so rollback images are also kept in private GitHub Container Registry packages (owner decision D6). After every successful runtime qualification run on a push to `main`, the [Release image custody](../../.github/workflows/images.yml) workflow (`workflow_run`) copies that run's qualified archives, without rebuilding, to:
+
+| Package | Archive (artifact) |
+| --- | --- |
+| `ghcr.io/optidigi/insignia-web:<commit>` | `web-image.tar` (`m5-web-image-…`) |
+| `ghcr.io/optidigi/insignia-worker:<commit>` | `worker-image.tar` (`m5-024-worker-image-…`); the signer runs from a worker image |
+| `ghcr.io/optidigi/insignia-verifier:<commit>` | `verifier-image.tar` (`release-verifier-…`) |
+| `ghcr.io/optidigi/insignia-heartbeat:<commit>` | `heartbeat-image.tar` (`operations-runtime-…`) |
+
+`<commit>` is the full `main` commit SHA. `skopeo copy --preserve-digests` pushes each OCI archive as is, and the job fails unless the registry's manifest digest equals the archive's single manifest digest, which is the `manifestId` that `qualify.mjs` records and the image ID Docker shows after loading the archive. The job summary lists each pushed digest. Only this workflow has `packages: write` (plus `actions: read` to fetch the run's artifacts); the qualification workflows are unchanged. A status-only run builds no images, and the workflow then pushes nothing. The artwork inspector is a host package, not an image, and stays a CI artifact only.
+
+**Rollback from GHCR.** On the host, with a GitHub token that has only `read:packages` (kept outside the checkout, not in a compose file):
+
+```sh
+docker login ghcr.io -u <github-user> --password-stdin < <read-only-token-file>
+docker pull ghcr.io/optidigi/insignia-web:<commit>
+docker image inspect --format '{{.Id}}' ghcr.io/optidigi/insignia-web:<commit>   # must equal the recorded manifest ID
+docker logout ghcr.io
+```
+
+Then deploy that image ID through the usual qualified path, exactly as with a loaded CI archive. Images built before this job existed are only in their deploy folders on the host.
+
+**Owner, once:** in GitHub → Optidigi → Packages, confirm the four `insignia-*` packages are **private** (organisation packages are private by default) and linked to this repository.
+
 ## Bounded deployment and recovery sequence
 
 1. Qualify exact candidate CI/artifact/Compose identity, current privileges, same-database endpoints, actual schema and current source compatibility. Verify any existing permission covers named services/effects; group genuinely missing owner inputs once. Secret-bearing renders, tokens and credentials stay private.
