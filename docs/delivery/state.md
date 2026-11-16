@@ -127,6 +127,16 @@ Owner decisions (16 Nov): production starts with a fresh, empty database (dev/te
 - **Inspector restart.** Done on the host (16 Nov): `ExecStartPre` removes a stale readiness socket and the unit runs with `Restart=on-failure`. A code-side cleanup at start would make it independent of the unit file.
 - `/srv/saas/infra/stacks/insignia/` is empty but needs root to remove.
 
+### Launch items, 16 November 2026 (evening)
+
+All on production (`app.insigniacustomizer.com`), proven on the review store `insignia-review-eu` (NL/EUR dev store, Bogus gateway).
+- **EUR.** #538: EUR admission is release-level (`eur-qualification-v2` in `INSIGNIA_EUR_NL_QUALIFICATION`): any EUR shop, buyers in the 20 euro-area countries, bound to Active version `1225110192129` and Functions `aa3b6166`. Native proof: test order **#1001** €704.95 (€699.95 + €5.00 Print surcharge applied by the cart transform), paid on the Bogus gateway, recorded in `purchase_orders`/`purchase_paid_facts`; an NL quote also prices under v2. Other euro countries are admitted by the same rule but need a store whose primary Market includes them.
+- **Payments before order creation.** #539: a checkout payment stamped up to 1 hour before `order.createdAt` counts, with the paid time clamped to `createdAt` (it caused `INVALID_PAYMENT_TIME` and "needs review" on #1001). Worker deployed; #1001 healed after an `orders/updated` (tag edit).
+- **Review flag.** #540: "Order needs review" reflects the newest observation only; a lasting problem is re-flagged by every new observation.
+- **Customer artwork email for real buyers.** #537: customer mode with `"tenantScopes": "all-active-installations"` (merchant switch from #528 still applies). Web runs customer mode with qualification profile `~/.config/insignia/production/customer-email-qualification.private.json`. Proof: test order **#1002** with "Provide artwork later": notification PENDING → SENT about 15 s after payment, to the buyer address `insignia@optidigi.nl`.
+- **Release image custody (D6).** #536: after each successful runtime run on `main`, CI pushes the exact web, worker, verifier and heartbeat archives to private GHCR (`ghcr.io/optidigi/insignia-*:<sha>`), digest-checked. Owner: confirm the packages are private; a `read:packages` token on the host is needed only for pulls.
+- **Found, open (small, buyer/merchant UI):** the cart line doesn't show the customization ("Review customized items" sits below the footer); the Designer caption reads "Selection Selection" instead of the colour; a resumed design shows "Artwork" instead of the file name; the Orders list shows the shop timezone while the order page shows UTC.
+
 ### Deployed identities
 
 Rewrite-dev on host alias `prod`, as of 16 November 2026 `16:10Z` (deploy S).
