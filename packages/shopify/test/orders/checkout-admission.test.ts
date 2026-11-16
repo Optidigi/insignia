@@ -175,7 +175,7 @@ describe('current checkout purchase admission', () => {
       expect(await createShopifyCheckoutPurchaseAdmission(config).admit({ order })).toBeNull();
     },
   );
-  it('admits an order from any store through that store\'s own installation, credentials and release scope', async () => {
+  it("admits an order from any store through that store's own installation, credentials and release scope", async () => {
     const { config, order, active, expectedBuild, attestation } = fixture();
     // That store's own release record carries its scope.
     Object.assign(expectedBuild, { shopId: 'another-tenant' });
@@ -199,7 +199,7 @@ describe('current checkout purchase admission', () => {
       'https://another.myshopify.com/admin/api/2026-07/graphql.json',
     );
   });
-  it('rejects an order whose installation is not the store\'s active one', async () => {
+  it("rejects an order whose installation is not the store's active one", async () => {
     const { config, order } = fixture();
     order.installationGeneration = '2';
     expect(await createShopifyCheckoutPurchaseAdmission(config).admit({ order })).toBeNull();
