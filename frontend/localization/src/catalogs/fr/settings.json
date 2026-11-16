@@ -628,5 +628,17 @@
     "automatic": "Utiliser la langue de Shopify",
     "failure": "La langue n’a pas pu être modifiée. Réessayez.",
     "preferences": "Préférences"
+  },
+  "customerEmail": {
+    "heading": "E-mails aux clients",
+    "label": "Envoyer un e-mail aux clients quand un visuel manque",
+    "details": "Lorsqu’une commande payée attend encore un visuel, Insignia envoie au client un lien de dépôt sécurisé par e-mail. Désactivez cette option pour contacter vous-même vos clients : ouvrez la commande et copiez le lien de dépôt client.",
+    "readOnly": "Lorsqu’une commande payée attend encore un visuel, Insignia envoie au client un lien de dépôt sécurisé par e-mail. Seuls les membres du personnel autorisés à modifier Insignia peuvent changer cette option.",
+    "unavailable": "Ce paramètre n’a pas pu être chargé. Rechargez la page pour réessayer.",
+    "notice": {
+      "save-failed": "Votre modification n’a pas pu être enregistrée. Réessayez.",
+      "busy": "Shopify est actuellement surchargé, rien n’a donc été modifié. Patientez quelques secondes et réessayez.",
+      "changed-elsewhere": "Ce paramètre a été modifié ailleurs. Le paramètre actuel est affiché."
+    }
   }
 }

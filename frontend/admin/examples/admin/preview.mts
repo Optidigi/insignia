@@ -222,7 +222,8 @@ config.config.draft.labels = {
 const selectedContext = { shop: 'synthetic.myshopify.com', authority: 'a'.repeat(64), canEdit: false };
 fixtures['/api/admin/preferences'] = {
   version: 'merchant-preferences-v1', ...selectedContext, canReadPrivacy: false,
-  guidanceVersion: '0', wordingVersion: '0', guidance: { dismissed: false, completedSteps: [] },
+  guidanceVersion: '0', wordingVersion: '0', notificationsVersion: '0', guidance: { dismissed: false, completedSteps: [] },
+  notifications: { customerArtworkEmail: true },
   overlays: { en: { locale: 'en', messages: {} } },
 };
 fixtures['/api/admin/methods'] = { ...selectedContext, currency: 'USD', methods: [] };

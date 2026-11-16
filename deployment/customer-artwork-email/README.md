@@ -21,6 +21,8 @@ Keep the reusable API credential outside the checkout in an owner-readable regul
 }
 ```
 
+A store can turn automatic customer email off in Settings; its waiting notices then settle `SUPPRESSED` without a send ([customer artwork](../../docs/architecture/customer-artwork-integration.md)). The sender configuration is unaffected.
+
 Development mode sends only to the explicitly allocated `admin@optidigi.nl` address and labels the message as a development test. It does not establish a real customer order or authorization. Customer mode also requires a server-owned sending-qualification port; a configuration string alone does not establish entitlement or recipient-field access. The connected Cloudflare tool credential cannot be exported into the app.
 
 `X-Insignia-Notification` is trace metadata, not provider idempotency. The durable notification claim owns one dispatch. Explicit provider acknowledgement with message ID settles SENT (queued acknowledgement is not proof of inbox delivery); documented structured no-effect denials may enter bounded recovery. A timeout, unknown gateway response or unresolved send settles UNCERTAIN, and is never blindly retried. Original design cleanup erases link and notification authority. Offline restore drops restored intents/capabilities and rotates the link epoch so old URLs cannot revive.

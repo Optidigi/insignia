@@ -98,6 +98,58 @@ test('store preferences share guidance and live wording across staff while CAS, 
     );
     assert.deepEqual(Object.keys(publicWording ?? {}).sort(), ['overlays', 'wordingVersion']);
     assert.equal(publicWording?.overlays.nl?.messages['customer:steps.done']?.message, 'Gereed');
+    // Automatic customer email is its own versioned section: on by default, other sections untouched.
+    assert.deepEqual(initial.notifications, { customerArtworkEmail: true });
+    assert.equal(initial.notificationsVersion, '0');
+    const emailOff = await service.save(
+      a,
+      {
+        action: 'notifications',
+        authority: initial.authority,
+        expectedVersion: '0',
+        notifications: { customerArtworkEmail: false },
+      },
+      'notifications-write-1',
+    );
+    assert.equal(emailOff.kind, 'saved');
+    assert.equal(emailOff.kind === 'saved' && emailOff.preferences.notificationsVersion, '1');
+    assert.deepEqual((await service.read({ ...a, staffId: 'other-staff' })).notifications, {
+      customerArtworkEmail: false,
+    });
+    assert.deepEqual(
+      (await service.read(b)).notifications,
+      { customerArtworkEmail: true },
+      'Another store is unaffected',
+    );
+    assert.equal((await service.read(a)).wordingVersion, '1', 'Wording keeps its own version');
+    assert.equal(
+      (
+        await service.save(
+          a,
+          {
+            action: 'notifications',
+            authority: initial.authority,
+            expectedVersion: '0',
+            notifications: { customerArtworkEmail: true },
+          },
+          'notifications-stale-1',
+        )
+      ).kind,
+      'conflict',
+    );
+    await assert.rejects(
+      service.save(
+        { ...a, canEdit: false },
+        {
+          action: 'notifications',
+          authority: initial.authority,
+          expectedVersion: '1',
+          notifications: { customerArtworkEmail: true },
+        },
+        'notifications-readonly-1',
+      ),
+      /Edit permission required/,
+    );
     assert.equal(
       await core.transactions.run((tx) =>
         core.preferences.readWording(tx, { shopId: a.tenantShopId, installationGeneration: '2' }),
