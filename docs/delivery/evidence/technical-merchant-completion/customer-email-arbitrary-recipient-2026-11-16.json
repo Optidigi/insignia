@@ -1,0 +1,27 @@
+{
+  "version": "customer-email-received-authentication-v1",
+  "classification": "OWNER_APPROVED_ARBITRARY_RECIPIENT_TRANSPORT_AND_RECEIVED_HEADERS_SUMMARY",
+  "authority": "Owner instruction 16 Nov 2026: one test send to an owner-supplied address outside the account's verified destinations",
+  "messageId": "<jj3n3JMvXEeIgtYXMMxGEVPSyQB3zBKeViGy@insigniacustomizer.com>",
+  "sentAt": "2026-11-16T14:44:23Z",
+  "receivedAt": "2026-11-16T14:44:29Z",
+  "receiver": "Gmail (mx.google.com), owner-supplied personal mailbox, not a Cloudflare verified destination",
+  "from": "noreply@insigniacustomizer.com",
+  "provider": {
+    "api": "POST /accounts/{account_id}/email/sending/send",
+    "http": 200,
+    "success": true,
+    "recipientState": "queued",
+    "permanentBounces": 0,
+    "suppressedRecipients": 0,
+    "errors": []
+  },
+  "spf": { "result": "pass", "mailFrom": "cf-bounce.insigniacustomizer.com", "clientIp": "104.30.16.175" },
+  "dkim": [
+    { "result": "pass", "d": "insigniacustomizer.com", "selector": "cf-bounce", "aligned": true },
+    { "result": "pass", "d": "cloudflare-smtp.org", "selector": "cf2024-1" }
+  ],
+  "dmarc": { "result": "pass", "policy": "reject", "headerFrom": "insigniacustomizer.com" },
+  "content": "Plain-text delivery test; no order, payment or artwork link.",
+  "note": "Summary only; full headers and the recipient address are not stored in the repository. Proves the existing token's account can send to arbitrary recipients (Cloudflare documents this as Workers Paid only); it does not by itself enable customer mode."
+}
