@@ -163,10 +163,13 @@ test('fixed Admin TLS capability talks only to the named store and refreshes its
         body,
       }),
     );
-    const response = await provider.refreshFetch('https://synthetic-second-store.myshopify.com/admin/oauth/access_token', {
-      method: 'POST',
-      body,
-    });
+    const response = await provider.refreshFetch(
+      'https://synthetic-second-store.myshopify.com/admin/oauth/access_token',
+      {
+        method: 'POST',
+        body,
+      },
+    );
     // The status reaches the shared refresh parser, which owns its classification.
     assert.equal(response.status, status);
     assert.equal(response.headers.get('content-type'), 'application/json');
@@ -185,7 +188,10 @@ test('fixed Admin TLS capability talks only to the named store and refreshes its
       }),
     );
     assert.equal(requests.length, 1);
-    assert.equal(required(requests[0]).endpoint, 'https://synthetic-second-store.myshopify.com/admin/oauth/access_token');
+    assert.equal(
+      required(requests[0]).endpoint,
+      'https://synthetic-second-store.myshopify.com/admin/oauth/access_token',
+    );
     assert.equal(required(requests[0]).body, body);
     assert.equal(required(requests[0]).options.rejectUnauthorized, true);
     assert.equal(required(requests[0]).options.minVersion, 'TLSv1.2');
