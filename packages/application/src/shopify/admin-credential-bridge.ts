@@ -20,7 +20,8 @@ export function createAdminReadCredentialSource(config: {
   if (!Number.isSafeInteger(claimLeaseMs) || claimLeaseMs < 30_000 || claimLeaseMs > 300_000)
     throw new TypeError('Credential claim lease is invalid');
   const minimumRemainingMs = config.minimumRemainingMs ?? 30_000;
-  if (!Number.isSafeInteger(minimumRemainingMs) || minimumRemainingMs < 30_000 || minimumRemainingMs > 600_000)
+  // The credential store refuses more than 300 s (shop-credentials readUsable/acquire).
+  if (!Number.isSafeInteger(minimumRemainingMs) || minimumRemainingMs < 30_000 || minimumRemainingMs > 300_000)
     throw new TypeError('Credential remaining validity is invalid');
   return {
     async acquire(input: {

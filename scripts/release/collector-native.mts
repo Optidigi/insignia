@@ -46,6 +46,11 @@ import { APP_CLIENT_ID, currentTenantBinding } from './tenant-binding.mts';
 
 const NATIVE_PARENT = VERIFIER_STATE;
 export const ownerPhaseForRecord = (recordId: string) => join(NATIVE_PARENT, recordPhaseName(recordId));
+/** Validity the store's token must have left. The credential store accepts at most 300 s; the
+ * deadline is never more than 300 s away, so a token with that much left outlives the collection. */
+export function credentialWindowMs(deadline: number, now: number) {
+  return Math.min(300_000, Math.max(30_000, deadline - now + 10_000));
+}
 /** Import-safe private packet seam. Six flat string fields only; the textual
  * token count also rejects duplicate JSON properties before credentials are used. */
 export function parseOwnerPrivatePacket(text: string): OwnerPrivatePacket {
@@ -172,7 +177,7 @@ async function main() {
     const offline = createAdminReadCredentialSource({
       tenants: database.tenants,
       // The token must outlive the whole collection, so it is refreshed up front when it would not.
-      minimumRemainingMs: Math.min(600_000, Math.max(30_000, deadline - Date.now() + 10_000)),
+      minimumRemainingMs: credentialWindowMs(deadline, Date.now()),
       // Longer than the refresh request (at most 30 s) plus the time kept to store its result.
       claimLeaseMs: 90_000,
       credentials: {

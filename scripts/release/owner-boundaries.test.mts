@@ -614,3 +614,12 @@ test('collector transport awaits preparation beyond observation TTL within the a
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test('the token validity window never exceeds what the credential store accepts', () => {
+  const now = 1_000_000;
+  // A buyer request may carry a deadline up to 300 s away (deploy O regression: 309 s was refused).
+  assert.equal(nativeEntry.credentialWindowMs(now + 300_000, now), 300_000);
+  assert.equal(nativeEntry.credentialWindowMs(now + 299_000, now), 300_000);
+  assert.equal(nativeEntry.credentialWindowMs(now + 100_000, now), 110_000);
+  assert.equal(nativeEntry.credentialWindowMs(now + 1_000, now), 30_000);
+});
