@@ -410,7 +410,7 @@ export class AlertMonitor {
       try {
         const sent = await this.env.ALERT_EMAIL.send({
           from: { email: 'insignia-alerts@optidigi.nl', name: 'Insignia Alerts' },
-          to: 'admin@optidigi.nl',
+          to: 'insignia@optidigi.nl',
           subject: `[Insignia production] ${details.component} ${details.event}`,
           text: `Automated operational notice.\nComponent: ${details.component}\nEvent: ${details.event}\nIncident: ${details.incidentId}\nEvidence: ${details.evidence}\nSeverity: ${details.severity}\nAggregate count: ${details.count}\nObserved at: ${new Date(now).toISOString()}\nThis notice does not establish application or merchant readiness.`,
         });

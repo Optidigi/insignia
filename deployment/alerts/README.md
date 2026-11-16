@@ -1,6 +1,6 @@
 # Restricted operational alerts
 
-The relay permits only `Insignia Alerts <insignia-alerts@optidigi.nl>` to `admin@optidigi.nl`. [Delivery state](../../docs/delivery/state.md) owns installed wiring, observed drills/email delivery, outstanding authentication evidence and permitted next actions. Source and local tests do not establish provider deployment or application readiness; do not repeat consumed drills or verification messages.
+The relay permits only `Insignia Alerts <insignia-alerts@optidigi.nl>` to `insignia@optidigi.nl`. [Delivery state](../../docs/delivery/state.md) owns installed wiring, observed drills/email delivery, outstanding authentication evidence and permitted next actions. Source and local tests do not establish provider deployment or application readiness; do not repeat consumed drills or verification messages.
 
 Run local behavioral checks from the repository root:
 

@@ -59,7 +59,7 @@ export function createCloudflareCustomerArtworkSender(input: {
         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(message.recipient)
       )
         return { kind: 'no-effect' };
-      if (profile.mode === 'development' && message.recipient !== 'admin@optidigi.nl') return { kind: 'no-effect' };
+      if (profile.mode === 'development' && message.recipient !== 'insignia@optidigi.nl') return { kind: 'no-effect' };
       let link: URL;
       try {
         link = new URL(message.artworkUrl);

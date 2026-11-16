@@ -18,4 +18,4 @@ new_sqlite_classes = ["AlertMonitor"]
 
 [[send_email]]
 name = "ALERT_EMAIL"
-destination_address = "admin@optidigi.nl"
+destination_address = "insignia@optidigi.nl"

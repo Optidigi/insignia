@@ -15,7 +15,7 @@ const profile: CustomerArtworkEmailProfile = {
 };
 const message = {
   idempotencyKey: '4ae66163-79b4-48fa-a8c6-f84b22c30f01',
-  recipient: 'admin@optidigi.nl',
+  recipient: 'insignia@optidigi.nl',
   artworkUrl: `https://insignia.test/artwork-upload#capability=${'b'.repeat(64)}`,
   expiresAt: '2026-11-06T12:00:00.000Z',
 };
@@ -35,7 +35,7 @@ test('scoped development sender permits only explicit admin test and parses actu
         success: true,
         result: {
           message_id: '<message-1@optidigi.nl>',
-          delivered: ['admin@optidigi.nl'],
+          delivered: ['insignia@optidigi.nl'],
           queued: [],
           permanent_bounces: [],
           suppressed_recipients: [],
@@ -48,7 +48,7 @@ test('scoped development sender permits only explicit admin test and parses actu
   assert.deepEqual(await sender.send(message), { kind: 'sent', receipt: '<message-1@optidigi.nl>' });
   const body = JSON.parse(String(request?.body));
   assert.equal(body.from, 'noreply@insigniacustomizer.com');
-  assert.equal(body.to, 'admin@optidigi.nl');
+  assert.equal(body.to, 'insignia@optidigi.nl');
   assert.match(body.subject, /development/);
   assert.equal(body.headers['X-Insignia-Notification'], message.idempotencyKey);
   request = undefined;
