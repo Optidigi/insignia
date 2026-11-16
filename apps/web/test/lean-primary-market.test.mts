@@ -5,6 +5,7 @@ import type { PrimaryMarketSnapshot } from '@insignia/shopify';
 import {
   createLeanPrimaryMarketAdmission,
   EUROZONE_COUNTRIES,
+  type EurQualification,
   parseEurNetherlandsQualification,
   parseEurQualification,
 } from '../src/server/buyer/lean-primary-market.ts';
@@ -49,7 +50,10 @@ const snapshot: PrimaryMarketSnapshot = {
   observedAt: '2026-11-05T11:00:00Z',
   freshUntil: '2026-11-05T11:05:00Z',
 };
-const setup = (observed = snapshot, qualification = parseEurNetherlandsQualification(JSON.stringify(profile))) =>
+const setup = (
+  observed = snapshot,
+  qualification: EurQualification | null = parseEurNetherlandsQualification(JSON.stringify(profile)),
+) =>
   createLeanPrimaryMarketAdmission({
     scope: { shopId: 'tenant', installationGeneration: '1' },
     active: async () => authority,
