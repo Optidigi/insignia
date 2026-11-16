@@ -182,7 +182,7 @@ export function ensureCustomerArtworkNotificationRuntime(env: NodeJS.ProcessEnv 
         sender,
         recipients: {
           async read(scope, orderId) {
-            if (profile.mode === 'development') return 'admin@optidigi.nl';
+            if (profile.mode === 'development') return 'insignia@optidigi.nl';
             const approved = await qualification();
             if (
               !approved.tenantScopes.some(
