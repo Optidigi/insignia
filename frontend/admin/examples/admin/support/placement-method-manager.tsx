@@ -1,9 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'preact/hooks';
+import { DecimalField } from '../../../src/components/DecimalField.tsx';
+import {
+  availablePlacementMethods,
+  type PlacementMethodCatalog,
+} from '../../../src/islands/selected-method-choices.ts';
 import { useAdminLocale } from '../../../src/shared/admin-i18n.js';
 import Dialog from './method-dialog.tsx';
-import { DecimalField } from '../../../src/components/DecimalField.tsx';
 import { currencyPrefix, formatPrice, parsePrice } from './method-workflow-prices.mts';
-import { availablePlacementMethods, type PlacementMethodCatalog } from '../../../src/islands/selected-method-choices.ts';
 import {
   createPlacementMethodManagerState,
   type PlacementMethodManagerError,
@@ -15,7 +18,12 @@ import type { EditorMethod, EditorPlacement, PlacementProduct } from './placemen
 
 type MethodChanges = Pick<EditorPlacement, 'methodIds' | 'sizes'>;
 
-function priceLabel(value: string, t: ReturnType<typeof useAdminLocale>['t'], locale: string, currency = 'EUR'): string {
+function priceLabel(
+  value: string,
+  t: ReturnType<typeof useAdminLocale>['t'],
+  locale: string,
+  currency = 'EUR',
+): string {
   const result = parsePrice(value);
   if (result.kind === 'invalid') return t('editor:placementMethodManager.priceUnavailable');
   return result.minor === 0n ? t('editor:placementMethodManager.free') : formatPrice(result.minor, locale, currency);
@@ -89,7 +97,12 @@ export default function PlacementMethodManager({
   sessionId: string;
   targetRevision: number;
   onClose(): void;
-  onApply(change: MethodChanges, choices: EditorMethod[], editedIds: string[], editedCells: { sizeId: string; methodId: string }[]): void;
+  onApply(
+    change: MethodChanges,
+    choices: EditorMethod[],
+    editedIds: string[],
+    editedCells: { sizeId: string; methodId: string }[],
+  ): void;
 }) {
   const { t: translateUi, formatLocale } = useAdminLocale();
   const initialState = useMemo(
@@ -287,7 +300,12 @@ export default function PlacementMethodManager({
       return;
     }
     claimedCommit.current = true;
-    onApply(structuredClone(next.applied.change), next.applied.choices, next.applied.editedIds, next.applied.editedCells);
+    onApply(
+      structuredClone(next.applied.change),
+      next.applied.choices,
+      next.applied.editedIds,
+      next.applied.editedCells,
+    );
     onClose();
   }
 
@@ -402,7 +420,8 @@ export default function PlacementMethodManager({
               </div>
             )}
             <div class="pm-manager__results" ref={list} aria-busy={library === 'loading'}>
-              {library === 'loading' && !methods.length && (
+              {/* Rows appear only with the loaded catalog; the late "Add method" row would otherwise move a row under the pointer. */}
+              {library === 'loading' && (
                 <div class="pm-manager__empty">
                   <s-spinner accessibilityLabel={translateUi('editor:placementMethodManager.loadingMethodLibrary')} />
                 </div>
@@ -425,12 +444,12 @@ export default function PlacementMethodManager({
                   </s-button>
                 </div>
               )}
-              <div class="pm-manager__method-list">
-                {unavailableError && (
-                  <s-banner tone="critical">{managerErrorMessage(unavailableError, translateUi)}</s-banner>
-                )}
-                {library !== 'loading' &&
-                  unavailableIds.map((id, index) => (
+              {library !== 'loading' && (
+                <div class="pm-manager__method-list">
+                  {unavailableError && (
+                    <s-banner tone="critical">{managerErrorMessage(unavailableError, translateUi)}</s-banner>
+                  )}
+                  {unavailableIds.map((id, index) => (
                     <fieldset class="pm-manager__method" key={id}>
                       <s-checkbox
                         label={translateUi('editor:placementMethodManager.unavailableMethod', {
@@ -445,95 +464,98 @@ export default function PlacementMethodManager({
                       </s-text>
                     </fieldset>
                   ))}
-                {visibleMethods.map((method) => {
-                  const enabled = draft.methodIds.includes(method.id);
-                  const fixed = method.pricing === 'fixed';
-                  return (
-                    <fieldset
-                      class={`pm-manager__method ${fixed ? 'is-fixed-method' : 'is-product-method'} ${enabled ? 'is-enabled' : ''}`}
-                      key={method.id}
-                      aria-label={method.name}
-                    >
-                      <div class="pm-manager__choice">
-                        <s-checkbox
-                          label={method.name}
-                          checked={enabled}
-                          onChange={(event) => toggleMethod(method.id, event.currentTarget.checked)}
-                        />
-                      </div>
-                      {fixed ? (
-                        <div class="pm-manager__method-facts">
-                          <s-text type="strong">{priceLabel(method.amount, translateUi, formatLocale, currency)}</s-text>
-                          {enabled && (
-                            <s-button
-                              variant="tertiary"
-                              data-method-price-trigger={method.id}
-                              accessibilityLabel={translateUi('editor:placementMethodManager.editMethodPrice', {
-                                methodName: method.name,
-                              })}
-                              onClick={() => openPrices(method.id)}
-                            >
-                              {translateUi('editor:placementMethodManager.editPrice')}
-                            </s-button>
-                          )}
-                        </div>
-                      ) : enabled ? (
-                        <div class="pm-manager__product-price">
-                          <div class="pm-manager__coverage">
-                            <s-text color="subdued">
-                              {sizeCoverage(method.id, draft.sizes, translateUi, formatLocale)}
-                            </s-text>
-                          </div>
-                          <div class="pm-manager__price-action">
-                            <s-button
-                              variant="tertiary"
-                              data-method-price-trigger={method.id}
-                              onClick={() => openPrices(method.id)}
-                            >
-                              {translateUi('editor:placementMethodManager.editPrices')}
-                            </s-button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div class="pm-manager__method-type">
-                          <s-text color="subdued">{translateUi('editor:placementMethodManager.perSize')}</s-text>
-                        </div>
-                      )}
-                    </fieldset>
-                  );
-                })}
-                {visibleMethods.length === 0 &&
-                  (methods.length > 0 || library === 'ready') &&
-                  (methods.length === 0 ? (
-                    <div class="pm-manager__empty">
-                      <s-paragraph>
-                        {translateUi(
-                          'editor:placementMethodManager.addAMethodForThisProductOrCreateAReusableMethodInYourLibrary',
-                        )}
-                      </s-paragraph>
-                      {onOpenLibrary && (
-                        <s-button variant="secondary" onClick={onOpenLibrary}>
-                          {translateUi('editor:placementMethodManager.saveDraftAndOpenLibrary')}
-                        </s-button>
-                      )}
-                    </div>
-                  ) : (
-                    <div class="pm-manager__empty">
-                      <s-paragraph>
-                        {translateUi('editor:placementMethodManager.noMethodsMatchTheseFilters')}
-                      </s-paragraph>
-                      <s-button
-                        variant="tertiary"
-                        onClick={() => {
-                          setQuery('');
-                          setFilter('all');
-                        }}
+                  {visibleMethods.map((method) => {
+                    const enabled = draft.methodIds.includes(method.id);
+                    const fixed = method.pricing === 'fixed';
+                    return (
+                      <fieldset
+                        class={`pm-manager__method ${fixed ? 'is-fixed-method' : 'is-product-method'} ${enabled ? 'is-enabled' : ''}`}
+                        key={method.id}
+                        aria-label={method.name}
                       >
-                        {translateUi('editor:placementMethodManager.showAllMethods')}
-                      </s-button>
-                    </div>
-                  ))}
-              </div>
+                        <div class="pm-manager__choice">
+                          <s-checkbox
+                            label={method.name}
+                            checked={enabled}
+                            onChange={(event) => toggleMethod(method.id, event.currentTarget.checked)}
+                          />
+                        </div>
+                        {fixed ? (
+                          <div class="pm-manager__method-facts">
+                            <s-text type="strong">
+                              {priceLabel(method.amount, translateUi, formatLocale, currency)}
+                            </s-text>
+                            {enabled && (
+                              <s-button
+                                variant="tertiary"
+                                data-method-price-trigger={method.id}
+                                accessibilityLabel={translateUi('editor:placementMethodManager.editMethodPrice', {
+                                  methodName: method.name,
+                                })}
+                                onClick={() => openPrices(method.id)}
+                              >
+                                {translateUi('editor:placementMethodManager.editPrice')}
+                              </s-button>
+                            )}
+                          </div>
+                        ) : enabled ? (
+                          <div class="pm-manager__product-price">
+                            <div class="pm-manager__coverage">
+                              <s-text color="subdued">
+                                {sizeCoverage(method.id, draft.sizes, translateUi, formatLocale)}
+                              </s-text>
+                            </div>
+                            <div class="pm-manager__price-action">
+                              <s-button
+                                variant="tertiary"
+                                data-method-price-trigger={method.id}
+                                onClick={() => openPrices(method.id)}
+                              >
+                                {translateUi('editor:placementMethodManager.editPrices')}
+                              </s-button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div class="pm-manager__method-type">
+                            <s-text color="subdued">{translateUi('editor:placementMethodManager.perSize')}</s-text>
+                          </div>
+                        )}
+                      </fieldset>
+                    );
+                  })}
+                  {visibleMethods.length === 0 &&
+                    (methods.length > 0 || library === 'ready') &&
+                    (methods.length === 0 ? (
+                      <div class="pm-manager__empty">
+                        <s-paragraph>
+                          {translateUi(
+                            'editor:placementMethodManager.addAMethodForThisProductOrCreateAReusableMethodInYourLibrary',
+                          )}
+                        </s-paragraph>
+                        {onOpenLibrary && (
+                          <s-button variant="secondary" onClick={onOpenLibrary}>
+                            {translateUi('editor:placementMethodManager.saveDraftAndOpenLibrary')}
+                          </s-button>
+                        )}
+                      </div>
+                    ) : (
+                      <div class="pm-manager__empty">
+                        <s-paragraph>
+                          {translateUi('editor:placementMethodManager.noMethodsMatchTheseFilters')}
+                        </s-paragraph>
+                        <s-button
+                          variant="tertiary"
+                          onClick={() => {
+                            setQuery('');
+                            setFilter('all');
+                          }}
+                        >
+                          {translateUi('editor:placementMethodManager.showAllMethods')}
+                        </s-button>
+                      </div>
+                    ))}
+                </div>
+              )}
             </div>
           </>
         ) : (

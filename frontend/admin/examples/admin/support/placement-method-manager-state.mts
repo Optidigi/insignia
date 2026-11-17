@@ -192,7 +192,7 @@ export function placementMethodManagerReducer(
             catalog: { kind: 'loading', attempt: state.catalog.attempt + 1, requestId: event.requestId },
           };
     case 'method-toggled': {
-      if (state.screen.kind !== 'methods') return state;
+      if (state.screen.kind !== 'methods' || state.catalog.kind === 'loading') return state;
       const methodIds = event.checked
         ? state.draft.methodIds.includes(event.methodId)
           ? state.draft.methodIds
@@ -208,7 +208,11 @@ export function placementMethodManagerReducer(
       delete errors[key];
       return {
         ...state,
-        editedPriceCells: state.editedPriceCells.some((cell) => cell.sizeId === event.sizeId && cell.methodId === event.methodId) ? state.editedPriceCells : [...state.editedPriceCells, { sizeId: event.sizeId, methodId: event.methodId }],
+        editedPriceCells: state.editedPriceCells.some(
+          (cell) => cell.sizeId === event.sizeId && cell.methodId === event.methodId,
+        )
+          ? state.editedPriceCells
+          : [...state.editedPriceCells, { sizeId: event.sizeId, methodId: event.methodId }],
         draft: {
           ...state.draft,
           sizes: state.draft.sizes.map((size) =>
