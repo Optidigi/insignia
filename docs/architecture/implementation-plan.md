@@ -273,7 +273,7 @@ Routine publication, renewal, billing loss and plan changes do not bump epoch: d
 
 **Key validity (owner decision, 11 November 2026, option C).** Signing keys do not expire routinely. A new key's last valid day is the sentinel `0x7fffffff`, the largest PostgreSQL integer; the Functions read it as u32. A key is rotated only in three cases:
 - **Suspected leak:** one owner emergency run (#375) revokes the affected key(s), including any pending key, bumps the epoch and publishes the stricter config by compare-and-set with an exact readback. Every Function then rejects signatures whose header epoch differs from the published config, and lines of a revoked key. If the run leaves no active key (it must say so explicitly), issuance stops until the owner rotation that follows. That is the intended emergency result.
-- **Reinstall:** a new installation generation. The old generation's keys are destroyed at deactivation.
+- **Reinstall:** a new installation generation. The old generation's keys are destroyed at deactivation. Uninstall removes the Functions but not the shop's public config metafield. A generation without keys may therefore replace a published config bound to another authorization generation, by compare-and-set on its digest (owner decision, 17 November 2026). A config that claims the current generation while it has no keys still stops provisioning. Purchase reconciliation needs release evidence only to admit a customized order through checkout admission; other orders reconcile while the Functions are absent.
 - **Explicit owner rotation:** for example, moving to a new wrapping key or algorithm.
 
 **Retirement shortening.** A retired key never stays verifiable forever.

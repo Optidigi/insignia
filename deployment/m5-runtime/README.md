@@ -122,6 +122,16 @@ After the worker change, a failed `orders/create`, `orders/paid`, `orders/update
 3. Replace web with the new image. Read back: Settings shows "Customer emails" on by default for every store; no notice changes until a merchant turns it off.
 4. Rollback: an older web image ignores the setting, so stores that turned it off would get automatic email again; check `SELECT count(*) FROM merchant_preferences WHERE NOT customer_artwork_email` first. Already-suppressed notices stay settled. Migrating 70 down (after the old web is back) rewrites `SUPPRESSED` to `CANCELLED` (both terminal no-send states), restores the old check and drops the two columns, losing the stores' choices.
 
+**Migration 71: deactivation destroys the generation's signing keys (spec §5.5).** Not deployed yet. No image depends on it; apply it before or with the image that carries it.
+1. Apply `20261120000100_deactivated_installation_signing_keys.sql` through the schema owner (schema 70 to 71). It adds a `SECURITY DEFINER` trigger on `installation_generations`: when `deactivated_at` is first set (uninstall processing, or a reinstall deactivating the previous generation), the same transaction sets that generation's signing keys to `destroyed` and scrubs their private halves. Public keys, fingerprints and windows stay, so that generation's recorded orders still verify. The function is revoked from `PUBLIC` and granted to no role; no grant delta and no ACL digest change.
+2. It does not sweep generations deactivated earlier. For one named generation, run the operator command as the schema owner, first as a dry run:
+   ```
+   DATABASE_URL=<schema owner> node scripts/database/destroy-generation-signing-keys.mts --shop <tenant shop uuid> --generation <n>
+   DATABASE_URL=<schema owner> node scripts/database/destroy-generation-signing-keys.mts --shop <tenant shop uuid> --generation <n> --apply
+   ```
+   The dry run prints the keys (id, state, whether a private half remains) and the ids it would destroy. It refuses an active or unknown generation, in both modes. `--apply` destroys through `destroyInactiveInstallationKeys`, which re-checks the deactivation under row locks, and prints the count. Output is one JSON line with no key material.
+3. Rollback: migrate 71 down drops the trigger and function; keys already destroyed stay destroyed.
+
 **Theme or other app-version change.** Do the server steps first under the current profile. Then:
 1. Create the candidate once from the frozen staging of the current profile. Replace only the changed files: theme assets come from the foundation CI build of the source, byte-identical to a local build. Functions stay byte-identical unless the owner authorizes a Function change.
 2. Read the candidate back: inactive, inventory and module baseline as expected.

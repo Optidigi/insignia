@@ -2,6 +2,15 @@ import { type PurchasePorts, reconcilePurchase, type VerifiedOrder } from '@insi
 import { type DurableCore, webhookIdParsingSupported } from '@insignia/database';
 import type { ShopifyOrderChangesPage, ShopifyOrderChangesTarget } from '@insignia/shopify';
 
+/** Mirrors `reconcilePurchase`: a customized order without complete verified context binds through
+ * checkout admission. A partial context fails there anyway; it still waits for evidence here. */
+function needsCheckoutAdmission(order: VerifiedOrder): boolean {
+  return (
+    order.lines.some((line) => line.attributes.some((attribute) => attribute.key.startsWith('_insignia_'))) &&
+    !(order.contextVerified && order.country !== null && order.marketId !== null)
+  );
+}
+
 /** Reads Shopify independently. A signed webhook supplies only a scoped lookup hint. */
 export function createPurchaseRunner(input: {
   core: DurableCore;
@@ -18,9 +27,14 @@ export function createPurchaseRunner(input: {
   const orders = {
     ...input.orders,
     async read(target: { shopId: string; installationGeneration: string; orderId: string }) {
-      // Collection precedes the independent observation; admission keeps its
-      // existing fresh SELECT and enforcement checks afterward.
-      if (input.checkout) await input.prepareRelease?.(target);
+      const order = await input.orders.read(target);
+      // Release evidence serves only checkout admission. An order no admission can reach (nothing
+      // Insignia on it, or full provider context) reconciles without it, so a store without its
+      // checkout Functions (a reinstall before its first publish) still settles ordinary orders.
+      if (!input.checkout || !input.prepareRelease || !needsCheckoutAdmission(order)) return order;
+      // Fails closed: no evidence, no observation. Collection precedes the observation admission
+      // uses, which keeps its existing fresh SELECT and enforcement checks afterward.
+      await input.prepareRelease(target);
       return input.orders.read(target);
     },
   };

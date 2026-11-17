@@ -165,6 +165,14 @@ export function createProductionAdminServices(
   const requestTokens = new WeakMap<AdminActor, string>();
   const merchantTimezones = new WeakMap<AdminActor, string>();
   const authenticationLogger = createObservability().logger;
+  /** A refused publish names its failing preparation step (never a value) in the web log. */
+  const preparationStopped = (preparationStage: string) => {
+    try {
+      authenticationLogger.warn('publication_preparation_stopped', { preparationStage });
+    } catch {
+      /* Logging never changes the publish outcome. */
+    }
+  };
   // One web instance: verified grants and fenced installation observations are reused per process.
   const authenticationCache = createAdminAuthenticationCache<OnlineStaffGrant>();
   const activations = new WeakMap<AdminActor, ReturnType<typeof core.productionActivations.create>>();
@@ -640,10 +648,14 @@ export function createProductionAdminServices(
       // A private startup allocation allows initial setup; no browser plan or
       // status GET can select or dispatch it. Tokens live only with this actor.
       // A store's first publish deploys its checkout Functions, which verification then observes.
-      if (!(await storeFunctionsReady(actor)))
+      if (!(await storeFunctionsReady(actor))) {
+        preparationStopped('FUNCTIONS_SETUP');
         return { ready: false, reason: 'Publication setup is unavailable. Contact support.' };
-      if (!(await verifyPublicationRelease(actor)))
+      }
+      if (!(await verifyPublicationRelease(actor))) {
+        preparationStopped('RELEASE_VERIFICATION');
         return { ready: false, reason: 'Publication verification is unavailable. Contact support.' };
+      }
       // The owner's armed plan applies to its own store; every other store uses automatic provisioning.
       if (!signingOwner || signingOwnerConfiguration?.binding.tenantShopId !== actor.tenantShopId) {
         if (!automaticSigning) return { ready: true, reason: null };
@@ -718,7 +730,10 @@ export function createProductionAdminServices(
       ? createSigningOwnerAction(signingOwnerConfiguration, signingPorts)
       : undefined;
   // Every other store gets its first, non-expiring key on its first publish.
-  const automaticSigning = storeSetup && signingPorts ? createAutomaticSigningProvision(signingPorts) : undefined;
+  const automaticSigning =
+    storeSetup && signingPorts
+      ? createAutomaticSigningProvision(signingPorts, { onStopped: preparationStopped })
+      : undefined;
   return {
     billing,
     async setupStatus(actor) {

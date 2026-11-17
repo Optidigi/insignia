@@ -5,8 +5,11 @@ import {
   createAutomaticSigningProvision,
   NON_EXPIRING_LAST_DAY,
 } from '../../apps/web/src/server/admin/signing-automatic.ts';
+import type { SigningProvisionPorts } from '../../apps/web/src/server/admin/signing-provision.ts';
 import { fixture } from '../../apps/web/test/admin/support/signing-owner-fixture.mts';
 import * as app from '../../packages/application/dist/index.js';
+
+type SigningPorts = Omit<SigningProvisionPorts, 'journal'>;
 
 const shop = 'synthetic-second-store.myshopify.com';
 const clockStart = Date.parse('2026-10-11T12:00:00.000Z');
@@ -167,5 +170,105 @@ test('a store whose keys the owner revoked or is rotating gets no automatic key'
     assert.equal(owner.f.provisioned.length, 1);
   } finally {
     await owner.f.close();
+  }
+});
+
+/** What an earlier installation published: its own authorization generation and key. */
+function earlierInstallationConfig(generationHex: string) {
+  return JSON.stringify({
+    generationHex,
+    epoch: 0,
+    maxBuckets: 32,
+    maxPhysicalQuantity: 10000,
+    allowNoMarket: false,
+    keys: [{ id: 1, publicHex: 'ab'.repeat(32), revoked: false, firstDay: today - 40, lastDay: NON_EXPIRING_LAST_DAY }],
+  });
+}
+async function reported(ports?: (f: Awaited<ReturnType<typeof fixture>>) => Partial<SigningPorts>) {
+  const stages: string[] = [];
+  const f = await fixture({ shop });
+  const { journal: _journal, ...base } = f.ports;
+  const automatic = createAutomaticSigningProvision(
+    { ...base, ...ports?.(f) },
+    { onStopped: (stage) => stages.push(stage) },
+  );
+  return { f, automatic, stages };
+}
+
+test("a reinstall replaces the earlier installation's surviving public config by compare-and-set", async () => {
+  const { f, automatic, stages } = await reported();
+  try {
+    // Uninstall removed the Functions but not the shop metafield the earlier generation published.
+    f.setPublicValue(earlierInstallationConfig('22222222222242228222222222222222'));
+    // A write that does not compare against the surviving config's digest is rejected, as Shopify does.
+    f.strictCompareAndSet();
+    assert.equal(await automatic.ensure(actor(), 'SYNTHETIC_ID_TOKEN', 'Asia/Tokyo'), 'PROVISIONED');
+    assert.deepEqual(
+      f.rows.map((row) => [row.id, row.state]),
+      [[1, 'active']],
+    );
+    assert.equal(f.publicValue(), (await f.lifecycle.desiredPublicConfig(f.scope)).value);
+    assert.deepEqual(stages, []);
+  } finally {
+    await f.close();
+  }
+});
+
+test("a config claiming this installation's own generation without its keys still stops", async () => {
+  const { f, automatic, stages } = await reported();
+  try {
+    const own = earlierInstallationConfig(f.scope.authorizationGeneration.replaceAll('-', ''));
+    f.setPublicValue(own);
+    assert.equal(await automatic.ensure(actor(), 'SYNTHETIC_ID_TOKEN', 'Asia/Tokyo'), 'STOPPED');
+    assert.equal(f.provisioned.length, 0);
+    assert.equal(f.rows.length, 0);
+    assert.equal(f.publicValue(), own);
+    // The web log names the step, never a value.
+    assert.deepEqual(stages, ['SIGNING_PRIOR_CONFIG']);
+  } finally {
+    await f.close();
+  }
+});
+
+test('a config that changes after it was read is never overwritten; the pending key waits for the next publish', async () => {
+  const concurrent = earlierInstallationConfig('33333333333343338333333333333333');
+  const { f, automatic, stages } = await reported((f) => ({
+    signer: {
+      async provision(request) {
+        const created = await f.ports.signer.provision(request);
+        f.setPublicValue(concurrent);
+        return created;
+      },
+    },
+  }));
+  try {
+    f.setPublicValue(earlierInstallationConfig('22222222222242228222222222222222'));
+    f.strictCompareAndSet();
+    assert.equal(await automatic.ensure(actor(), 'SYNTHETIC_ID_TOKEN', 'Asia/Tokyo'), 'STOPPED');
+    assert.equal(f.publicValue(), concurrent);
+    assert.deepEqual(
+      f.rows.map((row) => [row.id, row.state]),
+      [[1, 'pending']],
+    );
+    assert.deepEqual(stages, ['SIGNING_PUBLISH_CONFIG']);
+  } finally {
+    await f.close();
+  }
+});
+
+test('every stopped or owner-held provisioning is reported by its step', async () => {
+  const { f, automatic, stages } = await reported();
+  try {
+    f.setReleaseReader(async () => null);
+    assert.equal(await automatic.ensure(actor(), 'SYNTHETIC_ID_TOKEN', 'Asia/Tokyo'), 'STOPPED');
+    f.setReleaseReader(async () => f.record);
+    assert.equal(await automatic.ensure(actor(), 'SYNTHETIC_ID_TOKEN', 'Asia/Tokyo'), 'PROVISIONED');
+    const key = f.rows[0];
+    assert.ok(key);
+    key.lastDay = today + 1;
+    assert.equal(await automatic.ensure(actor(), 'SYNTHETIC_ID_TOKEN', 'Asia/Tokyo'), 'OWNER_ACTION_REQUIRED');
+    assert.deepEqual(stages, ['SIGNING_RELEASE_READINESS', 'SIGNING_ACTIVE_KEY_WINDOW']);
+  } finally {
+    await f.close();
   }
 });

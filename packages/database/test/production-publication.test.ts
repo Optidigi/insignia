@@ -292,12 +292,13 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
     const generation = await database
       .transaction()
       .execute((tx) => createTenantRepository(tx).startInstallation(tx, f.shopId, 'synthetic-reinstalled'));
+    // Deactivation destroyed the old generation's private halves; the new one has its own (synthetic) envelope.
     await sql`INSERT INTO signing_keys (shop_id, installation_generation, authorization_generation,
       key_id, public_key, public_key_fingerprint, private_envelope, wrapping_key_id, state,
       first_valid_day, last_valid_day)
       SELECT key.shop_id, ${generation}::bigint, installation.authorization_generation,
-        key.key_id, key.public_key, key.public_key_fingerprint, key.private_envelope,
-        key.wrapping_key_id, 'pending', key.first_valid_day, key.last_valid_day
+        key.key_id, key.public_key, key.public_key_fingerprint, '{"kid":"synthetic-reinstall"}'::jsonb,
+        'synthetic-reinstall', 'pending', key.first_valid_day, key.last_valid_day
       FROM signing_keys key JOIN installation_generations installation ON installation.shop_id=key.shop_id
       WHERE key.shop_id=${f.shopId} AND key.installation_generation=${f.generation}::bigint
         AND installation.generation=${generation}::bigint`.execute(database);

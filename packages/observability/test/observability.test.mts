@@ -527,3 +527,30 @@ test('admin configuration rejections log only the command and a bounded reason c
   );
   assert.doesNotMatch(output, /SECRET|secret text/);
 });
+
+test('a stopped publication preparation logs only its bounded step name', () => {
+  let output = '';
+  const stream = new Writable({
+    write(chunk, _encoding, callback) {
+      output += chunk;
+      callback();
+    },
+  });
+  const { logger } = createObservability({ stream });
+  logger.warn('publication_preparation_stopped', {
+    preparationStage: 'SIGNING_AFTER_READ_CONFIG_BEFORE',
+    // @ts-expect-error Deliberately inject private content to prove runtime omission.
+    idToken: 'SECRET',
+    shopId: 'SECRET',
+  });
+  const entry = parseRecord(lastLine(output));
+  assert.deepEqual(entry, {
+    level: 40,
+    time: entry.time,
+    event: 'publication_preparation_stopped',
+    preparationStage: 'SIGNING_AFTER_READ_CONFIG_BEFORE',
+  });
+  assert.throws(() => logger.warn('publication_preparation_stopped', { preparationStage: 'secret text' }));
+  assert.throws(() => logger.warn('publication_preparation_stopped', {}));
+  assert.doesNotMatch(output, /SECRET|secret text/);
+});

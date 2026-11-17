@@ -96,6 +96,9 @@ jobs:
         run: |
           corepack pnpm db:migrate
           corepack pnpm db:migrate
+      - name: Operator signing key destruction for one deactivated generation
+        if: steps.changes.outputs.route == 'full'
+        run: node --test scripts/database/destroy-generation-signing-keys.test.mts
       - run: corepack pnpm --filter @insignia/worker test
         if: steps.changes.outputs.route == 'full'
       - name: Actual PostgreSQL merchant and customer integration

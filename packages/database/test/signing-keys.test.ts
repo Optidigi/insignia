@@ -278,7 +278,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable signing key lifecycle
         await createTenantRepository(tx).startInstallation(tx, shopId);
       });
       await expect(lifecycle.desiredPublicConfig(nextScope)).rejects.toThrow();
-      expect(await lifecycle.destroyInactiveInstallationKeys(shopId, '1')).toBe(1);
+      // The reinstall's deactivation already destroyed the old generation's keys (migration 71).
+      expect(await lifecycle.destroyInactiveInstallationKeys(shopId, '1')).toBe(0);
       const oldPrivate = await sql<{ private_envelope: unknown }>`SELECT private_envelope FROM signing_keys
         WHERE shop_id=${shopId} AND installation_generation=1 AND key_id=8`.execute(db);
       expect(oldPrivate.rows[0]?.private_envelope).toBeNull();

@@ -55,19 +55,36 @@ export function memorySigningJournal(plan: SigningProvisionPlan): SigningProvisi
  * stopped is resumed with its own pending key. Everything else (an active key that no longer covers
  * today, keys the owner revoked or retired, an owner's pending rotation) stays an owner operation.
  */
-export function createAutomaticSigningProvision(ports: Omit<SigningProvisionPorts, 'journal'>) {
+export function createAutomaticSigningProvision(
+  ports: Omit<SigningProvisionPorts, 'journal'>,
+  options: {
+    /** A nonsecret step name (`SIGNING_<STEP>`) for every run that does not end READY or PROVISIONED. */
+    onStopped?(stage: string): void;
+  } = {},
+) {
   const running = new Map<string, Promise<AutomaticSigningState>>();
+  function stopped<S extends AutomaticSigningState>(state: S, stage: string): S {
+    try {
+      options.onStopped?.(`SIGNING_${stage}`);
+    } catch {
+      /* Reporting never changes the outcome. */
+    }
+    return state;
+  }
   async function run(actor: AdminActor, idToken: string, ianaTimezone: string): Promise<AutomaticSigningState> {
     const scope = await ports.core.signingKeys.getActiveScope(actor.tenantShopId, actor.installationGeneration);
-    if (!scope) return 'STOPPED';
+    if (!scope) return stopped('STOPPED', 'NO_ACTIVE_SCOPE');
     const rows = await ports.core.signingKeys.list(scope);
     const day = ports.app.localDay(ports.now(), ianaTimezone).ordinal;
     const active = rows.find((row) => row.state === 'active');
-    if (active) return active.firstDay <= day && active.lastDay >= day + 2 ? 'READY' : 'OWNER_ACTION_REQUIRED';
+    if (active)
+      return active.firstDay <= day && active.lastDay >= day + 2
+        ? 'READY'
+        : stopped('OWNER_ACTION_REQUIRED', 'ACTIVE_KEY_WINDOW');
     const [only] = rows;
     // Only this flow's own stopped run (one pending, non-expiring key) is resumed, with exactly its plan.
     const resumable = rows.length === 1 && only?.state === 'pending' && only.lastDay === NON_EXPIRING_LAST_DAY;
-    if (rows.length && !resumable) return 'OWNER_ACTION_REQUIRED';
+    if (rows.length && !resumable) return stopped('OWNER_ACTION_REQUIRED', 'OWNER_KEYS');
     const plan = qualifySigningProvisionPlan(
       resumable && only
         ? { keyId: only.id, firstDay: only.firstDay, lastDay: only.lastDay }
@@ -79,9 +96,13 @@ export function createAutomaticSigningProvision(ports: Omit<SigningProvisionPort
           },
     );
     const journal = memorySigningJournal(plan);
+    let step = 'PLAN';
     const result = await provisionSigningKey(plan, idToken, {
       ...ports,
       journal,
+      observeStep: (entered) => {
+        step = entered;
+      },
       identity: {
         // The session token must be this publishing staff member's, on this store.
         async verify(token) {
@@ -98,7 +119,7 @@ export function createAutomaticSigningProvision(ports: Omit<SigningProvisionPort
         },
       },
     });
-    return result.classification === 'SIGNING_KEY_CONFIG_PROVISIONED' ? 'PROVISIONED' : 'STOPPED';
+    return result.classification === 'SIGNING_KEY_CONFIG_PROVISIONED' ? 'PROVISIONED' : stopped('STOPPED', step);
   }
   return {
     /** Concurrent publishes on one store share one run; another store runs independently. */
@@ -110,7 +131,7 @@ export function createAutomaticSigningProvision(ports: Omit<SigningProvisionPort
       if (!pending) {
         // Any failure before or during provisioning is a refusal with no key, never a server error.
         pending = run(actor, idToken, ianaTimezone)
-          .catch((): AutomaticSigningState => 'STOPPED')
+          .catch(() => stopped('STOPPED', 'UNEXPECTED'))
           .finally(() => running.delete(key));
         running.set(key, pending);
       }

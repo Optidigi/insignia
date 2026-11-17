@@ -27,6 +27,8 @@ type Operation =
   | 'SCHEDULE_RETIREMENT'
   | 'ACTIVATE_KEY';
 type AmbiguousOperation = 'CREATE_PENDING' | 'PUBLISH_CONFIG' | 'ACTIVATE_KEY' | null;
+/** A run's current step: the operation it started last, or a check between operations. Nonsecret. */
+export type SigningProvisionStep = 'PLAN' | Operation | 'PRIOR_CONFIG' | 'RELEASE_READINESS';
 export type SigningProvisionResult = {
   classification: 'SIGNING_KEY_CONFIG_PROVISIONED' | 'SIGNING_KEY_CONFIG_STOPPED';
   keyId: number | null;
@@ -67,6 +69,8 @@ export interface SigningProvisionPorts {
   };
   now(): Date;
   journal: SigningProvisionJournal;
+  /** Told each step as the run enters it, so a caller can name where a stopped run stopped. */
+  observeStep?(step: SigningProvisionStep): void;
   bindProvider(
     grant: OnlineStaffGrant,
     isCurrent: () => Promise<void>,
@@ -228,6 +232,18 @@ export function sameScope(actual: SigningApplication.KeyScope | null, expected: 
     assert.equal(actual[field], expected[field]);
 }
 
+/** The 32-hex authorization generation a published config is bound to, or null when it names none. */
+function publishedAuthorizationGeneration(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    const hex = parsed && typeof parsed === 'object' ? (parsed as { generationHex?: unknown }).generationHex : null;
+    return typeof hex === 'string' && /^[0-9a-f]{32}$/.test(hex) ? hex : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Narrow system boundaries are supplied only by the fixed executable or tests.
  * Public-config observation allows key activation, not quote issuance, Function
  * propagation or ProductConfig activation. Those existing gates stay separate. */
@@ -249,7 +265,19 @@ export async function provisionSigningKey(
   let uncertain: AmbiguousOperation = null,
     completed = false,
     keyId: number | null = null;
-  const operation = journaledOperation(ports.journal);
+  const enter = (step: SigningProvisionStep) => {
+    try {
+      ports.observeStep?.(step);
+    } catch {
+      /* Observation never changes the run. */
+    }
+  };
+  enter('PLAN');
+  const journaled = journaledOperation(ports.journal);
+  function operation<T>(name: Operation, action: () => Promise<T>): Promise<T> {
+    enter(name);
+    return journaled(name, action);
+  }
   try {
     const plan = qualifySigningProvisionPlan(inputPlan);
     assert.equal(ports.journal.planSha256, hash(plan));
@@ -335,6 +363,7 @@ export async function provisionSigningKey(
     );
     assert.ok(rows.filter((row) => row.state !== 'destroyed' && row.id !== plan.keyId).length < 4);
     const prior = await operation('READ_CONFIG_BEFORE', () => admin.read({ ...tenant, field: 'public_config' }));
+    enter('PRIOR_CONFIG');
     // The published config is the expected one, or an earlier publication that this run's pending
     // key, its retirement shortening, a revocation or an epoch bump has since only tightened.
     if (rows.some((row) => row.state !== 'destroyed')) {
@@ -349,7 +378,20 @@ export async function provisionSigningKey(
           compareDigest: prior?.compareDigest ?? null,
           differences,
         });
-    } else assert.equal(prior, null);
+    } else if (prior !== null) {
+      // Owner decision, 17 November 2026: uninstall removes the Functions but not this shop
+      // metafield, so a reinstall finds the earlier installation's config. A config bound to another
+      // authorization generation (immutable and unique per installation generation) is replaced by
+      // compare-and-set on its digest below; it can admit nothing for this installation. One that
+      // claims this installation's own generation while it has no keys still stops.
+      const published = publishedAuthorizationGeneration(prior.value);
+      assert.ok(published && published !== scope.authorizationGeneration.replaceAll('-', ''));
+      await ports.journal.record('published-config-tolerance', {
+        publishedSha256: createHash('sha256').update(prior.value).digest('hex'),
+        compareDigest: prior.compareDigest,
+        differences: ['earlier installation config replaced'],
+      });
+    }
     let ready:
       | {
           artifactScope: SigningApplication.FunctionArtifactScope;
@@ -369,6 +411,7 @@ export async function provisionSigningKey(
       });
     }
     async function readiness(name: Operation) {
+      enter('RELEASE_READINESS');
       await currentScope();
       dayCoverage();
       const artifactScope = {
