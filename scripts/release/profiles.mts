@@ -102,6 +102,8 @@ import startupModules from '../../deployment/m5-runtime/native-startup-module-ba
 import startupCandidate from '../../deployment/m5-runtime/native-startup-release-binding.json' with { type: 'json' };
 import nativeThemeModules from '../../deployment/m5-runtime/native-theme-module-baseline.json' with { type: 'json' };
 import nativeThemeCandidate from '../../deployment/m5-runtime/native-theme-release-binding.json' with { type: 'json' };
+import uiFixModules from '../../deployment/m5-runtime/native-uifix-module-baseline.json' with { type: 'json' };
+import uiFixBinding from '../../deployment/m5-runtime/native-uifix-release-binding.json' with { type: 'json' };
 import refreshModules from '../../deployment/m5-runtime/selected-refresh-module-baseline.json' with { type: 'json' };
 import refreshCandidate from '../../deployment/m5-runtime/selected-refresh-release-binding.json' with { type: 'json' };
 import selectedModules from '../../deployment/m5-runtime/selected-ui-module-baseline.json' with { type: 'json' };
@@ -184,6 +186,16 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  // Same Functions and non-theme modules as allorders; theme assets, cart-repair block and locales change (PR 542).
+  'native-uifix-565679f7': {
+    versionId: uiFixBinding.versionId,
+    versionTag: uiFixBinding.versionTag,
+    versionIds: uiFixBinding.versionIds,
+    moduleHash: uiFixBinding.moduleHash,
+    modules: uiFixModules,
+    grants: [...grants, 'read_orders', 'read_all_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   // Same theme, Functions and modules as scopes; only read_all_orders joins the required app_access scopes.
   'native-allorders-c0bb261a': {
     versionId: allOrdersBinding.versionId,
