@@ -3,7 +3,12 @@ import { type ActivationIdentity, type ActivationResult, executeCommand, newOutb
 import { currencyExponent } from '@insignia/cart-authorization';
 import { type MerchantDraft, MerchantDraftSchema, PublishedConfigSchema } from '@insignia/contracts';
 import type { DurableTransaction } from '@insignia/database';
-import { CONFIG_DRAFT_STORAGE_VERSION, type DurableCore, sha256CanonicalJson } from '@insignia/database';
+import {
+  CONFIG_DRAFT_STORAGE_VERSION,
+  type DurableCore,
+  PublicationAnchorConflictError,
+  sha256CanonicalJson,
+} from '@insignia/database';
 import { parseSignedMinor, validateLeanConfig, validatePublishedConfig } from '@insignia/domain';
 import { GEOMETRY_VERSION, type GeometryV1, validateGeometryBridge } from '@insignia/visualizer/geometry';
 import type { ConfigRejectionCode } from '../shared/config-rejection.ts';
@@ -70,18 +75,12 @@ const targetOccupied = (error: unknown) =>
 
 /** A committed publish request whose operation was never prepared wrote nothing to Shopify and took
  * no hold. Its request prepares within seconds of the command (a #468 resend within a session), so
- * one still unprepared after this bound has stopped: it is abandoned (shown as ABANDONED_RESTORED,
- * its key no longer resumes it) and the next publish supersedes it. Without this, losing the
- * original request's key (a closed tab, another device) would leave the product unpublishable. */
-export const UNPREPARED_PUBLICATION_ABANDON_MS = 10 * 60_000;
+ * one still unprepared after the database's bound (`unpreparedLapsed`, 10 minutes by the database
+ * clock alone) has stopped: it is abandoned (shown as ABANDONED_RESTORED, its key no longer resumes
+ * it) and the next publish supersedes it. Without this, losing the original request's key (a closed
+ * tab, another device) would leave the product unpublishable. */
 type CurrentPublication = Awaited<ReturnType<DurableCore['configs']['getCurrentPublication']>>;
-function unpreparedAbandoned(progress: CurrentPublication) {
-  return (
-    progress?.status === 'intent' &&
-    !!progress.requestedAt &&
-    Date.now() - progress.requestedAt.getTime() >= UNPREPARED_PUBLICATION_ABANDON_MS
-  );
-}
+const unpreparedAbandoned = (progress: CurrentPublication) => progress?.unpreparedLapsed === true;
 
 function publicationSettled(progress: CurrentPublication) {
   return (
@@ -1051,13 +1050,26 @@ export function createMerchantConfigService(input: {
         };
       await current(actor);
       const publication = input.publication(actor);
-      const prepared = await publication.prepare({
-        shopId: actor.tenantShopId,
-        configId: data.configId,
-        revisionId,
-        operationId: revisionId,
-        mode,
-      });
+      let prepared: Awaited<ReturnType<typeof publication.prepare>>;
+      try {
+        prepared = await publication.prepare({
+          shopId: actor.tenantShopId,
+          configId: data.configId,
+          revisionId,
+          operationId: revisionId,
+          mode,
+        });
+      } catch (error) {
+        // Nothing was journaled or written; the unprepared request lapses (spec §6.2) and a retry
+        // is refused the same way until support reconciles the product's fields (spec §5.5).
+        if (error instanceof PublicationAnchorConflictError)
+          return {
+            kind: 'invalid',
+            code: 'PUBLICATION_UNAVAILABLE',
+            message: "This product's Insignia fields in Shopify need support before it can be published.",
+          };
+        throw error;
+      }
       let phase: string = prepared.phase;
       const activation = input.activation?.(actor);
       let reconciliationFailure: 'CONFLICT' | 'OPERATOR_HOLD' | null = null;

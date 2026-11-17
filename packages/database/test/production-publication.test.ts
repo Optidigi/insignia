@@ -3,7 +3,7 @@ import { type Kysely, sql } from 'kysely';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../src/client/database.js';
 import { CONFIG_DRAFT_STORAGE_VERSION, createConfigRepositoryInternal } from '../src/repositories/config.js';
-import { PgProductionPublication } from '../src/repositories/production-publication.js';
+import { PgProductionPublication, PublicationAnchorConflictError } from '../src/repositories/production-publication.js';
 import { createPublicationRepository } from '../src/repositories/publication.js';
 import { PgSigningKeyRepository } from '../src/repositories/signing-keys.js';
 import { createTenantRepository } from '../src/repositories/tenant.js';
@@ -433,6 +433,155 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
       'Product enforcement anchors drifted or belong to another installation',
     );
   });
+
+  /** Prepare a publication and advance it `steps` times: a publication stopped mid-way (uninstall). */
+  async function publishUntil(
+    publisher: PgProductionPublication,
+    f: Awaited<ReturnType<typeof fixture>>,
+    steps: number,
+  ) {
+    const operationId = randomUUID();
+    await publisher.prepare({ ...f, operationId, mode: 'required' });
+    for (let i = 0; i < steps; i++) await publisher.advance(f.shopId, f.configId, operationId);
+  }
+  function setCell(remote: FakeRemote, field: Field, value: string) {
+    const anchor = cell(remote, field);
+    remote.cells.set(field, { ...anchor, value, compareDigest: createHash('sha256').update(value).digest('hex') });
+  }
+  const admitted = () => ({ established: async () => ({ isFresh: () => true }) });
+
+  it.each([
+    ['a first publication stopped after its pending registration', 0, 2, /^[0-9a-f]{32}:1:pending$/, null],
+    ['a first publication stopped after its policy', 0, 3, /^[0-9a-f]{32}:1:pending$/, /:1:required$/],
+    ['a later publication stopped after its pending registration', 1, 2, /:2:pending$/, /:1:required$/],
+  ] as const)(
+    'replaces the anchors of %s in an earlier generation',
+    async (_name, completed, steps, registration, policy) => {
+      const f = await fixture();
+      const remote = new FakeRemote();
+      const publisher = new PgProductionPublication(database, remote, '101', admitted());
+      for (let i = 0; i < completed; i++) await publishAndActivateWith(publisher, f, 'required');
+      await publishUntil(publisher, f, steps);
+      expect(remote.cells.get('registration')?.value).toMatch(registration);
+      if (policy) expect(remote.cells.get('policy')?.value).toMatch(policy);
+      else expect(remote.cells.get('policy')).toBeUndefined();
+      const next = await reinstall(f);
+      const operationId = randomUUID();
+      // Before: 'Product enforcement anchors drifted …' or 'Partial product enforcement anchors …' (a 503).
+      expect(await publisher.prepare({ ...f, operationId, mode: 'required' })).toEqual({
+        operationId,
+        phase: 'prepared',
+      });
+      let result = await publisher.advance(f.shopId, f.configId, operationId);
+      for (let i = 0; i < 5 && result.kind === 'PENDING'; i++)
+        result = await publisher.advance(f.shopId, f.configId, operationId);
+      expect(result).toEqual({ kind: 'REMOTE_READY_ACTIVATION_PENDING', phase: 'activation-pending' });
+      const hex = next.authorizationGeneration.replaceAll('-', '');
+      expect(cell(remote, 'registration').value).toMatch(new RegExp(`^${hex}:\\d+:ready$`));
+      expect(cell(remote, 'policy').value).toMatch(new RegExp(`^${hex}:\\d+:required$`));
+    },
+  );
+
+  it('still stops on earlier-generation anchors once the current generation has an effective publication', async () => {
+    const f = await fixture();
+    const remote = new FakeRemote();
+    const publisher = new PgProductionPublication(database, remote, '101', admitted());
+    await publishAndActivateWith(publisher, f, 'required');
+    const earlier = { registration: cell(remote, 'registration'), policy: cell(remote, 'policy') };
+    await reinstall(f);
+    await publishAndActivateWith(publisher, f, 'required');
+    remote.cells.set('registration', earlier.registration);
+    remote.cells.set('policy', earlier.policy);
+    await expect(publisher.prepare({ ...f, operationId: randomUUID(), mode: 'required' })).rejects.toThrow(
+      PublicationAnchorConflictError,
+    );
+  });
+
+  it('still stops on deactivated-generation anchors no publication can leave', async () => {
+    const f = await fixture();
+    const remote = new FakeRemote();
+    const publisher = new PgProductionPublication(database, remote, '101', admitted());
+    await publishAndActivateWith(publisher, f, 'required');
+    const firstPolicy = cell(remote, 'policy');
+    await reinstall(f);
+    await publishAndActivateWith(publisher, f, 'required');
+    const second = { registration: cell(remote, 'registration'), policy: cell(remote, 'policy') };
+    const secondHex = second.registration.value.split(':')[0];
+    await reinstall(f);
+    const refuses = () =>
+      expect(publisher.prepare({ ...f, operationId: randomUUID(), mode: 'required' })).rejects.toThrow(
+        PublicationAnchorConflictError,
+      );
+    // A ready registration over another deactivated generation's policy.
+    remote.cells.set('policy', firstPolicy);
+    await refuses();
+    // Same deactivated generation, but a ready registration never differs from its policy's sequence.
+    remote.cells.set('policy', second.policy);
+    setCell(remote, 'policy', `${secondHex}:1:required`);
+    await refuses();
+    // A pending registration is never older than the policy it is written over.
+    setCell(remote, 'registration', `${secondHex}:1:pending`);
+    setCell(remote, 'policy', `${secondHex}:2:required`);
+    await refuses();
+    // A policy without any registration.
+    remote.cells.delete('registration');
+    await refuses();
+  });
+
+  it('orders prepare after a publish command holding the config lock: a superseded request never prepares', async () => {
+    const f = await fixture();
+    const remote = new FakeRemote();
+    const publisher = new PgProductionPublication(database, remote, '101');
+    const newer = randomUUID();
+    await createConfigRepositoryInternal(database).createRevision({
+      shopId: f.shopId,
+      configId: f.configId,
+      revisionId: newer,
+      schemaVersion: 'm2-published-config-v1',
+      publishedValue: publishedValue(f.shopId, f.productId, newer),
+    });
+    let commit: (() => void) | undefined;
+    let locked: (() => void) | undefined;
+    const holding = new Promise<void>((resolve) => {
+      locked = resolve;
+    });
+    const released = new Promise<void>((resolve) => {
+      commit = resolve;
+    });
+    // The publish command: config row lock, then the pointer moves to its newer revision.
+    const command = database.transaction().execute(async (tx) => {
+      await sql`SELECT config_id FROM product_configs WHERE shop_id=${f.shopId} AND config_id=${f.configId}
+        FOR UPDATE`.execute(tx);
+      await sql`INSERT INTO m5_current_publication_pointer (shop_id, config_id, revision_id,
+        installation_generation, source_draft_version, idempotency_key)
+        VALUES (${f.shopId}, ${f.configId}, ${newer}, ${f.generation}::bigint, 2, 'newer-request-key')`.execute(tx);
+      locked?.();
+      await released;
+    });
+    await holding;
+    const preparing = publisher.prepare({ ...f, operationId: f.revisionId, mode: 'required' });
+    const outcome = preparing.then(
+      () => 'prepared',
+      (error: Error) => error.message,
+    );
+    await waitForLockWait();
+    commit?.();
+    await command;
+    expect(await outcome).toBe('A newer publication request exists');
+    const operations = await sql<{ count: string }>`SELECT count(*)::text AS count FROM publication_operations
+      WHERE shop_id=${f.shopId} AND config_id=${f.configId}`.execute(database);
+    expect(operations.rows[0]?.count).toBe('0');
+  });
+
+  async function waitForLockWait() {
+    for (let i = 0; i < 200; i++) {
+      const waiting = await sql<{ count: string }>`SELECT count(*)::text AS count FROM pg_stat_activity
+        WHERE datname=current_database() AND wait_event_type='Lock'`.execute(database);
+      if (waiting.rows[0]?.count !== '0') return;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    throw new Error('prepare never waited for the config lock');
+  }
 
   it('never prepares a request whose current-publication pointer moved to a newer request', async () => {
     const f = await fixture();

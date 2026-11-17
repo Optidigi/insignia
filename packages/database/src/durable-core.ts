@@ -267,8 +267,9 @@ export interface DurableCore {
       reconciliationKind?: string | null;
       /** The activation row still carries an availability hold (#466: support copy only then). */
       holdPresent?: boolean;
-      /** When the current-publication pointer was last set (null for a historical operation). */
-      requestedAt?: Date | null;
+      /** The pointer's request never prepared an operation and is older than
+       * UNPREPARED_PUBLICATION_LAPSE, by the database clock (never for a historical operation). */
+      unpreparedLapsed?: boolean;
     } | null>;
     /** #466: the config's newest operation (current generation) when its hold was claimed or
      * restored as abandoned. A derived input; the next publication's sequence ends it. */
@@ -423,6 +424,10 @@ export interface DurableCore {
   close(): Promise<void>;
 }
 
+/** A publish request whose operation is still unprepared this long after it was committed has
+ * stopped (its request prepares within seconds); it lapses as abandoned (spec §6.2). */
+const UNPREPARED_PUBLICATION_LAPSE = '10 minutes';
+
 /** The caller supplies a dedicated pool; no raw database or executor escapes. */
 export function createDurableCore(pool: Pool, options: { credentialKeys?: CredentialKeyRing } = {}): DurableCore {
   const database = createDatabase(pool);
@@ -468,8 +473,10 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       activation_kind: string | null;
       reconciliation_kind: string | null;
       hold_present: boolean | null;
-      requested_at: Date;
-    }>`SELECT pointer.revision_id, pointer.source_draft_version::text, pointer.updated_at AS requested_at,
+      unprepared_lapsed: boolean;
+    }>`SELECT pointer.revision_id, pointer.source_draft_version::text,
+        operation.operation_id IS NULL
+          AND clock_timestamp() - pointer.updated_at >= ${UNPREPARED_PUBLICATION_LAPSE}::interval AS unprepared_lapsed,
         pointer.idempotency_key, geometry.mode, operation.operation_id,
         progress.phase, progress.prior_mode, operation.status, activation.kind AS activation_kind,
         activation.hold IS NOT NULL AS hold_present,
@@ -506,7 +513,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
         activationKind: selected.activation_kind,
         reconciliationKind: selected.reconciliation_kind,
         holdPresent: selected.hold_present === true,
-        requestedAt: selected.requested_at,
+        unpreparedLapsed: selected.unprepared_lapsed === true,
       };
     }
     const historical = await sql<{

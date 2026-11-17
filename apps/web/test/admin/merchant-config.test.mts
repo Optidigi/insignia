@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { MerchantDraftSchema, PublishedConfigSchema } from '@insignia/contracts';
 import type { DurableCore } from '@insignia/database';
-import { CONFIG_DRAFT_STORAGE_VERSION, createDurableCore } from '@insignia/database';
+import { CONFIG_DRAFT_STORAGE_VERSION, createDurableCore, PublicationAnchorConflictError } from '@insignia/database';
 import { Pool } from 'pg';
 import { handleAdminRequest } from '../../src/server/admin/http.ts';
 import { createMerchantConfigService } from '../../src/server/merchant-config.ts';
@@ -741,6 +741,17 @@ test('durable editor CAS, exact-key replay, independent products, immutable geom
   }
 });
 
+async function waitForLockWait(pool: Pool) {
+  for (let i = 0; i < 300; i++) {
+    const waiting = await pool.query<{ count: string }>(
+      `SELECT count(*)::text AS count FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock'`,
+    );
+    if (waiting.rows[0]?.count !== '0') return;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  throw new Error('the publish command never waited for the config lock');
+}
+
 test('a committed publish that never prepared is abandoned after its bound and never wedges the product', {
   skip: !database,
   timeout: 30000,
@@ -760,6 +771,7 @@ test('a committed publish that never prepared is abandoned after its bound and n
     }),
   );
   let failPrepare = false;
+  let anchorConflict = false;
   const prepared: string[] = [];
   const service = createMerchantConfigService({
     core,
@@ -780,6 +792,10 @@ test('a committed publish that never prepared is abandoned after its bound and n
         async prepare(input) {
           // E.g. the reinstall anchor failure: the durable command committed, no operation exists.
           if (failPrepare) throw new Error('synthetic prepare failure after the command committed');
+          if (anchorConflict)
+            throw new PublicationAnchorConflictError(
+              'Product enforcement anchors drifted or belong to another installation',
+            );
           prepared.push(input.revisionId);
           return { operationId: input.operationId, phase: 'prepared' };
         },
@@ -828,6 +844,15 @@ test('a committed publish that never prepared is abandoned after its bound and n
       service.publish(staff, productA, { configId: a.configId, draftVersion: a.draftVersion, idempotencyKey });
     const stale = await failedPublish(productA, a.configId, a.draftVersion, 'publish-closed-tab-original');
     assert.equal((await state(productA)).state, 'PUBLISH_REQUESTED');
+    // The bound is measured by the database clock alone: an application clock ahead of it never
+    // abandons a request that may still be running.
+    const realNow = Date.now;
+    Date.now = () => realNow() + 11 * 60_000;
+    try {
+      assert.equal((await state(productA)).state, 'PUBLISH_REQUESTED');
+    } finally {
+      Date.now = realNow;
+    }
     assert.equal(
       (await publishA('publish-closed-tab-too-early')).kind,
       'conflict',
@@ -849,6 +874,34 @@ test('a committed publish that never prepared is abandoned after its bound and n
       'the superseded original key never resumes',
     );
     assert.deepEqual(prepared, [fresh.revisionId]);
+
+    // Reverse lock order: a prepare holding the config row lock creates the operation first; the
+    // publish command waiting on that lock then sees a prepared request and is refused (409).
+    await age(a.configId);
+    const holder = await sql.connect();
+    let blocked: Promise<unknown> | undefined;
+    try {
+      await holder.query('BEGIN');
+      await holder.query('SELECT config_id FROM product_configs WHERE shop_id=$1 AND config_id=$2 FOR UPDATE', [
+        shopId,
+        a.configId,
+      ]);
+      await holder.query(
+        `INSERT INTO publication_operations (shop_id, config_id, operation_id, revision_id, installation_generation,
+          operation_sequence, expected_projection, expected_projection_digest) VALUES ($1,$2,$3,$3,1,1,'{}',$4)`,
+        [shopId, a.configId, fresh.revisionId, '0'.repeat(64)],
+      );
+      await holder.query(
+        'INSERT INTO m4_publication_progress (shop_id, config_id, operation_id, phase, mode) VALUES ($1,$2,$3,$4,$5)',
+        [shopId, a.configId, fresh.revisionId, 'prepared', 'required'],
+      );
+      blocked = publishA('publish-behind-prepare');
+      await waitForLockWait(sql);
+      await holder.query('COMMIT');
+    } finally {
+      holder.release();
+    }
+    assert.deepEqual(await blocked, { kind: 'conflict', message: 'A publication request is already in progress' });
 
     // Draft changed since the abandoned request: its own key reports the abandonment and never
     // prepares; the next publish of the current draft supersedes it.
@@ -917,6 +970,16 @@ test('a committed publish that never prepared is abandoned after its bound and n
     });
     assert.equal(afterReinstall.kind, 'accepted');
     assert.equal(prepared.at(-1), afterReinstall.revisionId);
+
+    // Product anchors no publication can explain: a typed refusal the editor shows, never a 503.
+    await age(b.configId);
+    anchorConflict = true;
+    const refused = await service.publish(reinstalled, productB, {
+      configId: b.configId,
+      draftVersion: again.draftVersion,
+      idempotencyKey: 'publish-anchor-conflict',
+    });
+    assert.equal(refused.kind === 'invalid' && refused.code, 'PUBLICATION_UNAVAILABLE');
   } finally {
     await sql.end();
     await core.close();
