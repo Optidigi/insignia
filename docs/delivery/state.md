@@ -140,18 +140,20 @@ All on production (`app.insigniacustomizer.com`), proven on the review store `in
 
 ### Deployed identities
 
-Production on host alias `prod`, as of 17 November 2026 `18:08Z` (deploy X).
+Production on host alias `prod`, as of 17 November 2026 `19:35Z` (deploy Y).
 
 | Component | Identity | Source |
 | --- | --- | --- |
 | Shopify Active version | `1232902225921`, profile `native-reinstall-eb2ce476`; 46 versions, theme module hash `b9a12a0f…` (only theme assets changed from `1227332452353`); required scopes `read_all_orders,read_markets,read_orders,read_publications,write_app_proxy,write_cart_transforms,write_products,write_validations` (optional `read_product_listings`); NEVER_RELEASE versions inactive; `read_all_orders` is an optional grant for verification until each store accepts it | theme from main `eb2ce476`; binding `415a48ef` (#554) |
 | Functions | transform wasm `5c8708b5…` (module `826a9059…`, query `02ab5bce…`), validation wasm `6c362b36…` (module `076bfef2…`, query `5867e61f…`) | `aa3b6166` |
-| Web | `sha256:2b27aa5f…` (deploy X; `INSIGNIA_STORE_SETUP_ENABLED=1`; EUR v2 profile bound to `1232902225921`) | main `f4302391` |
+| Web | `sha256:d21a4510…` (deploy Y, main `1e9b1e00`; `INSIGNIA_STORE_SETUP_ENABLED=1`; EUR v2 profile bound to `1232902225921`) | main `f4302391` |
 | Worker | `sha256:5a6897fc…` (deploy X; `INSIGNIA_PUBLICATION_ABANDONMENT=restore`) | main `f4302391` |
 | Verifier | `sha256:f13bf4f5…` (deploy X; code manifest `e9000243…`; startup file carries the credential wrapping key) | main `f4302391` |
 | Signer | `sha256:e9b1f153…` (since 13 Nov `21:54:55Z`, #431) | main `afc3c1da` |
 | Host inspector | `~/insignia-artwork-releases/96726b31104588b83902d00325c7676d8a09f087/` (deploy V: bundled read-only fonts for SVG text; unit keeps the 16 Nov host edits, reapplied by `adminfix-deploy-V/host-unit.py`; prior `5662e423…` kept for rollback) | main `11c29285` (#550) |
 | Database | PostgreSQL 18.6, schema 71 (migration 71: deactivation destroys the generation's signing keys), container `insignia-production-database` (10.0.7.250, aliases `database` and `insignia-rewrite-m5-019-database`, which the verifier requires), data in `/srv/insignia/postgres` on the LUKS2 volume; fresh since 16 Nov `16:56Z` (no stores); ACL digests as before the cutover (roles and grants replayed from the dev database); `log_connections`/`log_disconnections` on | 71 repository migrations |
+
+**Deploy Y** (17 Nov, owner go; web only, same profile): main `1e9b1e00` — #558 (`admin_request_failed` for preferences and merchant-media unexpected 503s) and #559 (methods dialog shows only the loading state until the catalogue arrives and ignores toggles while loading; reproduced in the browser harness: rows moved 22.5 px when "Add method" appeared and swallowed the first click). Web replaced `19:34:51Z`; no app release, no fail-closed window; checkpoint restore-verified and shredded; facts unchanged. Receipt `logging-deploy-Y/receipt.json` on both hosts.
 
 **Deploy X** (17 Nov, owner go; Phase B only, same profile): main `f4302391` — #555 publish after reinstall (product registration/policy anchors left by one of the shop's own deactivated generations are replaced by compare-and-set like a first publication, including interrupted `pending` states; any other anchor conflict is a typed 422 `PUBLICATION_UNAVAILABLE`, not 503; a committed publish that never reached `prepare` lapses after 10 minutes by the database clock, so a closed tab no longer wedges the product; race guarded under the config row lock), independently reviewed; #556 `admin_request_failed` (route template, method, error class/code and own-code site only; no message) instead of a silent 503. Images from main runtime run 44142430303 (tree `539ad09a`). Checkpoint restore-verified at schema 71 and shredded. Phase B `18:07:21–23Z`; admission `ba94b1c6…` at `18:07:47Z`; no app release, no fail-closed window. No error lines, facts unchanged. Verified natively on `insignia-review-eu` (real clicks): the stale 16:33Z request showed "Publishing didn't finish…", Publish succeeded (Published, about `18:10Z`); storefront Designer renders SVG lettering as real letters from the server preview (R2 `artwork/previews/…`); Logo methods dialog shows one Print row after untick/re-tick. Receipt `publishfix-deploy-X/receipt.json` on both hosts.
 
@@ -230,8 +232,7 @@ The signing wrapping key lives only in `runtime/signer-secrets/signing-wrap-keys
 
 **Open from 17 Nov (launch hardening):**
 - #549 (research): library methods aren't offered in the product editor until assigned to the product; first-setup UX to decide.
-- `admin/preferences-http.ts` and `admin/merchant-media-http.ts` still end in silent 503 catch-alls; give them `admin_request_failed` like #556.
-- The Logo methods dialog sometimes finishes loading after it opens and the layout shifts, so a first click can land on the wrong row (seen once on review-eu after deploy X; not reproduced).
+- Merchant artwork routes (`apps/web/src/server/artwork/http.ts`, incl. guest artwork preview) and `handleMerchantArtworkLinkRequest` (`customer-artwork/http.ts`) still end in silent 503 catch-alls; each needs its own `admin_request_failed` hook (#558 covered preferences and merchant media).
 - Erasure test: `insignia-erasure-test` uninstalled `12:04:38Z` with order #1001, artwork and keys; `shop/redact` expected about 19 Nov `12:05Z`; scheduled check 19 Nov `14:00Z` (fence staged, rows and R2 objects gone, review-eu untouched).
 - Designer preview image accessible name still begins with "Selection" for one-option products (small; with the next theme release).
 
