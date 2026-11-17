@@ -72,3 +72,19 @@ jobs:
           push verifier verifier-image.tar
           push heartbeat heartbeat-image.tar
           skopeo logout ghcr.io
+      - name: Require the packages to stay private
+        # GHCR gives an anonymous pull token only for public packages. Visibility is set per package
+        # (the organization keeps public packages possible for its open-source repositories), so this
+        # fails the run if any Insignia image package was made public.
+        run: |
+          set -euo pipefail
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          public=0
+          for name in web worker verifier heartbeat; do
+            token=$(curl -sS --max-time 20 "https://ghcr.io/token?scope=repository:$owner/insignia-$name:pull" | jq -r '.token // empty')
+            if [ -n "$token" ]; then
+              echo "::error::ghcr.io/$owner/insignia-$name is publicly pullable; set the package to private"
+              public=1
+            fi
+          done
+          exit "$public"
