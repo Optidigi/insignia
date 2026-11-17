@@ -1,6 +1,7 @@
 import type { PurchaseGroup, PurchaseView } from '@insignia/contracts';
 import { formatExactCount } from '@insignia/ui-localization/core';
 import { useAdminLocale } from '../shared/admin-i18n.js';
+import { purchasedVariantLabel } from '../shared/purchase-presentation.ts';
 import AdminDisclosure from './AdminDisclosure';
 
 /** Keep small selections visible and disclose the full retained quantity vector on demand. */
@@ -8,13 +9,18 @@ export default function PurchaseVariants({ group, lines }: { group: PurchaseGrou
   const { t, formatLocale } = useAdminLocale();
   const variants = group.variants.map((variant) => ({
     ...variant,
-    label:
-      lines.find((line) => line.productId === group.productId && line.variantId === variant.variantId)?.variantTitle ??
+    label: purchasedVariantLabel(
+      lines.find((line) => line.productId === group.productId && line.variantId === variant.variantId),
       t('orders:items.variantUnavailable'),
+    ),
   }));
   if (variants.length <= 3)
     return (
-      <s-text color="subdued">{variants.map((variant) => `${variant.label} × ${variant.quantity}`).join(' · ')}</s-text>
+      <s-text color="subdued">
+        {variants
+          .map((variant) => (variant.label ? `${variant.label} × ${variant.quantity}` : `× ${variant.quantity}`))
+          .join(' · ')}
+      </s-text>
     );
   const quantity = variants.reduce((total, variant) => total + BigInt(variant.quantity), 0n);
   const number = new Intl.NumberFormat(formatLocale);

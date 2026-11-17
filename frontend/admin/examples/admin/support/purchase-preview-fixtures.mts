@@ -15,8 +15,9 @@ const PRODUCTS = [
   {
     id: 'gid://shopify/Product/222',
     title: 'Heavyweight canvas tote',
-    variantIds: ['gid://shopify/ProductVariant/21', 'gid://shopify/ProductVariant/22'],
-    variants: ['Natural / One size', 'Black / One size'],
+    // A single-variant product: Shopify reports no variant title for its "Default Title" variant.
+    variantIds: ['gid://shopify/ProductVariant/21'],
+    variants: [null],
   },
   {
     id: 'gid://shopify/Product/333',
@@ -151,7 +152,7 @@ function buildLines(index: number, isMultiCustomizationOrder: boolean) {
     return {
       orderLineId: `line-${index + 1}-${lineIndex + 1}`,
       title: product.title,
-      variantTitle: product.variants[selectedVariant] ?? 'One size',
+      variantTitle: product.variants[selectedVariant] ?? null,
       productId: product.id,
       variantId: product.variantIds[selectedVariant] ?? product.variantIds[0] ?? 'gid://shopify/ProductVariant/11',
       quantity,

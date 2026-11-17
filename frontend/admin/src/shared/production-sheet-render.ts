@@ -12,6 +12,7 @@ import {
   productionOrderWarnings,
   productionSheetOrderMessage,
 } from './production-sheet.js';
+import { purchasedVariantLabel } from './purchase-presentation.ts';
 
 export interface ProductionSheetProgress {
   phase: 'design' | 'artwork' | 'garment' | 'page';
@@ -441,9 +442,12 @@ export async function renderProductionSheet(
       // Retain arbitrarily long merchant text in the body; compact repeated page headers remain readable.
       if (compact(orderLabel, 42, 750, (contentWidth - 48) / 2) !== orderLabel) await paragraph(orderLabel, 22);
       if (compact(productTitle, 29, 650, productWidth) !== productTitle) await paragraph(productTitle, 25, 600);
+      // A single-variant (Default Title) product row shows only its quantity.
       const variantName = (variantId: string) =>
-        purchase.lines.find((line) => line.productId === group.productId && line.variantId === variantId)
-          ?.variantTitle ?? localization.t('exports:productionSheet.pdf.variantUnavailable');
+        purchasedVariantLabel(
+          purchase.lines.find((line) => line.productId === group.productId && line.variantId === variantId),
+          localization.t('exports:productionSheet.pdf.variantUnavailable'),
+        ) ?? '';
       await heading(localization.t('exports:productionSheet.pdf.garments'), 90);
       context.font = '650 24px system-ui, sans-serif';
       const quantityColumnWidth = Math.max(
@@ -459,7 +463,8 @@ export async function renderProductionSheet(
       };
       tableHeader();
       for (const variant of group.variants) {
-        const lines = wrapped(variantName(variant.variantId), 22, 400, contentWidth - quantityColumnWidth);
+        const name = wrapped(variantName(variant.variantId), 22, 400, contentWidth - quantityColumnWidth);
+        const lines = name.length ? name : [''];
         for (let index = 0; index < lines.length; index++) {
           if (await room(35)) tableHeader();
           draw(lines[index] ?? '', margin + 12, y + 23, 22);
@@ -791,7 +796,7 @@ export async function renderProductionSheet(
                 variantId: variant.variantId,
                 selectedPlacementId: placement.id,
                 selectedStepId: placement.stepId,
-                ...(placement.position ? {artworkPosition:placement.position} : {}),
+                ...(placement.position ? { artworkPosition: placement.position } : {}),
                 artwork: { kind: 'raster', url: 'blob:worksheet', aspectRatio: current.ratio },
               },
               viewport,

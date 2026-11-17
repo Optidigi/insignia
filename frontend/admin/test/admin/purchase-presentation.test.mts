@@ -4,6 +4,7 @@ import {
   formatShopDateTime,
   PurchaseListViewSchema,
   PurchaseOriginalDownloadSchema,
+  purchasedVariantLabel,
 } from '../../src/shared/purchase-presentation.ts';
 
 test('order times show in the shop time zone with its label, or labelled UTC when the zone is unknown', () => {
@@ -32,4 +33,14 @@ test('archive preparation requires verified metadata instead of treating an ordi
   assert.equal(PurchaseOriginalDownloadSchema.parse(original).byteLength, 1024);
   assert.throws(() => PurchaseOriginalDownloadSchema.parse({ ...original, byteLength: -1 }));
   assert.throws(() => PurchaseOriginalDownloadSchema.parse({ ...original, contentType: 'text/html' }));
+});
+
+test('a resolved single-variant line shows no variant label; only a failed lookup says unavailable', () => {
+  const unavailable = 'Variant name unavailable';
+  assert.equal(purchasedVariantLabel({ title: 'Shirt', variantTitle: 'Blue / M' }, unavailable), 'Blue / M');
+  // Shopify gives no variant title for a product's only ("Default Title") variant.
+  assert.equal(purchasedVariantLabel({ title: 'Shirt', variantTitle: null }, unavailable), null);
+  assert.equal(purchasedVariantLabel({ title: 'Shirt' }, unavailable), null);
+  assert.equal(purchasedVariantLabel({ title: null, variantTitle: null }, unavailable), unavailable);
+  assert.equal(purchasedVariantLabel(undefined, unavailable), unavailable);
 });

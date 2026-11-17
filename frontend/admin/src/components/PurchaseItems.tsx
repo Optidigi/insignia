@@ -3,6 +3,7 @@ import { formatExactCount } from '@insignia/ui-localization/core';
 import { type GeometryV1, validateGeometry } from '@insignia/ui-visualizer/geometry';
 import { useEffect, useState } from 'preact/hooks';
 import { useAdminLocale } from '../shared/admin-i18n.js';
+import { purchasedVariantLabel } from '../shared/purchase-presentation.ts';
 import { localizedPurchaseMoney } from '../shared/purchase-view';
 import AdminDisclosure from './AdminDisclosure';
 
@@ -67,6 +68,8 @@ export default function PurchaseItems({ purchase, aside = false }: { purchase: P
     else products.set(key, [line]);
   }
   const number = new Intl.NumberFormat(formatLocale);
+  const variantLabel = (line: PurchaseView['lines'][number]) =>
+    purchasedVariantLabel(line, t('orders:items.variantUnavailable'));
   const itemCount = (value: bigint) => {
     const exact = formatExactCount(value, formatLocale);
     return exact.kind === 'plural'
@@ -95,7 +98,7 @@ export default function PurchaseItems({ purchase, aside = false }: { purchase: P
                 });
                 const rows = lines.map((item) => (
                   <s-stack key={item.orderLineId} gap="small-300">
-                    {lines.length > 1 && <s-text>{item.variantTitle ?? t('orders:items.variantUnavailable')}</s-text>}
+                    {lines.length > 1 && variantLabel(item) && <s-text>{variantLabel(item)}</s-text>}
                     <s-grid gridTemplateColumns="minmax(0, 1fr) minmax(0, 1fr)" gap="small" alignItems="center">
                       <s-stack direction="inline" gap="small-200" alignItems="center">
                         <s-text color="subdued">
@@ -143,8 +146,8 @@ export default function PurchaseItems({ purchase, aside = false }: { purchase: P
                         <PurchasedItemImage groups={purchase.groups} line={line} size="small" />
                         <s-stack gap="small-300">
                           <s-text type="strong">{line.title ?? t('orders:items.purchasedItemUnavailable')}</s-text>
-                          {lines.length === 1 && (
-                            <s-text color="subdued">{line.variantTitle ?? t('orders:items.variantUnavailable')}</s-text>
+                          {lines.length === 1 && variantLabel(line) && (
+                            <s-text color="subdued">{variantLabel(line)}</s-text>
                           )}
                         </s-stack>
                       </s-grid>

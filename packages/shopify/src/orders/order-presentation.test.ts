@@ -42,6 +42,17 @@ test('retained order labels bind to exact order and purchased line identities', 
   expect((await readOrderPresentation({ read: async () => ({ order: foreign }) }, target))?.lines).toEqual([]);
 });
 
+test('a single-variant (Default Title) line keeps its product title without a variant title', async () => {
+  // Shopify reports no variantTitle for a product's only "Default Title" variant.
+  const single = {
+    ...order,
+    lineItems: { ...order.lineItems, nodes: [{ ...order.lineItems.nodes[0], variantTitle: null }] },
+  };
+  expect((await readOrderPresentation({ read: async () => ({ order: single }) }, target))?.lines).toEqual([
+    { orderLineId: 'gid://shopify/LineItem/2', title: 'Purchased shirt', variantTitle: null },
+  ]);
+});
+
 test.each([
   ['3', '4'],
   ['3', 'gid://shopify/ProductVariant/4'],

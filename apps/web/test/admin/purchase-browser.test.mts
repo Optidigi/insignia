@@ -626,6 +626,27 @@ test('Shopify refund records describe requested facts without claiming settled p
   assert.equal(await page.getByText('Test', { exact: true }).count(), 0);
 });
 
+test('a single-variant (Default Title) line shows no variant label; only a failed lookup says unavailable', {
+  timeout: 15000,
+}, async (t) => {
+  const { page, base } = await fixture(t);
+  // Shopify reports no variant title for a product's only "Default Title" variant.
+  let current: PurchaseView = view();
+  required(current.lines[0]).variantTitle = null;
+  await page.route(`**/api/purchases/v1/${id}`, (r) => r.fulfill({ json: current }));
+  await page.goto(`${base}/admin/orders/${id}`);
+  await page.getByRole('region', { name: 'Purchased shirt customization', exact: true }).waitFor();
+  await page.getByText('× 2', { exact: true }).waitFor();
+  assert.equal(await page.getByText('Variant name unavailable', { exact: true }).count(), 0);
+
+  // A failed label lookup resolves neither the product nor the variant title.
+  current = view();
+  required(current.lines[0]).title = null;
+  required(current.lines[0]).variantTitle = null;
+  await refreshPurchase(page);
+  await page.getByText('Variant name unavailable', { exact: true }).first().waitFor();
+});
+
 test('merchant requests independent reconciliation without claiming current facts changed', {
   timeout: 20000,
 }, async (t) => {
