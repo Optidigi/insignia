@@ -32,6 +32,7 @@ export function resolveNativePurchaseQualification(input: {
   const profile = resolveRuntimeReleaseProfile(input.releaseProfile);
   if (
     ![
+      'native-uifix-565679f7',
       'native-allorders-c0bb261a',
       'native-scopes-e896db0a',
       'native-designer-d2002a28',

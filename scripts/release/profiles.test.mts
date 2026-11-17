@@ -105,6 +105,8 @@ import speedBinding from '../../deployment/m5-runtime/native-speed-release-bindi
 import startupModules from '../../deployment/m5-runtime/native-startup-module-baseline.json' with { type: 'json' };
 import startupBinding from '../../deployment/m5-runtime/native-startup-release-binding.json' with { type: 'json' };
 import nativeThemeModules from '../../deployment/m5-runtime/native-theme-module-baseline.json' with { type: 'json' };
+import uiFixModules from '../../deployment/m5-runtime/native-uifix-module-baseline.json' with { type: 'json' };
+import uiFixBinding from '../../deployment/m5-runtime/native-uifix-release-binding.json' with { type: 'json' };
 import refreshModules from '../../deployment/m5-runtime/selected-refresh-module-baseline.json' with { type: 'json' };
 import selectedModules from '../../deployment/m5-runtime/selected-ui-module-baseline.json' with { type: 'json' };
 import proxyModules from '../../deployment/m8-journey/app-proxy-module-baseline.json' with { type: 'json' };
@@ -438,6 +440,20 @@ test('functions renew candidate preserves identities and changes only theme and 
       };
       assert.deepEqual(unversioned(config), unversioned(oldConfig));
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
+  }
+});
+test('UI-batch candidate changes only the theme module', () => {
+  assert.equal(uiFixModules.length, 14);
+  assert.equal(uiFixBinding.moduleHash, 'dceb379b1a01315fb181c34becebfd49b37db916cc65f396db20401e7ba3b087');
+  assert.equal(uiFixBinding.versionId, '1226879205377');
+  assert.deepEqual(new Set(uiFixBinding.versionIds), new Set([...allOrdersBinding.versionIds, '1226879205377']));
+  const prior = new Map(allOrdersModules.map((m) => [m.handle, m]));
+  assert.equal(prior.size, 14);
+  for (const module of uiFixModules) {
+    const old = required(prior.get(module.handle));
+    if (module.type === 'theme_app_extension')
+      assert.deepEqual({ ...module, config: undefined }, { ...old, config: undefined });
+    else assert.deepEqual(module, old);
   }
 });
 test('read_all_orders candidate adds only that required scope', () => {

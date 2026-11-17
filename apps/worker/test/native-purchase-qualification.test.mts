@@ -54,6 +54,7 @@ test('observed native origin binds only the closed release profile and validated
 });
 
 for (const [releaseProfile, expectedVersion] of [
+  ['native-uifix-565679f7', '1226879205377'],
   ['native-allorders-c0bb261a', '1225110192129'],
   ['native-scopes-e896db0a', '1222703742977'],
   ['native-designer-d2002a28', '1222232834049'],
