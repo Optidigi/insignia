@@ -584,6 +584,7 @@
       "customer_recovery_earlierSession": "Kop voor eerdere sessie",
       "customer_recovery_earlierSessionHelp": "Uitleg voor eerdere sessie",
       "customer_recovery_earlierSessionExpiredHelp": "Uitleg voor eerdere sessie (verlopen)",
+      "customer_recovery_unavailableHelp": "Uitleg personaliseren niet beschikbaar",
       "customer_recovery_draftUnavailable": "Melding eerder ontwerp niet beschikbaar",
       "customer_startup_loading": "Laadbericht",
       "customer_startup_failure": "Bericht bij laadfout",

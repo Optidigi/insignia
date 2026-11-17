@@ -2570,6 +2570,7 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_recovery_sessionQuota': object;
   'settings:translations.fields.customer_recovery_startNew': object;
   'settings:translations.fields.customer_recovery_unavailable': object;
+  'settings:translations.fields.customer_recovery_unavailableHelp': object;
   'settings:translations.fields.customer_recovery_undo': object;
   'settings:translations.fields.customer_recovery_unsupportedMarket': object;
   'settings:translations.fields.customer_resume_continue': object;
@@ -2948,6 +2949,7 @@ export interface CustomerMessageTable {
   'customer:recovery.sessionQuota': object;
   'customer:recovery.startNew': object;
   'customer:recovery.unavailable': object;
+  'customer:recovery.unavailableHelp': object;
   'customer:recovery.undo': object;
   'customer:recovery.unsupportedMarket': object;
   'customer:resume.continue': object;

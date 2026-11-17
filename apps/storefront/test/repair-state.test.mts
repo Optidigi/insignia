@@ -52,11 +52,21 @@ const cases: { state: RepairState; view: ReturnType<typeof summary> }[] = [
   { state: { cause: 'unresolved-write' }, view: { ...repairRequired, actions: [removeAll, retry] } },
   { state: { cause: 'unavailable', canRemoveAll: true }, view: { ...repairRequired, actions: [removeAll, retry] } },
   {
+    // Nothing to remove or start: the buyer is told plainly that customization isn't available now.
     state: { cause: 'unavailable', canRemoveAll: false },
     view: {
       heading: 'customer:chrome.unavailable',
       label: 'customer:recovery.repairRequired',
-      help: undefined,
+      help: 'customer:recovery.unavailableHelp',
+      actions: [retry],
+    },
+  },
+  {
+    state: { cause: 'review-required', canStart: false, canRemoveGroup: false, canRemoveAll: false },
+    view: {
+      heading: 'customer:chrome.unavailable',
+      label: 'customer:recovery.repairRequired',
+      help: 'customer:recovery.unavailableHelp',
       actions: [retry],
     },
   },
