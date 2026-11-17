@@ -217,6 +217,93 @@ test('unknown durable command failures remain unavailable without leaking detail
   assert.deepEqual(await response.json(), { error: 'Admin service unavailable' });
 });
 
+test('an unexpected admin failure is recorded by safe fields only and keeps the same 503', async () => {
+  const recorded: unknown[] = [];
+  const secret = 'password=SECRET-9f2c for alpha.myshopify.com gid://shopify/Product/10485042479387';
+  const h = deps({
+    recordAdminFailure: (failure) => recorded.push(failure),
+    configs: {
+      read: async () => {
+        throw Object.assign(new RangeError(secret), { code: 'ERR_INJECTED_FAILURE' });
+      },
+    },
+  });
+  const response = await handleAdminRequest(request('/api/admin/products/10485042479387/config'), h.services, {
+    kind: 'config',
+    productId,
+  });
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), { error: 'Admin service unavailable' });
+  assert.equal(recorded.length, 1);
+  const failure = recorded[0] as Record<string, unknown>;
+  assert.deepEqual(Object.keys(failure).sort(), ['adminRoute', 'errorClass', 'errorCode', 'errorSite', 'httpMethod']);
+  assert.equal(failure.adminRoute, 'product-config');
+  assert.equal(failure.httpMethod, 'GET');
+  assert.equal(failure.errorClass, 'RangeError');
+  assert.equal(failure.errorCode, 'ERR_INJECTED_FAILURE');
+  assert.match(String(failure.errorSite), /^apps\/web\/test\/admin\/commands\.test\.mts:[1-9][0-9]*$/);
+  assert.doesNotMatch(JSON.stringify(recorded), /SECRET|myshopify|gid:|10485042479387|synthetic/i);
+
+  const command = deps({
+    recordAdminFailure: (failure) => recorded.push(failure),
+    configs: {
+      publish: async () => {
+        throw new Error(secret);
+      },
+    },
+  });
+  const failed = await handleAdminRequest(
+    request('/api/admin/products/10485042479387/config', 'POST', {
+      action: 'publish',
+      configId: 'config-1',
+      draftVersion: '1',
+    }),
+    command.services,
+    { kind: 'config', productId },
+  );
+  assert.equal(failed.status, 503);
+  assert.deepEqual(await failed.json(), { error: 'Admin service unavailable' });
+  assert.deepEqual(
+    { ...(recorded[1] as object), errorSite: undefined },
+    { adminRoute: 'product-config-command', httpMethod: 'POST', errorClass: 'Error', errorSite: undefined },
+  );
+
+  const throwing = deps({
+    recordAdminFailure: () => {
+      throw new Error('recorder down');
+    },
+    configs: {
+      read: async () => {
+        throw new Error(secret);
+      },
+    },
+  });
+  const still = await handleAdminRequest(request('/api/admin/products/10485042479387/config'), throwing.services, {
+    kind: 'config',
+    productId,
+  });
+  assert.equal(still.status, 503);
+  assert.deepEqual(await still.json(), { error: 'Admin service unavailable' });
+});
+
+test('handled admin outcomes are not recorded as unexpected failures', async () => {
+  const recorded: unknown[] = [];
+  const h = deps({
+    recordAdminFailure: (failure) => recorded.push(failure),
+    configs: {
+      read: async () => {
+        throw Object.assign(new Error('Shopify throttled'), { transient: true });
+      },
+    },
+  });
+  const busy = await handleAdminRequest(request('/api/admin/products/10485042479387/config'), h.services, {
+    kind: 'config',
+    productId,
+  });
+  assert.equal(busy.status, 409);
+  assert.deepEqual(recorded, []);
+});
+
 test('refresh-required online exchange is 401 with Shopify fresh-ID-token retry signal', async () => {
   const h = deps({
     authenticate: async () => {
