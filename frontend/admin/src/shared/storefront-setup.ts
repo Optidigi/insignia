@@ -59,6 +59,9 @@ export function storefrontLinks(shop: unknown, apiKey: unknown) {
   const editor = `https://${shop}/admin/themes/current/editor`;
   return {
     editor: `${editor}?template=product`,
+    // Shopify's app block deep link: proposes the optional customization block (blocks/customize.liquid) in the
+    // product page's main section; the merchant positions and saves it in the theme editor.
+    productBlock: `${editor}?${new URLSearchParams({ template: 'product', addAppBlockId: `${apiKey}/customize`, target: 'mainSection' })}`,
     cartEditor: `${editor}?context=apps&template=product`,
     button: `${editor}?${new URLSearchParams({ context: 'apps', template: 'product', activateAppId: `${apiKey}/cart-repair` })}`,
     cart: `${editor}?${new URLSearchParams({ context: 'apps', template: 'product', activateAppId: `${apiKey}/cart-repair` })}`,

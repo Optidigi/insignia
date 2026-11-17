@@ -76,6 +76,11 @@ test('a one-option product names its option instead of "Selection Selection" on 
     // No row choice exists: the generic row caption is not shown under the preview.
     assert.equal(await page.locator('.color-section').count(), 0);
     assert.doesNotMatch(await page.locator('.app').innerText(), /Selection/);
+    // The preview image's accessible name follows the same caption, not the generic "Selection".
+    const preview = page.locator('.garment-stage [role="img"]').first();
+    const previewName = (await preview.getAttribute('aria-label')) ?? '';
+    assert.match(previewName, /^Color /);
+    assert.doesNotMatch(previewName, /Selection/);
     await page.locator('.steps button').nth(1).click();
     await page.locator('.app[data-step="1"]').waitFor();
     const quantities = await page.locator('.app').innerText();

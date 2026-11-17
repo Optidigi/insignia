@@ -270,6 +270,20 @@ test('storefront setup asks for a theme save only while a theme change is still 
   assert.equal(await unknown.getByText(save, { exact: true }).count(), 0, 'no save request from an unverified state');
 });
 
+test('storefront setup links the optional customization block to its Shopify app block deep link', {
+  timeout: 30000,
+}, async (t) => {
+  const page = await openMerchantPage(t, '/admin/settings/storefront', { embed: 'active' });
+  await page.getByText('Added', { exact: true }).first().waitFor();
+  const link = page.locator('s-link', { hasText: 'Add the customization block' });
+  assert.equal(await link.count(), 1);
+  const href = new URL((await link.getAttribute('href')) ?? '');
+  assert.equal(href.pathname, '/admin/themes/current/editor');
+  assert.equal(href.searchParams.get('template'), 'product');
+  assert.match(href.searchParams.get('addAppBlockId') ?? '', /^[a-f0-9]{32}\/customize$/);
+  assert.equal(href.searchParams.get('target'), 'mainSection');
+});
+
 test('Home order tiles say that test and cancelled orders are not counted, in every bundled language', {
   timeout: 60000,
 }, async (t) => {

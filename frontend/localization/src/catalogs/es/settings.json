@@ -121,6 +121,7 @@
     "unsupportedAnnouncement": "El estado del tema no está disponible.",
     "finishedAnnouncement": "Terminó la comprobación del tema publicado.",
     "productTemplatesGuidance": "Activa una vez la integración de tienda Insignia para colocar el botón automáticamente en las plantillas de producto compatibles. Usa el bloque de aplicación opcional para una posición concreta.",
+    "addCustomizationBlock": "Añadir el bloque de personalización",
     "unpublishedThemesGuidance": "Abre el tema desde Tienda online → Temas para añadir Insignia. Los estados que aparecen aquí solo se aplican al tema publicado.",
     "compatibilityGuidance": "La colocación automática admite Horizon y Dawn. En temas personalizados, prueba los controles de producto y adición rápida o usa el bloque de aplicación opcional."
   },

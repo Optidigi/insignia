@@ -121,6 +121,7 @@
     "unsupportedAnnouncement": "L’état du thème n’est pas disponible.",
     "finishedAnnouncement": "Vérification du thème publié terminée.",
     "productTemplatesGuidance": "Activez une seule fois l’intégration de boutique Insignia pour le placement automatique dans les modèles de produit compatibles. Utilisez le bloc d’application facultatif pour une position précise.",
+    "addCustomizationBlock": "Ajouter le bloc de personnalisation",
     "unpublishedThemesGuidance": "Ouvrez le thème depuis Boutique en ligne → Thèmes pour y ajouter Insignia. Les états affichés ici concernent uniquement le thème publié.",
     "compatibilityGuidance": "Le placement automatique prend en charge Horizon et Dawn. Pour un thème personnalisé, testez les boutons de produit et d’ajout rapide ou utilisez le bloc d’application facultatif."
   },

@@ -2287,6 +2287,7 @@ export const adminParameterContracts = {
   'settings:readinessPermissions.unverifiedDescription': {},
   'settings:readinessPermissions.viewOnly': {},
   'settings:readinessPermissions.yourProductAccess': {},
+  'settings:storefrontSetup.addCustomizationBlock': {},
   'settings:storefrontSetup.checkingAnnouncement': {},
   'settings:storefrontSetup.compatibilityGuidance': {},
   'settings:storefrontSetup.failedAnnouncement': {},
