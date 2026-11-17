@@ -6,6 +6,7 @@ const EVENTS = new Set([
   'admin_authentication',
   'admin_config_rejected',
   'admin_request_failed',
+  'system_request_failed',
   'artwork_request_timing',
   'buyer_request_failed',
   'buyer_request_rejected',
@@ -34,6 +35,8 @@ export type RuntimeEvent =
   | 'admin_config_rejected'
   /** Error: an admin API request failed unexpectedly (503); names the route, error class and own-code site only. */
   | 'admin_request_failed'
+  /** Error: a Shopify webhook or operator request failed unexpectedly (503); names the route, error class and own-code site only. */
+  | 'system_request_failed'
   | 'artwork_request_timing'
   | 'buyer_request_failed'
   /** An expected 4xx outcome: buyer-actionable (info) or BUSY, transient and retryable (warn). */
@@ -171,7 +174,10 @@ export const ADMIN_FAILURE_ROUTES = [
   'merchant-media',
   'merchant-artwork',
   'artwork-link',
+  'purchases',
 ] as const;
+/** Non-user routes: Shopify webhook ingress, its per-request setup, and the operator metrics scrape. */
+export const SYSTEM_FAILURE_ROUTES = ['shopify-webhook', 'shopify-webhook-setup', 'internal-metrics'] as const;
 const HTTP_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] as const;
 /** A code identifier, never message text. */
 const ERROR_CLASS = /^[A-Za-z][A-Za-z0-9_]{0,63}$/;
@@ -190,6 +196,26 @@ export type AdminFailureDiagnostic = {
   correlationId?: string;
 };
 export type UnexpectedErrorDiagnostic = Pick<AdminFailureDiagnostic, 'errorClass' | 'errorCode' | 'errorSite'>;
+/** An unexpected webhook or operator failure: no method, correlation, shop, topic or payload. */
+export type SystemFailureDiagnostic = UnexpectedErrorDiagnostic & {
+  systemRoute: (typeof SYSTEM_FAILURE_ROUTES)[number];
+};
+function validUnexpectedError(f: UnexpectedErrorDiagnostic): boolean {
+  return (
+    typeof f.errorClass === 'string' &&
+    ERROR_CLASS.test(f.errorClass) &&
+    (f.errorCode === undefined || (typeof f.errorCode === 'string' && ERROR_CODE.test(f.errorCode))) &&
+    (f.errorSite === undefined ||
+      (typeof f.errorSite === 'string' && f.errorSite.length <= 200 && ERROR_SITE.test(f.errorSite)))
+  );
+}
+function unexpectedErrorDetails(f: UnexpectedErrorDiagnostic): UnexpectedErrorDiagnostic {
+  return {
+    errorClass: f.errorClass,
+    ...(f.errorCode === undefined ? {} : { errorCode: f.errorCode }),
+    ...(f.errorSite === undefined ? {} : { errorSite: f.errorSite }),
+  };
+}
 
 /** Reduce a stack frame location to a path relative to Insignia's own code, or null for a
  * third-party, runtime-internal or unrecognized frame. Only the path and line survive. */
@@ -246,6 +272,10 @@ const BUYER_STAGES = [
   'request',
   /** Guest (App Proxy) artwork upload, status and preview. */
   'artwork',
+  /** Guest (App Proxy) artwork session issue. */
+  'artwork-session',
+  /** The emailed customer artwork link (bearer capability). */
+  'customer-artwork',
 ] as const;
 const BUYER_FAILURES = [
   'ReviewRequired',
@@ -425,6 +455,8 @@ export interface RuntimeLogDetails {
   rejectionCode?: string;
   /** admin_request_failed only. */
   adminFailure?: AdminFailureDiagnostic;
+  /** system_request_failed only. */
+  systemFailure?: SystemFailureDiagnostic;
   correlationId?: string;
   inboxId?: string;
   shopId?: string;
@@ -573,22 +605,22 @@ function eventDetails(event: RuntimeEvent, input: RuntimeLogDetails) {
       !f ||
       !ADMIN_FAILURE_ROUTES.includes(f.adminRoute) ||
       !HTTP_METHODS.includes(f.httpMethod) ||
-      typeof f.errorClass !== 'string' ||
-      !ERROR_CLASS.test(f.errorClass) ||
-      (f.errorCode !== undefined && (typeof f.errorCode !== 'string' || !ERROR_CODE.test(f.errorCode))) ||
-      (f.errorSite !== undefined &&
-        (typeof f.errorSite !== 'string' || f.errorSite.length > 200 || !ERROR_SITE.test(f.errorSite))) ||
+      !validUnexpectedError(f) ||
       (f.correlationId !== undefined && (typeof f.correlationId !== 'string' || !UUID.test(f.correlationId)))
     )
       throw new Error('Invalid admin failure diagnostic');
     return {
       adminRoute: f.adminRoute,
       httpMethod: f.httpMethod,
-      errorClass: f.errorClass,
-      ...(f.errorCode === undefined ? {} : { errorCode: f.errorCode }),
-      ...(f.errorSite === undefined ? {} : { errorSite: f.errorSite }),
+      ...unexpectedErrorDetails(f),
       ...(f.correlationId === undefined ? {} : { correlationId: f.correlationId }),
     };
+  }
+  if (event === 'system_request_failed') {
+    const f = input.systemFailure;
+    if (!f || !SYSTEM_FAILURE_ROUTES.includes(f.systemRoute) || !validUnexpectedError(f))
+      throw new Error('Invalid system failure diagnostic');
+    return { systemRoute: f.systemRoute, ...unexpectedErrorDetails(f) };
   }
   if (event === 'publication_preparation_stopped') {
     if (typeof input.preparationStage !== 'string' || !REJECTION_CODE.test(input.preparationStage))

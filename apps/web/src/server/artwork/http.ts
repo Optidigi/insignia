@@ -214,13 +214,20 @@ function recordUnexpected(
     recordAdminFailure(services, request, 'merchant-artwork', error);
     return;
   }
+  recordBuyerUnexpected(services.recordBuyerFailure, 'artwork', error, correlationId);
+}
+
+/** A buyer-side unexpected failure carries the closed buyer vocabulary and a correlation id only.
+ * A throwing recorder is swallowed: the buyer still receives the same 503. */
+export function recordBuyerUnexpected(
+  record: ((failure: BuyerFailureDiagnostic) => void) | undefined,
+  buyerStage: BuyerFailureDiagnostic['buyerStage'],
+  error: unknown,
+  correlationId: string = randomUUID(),
+): void {
   try {
-    services.recordBuyerFailure?.({
-      buyerStage: 'artwork',
-      correlationId,
-      errorClass: error instanceof TypeError ? 'TypeError' : 'UnexpectedFailure',
-    });
+    record?.({ buyerStage, correlationId, errorClass: error instanceof TypeError ? 'TypeError' : 'UnexpectedFailure' });
   } catch {
-    // Observation is best effort; the buyer still receives the same 503.
+    // Observation is best effort.
   }
 }

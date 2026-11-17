@@ -1,9 +1,10 @@
 import type { createArtworkService, createCustomerArtworkLinks } from '@insignia/application';
-import type { AdminFailureDiagnostic } from '@insignia/observability';
+import type { AdminFailureDiagnostic, BuyerFailureDiagnostic } from '@insignia/observability';
 import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminActor } from '../admin/contracts.js';
 import { adminBusy, mutationOrigin, recordAdminFailure, shopifyBusy, validActor } from '../admin/http.ts';
 import { artworkJsonBody } from '../artwork/body.ts';
+import { recordBuyerUnexpected } from '../artwork/http.ts';
 
 export type CustomerArtworkHttpServices = {
   appOrigin: string;
@@ -15,6 +16,8 @@ export type CustomerArtworkHttpServices = {
   ensureInspectionReady(): Promise<void>;
   /** Staff link unexpected-failure (503) observation: route template, method and reduced error only. */
   recordAdminFailure?(failure: AdminFailureDiagnostic): void;
+  /** Customer link unexpected-failure (503) observation: the buyer failure vocabulary and a correlation id only. */
+  recordBuyerFailure?(failure: BuyerFailureDiagnostic): void;
 };
 const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 function json(data: unknown, status = 200) {
@@ -104,6 +107,7 @@ export async function handleCustomerArtworkRequest(
       (error instanceof Error && error.message === 'CUSTOMER_ARTWORK_UNAVAILABLE')
     )
       return json({ error: 'Customer artwork link or slot unavailable' }, 409);
+    recordBuyerUnexpected(services.recordBuyerFailure, 'customer-artwork', error);
     return json({ error: 'Customer artwork temporarily unavailable' }, 503);
   }
 }

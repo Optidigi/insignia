@@ -1,12 +1,12 @@
-import type { PurchaseServices } from './service.ts';
+import type { PurchaseHttpServices } from './http.ts';
 
-let configured: PurchaseServices | undefined;
-let pending: Promise<PurchaseServices | undefined> | undefined;
-export function configurePurchaseServices(services: PurchaseServices) {
+let configured: PurchaseHttpServices | undefined;
+let pending: Promise<PurchaseHttpServices | undefined> | undefined;
+export function configurePurchaseServices(services: PurchaseHttpServices) {
   if (configured) throw new Error('Purchase services already configured');
   configured = services;
 }
-export async function purchaseServices(): Promise<PurchaseServices | undefined> {
+export async function purchaseServices(): Promise<PurchaseHttpServices | undefined> {
   if (configured) return configured;
   if (!pending)
     pending = import('./production.ts')
