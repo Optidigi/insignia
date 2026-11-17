@@ -1,9 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { ARTWORK_POLICY, ArtworkError, type ArtworkScope, type createArtworkService } from '@insignia/application';
-import { type ArtworkTimingDiagnostic, createObservability } from '@insignia/observability';
+import {
+  type AdminFailureDiagnostic,
+  type ArtworkTimingDiagnostic,
+  type BuyerFailureDiagnostic,
+  createObservability,
+} from '@insignia/observability';
 import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminActor } from '../admin/contracts.js';
-import { adminBusy, adminJson, mutationOrigin, shopifyBusy, validActor } from '../admin/http.ts';
+import { adminBusy, adminJson, mutationOrigin, recordAdminFailure, shopifyBusy, validActor } from '../admin/http.ts';
 import { artworkEmptyBody, artworkJsonBody } from './body.ts';
 
 export type ArtworkRoute = { audience: 'merchant' | 'guest' } & (
@@ -19,6 +24,10 @@ export interface ArtworkHttpServices {
   issueGuest?(request: Request): Promise<{ token: string; expiresAt: string } | null>;
   /** No upload admission without a qualified, available isolated worker. */
   ensureInspectionReady?(): Promise<void>;
+  /** Merchant unexpected-failure (503) observation: route template, method and reduced error only. */
+  recordAdminFailure?(failure: AdminFailureDiagnostic): void;
+  /** Guest unexpected-failure (503) observation: the buyer failure vocabulary and a correlation id only. */
+  recordBuyerFailure?(failure: BuyerFailureDiagnostic): void;
 }
 const ASSET = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 async function declaration(request: Request, guest: boolean) {
@@ -65,19 +74,20 @@ export async function handleArtworkRequest(
     logger.info('artwork_request_timing', { artworkTiming: value }),
 ): Promise<Response> {
   if (route.audience !== 'guest' || (route.kind !== 'begin' && route.kind !== 'complete' && route.kind !== 'status'))
-    return respondArtwork(request, services, route, {});
+    return respondArtwork(request, services, route, {}, randomUUID());
   const operation = route.kind;
   const started = performance.now();
+  const correlationId = randomUUID();
   const note: ArtworkNote = 'assetId' in route && ASSET.test(route.assetId) ? { assetId: route.assetId } : {};
   let httpStatus = 500;
   try {
-    const response = await respondArtwork(request, services, route, note);
+    const response = await respondArtwork(request, services, route, note, correlationId);
     httpStatus = response.status;
     return response;
   } finally {
     try {
       timing({
-        correlationId: randomUUID(),
+        correlationId,
         operation,
         outcome: httpStatus < 400 ? 'success' : 'failure',
         httpStatus,
@@ -97,6 +107,8 @@ async function respondArtwork(
   services: ArtworkHttpServices | undefined,
   route: ArtworkRoute,
   note: ArtworkNote,
+  /** Shared with the guest timing line so an unexpected failure can be matched to it. */
+  correlationId: string,
 ): Promise<Response> {
   if (!services) return adminJson(503, { error: 'Artwork unavailable' });
   const write = route.kind === 'begin' || route.kind === 'complete';
@@ -168,6 +180,7 @@ async function respondArtwork(
   } catch (error) {
     const code = error instanceof ArtworkError ? error.code : 'UNAVAILABLE';
     note.failure ??= code;
+    if (!(error instanceof ArtworkError)) recordUnexpected(request, services, route, error, correlationId);
     const status = {
       INVALID_INPUT: 422,
       NOT_FOUND: 404,
@@ -185,5 +198,29 @@ async function respondArtwork(
     if (error instanceof ArtworkError && error.retryAfterSeconds)
       response.headers.set('Retry-After', String(error.retryAfterSeconds));
     return response;
+  }
+}
+
+/** Only an unexpected exception is recorded; ArtworkError outcomes, including UNAVAILABLE, are handled.
+ * Recording never changes the response and never carries the message or request data. */
+function recordUnexpected(
+  request: Request,
+  services: ArtworkHttpServices,
+  route: ArtworkRoute,
+  error: unknown,
+  correlationId: string,
+): void {
+  if (route.audience === 'merchant') {
+    recordAdminFailure(services, request, 'merchant-artwork', error);
+    return;
+  }
+  try {
+    services.recordBuyerFailure?.({
+      buyerStage: 'artwork',
+      correlationId,
+      errorClass: error instanceof TypeError ? 'TypeError' : 'UnexpectedFailure',
+    });
+  } catch {
+    // Observation is best effort; the buyer still receives the same 503.
   }
 }

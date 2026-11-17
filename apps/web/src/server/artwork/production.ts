@@ -1,4 +1,5 @@
 import { createArtworkService } from '@insignia/application';
+import { createObservability } from '@insignia/observability';
 import { createAppProxyVerifier } from '@insignia/shopify';
 import { loadArtworkStorageProfile } from '@insignia/storage';
 import { adminServices } from '../admin/runtime.js';
@@ -24,6 +25,7 @@ export async function createProductionArtworkServices(
     prefix: required('ARTWORK_R2_PREFIX'),
   });
   const { core } = await webRuntime();
+  const logger = createObservability().logger;
   const artwork = createArtworkService({
     store: core.artwork,
     storage,
@@ -52,6 +54,9 @@ export async function createProductionArtworkServices(
     authenticate: async (request, options) => (await adminServices()?.authenticate(request, options)) ?? null,
     verifyGuest: guest?.verify,
     issueGuest: guest?.issue,
+    // Merchant failures share the admin logger (admin_request_failed); guest failures are buyer failures.
+    recordAdminFailure: (failure) => adminServices()?.recordAdminFailure?.(failure),
+    recordBuyerFailure: (failure) => logger.error('buyer_request_failed', failure),
     async ensureInspectionReady() {
       await ensureArtworkInspectionReady({
         socketPath: env.ARTWORK_WORKER_READY_SOCKET,

@@ -38,6 +38,7 @@ export async function customerArtworkServices(): Promise<CustomerArtworkHttpServ
           if (!assertAccess) throw new Error('Current merchant authority unavailable');
           await assertAccess(actor);
         },
+        recordAdminFailure: (failure) => adminServices()?.recordAdminFailure?.(failure),
         async ensureInspectionReady() {
           if (!upload?.ensureInspectionReady) throw new Error('Artwork inspection unavailable');
           await upload.ensureInspectionReady();

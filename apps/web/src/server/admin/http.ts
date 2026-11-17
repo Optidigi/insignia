@@ -193,7 +193,7 @@ const FAILURE_METHODS: readonly string[] = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH
 
 /** Unexpected failures are recorded by route template and reduced error only; recording never changes the response. */
 export function recordAdminFailure(
-  services: AdminServices,
+  services: Pick<AdminServices, 'recordAdminFailure'>,
   request: Request,
   adminRoute: AdminFailureDiagnostic['adminRoute'],
   error: unknown,

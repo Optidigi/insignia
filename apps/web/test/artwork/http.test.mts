@@ -281,3 +281,179 @@ test('an exhausted upload quota is a 429 with its code and Retry-After, which th
   assert.equal(lines.length, 1);
   assert.equal(lines[0]?.failure, 'RATE_LIMITED');
 });
+
+const failureAssetId = 'ae771020-1f54-47ab-a8af-48b1eb7de3d2';
+const failureSecret = 'password=SECRET-9f2c for alpha.myshopify.com gid://shopify/Product/10485042479387';
+const merchantPreview = () =>
+  new Request(`https://app.example.test/api/artwork/${failureAssetId}/preview`, {
+    headers: { Authorization: 'Bearer synthetic' },
+  });
+const guestRead = () =>
+  new Request(`https://app.example.test/api/artwork/guest/${failureAssetId}/preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ capability: 'synthetic' }),
+  });
+const verifyGuest = async (): Promise<ArtworkScope> => ({
+  kind: 'guest',
+  shopId: 'tenant-2',
+  installationGeneration: '9',
+  ownerHash: 'a'.repeat(64),
+});
+
+test('an unexpected merchant artwork failure is recorded by safe fields only and keeps the same 503', async () => {
+  const admin: unknown[] = [];
+  const buyer: unknown[] = [];
+  const failing = (recordAdminFailure: (failure: unknown) => void): ArtworkHttpServices => ({
+    ...services,
+    recordAdminFailure,
+    recordBuyerFailure: (failure) => buyer.push(failure),
+    artwork: artworkFixture({
+      preview: async () => {
+        throw Object.assign(new RangeError(failureSecret), { code: 'ERR_INJECTED_FAILURE' });
+      },
+      begin: async () => {
+        throw new Error(failureSecret);
+      },
+    }),
+  });
+  const recording = failing((failure) => admin.push(failure));
+  const read = await handleArtworkRequest(merchantPreview(), recording, {
+    kind: 'preview',
+    audience: 'merchant',
+    assetId: failureAssetId,
+  });
+  assert.equal(read.status, 503);
+  assert.deepEqual(await read.json(), { code: 'UNAVAILABLE', error: 'Artwork unavailable' });
+  assert.equal(admin.length, 1);
+  const failure = admin[0] as Record<string, unknown>;
+  assert.deepEqual(Object.keys(failure).sort(), ['adminRoute', 'errorClass', 'errorCode', 'errorSite', 'httpMethod']);
+  assert.equal(failure.adminRoute, 'merchant-artwork');
+  assert.equal(failure.httpMethod, 'GET');
+  assert.equal(failure.errorClass, 'RangeError');
+  assert.equal(failure.errorCode, 'ERR_INJECTED_FAILURE');
+  assert.match(String(failure.errorSite), /^apps\/web\/test\/artwork\/http\.test\.mts:[1-9][0-9]*$/);
+
+  const begun = await handleArtworkRequest(request({ contentType: 'image/png', byteLength: 108 }), recording, {
+    kind: 'begin',
+    audience: 'merchant',
+  });
+  assert.equal(begun.status, 503);
+  assert.deepEqual(await begun.json(), { code: 'UNAVAILABLE', error: 'Artwork unavailable' });
+  assert.deepEqual(
+    { ...(admin[1] as object), errorSite: undefined },
+    { adminRoute: 'merchant-artwork', httpMethod: 'POST', errorClass: 'Error', errorSite: undefined },
+  );
+  assert.deepEqual(buyer, []);
+  assert.doesNotMatch(JSON.stringify(admin), /SECRET|myshopify|gid:|10485042479387|synthetic|ae771020/i);
+
+  const still = await handleArtworkRequest(
+    merchantPreview(),
+    failing(() => {
+      throw new Error('recorder down');
+    }),
+    { kind: 'preview', audience: 'merchant', assetId: failureAssetId },
+  );
+  assert.equal(still.status, 503);
+  assert.deepEqual(await still.json(), { code: 'UNAVAILABLE', error: 'Artwork unavailable' });
+});
+
+test('an unexpected guest artwork failure is recorded as a buyer failure and keeps the same 503', async () => {
+  const admin: unknown[] = [];
+  const buyer: unknown[] = [];
+  const lines: Record<string, unknown>[] = [];
+  const failing = (recordBuyerFailure: (failure: unknown) => void): ArtworkHttpServices => ({
+    ...services,
+    verifyGuest,
+    recordAdminFailure: (failure) => admin.push(failure),
+    recordBuyerFailure,
+    artwork: artworkFixture({
+      preview: async () => {
+        throw Object.assign(new RangeError(failureSecret), { code: 'ERR_INJECTED_FAILURE' });
+      },
+      status: async () => {
+        throw new TypeError(failureSecret);
+      },
+    }),
+  });
+  const recording = failing((failure) => buyer.push(failure));
+  const preview = await handleArtworkRequest(guestRead(), recording, {
+    kind: 'preview',
+    audience: 'guest',
+    assetId: failureAssetId,
+  });
+  assert.equal(preview.status, 503);
+  assert.deepEqual(await preview.json(), { code: 'UNAVAILABLE', error: 'Artwork unavailable' });
+  const status = await handleArtworkRequest(
+    guestRead(),
+    recording,
+    { kind: 'status', audience: 'guest', assetId: failureAssetId },
+    (value) => lines.push({ ...value }),
+  );
+  assert.equal(status.status, 503);
+  assert.deepEqual(await status.json(), { code: 'UNAVAILABLE', error: 'Artwork unavailable' });
+  assert.equal(buyer.length, 2);
+  for (const failure of buyer as Record<string, unknown>[]) {
+    assert.deepEqual(Object.keys(failure).sort(), ['buyerStage', 'correlationId', 'errorClass']);
+    assert.equal(failure.buyerStage, 'artwork');
+    assert.match(String(failure.correlationId), /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+  }
+  assert.equal((buyer[0] as Record<string, unknown>).errorClass, 'UnexpectedFailure');
+  assert.equal((buyer[1] as Record<string, unknown>).errorClass, 'TypeError');
+  // The failure line correlates with the guest timing line of the same request.
+  assert.equal(lines.length, 1);
+  assert.equal((buyer[1] as Record<string, unknown>).correlationId, lines[0]?.correlationId);
+  assert.deepEqual(admin, []);
+  assert.doesNotMatch(JSON.stringify(buyer), /SECRET|myshopify|gid:|10485042479387|synthetic|ae771020/i);
+
+  const still = await handleArtworkRequest(
+    guestRead(),
+    failing(() => {
+      throw new Error('recorder down');
+    }),
+    { kind: 'preview', audience: 'guest', assetId: failureAssetId },
+  );
+  assert.equal(still.status, 503);
+  assert.deepEqual(await still.json(), { code: 'UNAVAILABLE', error: 'Artwork unavailable' });
+});
+
+test('handled artwork outcomes are not recorded as unexpected failures', async () => {
+  const recorded: unknown[] = [];
+  let thrown: unknown;
+  const recording: ArtworkHttpServices = {
+    ...services,
+    verifyGuest,
+    recordAdminFailure: (failure) => recorded.push(failure),
+    recordBuyerFailure: (failure) => recorded.push(failure),
+    artwork: artworkFixture({
+      preview: async () => {
+        throw thrown;
+      },
+    }),
+  };
+  const merchant = { kind: 'preview', audience: 'merchant', assetId: failureAssetId } as const;
+  const guest = { kind: 'preview', audience: 'guest', assetId: failureAssetId } as const;
+  const codes = ['INVALID_INPUT', 'NOT_FOUND', 'EXPIRED', 'NOT_USABLE', 'CONFLICT', 'RATE_LIMITED', 'UNAVAILABLE'];
+  for (const code of codes) {
+    thrown = new ArtworkError(code as ArtworkError['code']);
+    await handleArtworkRequest(merchantPreview(), recording, merchant);
+    await handleArtworkRequest(guestRead(), recording, guest);
+  }
+  const authFailing: ArtworkHttpServices = {
+    ...recording,
+    authenticate: async () => {
+      throw new Error(failureSecret);
+    },
+    verifyGuest: async () => {
+      throw new Error(failureSecret);
+    },
+  };
+  assert.equal((await handleArtworkRequest(merchantPreview(), authFailing, merchant)).status, 503);
+  assert.equal((await handleArtworkRequest(guestRead(), authFailing, guest)).status, 503);
+  const anonymous = { ...recording, authenticate: async () => null, verifyGuest: async () => null };
+  assert.equal((await handleArtworkRequest(merchantPreview(), anonymous, merchant)).status, 401);
+  assert.equal((await handleArtworkRequest(guestRead(), anonymous, guest)).status, 401);
+  const invalid = request({ contentType: 'image/png', byteLength: 0 });
+  assert.equal((await handleArtworkRequest(invalid, recording, { kind: 'begin', audience: 'merchant' })).status, 422);
+  assert.deepEqual(recorded, []);
+});

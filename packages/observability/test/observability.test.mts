@@ -294,6 +294,26 @@ test('buyer review-required logging retains only its finite diagnostic and corre
   assert.doesNotMatch(output, /SECRET|capability|carrier|properties|message/);
 });
 
+test('an unexpected guest artwork failure logs as a buyer failure at the artwork stage', () => {
+  let output = '';
+  const { logger } = createObservability({
+    stream: new Writable({
+      write(chunk, _encoding, callback) {
+        output += chunk;
+        callback();
+      },
+    }),
+  });
+  logger.error('buyer_request_failed', {
+    correlationId: '01234567-89ab-4cde-8123-456789abcdef',
+    buyerStage: 'artwork',
+    errorClass: 'UnexpectedFailure',
+  });
+  const entry = parseRecord(output.trim());
+  assert.equal(entry.buyerStage, 'artwork');
+  assert.equal(entry.errorClass, 'UnexpectedFailure');
+});
+
 test('expected buyer outcomes log as rejections with the same finite fields; BUSY logs at warn', () => {
   let output = '';
   const { logger } = createObservability({
@@ -600,7 +620,7 @@ test('an unexpected admin failure logs only its route, method, class, code and o
     'level',
     'time',
   ]);
-  for (const adminRoute of ['preferences', 'merchant-media'] as const) {
+  for (const adminRoute of ['preferences', 'merchant-media', 'merchant-artwork', 'artwork-link'] as const) {
     logger.error('admin_request_failed', { adminFailure: { adminRoute, httpMethod: 'POST', errorClass: 'Error' } });
     assert.equal(parseRecord(lastLine(output)).adminRoute, adminRoute);
   }
