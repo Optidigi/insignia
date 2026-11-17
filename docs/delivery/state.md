@@ -140,18 +140,20 @@ All on production (`app.insigniacustomizer.com`), proven on the review store `in
 
 ### Deployed identities
 
-Production on host alias `prod`, as of 17 November 2026 `21:01Z` (deploy Z).
+Production on host alias `prod`, as of 17 November 2026 `22:44Z` (deploy AA).
 
 | Component | Identity | Source |
 | --- | --- | --- |
 | Shopify Active version | `1232902225921`, profile `native-reinstall-eb2ce476`; 46 versions, theme module hash `b9a12a0f…` (only theme assets changed from `1227332452353`); required scopes `read_all_orders,read_markets,read_orders,read_publications,write_app_proxy,write_cart_transforms,write_products,write_validations` (optional `read_product_listings`); NEVER_RELEASE versions inactive; `read_all_orders` is an optional grant for verification until each store accepts it | theme from main `eb2ce476`; binding `415a48ef` (#554) |
 | Functions | transform wasm `5c8708b5…` (module `826a9059…`, query `02ab5bce…`), validation wasm `6c362b36…` (module `076bfef2…`, query `5867e61f…`) | `aa3b6166` |
-| Web | `sha256:fde20b22…` (deploy Z, main `6798e2ab`; `INSIGNIA_STORE_SETUP_ENABLED=1`; EUR v2 profile bound to `1232902225921`) | main `f4302391` |
+| Web | `sha256:9e8d8600…` (deploy AA, main `8adf7399`; `INSIGNIA_STORE_SETUP_ENABLED=1`; EUR v2 profile bound to `1232902225921`) | main `f4302391` |
 | Worker | `sha256:5a6897fc…` (deploy X; `INSIGNIA_PUBLICATION_ABANDONMENT=restore`) | main `f4302391` |
 | Verifier | `sha256:f13bf4f5…` (deploy X; code manifest `e9000243…`; startup file carries the credential wrapping key) | main `f4302391` |
 | Signer | `sha256:e9b1f153…` (since 13 Nov `21:54:55Z`, #431) | main `afc3c1da` |
 | Host inspector | `~/insignia-artwork-releases/96726b31104588b83902d00325c7676d8a09f087/` (deploy V: bundled read-only fonts for SVG text; unit keeps the 16 Nov host edits, reapplied by `adminfix-deploy-V/host-unit.py`; prior `5662e423…` kept for rollback) | main `11c29285` (#550) |
 | Database | PostgreSQL 18.6, schema 71 (migration 71: deactivation destroys the generation's signing keys), container `insignia-production-database` (10.0.7.250, aliases `database` and `insignia-rewrite-m5-019-database`, which the verifier requires), data in `/srv/insignia/postgres` on the LUKS2 volume; fresh since 16 Nov `16:56Z` (no stores); ACL digests as before the cutover (roles and grants replayed from the dev database); `log_connections`/`log_disconnections` on | 71 repository migrations |
+
+**Deploy AA** (17 Nov, web only, same profile): main `8adf7399` — #563 (Home opens Shopify's managed pricing page once per session when a fresh billing read finds no plan; banner stays; never on unverified/failed reads) and #564 (the six remaining unexpected 503s record one reduced diagnostic: guest artwork session and customer-link artwork `buyer_request_failed`, purchases `admin_request_failed` route `purchases`, webhook handler/setup and internal metrics new `system_request_failed`). Image from main runtime run 44190930207 (tree `0922f7b0`). Web replaced `22:43:40Z`; no app release, no fail-closed window; checkpoint restore-verified and shredded; facts unchanged; no error lines. `insignia-review-eu` (active plan) opens Home without a redirect. Receipt `planprompt-deploy-AA/receipt.json` on both hosts.
 
 **Deploy Z** (17 Nov, web only, same profile): main `6798e2ab` — #561 unexpected 503s on merchant artwork routes (`admin_request_failed`, route `merchant-artwork`), the staff artwork-link action (`artwork-link`, after sign-in only) and guest App Proxy artwork routes (`buyer_request_failed`, stage `artwork`, correlation id shared with the guest timing line). A throwing inspection-readiness check now logs one error per upload attempt. Image from main runtime run 44173631111 (tree `18067cc4`). Web replaced `21:00:54Z`; no app release, no fail-closed window; checkpoint restore-verified and shredded; facts unchanged; no error lines. Receipt `logging-deploy-Z/receipt.json` on both hosts.
 
@@ -234,7 +236,8 @@ The signing wrapping key lives only in `runtime/signer-secrets/signing-wrap-keys
 
 **Open from 17 Nov (launch hardening):**
 - #549 (research): library methods aren't offered in the product editor until assigned to the product; first-setup UX to decide.
-- Remaining silent 503 catch-alls (listed in #561, none fixed): guest artwork session issue (`pages/api/artwork/guest/session.ts`, no unit-test seam), customer-link artwork (`handleCustomerArtworkRequest`, event choice open), purchase routes (`server/purchase/http.ts`, classify by message text), webhook handler (`server/shopify-webhook.ts`, counter only), webhook handoff setup (`server/shopify-webhook-route.ts`), internal metrics (`pages/api/internal/metrics.ts`).
+- Review readiness (owner-locked shape, 17 Nov): step 1 done (deploy AA). Polaris stays on `polaris-2.0-rc.js`: the stable `polaris.js` URL serves Polaris 1.1 (a downgrade; every admin screen differed), so it was not switched. Step 2 Lighthouse on `insignia-review-eu` (3 runs, Insignia assets loaded vs blocked): drop home 4.7, product 5.0, collection −4.0 (noise), about 1 point weighted — within the 10-point limit. Next: step 3 app release (Function and theme extension names, Designer preview accessible name, product add-block deep link), then step 4 canonical prod layout.
+- The guest artwork session endpoint returns the issued guest scope (`shopId`, `installationGeneration`, `ownerHash`) besides `{ token, expiresAt }` (found in #564; not changed).
 - Erasure test: `insignia-erasure-test` uninstalled `12:04:38Z` with order #1001, artwork and keys; `shop/redact` expected about 19 Nov `12:05Z`; scheduled check 19 Nov `14:00Z` (fence staged, rows and R2 objects gone, review-eu untouched).
 - Designer preview image accessible name still begins with "Selection" for one-option products (small; with the next theme release).
 
