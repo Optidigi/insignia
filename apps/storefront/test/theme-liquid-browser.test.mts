@@ -251,7 +251,8 @@ test('cart page marks each customized line and offers review above checkout, not
   let items = [designed, plain, other];
   await page.route('**/cart.js', (route) => route.fulfill({ json: { items } }));
   await page.route('**/cart/change.js', (route) => route.fulfill({ json: {} }));
-  // Dawn-style cart page: image and title links per row, checkout in its own group, then the theme footer.
+  // Dawn-style cart page: image and title links per row, checkout in its own group, then the theme footer. A closed
+  // cart drawer comes first in the document; its checkout is laid out but `visibility: hidden` and must be skipped.
   const rows = () =>
     `<form action="/cart" id="cart"><table><tbody>${[
       ['101', 'Tee'],
@@ -269,8 +270,11 @@ test('cart page marks each customized line and offers review above checkout, not
       history.replaceState(null, '', '/cart');
       document.body.insertAdjacentHTML(
         'beforeend',
-        `<cart-items>${cart}</cart-items><div class="cart__footer"><div class="cart__ctas">` +
-          `<button type="submit" name="checkout" form="cart">Check out</button></div></div>` +
+        `<cart-drawer class="drawer"><div class="drawer__inner" style="visibility: hidden">` +
+          `<div class="cart__ctas" id="drawer-ctas"><button type="submit" name="checkout" id="CartDrawer-Checkout">` +
+          `Check out</button></div></div></cart-drawer>` +
+          `<cart-items>${cart}</cart-items><div class="cart__footer"><div class="cart__ctas" id="page-ctas">` +
+          `<button type="submit" name="checkout" id="checkout" form="cart">Check out</button></div></div>` +
           `<footer>Shop footer</footer>${markup}`,
       );
     },
@@ -292,17 +296,18 @@ test('cart page marks each customized line and offers review above checkout, not
   const trigger = page.getByRole('button', { name: 'Review customized items', exact: true });
   await trigger.waitFor();
   assert.equal(
-    await page.evaluate(() => document.querySelector('.cart__ctas')?.previousElementSibling?.className),
+    await page.evaluate(() => document.querySelector('#page-ctas')?.previousElementSibling?.className),
     'insignia-cart-review',
   );
   assert.equal(
     await trigger.evaluate((button) => {
-      const checkout = document.querySelector('[name="checkout"]');
+      const checkout = document.querySelector('#checkout');
       return !!checkout && !!(button.compareDocumentPosition(checkout) & Node.DOCUMENT_POSITION_FOLLOWING);
     }),
     true,
   );
-  await page.locator('[name="checkout"]').focus();
+  assert.equal(await page.locator('cart-drawer .insignia-cart-review').count(), 0);
+  await page.locator('#checkout').focus();
   await page.keyboard.press('Shift+Tab');
   assert.equal(await trigger.evaluate((button) => button === document.activeElement), true);
 

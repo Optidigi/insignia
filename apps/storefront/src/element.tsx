@@ -532,6 +532,17 @@ export function customizedLineNeedsReview(line: CartJsLine): boolean {
   return !signed || typeof line.original_price !== 'number' || BigInt(line.original_price) !== signed.unitMinor;
 }
 
+/**
+ * Rendered and not hidden. A closed theme cart drawer keeps its checkout button laid out but `visibility: hidden`
+ * (Dawn), and it often comes first in the document, so layout alone would pick the drawer on the cart page.
+ */
+function isShown(element: HTMLElement): boolean {
+  if (element.getClientRects().length === 0) return false;
+  return typeof element.checkVisibility === 'function'
+    ? element.checkVisibility({ visibilityProperty: true, opacityProperty: true })
+    : getComputedStyle(element).visibility !== 'hidden';
+}
+
 /** Theme containers that list cart lines: cart forms and Dawn/Horizon-style cart page and drawer elements. */
 const CART_LINES = 'form[action$="/cart"], cart-items, cart-drawer-items, cart-items-component, [data-cart-items]';
 const LINE_MARKER = 'insignia-cart-line-marker';
@@ -711,7 +722,7 @@ export class InsigniaCartRepair extends HTMLElement {
     const checkout =
       location.pathname.replace(/\/+$/, '') === `${cartRoot}cart`
         ? [...document.querySelectorAll<HTMLElement>('button[name="checkout"], input[name="checkout"]')].find(
-            (button) => button.getClientRects().length > 0 && !button.closest('insignia-cart-repair'),
+            (button) => isShown(button) && !button.closest('insignia-cart-repair'),
           )
         : undefined;
     const group = checkout?.parentElement;
