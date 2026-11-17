@@ -7,6 +7,8 @@ type Bridge = {
   saveBar?: { show(id: string): Promise<void>; hide(id: string): Promise<void>; leaveConfirmation?(): Promise<void> };
 };
 
+export const productSaveBarId = 'product-draft-save-bar';
+
 /** App Bridge requires button declarations; Shopify renders these in the host save bar. */
 export default function AdminSaveBar({
   dirty,
@@ -15,7 +17,7 @@ export default function AdminSaveBar({
   canDiscard,
   onSave,
   onDiscard,
-  id = 'product-draft-save-bar',
+  id = productSaveBarId,
   saveLabel,
   discardDescription,
   showFallback = true,
@@ -35,12 +37,14 @@ export default function AdminSaveBar({
 }) {
   const { t } = useAdminLocale();
   const barId = id;
-  const modalId = id === 'product-draft-save-bar' ? 'discard-product-changes' : `${id}-discard`;
+  const modalId = id === productSaveBarId ? 'discard-product-changes' : `${id}-discard`;
   const modal = useRef<HTMLElementTagNameMap['s-modal']>(null);
   const [guard, dispatch] = useReducer(leaveGuardReducer, undefined, initialLeaveGuardState);
   const confirming = guard.phase === 'confirming';
   const leaving = useRef(false);
-  const [hostAvailable, setHostAvailable] = useState(() => !!(window as unknown as { shopify?: Bridge }).shopify?.saveBar);
+  const [hostAvailable, setHostAvailable] = useState(
+    () => !!(window as unknown as { shopify?: Bridge }).shopify?.saveBar,
+  );
   const pending = useRef<number | null>(null);
   const sequence = useRef(0);
   const mounted = useRef(true);

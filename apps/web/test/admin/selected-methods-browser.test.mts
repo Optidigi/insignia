@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { methodId } from './support/selected-browser.mts';
+import { assertRetiredBeforeNavigation, methodId, watchLeavePrompts } from './support/selected-browser.mts';
 import { methodsFixture, saveMethod } from './support/selected-methods-browser.mts';
 
 test('real selected Method editing exposes Shopify save state and saves the exact current configuration', {
@@ -344,5 +344,53 @@ test('pending picker dismissal is delivered after leave confirmation resumes its
     .waitFor({ state: 'detached' });
   assert.equal(await f.page.getByRole('textbox', { name: /^Method name/ }).inputValue(), 'Unsaved method name');
   assert.equal(await f.page.locator('[data-shopify-host-modal-scrim]').count(), 0);
+  assert.equal(f.writes.length, 0);
+});
+
+test('applying the product picker retires its Shopify backdrop so a real click reaches the host save bar', {
+  timeout: 30000,
+}, async (t) => {
+  const f = await methodsFixture(t, { shopifyModal: true });
+  await f.open(`/admin/methods/${methodId}`);
+  await f.page.getByRole('button', { name: 'Select products', exact: true }).click();
+  const picker = f.page.locator('s-modal[data-method-dialog]').filter({ hasText: 'Select products' });
+  await picker.waitFor({ state: 'visible' });
+  await f.page.locator('[data-shopify-host-modal-scrim]').waitFor({ state: 'attached' });
+  await picker.getByRole('checkbox', { name: 'Synthetic selected hoodie', exact: true }).uncheck();
+  await picker.getByRole('button', { name: 'Select', exact: true }).click();
+  await picker.waitFor({ state: 'detached' });
+  await f.page.locator('[data-shopify-host-modal-scrim]').waitFor({ state: 'detached' });
+
+  // A real pointer click: a leftover backdrop would intercept it.
+  const response = f.page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PUT' && new URL(response.url()).pathname.startsWith('/api/admin/methods'),
+  );
+  await f.page.locator('[data-shopify-host-save-bar="method-draft-save-bar"] button', { hasText: 'Save' }).click();
+  assert.equal((await response).status(), 200);
+  await f.page.getByText('Method saved.', { exact: true }).waitFor();
+  assert.deepEqual(f.records()[0]?.configuration.productIds, []);
+});
+
+test('discarding to leave the Method editor retires the dialog and save bar before navigating', {
+  timeout: 30000,
+}, async (t) => {
+  const f = await methodsFixture(t, { shopifyModal: true });
+  await f.open(`/admin/methods/${methodId}`);
+  const dialogs = await watchLeavePrompts(f.page);
+  await f.page.getByRole('textbox', { name: /^Method name/ }).fill('Unsaved method name');
+  await f.page.locator('[data-shopify-host-save-bar="method-draft-save-bar"]').waitFor();
+  await f.page.getByRole('link', { name: 'Synthetic selected hoodie', exact: true }).click();
+  const leave = f.page.locator('s-modal[data-method-dialog]').filter({ hasText: 'Discard unsaved changes?' });
+  await leave.waitFor({ state: 'visible' });
+  const leaveId = await leave.getAttribute('id');
+  await leave.getByRole('button', { name: 'Discard', exact: true }).click();
+  await f.page.waitForURL((url) => url.pathname === '/admin/products/111/config');
+  assertRetiredBeforeNavigation(
+    await f.page.evaluate(() => window.previousPageSaveBarEvents),
+    'method-draft-save-bar',
+    leaveId,
+  );
+  assert.deepEqual(dialogs, []);
   assert.equal(f.writes.length, 0);
 });

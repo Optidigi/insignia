@@ -258,14 +258,38 @@ async function fixture(t: TestContext, scenario: Scenario = {}) {
   await page.addInitScript(
     ({ shopifyModal, deferShopifyModalDismiss }) => {
       window.saveBarEvents = [];
+      // Host events survive a same-tab navigation so a test can check what happened before the page
+      // started leaving. Chromium dispatches beforeunload synchronously when navigation starts.
+      const carriedKey = 'insignia-test:previous-page-host-events';
+      window.previousPageSaveBarEvents = JSON.parse(sessionStorage.getItem(carriedKey) ?? '[]');
+      addEventListener('beforeunload', () => window.saveBarEvents.push(['navigate', location.pathname]));
+      addEventListener('pagehide', () => sessionStorage.setItem(carriedKey, JSON.stringify(window.saveBarEvents)));
+      // Stand-in for Shopify's host save bar: real pointer clicks reach it unless a host backdrop covers it.
+      function hostSaveBar(id: string, visible: boolean) {
+        document.querySelector(`[data-shopify-host-save-bar="${CSS.escape(id)}"]`)?.remove();
+        const declared = document.getElementById(id);
+        if (!visible || !shopifyModal || !declared) return;
+        const bar = document.createElement('div');
+        bar.dataset.shopifyHostSaveBar = id;
+        bar.style.cssText = 'position:fixed;left:0;bottom:0;z-index:2147483646;display:flex;gap:8px;padding:4px';
+        for (const source of declared.querySelectorAll('button')) {
+          const button = document.createElement('button');
+          button.textContent = source.textContent;
+          button.addEventListener('click', () => source.click());
+          bar.append(button);
+        }
+        document.body.append(bar);
+      }
       const shopify: Window['shopify'] = {
         idToken: async () => 'synthetic-selected-token',
         saveBar: {
           show: async (id) => {
             window.saveBarEvents.push(['show', id]);
+            hostSaveBar(id, true);
           },
           hide: async (id) => {
             window.saveBarEvents.push(['hide', id]);
+            hostSaveBar(id, false);
           },
         },
       };
@@ -278,27 +302,34 @@ async function fixture(t: TestContext, scenario: Scenario = {}) {
           if (!modal) return;
           mounted.delete(id);
           modal.scrim.remove();
+          window.saveBarEvents.push(['modal-hide', id]);
           if (deferNextDismiss) {
             deferNextDismiss = false;
             deferredDismissals.push(() => modal.onDismiss?.());
           } else modal.onDismiss?.();
+        }
+        // Like Shopify's, this backdrop covers the whole app (and the host save bar) until the host hides it.
+        function scrim() {
+          const element = document.createElement('div');
+          element.dataset.shopifyHostModalScrim = '';
+          element.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgb(0 0 0 / 0.5)';
+          document.body.append(element);
+          return element;
         }
         shopify._internal = {
           modal: {
             async show(id, options) {
               if (id && document.getElementById(id)) {
                 if (mounted.has(id)) return;
-                const scrim = document.createElement('div');
-                scrim.dataset.shopifyHostModalScrim = '';
-                document.body.append(scrim);
-                mounted.set(id, { scrim, onDismiss: options?.onDismiss });
+                mounted.set(id, { scrim: scrim(), onDismiss: options?.onDismiss });
                 return;
               }
-              const scrim = document.createElement('div');
-              scrim.dataset.shopifyHostModalScrim = '';
-              document.body.append(scrim);
+              scrim();
             },
             async hide(id) {
+              // App Bridge resolves the modal by its element ID: a hide sent after the
+              // s-modal left the document is silently lost and its backdrop stays.
+              if (!document.getElementById(id)) return;
               close(id);
             },
           },
@@ -475,6 +506,39 @@ async function editName(page: Page, value: string) {
 async function hostSave(page: Page) {
   await page.locator('ui-save-bar button[variant="primary"]').evaluate((button: HTMLButtonElement) => button.click());
 }
+/** Record native dialogs and any leave prompt the loaded page would raise when it starts unloading. */
+async function watchLeavePrompts(page: Page) {
+  const dialogs: string[] = [];
+  page.on('dialog', (dialog) => {
+    dialogs.push(dialog.type());
+    void dialog.accept();
+  });
+  // Registered after the app's own listeners, so it observes whether any of them asked to stay.
+  await page.evaluate(() =>
+    addEventListener('beforeunload', (event) => {
+      if (event.defaultPrevented) window.saveBarEvents.push(['leave-prompt', '']);
+    }),
+  );
+  return dialogs;
+}
+/** A deliberate exit hides the dialog and the save bar in the host before the page starts leaving. */
+function assertRetiredBeforeNavigation(events: [string, string][], saveBarId: string, dialogId: string | null) {
+  const trace = JSON.stringify(events);
+  const navigation = events.findIndex(([kind]) => kind === 'navigate');
+  assert.ok(navigation >= 0, `The page navigated: ${trace}`);
+  const before = events.slice(0, navigation);
+  const lastShow = before.findLastIndex(([kind, id]) => kind === 'show' && id === saveBarId);
+  assert.ok(lastShow >= 0, `The save bar was shown while dirty: ${trace}`);
+  assert.ok(
+    before.findLastIndex(([kind, id]) => kind === 'hide' && id === saveBarId) > lastShow,
+    `The save bar is hidden before navigation starts: ${trace}`,
+  );
+  assert.ok(
+    before.some(([kind, id]) => kind === 'modal-hide' && id === dialogId),
+    `The dialog is hidden in the host before navigation starts: ${trace}`,
+  );
+  assert.equal(events.filter(([kind]) => kind === 'leave-prompt').length, 0, `No leave prompt: ${trace}`);
+}
 async function storedIntent(page: Page) {
   return page.evaluate(() =>
     sessionStorage.getItem(
@@ -541,6 +605,7 @@ async function routePolaris(target: Page | import('playwright').BrowserContext, 
 
 export {
   artifacts,
+  assertRetiredBeforeNavigation,
   authority,
   browserFixture,
   catalog,
@@ -557,4 +622,5 @@ export {
   selectedConfigView,
   setup,
   storedIntent,
+  watchLeavePrompts,
 };

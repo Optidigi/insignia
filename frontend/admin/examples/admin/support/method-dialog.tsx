@@ -58,9 +58,13 @@ export default function MethodDialog({
     else if (!hideStartedSuspended.current) show();
   }, [suspended]);
   useLayoutEffect(() => {
+    const element = modal.current;
     return () => {
       active.current = false;
-      // Polaris hides the Shopify overlay from s-modal's disconnected callback.
+      // An owner that closes the dialog in the same transition (e.g. apply) unmounts it while open.
+      // App Bridge finds the host modal by element ID, so hide it while the element is still in the
+      // document; s-modal's own disconnected-callback hide arrives too late and leaves the backdrop.
+      element?.hideOverlay();
       requestAnimationFrame(() => {
         const target = previousFocus.current;
         if (

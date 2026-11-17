@@ -47,6 +47,8 @@ declare global {
     scopeQueries: number;
     scopeRequests: string[][];
     saveBarEvents: [string, string][];
+    /** `saveBarEvents` of the page this tab last left; `['navigate', pathname]` marks when it started leaving. */
+    previousPageSaveBarEvents: [string, string][];
     revoked: string[];
     erasurePrivacyGap: boolean;
     show(src: string | null): void;

@@ -1,15 +1,20 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { MerchantDraftSchema } from '@insignia/contracts';
+import { required } from './support/fixtures.mts';
 import {
   artifacts,
+  assertRetiredBeforeNavigation,
   authority,
+  catalog,
+  draft,
   editName,
   fixture,
   hostSave,
   imageUrl,
   methodId,
   storedIntent,
+  watchLeavePrompts,
 } from './support/selected-browser.mts';
 
 // Scope: real built UI/client/Polaris in an isolated browser with synthetic provider HTTP.
@@ -279,6 +284,129 @@ for (const closePath of ['X', 'Escape', 'Cancel'] as const) {
     assert.equal(f.mutations.length, 0, 'Closing the picker does not save a design change');
   });
 }
+
+test('applying Manage methods retires its Shopify backdrop so real clicks reach the host save bar and Publish', {
+  timeout: 30000,
+}, async (t) => {
+  const f = await fixture(t, { shopifyModal: true });
+  const importedId = '0d6f3c1e-3f5a-4d0b-9a59-2e3f4f8b1c11';
+  await f.page.route('**/api/admin/methods?view=catalog', (route) =>
+    route.fulfill({
+      json: {
+        ...catalog,
+        methods: [
+          ...catalog.methods,
+          {
+            version: '1',
+            currency: 'USD',
+            configuration: {
+              id: importedId,
+              name: 'Embroidery',
+              explanation: 'Stitched decoration',
+              pricing: 'fixed',
+              amount: '4.50',
+              assignment: 'manual',
+              productIds: ['111'],
+              tags: [],
+              tagMatch: 'any',
+            },
+          },
+        ],
+      },
+    }),
+  );
+  await f.open();
+  await f.page.getByRole('button', { name: 'Manage methods', exact: true }).click();
+  const dialog = f.page.locator('s-modal[data-method-dialog]').filter({ has: f.page.locator('.pm-manager') });
+  await dialog.getByRole('checkbox', { name: 'Embroidery', exact: true }).check();
+  await f.page.locator('[data-shopify-host-modal-scrim]').waitFor({ state: 'attached' });
+  await dialog.getByRole('button', { name: 'Done', exact: true }).click();
+  await dialog.waitFor({ state: 'detached' });
+  await f.page.locator('[data-shopify-host-modal-scrim]').waitFor({ state: 'detached' });
+
+  // Real pointer clicks: a leftover backdrop would intercept them.
+  const saved = f.page.waitForResponse(
+    (response) => response.request().method() === 'PUT' && response.url().endsWith('/api/admin/products/111/config'),
+  );
+  await f.page.locator('[data-shopify-host-save-bar="product-draft-save-bar"] button', { hasText: 'Save' }).click();
+  assert.equal((await saved).status(), 200);
+  await f.page.locator('[data-shopify-host-save-bar]').waitFor({ state: 'detached' });
+  // Shopify renders the page's primary action in its host title bar; stand in for it the same way.
+  await f.page
+    .locator('s-button[slot="primary-action"]')
+    .filter({ hasText: /^Publish$/ })
+    .evaluate((declared: HTMLElementTagNameMap['s-button']) => {
+      const button = document.createElement('button');
+      button.textContent = declared.textContent;
+      button.dataset.shopifyHostTitleBarAction = '';
+      button.style.cssText = 'position:fixed;right:0;top:0;z-index:2147483646';
+      button.addEventListener('click', () => declared.click());
+      document.body.append(button);
+    });
+  await f.page.locator('[data-shopify-host-title-bar-action]').click();
+  await f.page.locator('s-modal').filter({ hasText: 'Publish setup' }).waitFor({ state: 'visible' });
+});
+
+test('Save draft and open library saves, then retires the dialog and save bar before navigating', {
+  timeout: 30000,
+}, async (t) => {
+  const initial = structuredClone(draft);
+  initial.methods = [];
+  initial.pricingRules = [];
+  for (const placement of initial.placements) placement.allowedMethodIds = [];
+  delete initial.labels?.methods;
+  const selected = required(initial.selectedSetup);
+  selected.product.methods = [];
+  selected.methodBindings = {};
+  for (const view of selected.product.views) for (const placement of view.placements) placement.methodIds = [];
+  const f = await fixture(t, { shopifyModal: true, initialDraft: MerchantDraftSchema.parse(initial) });
+  await f.page.route('**/api/admin/methods?view=catalog', (route) =>
+    route.fulfill({ json: { ...catalog, methods: [] } }),
+  );
+  await f.open();
+  const dialogs = await watchLeavePrompts(f.page);
+  await editName(f.page, 'Saved before the library');
+  await f.page.locator('[data-shopify-host-save-bar="product-draft-save-bar"]').waitFor();
+  await f.page.getByRole('button', { name: 'Choose methods', exact: true }).click();
+  const manager = f.page.locator('s-modal[data-method-dialog]').filter({ has: f.page.locator('.pm-manager') });
+  const managerId = await manager.getAttribute('id');
+  await manager.getByRole('button', { name: 'Save draft and open library', exact: true }).click();
+  await f.page.waitForURL((url) => url.pathname === '/admin/methods');
+  assert.equal(f.mutations.filter((entry) => entry.method === 'PUT').length, 1);
+  assert.equal(f.read().selectedSetup?.product.views[0]?.placements[0]?.name, 'Saved before the library');
+  assertRetiredBeforeNavigation(
+    await f.page.evaluate(() => window.previousPageSaveBarEvents),
+    'product-draft-save-bar',
+    managerId,
+  );
+  assert.deepEqual(dialogs, []);
+});
+
+test('confirmed Leave page retires the dialog and save bar before navigating without saving', {
+  timeout: 30000,
+}, async (t) => {
+  const f = await fixture(t, { shopifyModal: true });
+  await f.open();
+  const dialogs = await watchLeavePrompts(f.page);
+  await editName(f.page, 'Discarded by leaving');
+  await f.page.locator('[data-shopify-host-save-bar="product-draft-save-bar"]').waitFor();
+  // Shopify renders breadcrumbs in the host; dispatch the declared link's click.
+  await f.page
+    .locator('s-link[slot="breadcrumb-actions"]')
+    .evaluate((link: HTMLElementTagNameMap['s-link']) => link.click());
+  const leave = f.page.locator('s-modal[data-method-dialog]').filter({ hasText: 'Leave without saving?' });
+  await leave.waitFor({ state: 'visible' });
+  const leaveId = await leave.getAttribute('id');
+  await leave.getByRole('button', { name: 'Leave page', exact: true }).click();
+  await f.page.waitForURL((url) => url.pathname !== '/admin/products/111/config');
+  assertRetiredBeforeNavigation(
+    await f.page.evaluate(() => window.previousPageSaveBarEvents),
+    'product-draft-save-bar',
+    leaveId,
+  );
+  assert.deepEqual(dialogs, []);
+  assert.equal(f.mutations.length, 0);
+});
 
 test('equal-valued explicit Method edits become dirty metadata and undo restores inheritance before an exact save', {
   timeout: 30000,

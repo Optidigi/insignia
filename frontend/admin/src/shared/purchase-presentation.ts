@@ -18,6 +18,19 @@ export const PurchaseListViewSchema = BackendPurchaseListSchema.extend({
     .optional(),
 });
 
+/**
+ * The variant label for a purchased line, or null for none. Shopify gives a product's only ("Default Title")
+ * variant no variant title, so a resolved line (its product title is known) shows no variant label, as Shopify
+ * admin does. Only a failed lookup, which also lacks the product title, shows `unavailable`.
+ */
+export function purchasedVariantLabel(
+  line: { title?: string | null; variantTitle?: string | null } | undefined,
+  unavailable: string,
+): string | null {
+  if (line?.variantTitle) return line.variantTitle;
+  return line?.title ? null : unavailable;
+}
+
 /** Verified original metadata is owned by the same server wire contract. */
 export { PurchaseOriginalDownloadSchema } from '@insignia/contracts';
 

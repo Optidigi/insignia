@@ -33,8 +33,10 @@ import AdminSaveBar from '../components/AdminSaveBar.tsx';
 import { DecimalField } from '../components/DecimalField.tsx';
 import { useAdminLocale } from '../shared/admin-i18n.js';
 import { isShopifyBusy } from '../shared/admin-request.ts';
+import { leavePage } from '../shared/leave-page.ts';
 
 const indexPath = '/admin/methods';
+const saveBarId = 'method-draft-save-bar';
 type MethodNotice =
   | { kind: 'method-unavailable' }
   | { kind: 'storage-failure' }
@@ -200,8 +202,13 @@ export default function SelectedMethods({
     if (target.kind === 'method-route') {
       showPath(target.path);
     } else if (target.kind === 'external') {
-      dirtyRef.current = false;
-      location.assign(target.href);
+      void leavePage({
+        href: target.href,
+        saveBarId,
+        disarm: () => {
+          dirtyRef.current = false;
+        },
+      });
     } else {
       allowedTraversal.current = true;
       history.go(target.delta);
@@ -465,7 +472,7 @@ export default function SelectedMethods({
     >
       {production && editor && (
         <AdminSaveBar
-          id="method-draft-save-bar"
+          id={saveBarId}
           dirty={dirty}
           saving={pending}
           canSave={dirty && !pending && !readOnly}

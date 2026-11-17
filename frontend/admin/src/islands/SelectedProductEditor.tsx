@@ -1,11 +1,12 @@
 /** Selected product editor presentation. Persistence/host effects are supplied by its composition. */
-import AdminSaveBar from '../components/AdminSaveBar.tsx';
+import AdminSaveBar, { productSaveBarId } from '../components/AdminSaveBar.tsx';
 import { DecimalField } from '../components/DecimalField.tsx';
 import { useEffect, useReducer, useRef, useState } from 'preact/hooks';
 import AdminResourceName from '../components/AdminResourceName.tsx';
 import AdminTruncatedLabel from '../components/AdminTruncatedLabel.tsx';
 import { useAdminLocale } from '../shared/admin-i18n.js';
 import { isShopifyBusy } from '../shared/admin-request.ts';
+import { leavePage } from '../shared/leave-page.ts';
 import { configRejectionFrom } from '../shared/config-rejection.ts';
 import { productEditorReturnPath } from '../shared/products-return-path.ts';
 import { storefrontProductTestSetupHref } from '../shared/storefront-product-test.ts';
@@ -4307,8 +4308,16 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
               variant="primary"
               tone="critical"
               onClick={() => {
-                dirtyRef.current = false;
-                location.assign(leaving);
+                if (dialog.kind !== 'leave') return;
+                const id = dialog.id;
+                void leavePage({
+                  href: leaving,
+                  saveBarId: productSaveBarId,
+                  closeDialog: () => dispatchDialog({ type: 'dialog-closed', id }),
+                  disarm: () => {
+                    dirtyRef.current = false;
+                  },
+                });
               }}
             >
               {translateUi('editor:placementWorkflowPreview.leavePage')}
@@ -4327,8 +4336,14 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
           product={product}
           onOpenLibrary={async () => {
             if (!(await saveDraft(true)) || !view) return;
-            dirtyRef.current = false;
-            location.assign(methodLibraryHref(product.id, view.id, placement.id));
+            await leavePage({
+              href: methodLibraryHref(product.id, view.id, placement.id),
+              saveBarId: productSaveBarId,
+              closeDialog: () => dispatchDialog({ type: 'dialog-closed', id: methodDialog.id }),
+              disarm: () => {
+                dirtyRef.current = false;
+              },
+            });
           }}
           placement={placement}
           initialMethodId={methodDialog.initialMethodId}
