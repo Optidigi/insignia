@@ -600,6 +600,10 @@ test('an unexpected admin failure logs only its route, method, class, code and o
     'level',
     'time',
   ]);
+  for (const adminRoute of ['preferences', 'merchant-media'] as const) {
+    logger.error('admin_request_failed', { adminFailure: { adminRoute, httpMethod: 'POST', errorClass: 'Error' } });
+    assert.equal(parseRecord(lastLine(output)).adminRoute, adminRoute);
+  }
   const valid = { adminRoute: 'catalog', httpMethod: 'GET', errorClass: 'Error' } as const;
   const invalidFailures: unknown[] = [
     {},

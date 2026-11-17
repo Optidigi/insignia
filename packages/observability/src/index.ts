@@ -167,6 +167,8 @@ export const ADMIN_FAILURE_ROUTES = [
   'methods',
   'method',
   'signing',
+  'preferences',
+  'merchant-media',
 ] as const;
 const HTTP_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] as const;
 /** A code identifier, never message text. */

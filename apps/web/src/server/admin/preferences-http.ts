@@ -2,7 +2,7 @@ import { CommandDigestConflictError } from '@insignia/application';
 import { MerchantPreferencesCommandSchema } from '@insignia/contracts';
 import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminServices } from './contracts.js';
-import { adminBusy, adminJson, busyWithoutEffect, mutationOrigin, validActor } from './http.ts';
+import { adminBusy, adminJson, busyWithoutEffect, mutationOrigin, recordAdminFailure, validActor } from './http.ts';
 import { PreferencesAuthorizationError, PreferencesValidationError } from './preferences.ts';
 
 const maxBody = 256_000;
@@ -65,6 +65,7 @@ export async function handlePreferencesRequest(
       result.headers.set('X-Shopify-Retry-Invalid-Session-Request', '1');
       return result;
     }
+    recordAdminFailure(services, request, 'preferences', error);
     return adminJson(503, { error: 'Store preferences unavailable' });
   }
 }
