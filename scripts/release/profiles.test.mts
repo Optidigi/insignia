@@ -64,6 +64,8 @@ import merchantBatchModules from '../../deployment/m5-runtime/native-merchant-ba
 import merchantBatchBinding from '../../deployment/m5-runtime/native-merchant-batch-release-binding.json' with {
   type: 'json',
 };
+import namesModules from '../../deployment/m5-runtime/native-names-module-baseline.json' with { type: 'json' };
+import namesBinding from '../../deployment/m5-runtime/native-names-release-binding.json' with { type: 'json' };
 import parityModules from '../../deployment/m5-runtime/native-parity-module-baseline.json' with { type: 'json' };
 import parityBinding from '../../deployment/m5-runtime/native-parity-release-binding.json' with { type: 'json' };
 import performanceModules from '../../deployment/m5-runtime/native-performance-module-baseline.json' with {
@@ -444,6 +446,38 @@ test('functions renew candidate preserves identities and changes only theme and 
       };
       assert.deepEqual(unversioned(config), unversioned(oldConfig));
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
+  }
+});
+test('merchant-facing-names candidate changes only the theme module and the Function titles', () => {
+  assert.equal(namesModules.length, 14);
+  assert.equal(namesBinding.moduleHash, 'bb5e99a61029533327cdd09245d502b47d960ce3267cd717ad5c63b99086de88');
+  assert.equal(namesBinding.versionId, '1234277105665');
+  assert.deepEqual(new Set(namesBinding.versionIds), new Set([...reinstallBinding.versionIds, '1234277105665']));
+  const prior = new Map(reinstallModules.map((m) => [m.handle, m]));
+  assert.equal(prior.size, 14);
+  const titles: Record<string, [string, string]> = {
+    'insignia-experimental-v2-transform': [
+      'Insignia cart transform',
+      'Applies the Insignia customization price to each customized cart line.',
+    ],
+    'insignia-experimental-v2-validation': [
+      'Insignia cart validation',
+      'Blocks checkout when a customized cart line is not validly priced by Insignia.',
+    ],
+  };
+  for (const module of namesModules) {
+    const old = required(prior.get(module.handle));
+    if (module.type === 'theme_app_extension')
+      assert.deepEqual({ ...module, config: undefined }, { ...old, config: undefined });
+    else if (module.type === 'function') {
+      const { config, ...identity } = module,
+        { config: oldConfig, ...oldIdentity } = old;
+      assert.deepEqual(identity, oldIdentity);
+      const { title, description, module_id: _id, ...rest } = object(config);
+      const { module_id: _oldId, title: _t, description: _d, ...oldRest } = object(oldConfig);
+      assert.deepEqual([title, description], titles[module.handle]);
+      assert.deepEqual(rest, oldRest);
+    } else assert.deepEqual(module, old);
   }
 });
 test('reinstall-batch candidate changes only the theme module', () => {
