@@ -44,6 +44,8 @@ import cartRepairModules from '../../deployment/m5-runtime/native-cart-repair-mo
 import cartRepairBinding from '../../deployment/m5-runtime/native-cart-repair-release-binding.json' with {
   type: 'json',
 };
+import cartFixModules from '../../deployment/m5-runtime/native-cartfix-module-baseline.json' with { type: 'json' };
+import cartFixBinding from '../../deployment/m5-runtime/native-cartfix-release-binding.json' with { type: 'json' };
 import designerModules from '../../deployment/m5-runtime/native-designer-module-baseline.json' with { type: 'json' };
 import designerBinding from '../../deployment/m5-runtime/native-designer-release-binding.json' with { type: 'json' };
 import fixedModules from '../../deployment/m5-runtime/native-fixed-module-baseline.json' with { type: 'json' };
@@ -440,6 +442,20 @@ test('functions renew candidate preserves identities and changes only theme and 
       };
       assert.deepEqual(unversioned(config), unversioned(oldConfig));
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
+  }
+});
+test('cart-fix candidate changes only the theme module', () => {
+  assert.equal(cartFixModules.length, 14);
+  assert.equal(cartFixBinding.moduleHash, '537ddb65cb8c636804b620db0eed793b7f71fe3e66f8cb6b65c9af2d56e14064');
+  assert.equal(cartFixBinding.versionId, '1227332452353');
+  assert.deepEqual(new Set(cartFixBinding.versionIds), new Set([...uiFixBinding.versionIds, '1227332452353']));
+  const prior = new Map(uiFixModules.map((m) => [m.handle, m]));
+  assert.equal(prior.size, 14);
+  for (const module of cartFixModules) {
+    const old = required(prior.get(module.handle));
+    if (module.type === 'theme_app_extension')
+      assert.deepEqual({ ...module, config: undefined }, { ...old, config: undefined });
+    else assert.deepEqual(module, old);
   }
 });
 test('UI-batch candidate changes only the theme module', () => {
