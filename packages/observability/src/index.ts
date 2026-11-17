@@ -24,6 +24,7 @@ const EVENTS = new Set([
   'lifecycle_credential_unavailable',
   'web_listen_failed',
   'publication_abandonment',
+  'publication_preparation_stopped',
 ]);
 
 export type RuntimeEvent =
@@ -52,7 +53,9 @@ export type RuntimeEvent =
   /** Error: the web server could not bind its address; the process exits non-zero. */
   | 'web_listen_failed'
   /** #466 abandoned publication hold: restored/finalized at info; flagged/ambiguous/conflict at warn. */
-  | 'publication_abandonment';
+  | 'publication_abandonment'
+  /** Warn: a publish could not be prepared (Functions, release verification or signing); names the step only. */
+  | 'publication_preparation_stopped';
 
 export const PUBLICATION_ABANDONMENT_OUTCOMES = [
   'restored',
@@ -351,6 +354,8 @@ export interface RuntimeLogDetails {
   operationId?: string;
   outcome?: PublicationAbandonmentOutcome;
   reasons?: readonly PublicationAbandonmentReason[];
+  /** publication_preparation_stopped only: a bounded upper-snake-case step name. */
+  preparationStage?: string;
 }
 
 /** Whitelist the complete event envelope; no merchant payload or error object enters Pino. */
@@ -476,6 +481,11 @@ function eventDetails(event: RuntimeEvent, input: RuntimeLogDetails) {
     )
       throw new Error('Invalid configuration rejection diagnostic');
     return { configAction: input.configAction, rejectionCode: input.rejectionCode };
+  }
+  if (event === 'publication_preparation_stopped') {
+    if (typeof input.preparationStage !== 'string' || !REJECTION_CODE.test(input.preparationStage))
+      throw new Error('Invalid publication preparation diagnostic');
+    return { preparationStage: input.preparationStage };
   }
   if (event === 'publication_abandonment') {
     const id = /^[A-Za-z0-9_-]{1,128}$/;

@@ -616,6 +616,33 @@ test('an exact published config journals no tolerance', async () => {
   }
 });
 
+test("replacing an earlier installation's config journals its digest and generation, never its keys", async () => {
+  const f = await fixture();
+  try {
+    const earlier = JSON.stringify({
+      generationHex: '22222222222242228222222222222222',
+      epoch: 3,
+      maxBuckets: 32,
+      maxPhysicalQuantity: 10000,
+      allowNoMarket: false,
+      keys: [{ id: 1, publicHex: 'ab'.repeat(32), revoked: false, firstDay: 1, lastDay: 2147483647 }],
+    });
+    f.setPublicValue(earlier);
+    f.strictCompareAndSet();
+    assert.equal(
+      (await provisionSigningKey(f.plan, 'SYNTHETIC_ID_TOKEN', f.ports)).classification,
+      'SIGNING_KEY_CONFIG_PROVISIONED',
+    );
+    assert.deepEqual(JSON.parse(await readFile(join(f.directory, 'run', 'published-config-tolerance.json'), 'utf8')), {
+      publishedSha256: createHash('sha256').update(earlier).digest('hex'),
+      compareDigest: createHash('sha256').update(earlier).digest('hex'),
+      differences: ['earlier installation config 22222222222242228222222222222222 replaced'],
+    });
+  } finally {
+    await f.close();
+  }
+});
+
 test('a suspected leak after a stopped rotation: revoke both keys, bump the epoch, rotate to a third key', async () => {
   for (const bump of [true, false]) {
     const f = await fixture();

@@ -208,7 +208,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('signing-key envelope writer a
       while ((await owned.destroyExpired(100)) > 0);
       expect((await envelopes(fixture)).find((row) => row.key_id === 1)?.state).toBe('destroyed');
 
-      // Uninstall: web destroys an installation's keys, scrubbing the active key in the same statement.
+      // Uninstall: deactivation destroys the installation's keys, scrubbing the active key in the same
+      // transaction (migration 71); web's explicit destruction then finds nothing left.
       await new SigningKeyLifecycle(fixture.signer.store, ring2).createPending({
         scope,
         keyId: 4,
@@ -220,7 +221,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('signing-key envelope writer a
         `UPDATE installation_generations SET deactivated_at=clock_timestamp() WHERE shop_id=$1 AND generation=1`,
         [shopId],
       );
-      expect(await fixture.web.store.destroyInactiveInstallationKeys(shopId, '1')).toBe(3);
+      expect(await fixture.web.store.destroyInactiveInstallationKeys(shopId, '1')).toBe(0);
       expect(
         (await envelopes(fixture)).every((row) => row.private_envelope === null && row.state === 'destroyed'),
       ).toBe(true);
