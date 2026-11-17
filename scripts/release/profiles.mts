@@ -39,6 +39,8 @@ import cartRepairModules from '../../deployment/m5-runtime/native-cart-repair-mo
 import cartRepairBinding from '../../deployment/m5-runtime/native-cart-repair-release-binding.json' with {
   type: 'json',
 };
+import cartFixModules from '../../deployment/m5-runtime/native-cartfix-module-baseline.json' with { type: 'json' };
+import cartFixBinding from '../../deployment/m5-runtime/native-cartfix-release-binding.json' with { type: 'json' };
 import designerModules from '../../deployment/m5-runtime/native-designer-module-baseline.json' with { type: 'json' };
 import designerBinding from '../../deployment/m5-runtime/native-designer-release-binding.json' with { type: 'json' };
 import fixedModules from '../../deployment/m5-runtime/native-fixed-module-baseline.json' with { type: 'json' };
@@ -186,6 +188,16 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  // Same Functions, non-theme modules, blocks and locales as uifix; only theme assets change (PR 546).
+  'native-cartfix-3075eac9': {
+    versionId: cartFixBinding.versionId,
+    versionTag: cartFixBinding.versionTag,
+    versionIds: cartFixBinding.versionIds,
+    moduleHash: cartFixBinding.moduleHash,
+    modules: cartFixModules,
+    grants: [...grants, 'read_orders', 'read_all_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   // Same Functions and non-theme modules as allorders; theme assets, cart-repair block and locales change (PR 542).
   'native-uifix-565679f7': {
     versionId: uiFixBinding.versionId,
