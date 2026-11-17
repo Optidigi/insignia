@@ -5,6 +5,7 @@ import {
   type CustomerArtworkStore,
   createCustomerArtworkLinks,
 } from '@insignia/application';
+import { AdminOnlineIdentityError } from '@insignia/shopify';
 import {
   type CustomerArtworkHttpServices,
   handleCustomerArtworkRequest,
@@ -141,4 +142,105 @@ test('merchant copy preflights the retained customer view and never returns an u
   assert.equal(issued.status, 201);
   assert.match((await issued.json()).url, /\/artwork-upload#capability=/);
   assert.match(issued.headers.get('Cache-Control') ?? '', /no-store/);
+});
+
+const linkRequest = (body: unknown = { requestId }) =>
+  new Request(`https://insignia.test/api/admin/purchases/${purchaseId}/artwork-link`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Origin: 'https://insignia.test',
+      Authorization: 'Bearer staff-token',
+    },
+    body: JSON.stringify(body),
+  });
+const linkActor = () =>
+  actorFixture({
+    tenantShopId: 'shop-one',
+    installationGeneration: '1',
+    canReadOrders: true,
+    canReadArtwork: true,
+    canUploadArtwork: true,
+    expiresAtMs: Date.now() + 60000,
+  });
+const linkSecret = 'password=SECRET-9f2c for alpha.myshopify.com gid://shopify/Order/10485042479387';
+
+test('an unexpected artwork-link failure is recorded by safe fields only and keeps the same 503', async () => {
+  const recorded: unknown[] = [];
+  const failing = (recordAdminFailure: (failure: unknown) => void): CustomerArtworkHttpServices => {
+    const { services } = fixture();
+    services.authenticate = async () => linkActor();
+    services.recordAdminFailure = recordAdminFailure;
+    services.links = {
+      ...services.links,
+      issue: async () => {
+        throw Object.assign(new RangeError(linkSecret), { code: 'ERR_INJECTED_FAILURE' });
+      },
+    };
+    return services;
+  };
+  const failed = await handleMerchantArtworkLinkRequest(
+    linkRequest(),
+    failing((failure) => recorded.push(failure)),
+    purchaseId,
+  );
+  assert.equal(failed.status, 503);
+  assert.deepEqual(await failed.json(), { error: 'Customer artwork link unavailable' });
+  assert.equal(recorded.length, 1);
+  const failure = recorded[0] as Record<string, unknown>;
+  assert.deepEqual(Object.keys(failure).sort(), ['adminRoute', 'errorClass', 'errorCode', 'errorSite', 'httpMethod']);
+  assert.equal(failure.adminRoute, 'artwork-link');
+  assert.equal(failure.httpMethod, 'POST');
+  assert.equal(failure.errorClass, 'RangeError');
+  assert.equal(failure.errorCode, 'ERR_INJECTED_FAILURE');
+  assert.match(String(failure.errorSite), /^apps\/web\/test\/customer-artwork\.test\.mts:[1-9][0-9]*$/);
+  assert.doesNotMatch(JSON.stringify(recorded), /SECRET|myshopify|gid:|10485042479387|staff-token|4ae66163|shop-one/i);
+
+  const still = await handleMerchantArtworkLinkRequest(
+    linkRequest(),
+    failing(() => {
+      throw new Error('recorder down');
+    }),
+    purchaseId,
+  );
+  assert.equal(still.status, 503);
+  assert.deepEqual(await still.json(), { error: 'Customer artwork link unavailable' });
+});
+
+test('handled artwork-link outcomes are not recorded as unexpected failures', async () => {
+  const recorded: unknown[] = [];
+  const { services } = fixture();
+  services.recordAdminFailure = (failure) => recorded.push(failure);
+  let authenticate: () => Promise<unknown> = async () => linkActor();
+  services.authenticate = async () => (await authenticate()) as Awaited<ReturnType<typeof linkActor>>;
+  const statusFor = async (body?: unknown, id = purchaseId) =>
+    (await handleMerchantArtworkLinkRequest(linkRequest(body), services, id)).status;
+  // Authentication outcomes are observed by admin_authentication, not as unexpected failures.
+  for (const stage of ['ONLINE_EXCHANGE_REFRESH_REQUIRED', 'ONLINE_EXCHANGE_FAILED'] as const) {
+    authenticate = async () => {
+      throw new AdminOnlineIdentityError(stage);
+    };
+    await statusFor();
+  }
+  authenticate = async () => {
+    throw new Error(linkSecret);
+  };
+  assert.equal(await statusFor(), 503);
+  authenticate = async () => {
+    throw Object.assign(new Error('Shopify throttled'), { transient: true });
+  };
+  assert.equal(await statusFor(), 409);
+  authenticate = async () => null;
+  assert.equal(await statusFor(), 401);
+  authenticate = async () => linkActor();
+  assert.equal(await statusFor({ requestId, extra: true }), 422);
+  assert.equal(await statusFor(undefined, 'not-a-purchase'), 404);
+  services.links = {
+    ...services.links,
+    issue: async () => {
+      throw new Error('CUSTOMER_ARTWORK_UNAVAILABLE');
+    },
+  };
+  assert.equal(await statusFor(), 409);
+  assert.deepEqual(recorded, []);
 });

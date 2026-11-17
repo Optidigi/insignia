@@ -1,7 +1,8 @@
 import type { createArtworkService, createCustomerArtworkLinks } from '@insignia/application';
+import type { AdminFailureDiagnostic } from '@insignia/observability';
 import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminActor } from '../admin/contracts.js';
-import { adminBusy, mutationOrigin, shopifyBusy, validActor } from '../admin/http.ts';
+import { adminBusy, mutationOrigin, recordAdminFailure, shopifyBusy, validActor } from '../admin/http.ts';
 import { artworkJsonBody } from '../artwork/body.ts';
 
 export type CustomerArtworkHttpServices = {
@@ -12,6 +13,8 @@ export type CustomerArtworkHttpServices = {
   authenticate(request: Request, options?: { fresh?: boolean }): Promise<AdminActor | null>;
   assertMerchantAccess?(actor: AdminActor): Promise<void>;
   ensureInspectionReady(): Promise<void>;
+  /** Staff link unexpected-failure (503) observation: route template, method and reduced error only. */
+  recordAdminFailure?(failure: AdminFailureDiagnostic): void;
 };
 const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 function json(data: unknown, status = 200) {
@@ -114,6 +117,8 @@ export async function handleMerchantArtworkLinkRequest(
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
   if (!/^Bearer [^\s]{1,8192}$/.test(request.headers.get('Authorization') ?? ''))
     return json({ error: 'Authentication required' }, 401);
+  // Authentication failures are observed by the authenticator (admin_authentication), not recorded here.
+  let authenticated = false;
   try {
     // Sharing order artwork is staff-sensitive: fresh online exchange.
     let actor: AdminActor | null;
@@ -123,6 +128,7 @@ export async function handleMerchantArtworkLinkRequest(
       if (shopifyBusy(error)) return adminBusy();
       throw error;
     }
+    authenticated = true;
     if (!validActor(actor, Date.now())) return json({ error: 'Authentication required' }, 401);
     if (!actor.canReadOrders || !actor.canReadArtwork || !actor.canUploadArtwork)
       return json({ error: 'Artwork permission required' }, 403);
@@ -149,9 +155,9 @@ export async function handleMerchantArtworkLinkRequest(
       response.headers.set('X-Shopify-Retry-Invalid-Session-Request', '1');
       return response;
     }
-    return json(
-      { error: 'Customer artwork link unavailable' },
-      error instanceof Error && error.message === 'CUSTOMER_ARTWORK_UNAVAILABLE' ? 409 : 503,
-    );
+    if (error instanceof Error && error.message === 'CUSTOMER_ARTWORK_UNAVAILABLE')
+      return json({ error: 'Customer artwork link unavailable' }, 409);
+    if (authenticated) recordAdminFailure(services, request, 'artwork-link', error);
+    return json({ error: 'Customer artwork link unavailable' }, 503);
   }
 }

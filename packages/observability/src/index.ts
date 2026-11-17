@@ -169,6 +169,8 @@ export const ADMIN_FAILURE_ROUTES = [
   'signing',
   'preferences',
   'merchant-media',
+  'merchant-artwork',
+  'artwork-link',
 ] as const;
 const HTTP_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] as const;
 /** A code identifier, never message text. */
@@ -242,6 +244,8 @@ const BUYER_STAGES = [
   'cart-applications',
   'cart-state',
   'request',
+  /** Guest (App Proxy) artwork upload, status and preview. */
+  'artwork',
 ] as const;
 const BUYER_FAILURES = [
   'ReviewRequired',
