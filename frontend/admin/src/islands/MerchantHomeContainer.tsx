@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'preact/hooks';
 import { withAdminLocale } from '../shared/admin-i18n';
 import { authenticatedJson, isShopifyBusy } from '../shared/admin-request';
-import { createMerchantPreferencesClient } from '../shared/merchant-preferences-client';
 import { homeGuidanceReducer, initialHomeGuidanceState } from '../shared/home-workflow-state';
 import type {
   HomeOrdersPanel,
@@ -11,15 +10,17 @@ import type {
   MerchantHomeModel,
 } from '../shared/merchant-home';
 import {
+  homeGuidanceWithObservedSteps,
   homeHasPublishedProductFromSetupStatus,
+  homeObservedGuidanceSteps,
   homeOrdersFromResponse,
   homeProductsFromResponse,
-  homeGuidanceWithObservedSteps,
-  homeObservedGuidanceSteps,
   homeSetupFromTheme,
-  homeStatisticsFromResponse,
   homeStatisticsFromAggregate,
+  homeStatisticsFromResponse,
 } from '../shared/merchant-home-source';
+import { createMerchantPreferencesClient } from '../shared/merchant-preferences-client';
+import { claimPlanSelectionPrompt, planSelectionTarget } from '../shared/plan-prompt';
 import { type ThemeSetupStatus, themeSetupStatus, unknownThemeSetup } from '../shared/storefront-setup';
 import MerchantHome from './MerchantHome';
 
@@ -91,7 +92,9 @@ function MerchantHomeContainer() {
         setOrders(homeOrdersFromResponse(value));
         setStatistics(homeStatisticsFromResponse(value));
         try {
-          const totals = await authenticatedJson<unknown>('/api/purchases/v1/statistics', { signal: controller.signal });
+          const totals = await authenticatedJson<unknown>('/api/purchases/v1/statistics', {
+            signal: controller.signal,
+          });
           if (mounted.current && !controller.signal.aborted) setStatistics(homeStatisticsFromAggregate(totals));
         } catch {
           if (mounted.current && !controller.signal.aborted) setStatistics(undefined);
@@ -112,7 +115,10 @@ function MerchantHomeContainer() {
       try {
         const value = await preferences.read();
         if (!mounted.current) return;
-        guidanceRef.current = homeGuidanceReducer(guidanceRef.current, { type: 'preferences-loaded', ...value.guidance });
+        guidanceRef.current = homeGuidanceReducer(guidanceRef.current, {
+          type: 'preferences-loaded',
+          ...value.guidance,
+        });
         dispatchGuidance({ type: 'preferences-loaded', ...value.guidance });
         setGuidanceEditable(value.canEdit === true);
         setGuidanceFailure(null);
@@ -167,15 +173,18 @@ function MerchantHomeContainer() {
       billingController = current;
       try {
         const value = await authenticatedJson<unknown>('/api/admin/billing', { signal: current.signal });
+        if (!mounted.current || current.signal.aborted) return;
         if (
-          mounted.current &&
-          !current.signal.aborted &&
           value &&
           typeof value === 'object' &&
           'newActionsAllowed' in value &&
           typeof value.newActionsAllowed === 'boolean'
         )
           setRestrictedPlan(!value.newActionsAllowed);
+        // Managed pricing: a store definitively without a plan goes to Shopify's plan selection once per
+        // session. The plan banner stays as the fallback if the navigation is blocked or the merchant returns.
+        const planSelection = planSelectionTarget(value);
+        if (planSelection && claimPlanSelectionPrompt(() => window.sessionStorage)) window.open(planSelection, '_top');
       } catch {
         /* A failed observation never implies an inactive plan. Billing owns recovery. */
       }
@@ -224,9 +233,15 @@ function MerchantHomeContainer() {
         const observed = await preferences.read();
         const base = homeGuidanceReducer(guidanceRef.current, { type: 'preferences-loaded', ...observed.guidance });
         const next = homeGuidanceReducer(base, event);
-        const saved = await preferences.saveGuidance({ dismissed: next.dismissed, completedSteps: next.completedSteps });
+        const saved = await preferences.saveGuidance({
+          dismissed: next.dismissed,
+          completedSteps: next.completedSteps,
+        });
         if (!mounted.current) return;
-        guidanceRef.current = homeGuidanceReducer(guidanceRef.current, { type: 'preferences-loaded', ...saved.guidance });
+        guidanceRef.current = homeGuidanceReducer(guidanceRef.current, {
+          type: 'preferences-loaded',
+          ...saved.guidance,
+        });
         dispatchGuidance({ type: 'preferences-loaded', ...saved.guidance });
         setGuidanceFailure(null);
       } catch (error) {
@@ -234,36 +249,37 @@ function MerchantHomeContainer() {
       }
     });
   }
-  const model: MerchantHomeModel = sessionLost || guidanceFailure
-    ? sessionLost || guidanceFailure !== 'restricted'
-      ? {
-          state: 'unavailable',
-          reopenHref: '/admin/home',
-          ...(sessionLost
-            ? { reason: 'session-lost' as const }
-            : guidanceFailure === 'busy'
-              ? { reason: 'busy' as const }
-              : {}),
-        }
-      : { state: 'unavailable', reason: 'permission', reopenHref: '/admin/settings/permissions' }
-    : {
-        state: 'ready',
-        products: products.state === 'ready' ? { ...products, canConfigure: !restrictedPlan } : products,
-        orders,
-        ...(statistics ? { statistics } : {}),
-        ...(products.state === 'ready'
-          ? {
-              guidance: homeGuidanceWithObservedSteps(
-                { dismissed: guidanceDismissed, completedSteps: guidanceCompletedSteps },
-                observedSteps,
-              ),
-            }
-          : {}),
-        ...(setup
-          ? { setup: { ...setup, initiallyCollapsed: orders.state === 'ready' && orders.items.length > 0 } }
-          : {}),
-        ...(restrictedPlan ? { notice: { kind: 'plan-restriction' as const } } : {}),
-      };
+  const model: MerchantHomeModel =
+    sessionLost || guidanceFailure
+      ? sessionLost || guidanceFailure !== 'restricted'
+        ? {
+            state: 'unavailable',
+            reopenHref: '/admin/home',
+            ...(sessionLost
+              ? { reason: 'session-lost' as const }
+              : guidanceFailure === 'busy'
+                ? { reason: 'busy' as const }
+                : {}),
+          }
+        : { state: 'unavailable', reason: 'permission', reopenHref: '/admin/settings/permissions' }
+      : {
+          state: 'ready',
+          products: products.state === 'ready' ? { ...products, canConfigure: !restrictedPlan } : products,
+          orders,
+          ...(statistics ? { statistics } : {}),
+          ...(products.state === 'ready'
+            ? {
+                guidance: homeGuidanceWithObservedSteps(
+                  { dismissed: guidanceDismissed, completedSteps: guidanceCompletedSteps },
+                  observedSteps,
+                ),
+              }
+            : {}),
+          ...(setup
+            ? { setup: { ...setup, initiallyCollapsed: orders.state === 'ready' && orders.items.length > 0 } }
+            : {}),
+          ...(restrictedPlan ? { notice: { kind: 'plan-restriction' as const } } : {}),
+        };
   async function createProduct() {
     const intents = (
       window as unknown as {
@@ -287,7 +303,9 @@ function MerchantHomeContainer() {
       onCreateProduct={createProduct}
       onDismissGuidance={guidanceEditable ? () => dismissGuidance(true) : undefined}
       onRestoreGuidance={guidanceEditable ? () => dismissGuidance(false) : undefined}
-      onCompleteGuidanceStep={guidanceEditable ? (step, complete) => updateGuidance({ type: 'step-acknowledged', step, complete }) : undefined}
+      onCompleteGuidanceStep={
+        guidanceEditable ? (step, complete) => updateGuidance({ type: 'step-acknowledged', step, complete }) : undefined
+      }
     />
   );
 }
