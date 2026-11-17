@@ -51,6 +51,20 @@ class FakeRemote {
   }
 }
 
+function publishedValue(shopId: string, productId: string, revisionId: string) {
+  return {
+    version: 'm2-published-config-v1',
+    shopId,
+    productId,
+    revisionId,
+    shopCurrency: 'USD',
+    methods: [{ id: 'm' }],
+    placements: [{ id: 'front', allowedMethodIds: ['m'], allowedStepIds: ['s'], logoLaterAllowed: false }],
+    productionOptions: [],
+    pricingRules: [],
+  };
+}
+
 describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication journal', () => {
   let database: Kysely<Database>;
   beforeAll(async () => {
@@ -80,17 +94,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
       configId,
       revisionId,
       schemaVersion: 'm2-published-config-v1',
-      publishedValue: {
-        version: 'm2-published-config-v1',
-        shopId,
-        productId,
-        revisionId,
-        shopCurrency: 'USD',
-        methods: [{ id: 'm' }],
-        placements: [{ id: 'front', allowedMethodIds: ['m'], allowedStepIds: ['s'], logoLaterAllowed: false }],
-        productionOptions: [],
-        pricingRules: [],
-      },
+      publishedValue: publishedValue(shopId, productId, revisionId),
     });
     const identity = await sql<{ authorization_generation: string }>`SELECT authorization_generation::text
       FROM installation_generations WHERE shop_id=${shopId} AND generation=${generation}::bigint`.execute(database);
@@ -428,6 +432,30 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
     await expect(publisher.prepare({ ...f, operationId: randomUUID(), mode: 'required' })).rejects.toThrow(
       'Product enforcement anchors drifted or belong to another installation',
     );
+  });
+
+  it('never prepares a request whose current-publication pointer moved to a newer request', async () => {
+    const f = await fixture();
+    const remote = new FakeRemote();
+    const publisher = new PgProductionPublication(database, remote, '101');
+    const newer = randomUUID();
+    await createConfigRepositoryInternal(database).createRevision({
+      shopId: f.shopId,
+      configId: f.configId,
+      revisionId: newer,
+      schemaVersion: 'm2-published-config-v1',
+      publishedValue: publishedValue(f.shopId, f.productId, newer),
+    });
+    await sql`INSERT INTO m5_current_publication_pointer (shop_id, config_id, revision_id,
+      installation_generation, source_draft_version, idempotency_key)
+      VALUES (${f.shopId}, ${f.configId}, ${newer}, ${f.generation}::bigint, 2, 'newer-request-key')`.execute(database);
+    await expect(publisher.prepare({ ...f, operationId: f.revisionId, mode: 'required' })).rejects.toThrow(
+      'A newer publication request exists',
+    );
+    expect(await publisher.prepare({ ...f, revisionId: newer, operationId: newer, mode: 'required' })).toEqual({
+      operationId: newer,
+      phase: 'prepared',
+    });
   });
 
   it('recovers after a write timeout at every durable remote stage', async () => {

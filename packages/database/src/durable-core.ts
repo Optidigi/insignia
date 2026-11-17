@@ -267,6 +267,8 @@ export interface DurableCore {
       reconciliationKind?: string | null;
       /** The activation row still carries an availability hold (#466: support copy only then). */
       holdPresent?: boolean;
+      /** When the current-publication pointer was last set (null for a historical operation). */
+      requestedAt?: Date | null;
     } | null>;
     /** #466: the config's newest operation (current generation) when its hold was claimed or
      * restored as abandoned. A derived input; the next publication's sequence ends it. */
@@ -466,7 +468,8 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       activation_kind: string | null;
       reconciliation_kind: string | null;
       hold_present: boolean | null;
-    }>`SELECT pointer.revision_id, pointer.source_draft_version::text,
+      requested_at: Date;
+    }>`SELECT pointer.revision_id, pointer.source_draft_version::text, pointer.updated_at AS requested_at,
         pointer.idempotency_key, geometry.mode, operation.operation_id,
         progress.phase, progress.prior_mode, operation.status, activation.kind AS activation_kind,
         activation.hold IS NOT NULL AS hold_present,
@@ -503,6 +506,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
         activationKind: selected.activation_kind,
         reconciliationKind: selected.reconciliation_kind,
         holdPresent: selected.hold_present === true,
+        requestedAt: selected.requested_at,
       };
     }
     const historical = await sql<{

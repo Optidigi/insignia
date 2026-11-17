@@ -364,6 +364,12 @@ export class PgProductionPublication {
         row.effective_operation_id !== first.effective_operation_id
       )
         throw new Error('Publication installation or revision changed while preparing');
+      // The config row lock orders this against the publish command that moves the pointer: a request
+      // superseded while unprepared (an abandoned unprepared intent) never prepares afterwards.
+      const pointer = await sql<{ revision_id: string }>`SELECT revision_id FROM m5_current_publication_pointer
+        WHERE shop_id=${input.shopId} AND config_id=${input.configId}`.execute(tx);
+      if (pointer.rows[0] && pointer.rows[0].revision_id !== input.revisionId)
+        throw new Error('A newer publication request exists');
       const replay = await sql<{ revision_id: string; mode: ProductPolicyMode; phase: ProgressPhase }>`
         SELECT o.revision_id, p.mode, p.phase FROM publication_operations o
         JOIN m4_publication_progress p USING (shop_id, config_id, operation_id)

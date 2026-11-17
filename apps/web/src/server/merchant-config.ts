@@ -68,9 +68,25 @@ const targetOccupied = (error: unknown) =>
   (error as { code?: string; constraint?: string }).code === '23505' &&
   (error as { constraint?: string }).constraint === 'product_configs_shop_id_external_product_id_key';
 
-function publicationSettled(progress: Awaited<ReturnType<DurableCore['configs']['getCurrentPublication']>>) {
+/** A committed publish request whose operation was never prepared wrote nothing to Shopify and took
+ * no hold. Its request prepares within seconds of the command (a #468 resend within a session), so
+ * one still unprepared after this bound has stopped: it is abandoned (shown as ABANDONED_RESTORED,
+ * its key no longer resumes it) and the next publish supersedes it. Without this, losing the
+ * original request's key (a closed tab, another device) would leave the product unpublishable. */
+export const UNPREPARED_PUBLICATION_ABANDON_MS = 10 * 60_000;
+type CurrentPublication = Awaited<ReturnType<DurableCore['configs']['getCurrentPublication']>>;
+function unpreparedAbandoned(progress: CurrentPublication) {
+  return (
+    progress?.status === 'intent' &&
+    !!progress.requestedAt &&
+    Date.now() - progress.requestedAt.getTime() >= UNPREPARED_PUBLICATION_ABANDON_MS
+  );
+}
+
+function publicationSettled(progress: CurrentPublication) {
   return (
     !progress ||
+    unpreparedAbandoned(progress) ||
     (progress.phase === 'active' &&
       progress.reconciliationKind !== 'OPERATOR_HOLD' &&
       (progress.activationKind === null || progress.activationKind === 'RESTORED'))
@@ -445,7 +461,7 @@ export function createMerchantConfigService(input: {
         reconciliationKind: progress?.reconciliationKind,
         operationStatus: progress?.status,
         recoveryFromAnotherOperation: otherRecovery,
-        abandonedLatest: abandonment?.kind === 'ABANDON_RESTORED',
+        abandonedLatest: abandonment?.kind === 'ABANDON_RESTORED' || unpreparedAbandoned(progress),
         holdPresent: progress?.holdPresent,
       });
       // #466: after finalize the abandoned request leaves every current read; the view still names it,
@@ -961,6 +977,8 @@ export function createMerchantConfigService(input: {
           message: 'Publication belongs to a prior installation',
         };
       const existing = await core.configs.getCurrentPublication(actor.tenantShopId, data.configId);
+      if (existing?.operationId === revisionId && unpreparedAbandoned(existing))
+        return { kind: 'accepted', revisionId, state: 'ABANDONED_RESTORED' };
       if (existing && existing.operationId !== revisionId && existing.phase !== 'active')
         return { kind: 'conflict', message: 'A newer publication request exists' };
       const beforeRecovery = continuing(revisionId);
