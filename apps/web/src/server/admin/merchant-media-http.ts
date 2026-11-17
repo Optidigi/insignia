@@ -1,6 +1,6 @@
 import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminServices } from './contracts.js';
-import { adminBusy, adminJson, busyWithoutEffect, mutationOrigin, validActor } from './http.ts';
+import { adminBusy, adminJson, busyWithoutEffect, mutationOrigin, recordAdminFailure, validActor } from './http.ts';
 import { MerchantMediaError } from './merchant-media.ts';
 
 const limit = 5 * 1024 * 1024;
@@ -83,6 +83,7 @@ export async function handleMerchantMediaRequest(
               : 'Product media unavailable',
         },
       );
+    recordAdminFailure(services, request, 'merchant-media', error);
     return adminJson(503, { error: 'Product media unavailable' });
   }
 }

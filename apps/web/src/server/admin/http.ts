@@ -192,16 +192,16 @@ const FAILURE_ROUTES = {
 const FAILURE_METHODS: readonly string[] = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
 
 /** Unexpected failures are recorded by route template and reduced error only; recording never changes the response. */
-function recordFailure(services: AdminServices, request: Request, route: AdminRoute, error: unknown): void {
+export function recordAdminFailure(
+  services: AdminServices,
+  request: Request,
+  adminRoute: AdminFailureDiagnostic['adminRoute'],
+  error: unknown,
+): void {
   if (!services.recordAdminFailure || !FAILURE_METHODS.includes(request.method)) return;
   try {
     services.recordAdminFailure({
-      adminRoute:
-        route.kind === 'config'
-          ? request.method === 'GET'
-            ? 'product-config'
-            : 'product-config-command'
-          : FAILURE_ROUTES[route.kind],
+      adminRoute,
       httpMethod: request.method as AdminFailureDiagnostic['httpMethod'],
       ...describeUnexpectedError(error),
     });
@@ -489,7 +489,16 @@ export async function handleAdminRequest(
     if (error instanceof CommandDigestConflictError)
       return adminJson(409, { kind: 'conflict', message: 'Command key was used for a different request' });
     if (busyWithoutEffect(request, error)) return adminBusy();
-    recordFailure(services, request, route, error);
+    recordAdminFailure(
+      services,
+      request,
+      route.kind === 'config'
+        ? request.method === 'GET'
+          ? 'product-config'
+          : 'product-config-command'
+        : FAILURE_ROUTES[route.kind],
+      error,
+    );
     return adminJson(503, { error: 'Admin service unavailable' });
   }
 }

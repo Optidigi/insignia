@@ -275,3 +275,98 @@ test('session expiry after inspection cannot dispatch private object writes', as
   assert.equal(f.rows.size, 0);
   assert.equal(f.objects.size, 0);
 });
+
+const mediaRead = () =>
+  new Request('https://app.example/api/admin/products/111/media?ids=image-1', {
+    headers: { Authorization: 'Bearer synthetic' },
+  });
+const mediaUpload = () =>
+  new Request('https://app.example/api/admin/products/111/media', {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer synthetic',
+      Origin: 'https://app.example',
+      'Content-Type': 'image/png',
+      'Idempotency-Key': randomUUID(),
+      'X-Insignia-Setup-Authority': 'a'.repeat(64),
+    },
+    body: Buffer.from(png),
+  });
+
+test('an unexpected media failure is recorded by safe fields only and keeps the same 503', async () => {
+  const recorded: unknown[] = [];
+  const secret = 'password=SECRET-9f2c for alpha.myshopify.com gid://shopify/Product/10485042479387';
+  const f = fixture();
+  const failing = (recordAdminFailure: (failure: unknown) => void) =>
+    adminServices({
+      appOrigin: 'https://app.example',
+      authenticate: async () => f.actor,
+      recordAdminFailure,
+      media: {
+        ...f.service,
+        read: async () => {
+          throw Object.assign(new RangeError(secret), { code: 'ERR_INJECTED_FAILURE' });
+        },
+        upload: async () => {
+          throw new Error(secret);
+        },
+      },
+    });
+  const services = failing((failure) => recorded.push(failure));
+  const read = await handleMerchantMediaRequest(mediaRead(), services, product);
+  assert.equal(read.status, 503);
+  assert.deepEqual(await read.json(), { error: 'Product media unavailable' });
+  assert.equal(recorded.length, 1);
+  const failure = recorded[0] as Record<string, unknown>;
+  assert.deepEqual(Object.keys(failure).sort(), ['adminRoute', 'errorClass', 'errorCode', 'errorSite', 'httpMethod']);
+  assert.equal(failure.adminRoute, 'merchant-media');
+  assert.equal(failure.httpMethod, 'GET');
+  assert.equal(failure.errorClass, 'RangeError');
+  assert.equal(failure.errorCode, 'ERR_INJECTED_FAILURE');
+  assert.match(String(failure.errorSite), /^apps\/web\/test\/admin\/merchant-media\.test\.mts:[1-9][0-9]*$/);
+
+  const uploaded = await handleMerchantMediaRequest(mediaUpload(), services, product);
+  assert.equal(uploaded.status, 503);
+  assert.deepEqual(await uploaded.json(), { error: 'Product media unavailable' });
+  assert.deepEqual(
+    { ...(recorded[1] as object), errorSite: undefined },
+    { adminRoute: 'merchant-media', httpMethod: 'POST', errorClass: 'Error', errorSite: undefined },
+  );
+  assert.doesNotMatch(JSON.stringify(recorded), /SECRET|myshopify|gid:|10485042479387|synthetic|image-1/i);
+
+  const still = await handleMerchantMediaRequest(
+    mediaUpload(),
+    failing(() => {
+      throw new Error('recorder down');
+    }),
+    product,
+  );
+  assert.equal(still.status, 503);
+  assert.deepEqual(await still.json(), { error: 'Product media unavailable' });
+});
+
+test('handled media outcomes are not recorded as unexpected failures', async () => {
+  const recorded: unknown[] = [];
+  const f = fixture();
+  let thrown: unknown;
+  const services = adminServices({
+    appOrigin: 'https://app.example',
+    authenticate: async () => f.actor,
+    recordAdminFailure: (failure) => recorded.push(failure),
+    media: {
+      ...f.service,
+      read: async () => {
+        throw thrown;
+      },
+    },
+  });
+  const statusFor = async (error: unknown) => {
+    thrown = error;
+    return (await handleMerchantMediaRequest(mediaRead(), services, product)).status;
+  };
+  assert.equal(await statusFor(Object.assign(new Error('Shopify throttled'), { transient: true })), 409);
+  assert.equal(await statusFor(new MerchantMediaError('NOT_FOUND')), 404);
+  assert.equal(await statusFor(new MerchantMediaError('INVALID_INPUT')), 422);
+  assert.equal(await statusFor(new MerchantMediaError('UNAVAILABLE')), 503);
+  assert.deepEqual(recorded, []);
+});
