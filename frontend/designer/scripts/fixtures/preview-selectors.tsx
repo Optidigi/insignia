@@ -12,12 +12,16 @@ import '../../src/review.css';
 const parameters = new URLSearchParams(location.search);
 const named = parameters.get('palette') === 'named';
 const missingSwatches = parameters.get('palette') === 'missing';
+// A one-option product (e.g. only "Color"): its single row is the generic "Selection" and the option is the column.
+const oneOption = parameters.get('palette') === 'one-option';
 const count = Number(parameters.get('views') ?? 3);
 // Four sizes switch the quantity step from the compact stepper layout to the plain grid.
-const sizes = [
+const sizes = (oneOption ? [
+  { id: 'small', label: 'Ice' }, { id: 'medium', label: 'Navy' },
+] : [
   { id: 'small', label: 'Small' }, { id: 'medium', label: 'Medium' },
   { id: 'large', label: 'Large' }, { id: 'xl', label: 'XL' },
-].slice(0, Number(parameters.get('sizes') ?? 1));
+]).slice(0, Number(parameters.get('sizes') ?? 1));
 const sizeIds = sizes.map((size) => size.id);
 const config = configSchema.parse({
   id: 'preview-selector-fixture', name: 'Preview selector fixture',
@@ -26,12 +30,17 @@ const config = configSchema.parse({
   productDescription: 'Product preview selector regression fixture.',
   basePrice: 1000, currency: 'EUR', locale: 'en-GB',
   garment: 'tshirt', preview: 'illustration', maxQuantity: 99, artworkLater: false,
-  optionPresentation: {
+  optionPresentation: oneOption ? {
+    rowOption: { label: 'Selection', display: 'named-choice', labelSource: 'generic-selection' },
+    columnOption: { label: 'Color' },
+  } : {
     rowOption: { label: 'Colour', display: named ? 'named-choice' : 'swatch' },
     columnOption: { label: 'Size' },
   },
   sizes,
-  colors: [
+  colors: oneOption ? [
+    { id: 'white', name: 'Selection', nameSource: 'generic-selection', availableSizeIds: sizeIds },
+  ] : [
     { id: 'white', name: 'Warm white with a very long merchant supplied finish name', ...(!named && !missingSwatches && { hex: '#ffffff' }), availableSizeIds: sizeIds },
     { id: 'navy', name: 'Midnight navy with a very long merchant supplied finish name', ...(!named && !missingSwatches && { hex: '#102030' }), availableSizeIds: sizeIds },
   ],

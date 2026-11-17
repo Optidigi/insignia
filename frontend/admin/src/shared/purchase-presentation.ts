@@ -20,3 +20,30 @@ export const PurchaseListViewSchema = BackendPurchaseListSchema.extend({
 
 /** Verified original metadata is owned by the same server wire contract. */
 export { PurchaseOriginalDownloadSchema } from '@insignia/contracts';
+
+/**
+ * An order-related time in the shop's time zone, labelled with that zone (e.g. "16 Nov 2026, 16:46 EST").
+ * Without a known shop zone it falls back to UTC, labelled by `utcLabel`. The Orders list and the order
+ * detail use this one format so the same order shows the same time everywhere.
+ */
+export function formatShopDateTime(
+  locale: string,
+  value: string | Date,
+  timeZone: string | undefined,
+  utcLabel: (date: string) => string,
+): string {
+  const instant = typeof value === 'string' ? new Date(value) : value;
+  if (!timeZone)
+    return utcLabel(
+      new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }).format(instant),
+    );
+  return new Intl.DateTimeFormat(locale, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone,
+    timeZoneName: 'short',
+  }).format(instant);
+}

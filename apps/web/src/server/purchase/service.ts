@@ -315,8 +315,15 @@ export function createPurchaseServices(input: {
       await currentAccess(actor);
       const purchase = await store.get(scope(actor), id);
       const result = purchase ? await view(actor, purchase) : null;
+      let timeZone: string | undefined;
+      if (result && input.timeZone)
+        try {
+          timeZone = await input.timeZone(actor);
+        } catch {
+          /* The detail still reads; times then show in UTC, labelled. */
+        }
       await currentAccess(actor);
-      return result;
+      return result && timeZone ? { ...result, timeZone } : result;
     },
     async attach(
       actor: AdminActor,

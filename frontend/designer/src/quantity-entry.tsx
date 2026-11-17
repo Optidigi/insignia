@@ -74,8 +74,9 @@ export function QuantityEntry({
 
   function rowName(row: ProductConfig["colors"][number] | undefined): string {
     if (!row) return t("customer:options.genericLabel");
+    // The single generic row of a one-option product is named by that option (e.g. "Color").
     return row.nameSource === "generic-selection"
-      ? t("customer:options.selectionFallback")
+      ? (config.optionPresentation?.columnOption.label ?? t("customer:options.selectionFallback"))
       : row.name;
   }
 

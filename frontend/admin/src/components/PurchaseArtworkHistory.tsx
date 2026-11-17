@@ -1,15 +1,18 @@
 import type { PurchaseView } from '@insignia/contracts';
 import { useState } from 'preact/hooks';
 import { useAdminLocale } from '../shared/admin-i18n.js';
+import { formatShopDateTime } from '../shared/purchase-presentation.ts';
 import AdminDisclosure from './AdminDisclosure';
 import OriginalArtworkDownload from './OriginalArtworkDownload';
 
 /** Keep long histories navigable without mounting every download control at once. */
 export default function PurchaseArtworkHistory({
   purchase,
+  timeZone,
   deny,
 }: {
   purchase: PurchaseView;
+  timeZone?: string;
   deny(error: unknown): void;
 }) {
   const { t, formatLocale } = useAdminLocale();
@@ -20,11 +23,7 @@ export default function PurchaseArtworkHistory({
   if (!events.length) return null;
   const number = new Intl.NumberFormat(formatLocale);
   const date = (value: string) =>
-    t('orders:artworkHistory.dateUtc', {
-      date: new Intl.DateTimeFormat(formatLocale, { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }).format(
-        new Date(value),
-      ),
-    });
+    formatShopDateTime(formatLocale, value, timeZone, (date) => t('orders:artworkHistory.dateUtc', { date }));
   return (
     <s-section heading={t('orders:artworkHistory.heading')}>
       <s-icon slot="graphic" type="clock" />

@@ -437,6 +437,7 @@ if (!customElements.get('insignia-buyer')) customElements.define('insignia-buyer
 
 type CartJsLine = {
   product_id?: number;
+  variant_id?: number;
   quantity?: number;
   original_price?: number;
   properties?: Record<string, unknown>;
@@ -531,9 +532,76 @@ export function customizedLineNeedsReview(line: CartJsLine): boolean {
   return !signed || typeof line.original_price !== 'number' || BigInt(line.original_price) !== signed.unitMinor;
 }
 
+/** Theme containers that list cart lines: cart forms and Dawn/Horizon-style cart page and drawer elements. */
+const CART_LINES = 'form[action$="/cart"], cart-items, cart-drawer-items, cart-items-component, [data-cart-items]';
+const LINE_MARKER = 'insignia-cart-line-marker';
+
+/**
+ * Marks each customized line in the theme's cart markup, right after its product title link. Only cart order and
+ * variant are used: within one cart container the titled links to a variant map to that variant's cart lines in
+ * order. When the theme shows a different number of rows, a variant is marked only if all its lines are customized.
+ * Presentation only: no signed content is read or shown, and lines the theme does not link are left unmarked.
+ */
+export function markCustomizedLines(
+  items: CartJsLine[],
+  labels: { customized: string; review: string },
+  root: Document = document,
+) {
+  const wanted = new Map<Element, string>();
+  if (items.some(isCustomized)) {
+    const containers = new Set<Element>();
+    for (const link of root.querySelectorAll('a[href*="variant="]')) {
+      const container = link.closest(CART_LINES);
+      if (container && !link.closest('insignia-cart-repair, .insignia-cart-review')) containers.add(container);
+    }
+    for (const container of containers) {
+      const links = new Map<string, HTMLAnchorElement[]>();
+      for (const link of container.querySelectorAll<HTMLAnchorElement>('a[href*="variant="]')) {
+        // Image links repeat the title link without text; nested containers are handled on their own.
+        if (link.closest(CART_LINES) !== container || !link.textContent?.trim()) continue;
+        const variant = new URL(link.href, location.href).searchParams.get('variant');
+        if (variant) links.set(variant, [...(links.get(variant) ?? []), link]);
+      }
+      for (const [variant, anchors] of links) {
+        const lines = items.filter((line) => String(line.variant_id) === variant);
+        if (!lines.some(isCustomized)) continue;
+        const allCustomized = lines.every(isCustomized);
+        anchors.forEach((anchor, index) => {
+          const line =
+            anchors.length === lines.length
+              ? lines[index]
+              : allCustomized
+                ? (lines.find(customizedLineNeedsReview) ?? lines[0])
+                : undefined;
+          if (line && isCustomized(line))
+            wanted.set(anchor, customizedLineNeedsReview(line) ? labels.review : labels.customized);
+        });
+      }
+    }
+  }
+  for (const marker of root.querySelectorAll(`.${LINE_MARKER}`)) {
+    const anchor = marker.previousElementSibling;
+    if (!anchor || wanted.get(anchor) !== marker.textContent) marker.remove();
+  }
+  for (const [anchor, text] of wanted) {
+    if (anchor.nextElementSibling?.classList.contains(LINE_MARKER)) continue;
+    const marker = root.createElement('span');
+    marker.className = LINE_MARKER;
+    marker.textContent = text;
+    Object.assign(marker.style, { display: 'block', fontSize: '0.875em', marginBlockStart: '0.25rem' });
+    anchor.after(marker);
+  }
+}
+
 export class InsigniaCartRepair extends HTMLElement {
   private abort?: AbortController;
   private observer?: PerformanceObserver;
+  /** Themes re-render cart markup after their own fetches; markers and the moved notice are restored afterwards. */
+  private mutations?: MutationObserver;
+  private frame = 0;
+  private lines: CartJsLine[] = [];
+  /** The review entry. On the cart page it sits above the theme's checkout controls, outside this element. */
+  private notice?: HTMLElement;
   private renewing = false;
   private renewFailed = false;
   /** The stored session's cart-state called the cart's set renewable at the last load. */
@@ -541,6 +609,16 @@ export class InsigniaCartRepair extends HTMLElement {
   private readonly refresh = () => this.load();
   connectedCallback() {
     window.addEventListener('insignia-cart-updated', this.refresh);
+    if (typeof MutationObserver === 'function') {
+      this.mutations = new MutationObserver(() => {
+        if (this.frame || !this.lines.some(isCustomized)) return;
+        this.frame = requestAnimationFrame(() => {
+          this.frame = 0;
+          this.restore();
+        });
+      });
+      this.mutations.observe(document.body, { childList: true, subtree: true });
+    }
     // Native theme quantity/remove controls change the cart without an Insignia event.
     if (typeof PerformanceObserver === 'function') {
       const observer = new PerformanceObserver((list) => {
@@ -573,7 +651,9 @@ export class InsigniaCartRepair extends HTMLElement {
           currency?: string;
         };
         if (controller.signal.aborted || this.abort !== controller) return;
-        const customized = (cart.items ?? []).filter(isCustomized);
+        this.lines = cart.items ?? [];
+        this.markLines();
+        const customized = this.lines.filter(isCustomized);
         const reason = cartReviewReason(customized, {
           currency: typeof cart.currency === 'string' ? cart.currency : undefined,
           country: this.getAttribute('country') ?? undefined,
@@ -603,10 +683,46 @@ export class InsigniaCartRepair extends HTMLElement {
           this.render(String(line.product_id), reason);
           return;
         }
-        this.replaceChildren();
+        this.clearNotice();
         if (cart.attributes?._insignia_quote_v2) this.clearStaleQuote(cartRoot, controller.signal);
       })
       .catch(() => {});
+  }
+  private markLines() {
+    markCustomizedLines(this.lines, {
+      customized: this.getAttribute('line-label') ?? 'Customized',
+      review: this.getAttribute('line-review-label') ?? 'Customized · needs review',
+    });
+  }
+  /** After a theme re-render: re-mark lines and put a removed review entry back. */
+  private restore() {
+    if (!this.isConnected) return;
+    this.markLines();
+    if (this.notice && !this.notice.isConnected) this.placeNotice(this.notice);
+  }
+  /**
+   * On the cart page the review entry goes right above the visible checkout controls, so it is seen next to the
+   * cart lines and comes before checkout in keyboard order. Elsewhere, or when the theme has no recognizable
+   * checkout button, it stays at this embed. It is placed once (or again after a theme re-render removed it):
+   * moving it would reconnect the Designer element inside.
+   */
+  private placeNotice(notice: HTMLElement) {
+    const cartRoot = this.getAttribute('cart-root') ?? '/';
+    const checkout =
+      location.pathname.replace(/\/+$/, '') === `${cartRoot}cart`
+        ? [...document.querySelectorAll<HTMLElement>('button[name="checkout"], input[name="checkout"]')].find(
+            (button) => button.getClientRects().length > 0 && !button.closest('insignia-cart-repair'),
+          )
+        : undefined;
+    const group = checkout?.parentElement;
+    const anchor = group && !['FORM', 'BODY'].includes(group.tagName) ? group : checkout;
+    if (anchor) anchor.before(notice);
+    else this.replaceChildren(notice);
+  }
+  private clearNotice() {
+    this.notice?.remove();
+    this.notice = undefined;
+    this.replaceChildren();
   }
   /**
    * Harmless cleanup of a leftover historical v2 cart-level quote attribute once no designed line remains.
@@ -658,13 +774,14 @@ export class InsigniaCartRepair extends HTMLElement {
     }
     this.renewFailed = true;
     this.render(productId, 'expired');
-    this.querySelector<HTMLButtonElement>('insignia-buyer button[slot="trigger"]')?.focus();
+    this.notice?.querySelector<HTMLButtonElement>('insignia-buyer button[slot="trigger"]')?.focus();
     this.load();
   }
   private render(productId: string, reason: CartReviewReason | undefined) {
     const needsReview = !!reason;
     const renewable = reason === 'expired' && !this.renewFailed && this.renewableNow;
-    let buyer = this.querySelector('insignia-buyer');
+    let notice = this.notice;
+    let buyer = notice?.querySelector('insignia-buyer');
     if (buyer?.getAttribute('product-id') !== productId) {
       // Light DOM keeps the theme's own button styling on the trigger.
       buyer = document.createElement('insignia-buyer');
@@ -682,14 +799,14 @@ export class InsigniaCartRepair extends HTMLElement {
       buyer.setAttribute('product-id', productId);
       buyer.setAttribute('repair', '');
     }
-    let notice = this.querySelector<HTMLElement>(':scope > .insignia-cart-review');
     if (!notice) {
       notice = document.createElement('div');
       notice.className = 'insignia-cart-review';
       notice.setAttribute('role', 'status');
       notice.append(document.createElement('p'));
-      this.replaceChildren(notice);
+      this.notice = notice;
     }
+    if (!notice.isConnected) this.placeNotice(notice);
     const text = notice.querySelector('p');
     if (text) {
       text.textContent = !needsReview
@@ -726,8 +843,10 @@ export class InsigniaCartRepair extends HTMLElement {
             border: '1px solid currentColor',
             borderRadius: '0.5rem',
             boxShadow: '0 0.5rem 1.5rem rgb(0 0 0 / 0.2)',
+            marginBlockEnd: '',
           }
         : {
+            marginBlockEnd: '1rem',
             position: '',
             insetInline: '',
             bottom: '',
@@ -763,8 +882,13 @@ export class InsigniaCartRepair extends HTMLElement {
   disconnectedCallback() {
     window.removeEventListener('insignia-cart-updated', this.refresh);
     this.observer?.disconnect();
+    this.mutations?.disconnect();
+    cancelAnimationFrame(this.frame);
+    this.frame = 0;
     this.abort?.abort();
-    this.replaceChildren();
+    this.lines = [];
+    this.markLines();
+    this.clearNotice();
   }
 }
 if (!customElements.get('insignia-cart-repair')) customElements.define('insignia-cart-repair', InsigniaCartRepair);

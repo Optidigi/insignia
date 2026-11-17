@@ -68,6 +68,29 @@ test('phone view and colour names fit together, retain full labels and dispatch 
   }
 });
 
+test('a one-option product names its option instead of "Selection Selection" on every step', async () => {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  try {
+    await page.goto(`${origin}/scripts/fixtures/preview-selectors.html?views=2&sizes=1&palette=one-option`);
+    await page.locator('.app[data-step="0"]').waitFor();
+    // No row choice exists: the generic row caption is not shown under the preview.
+    assert.equal(await page.locator('.color-section').count(), 0);
+    assert.doesNotMatch(await page.locator('.app').innerText(), /Selection/);
+    await page.locator('.steps button').nth(1).click();
+    await page.locator('.app[data-step="1"]').waitFor();
+    const quantities = await page.locator('.app').innerText();
+    assert.match(quantities, /Color/);
+    assert.match(quantities, /Ice/);
+    assert.doesNotMatch(quantities, /Selection/);
+    await page.locator('#quantity-white-small').fill('1');
+    await page.locator('.panel-footer .primary-button').click();
+    await page.locator('.app[data-step="2"]').waitFor();
+    const review = await page.locator('.app').innerText();
+    assert.match(review, /Color/);
+    assert.doesNotMatch(review, /Selection/);
+  } finally { await page.close(); }
+});
+
 test('desktop retains up to three view tabs and uses a select for four views', async () => {
   for (const views of [1, 2, 3, 4]) {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });

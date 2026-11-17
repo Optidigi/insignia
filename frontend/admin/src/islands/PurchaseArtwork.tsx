@@ -24,6 +24,7 @@ import { authenticatedJson, isShopifyBusy } from '../shared/admin-request';
 import { artworkStatus } from '../shared/artwork-status';
 import { ordersReturnPath } from '../shared/orders-return-path';
 import { startOriginalArtworkDownload } from '../shared/original-artwork-download';
+import { formatShopDateTime } from '../shared/purchase-presentation.ts';
 import { localizedPurchaseMoney } from '../shared/purchase-view';
 import { initialRemoteReadState, remoteReadReducer } from '../shared/remote-read-state';
 import { attachmentReducer, initialAttachmentState } from './purchase-attachment-state';
@@ -39,8 +40,10 @@ function Placement({
   deny,
   disabled,
   onJumpTarget,
+  timeZone,
 }: {
   purchase: PurchaseView;
+  timeZone?: string;
   group: PurchaseGroup;
   placement: PurchaseGroup['placements'][number];
   changed: (view: PurchaseView) => void;
@@ -316,13 +319,9 @@ function Placement({
         {assetUsable && !retentionExpired && Date.parse(accessExpiresAt) - Date.now() <= 7 * 86400000 && (
           <s-banner tone="warning">
             {t('orders:purchaseArtwork.placement.deleteSoon', {
-              date: t('orders:artworkHistory.dateUtc', {
-                date: new Intl.DateTimeFormat(formatLocale, {
-                  dateStyle: 'medium',
-                  timeStyle: 'short',
-                  timeZone: 'UTC',
-                }).format(new Date(accessExpiresAt)),
-              }),
+              date: formatShopDateTime(formatLocale, accessExpiresAt, timeZone, (date) =>
+                t('orders:artworkHistory.dateUtc', { date }),
+              ),
             })}
           </s-banner>
         )}
@@ -425,6 +424,7 @@ function PurchaseArtwork({ purchaseId, returnTo }: { purchaseId: string; returnT
     initialRemoteReadState<PurchaseView>,
   );
   const purchase = read.value;
+  const [shopTimeZone, setShopTimeZone] = useState<string | undefined>(undefined);
   const message = (() => {
     switch (read.phase) {
       case 'denied':
@@ -437,14 +437,9 @@ function PurchaseArtwork({ purchaseId, returnTo }: { purchaseId: string; returnT
         return commandNotice ? t(`orders:purchaseArtwork.commands.${commandNotice}`) : '';
     }
   })();
+  // Shop time zone from the detail read; a command result keeps the last known zone.
   const recordDate = (value: string) =>
-    t('orders:artworkHistory.dateUtc', {
-      date: new Intl.DateTimeFormat(formatLocale, {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-        timeZone: 'UTC',
-      }).format(new Date(value)),
-    });
+    formatShopDateTime(formatLocale, value, shopTimeZone, (date) => t('orders:artworkHistory.dateUtc', { date }));
   const paymentLabel = (status: string) => {
     switch (status) {
       case 'PAID':
@@ -520,6 +515,7 @@ function PurchaseArtwork({ purchaseId, returnTo }: { purchaseId: string; returnT
       );
       if (value.purchaseId !== purchaseId) throw new Error('Purchase identity changed');
       if (generation === current.current && !controller.signal.aborted) {
+        if (value.timeZone) setShopTimeZone(value.timeZone);
         setNeedsRefresh(false);
         dispatchRead({ type: 'read-succeeded', request: generation, value });
       }
@@ -889,6 +885,7 @@ function PurchaseArtwork({ purchaseId, returnTo }: { purchaseId: string; returnT
                                 <Placement
                                   key={placement.id}
                                   purchase={purchase}
+                                  timeZone={shopTimeZone}
                                   group={group}
                                   placement={placement}
                                   changed={acceptArtworkChange}
@@ -913,7 +910,7 @@ function PurchaseArtwork({ purchaseId, returnTo }: { purchaseId: string; returnT
                   </>
                 )}
               </s-stack>
-              <PurchaseArtworkHistory purchase={purchase} deny={deny} />
+              <PurchaseArtworkHistory purchase={purchase} timeZone={shopTimeZone} deny={deny} />
             </s-stack>
           </div>
           <div slot="aside" class="purchase-detail-support">

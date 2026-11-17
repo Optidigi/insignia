@@ -1539,7 +1539,8 @@ function DesignerSession({
                 )}
             </div>
           </div>
-          {step === 0 && (
+          {/* A one-option product has only a generic row ("Selection"): its option is chosen per quantity. */}
+          {step === 0 && !(colors.length === 1 && colors[0]?.nameSource === 'generic-selection') && (
             <div className="color-section">
               <div className="color-label">
                 {previewOnly ? (

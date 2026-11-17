@@ -47,6 +47,19 @@ export const PurchaseGroupSchema = z.strictObject({
     .default({}),
   payloadExpiresAt: date,
 });
+const shopTimeZone = z
+  .string()
+  .min(1)
+  .max(128)
+  .refine((zone) => {
+    try {
+      new Intl.DateTimeFormat('en', { timeZone: zone });
+      return true;
+    } catch {
+      return false;
+    }
+  });
+
 export const PurchaseViewSchema = z.strictObject({
   version: z.literal('m8-purchase-v1'),
   purchaseId: z.string().uuid(),
@@ -94,24 +107,14 @@ export const PurchaseViewSchema = z.strictObject({
       }),
     )
     .max(1000),
+  /** The shop's IANA time zone, on the order detail read only; times show in it (UTC when absent). */
+  timeZone: shopTimeZone.optional(),
 });
 export const PurchaseListSchema = z.strictObject({
   version: z.literal('m8-purchase-list-v1'),
   items: z.array(PurchaseViewSchema).max(100),
   nextCursor: z.string().uuid().nullable(),
-  timeZone: z
-    .string()
-    .min(1)
-    .max(128)
-    .refine((zone) => {
-      try {
-        new Intl.DateTimeFormat('en', { timeZone: zone });
-        return true;
-      } catch {
-        return false;
-      }
-    })
-    .optional(),
+  timeZone: shopTimeZone.optional(),
 });
 export const PurchaseAttachmentSchema = z.strictObject({
   expectedVersion: z.number().int().nonnegative(),
