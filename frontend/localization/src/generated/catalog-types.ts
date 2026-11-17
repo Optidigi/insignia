@@ -2248,6 +2248,7 @@ export interface AdminMessageTable {
   'settings:readinessPermissions.unverifiedDescription': object;
   'settings:readinessPermissions.viewOnly': object;
   'settings:readinessPermissions.yourProductAccess': object;
+  'settings:storefrontSetup.addCustomizationBlock': object;
   'settings:storefrontSetup.checkingAnnouncement': object;
   'settings:storefrontSetup.compatibilityGuidance': object;
   'settings:storefrontSetup.failedAnnouncement': object;

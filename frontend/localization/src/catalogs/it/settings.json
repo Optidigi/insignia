@@ -121,6 +121,7 @@
     "unsupportedAnnouncement": "Stato del tema non disponibile.",
     "finishedAnnouncement": "Verifica del tema pubblicato completata.",
     "productTemplatesGuidance": "Attiva una sola volta l’incorporamento della vetrina Insignia per il posizionamento automatico nei modelli di prodotto supportati. Usa il blocco app facoltativo per una posizione specifica.",
+    "addCustomizationBlock": "Aggiungi il blocco di personalizzazione",
     "unpublishedThemesGuidance": "Apri il tema da Negozio online → Temi per aggiungere Insignia. Qui gli stati si riferiscono solo al tema pubblicato.",
     "compatibilityGuidance": "Il posizionamento automatico supporta Horizon e Dawn. Per i temi personalizzati, prova i controlli di prodotto e aggiunta rapida oppure usa il blocco app facoltativo."
   },

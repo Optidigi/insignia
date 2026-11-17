@@ -119,6 +119,7 @@
     "unsupportedAnnouncement": "Thema-status is niet beschikbaar.",
     "finishedAnnouncement": "Controle van gepubliceerd thema voltooid.",
     "productTemplatesGuidance": "Schakel de Insignia-storefront-embed één keer in voor automatische plaatsing op ondersteunde producttemplates. Gebruik het optionele personalisatie-appblok voor een specifieke positie.",
+    "addCustomizationBlock": "Personalisatieblok toevoegen",
     "unpublishedThemesGuidance": "Open het thema via Onlinewinkel → Thema’s om Insignia toe te voegen. De statussen hier gelden alleen voor het gepubliceerde thema.",
     "compatibilityGuidance": "Automatische plaatsing ondersteunt Horizon en Dawn. Test bij aangepaste thema’s de product- en sneltoevoegknoppen of gebruik het optionele appblok."
   },

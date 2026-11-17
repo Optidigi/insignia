@@ -171,6 +171,14 @@ function StorefrontSetup() {
                   <s-list-item>
                     <s-text fontWeight="medium">{translateUi('settings:storefrontSetup.productTemplates')}</s-text>{' '}
                     {translateUi('settings:storefrontSetup.productTemplatesGuidance')}
+                    {links && (
+                      <>
+                        {' '}
+                        <s-link href={links.productBlock} target="_top">
+                          {translateUi('settings:storefrontSetup.addCustomizationBlock')}
+                        </s-link>
+                      </>
+                    )}
                   </s-list-item>
                   <s-list-item>
                     <s-text fontWeight="medium">{translateUi('settings:storefrontSetup.unpublishedThemes')}</s-text>{' '}

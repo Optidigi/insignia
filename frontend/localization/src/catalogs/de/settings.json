@@ -119,6 +119,7 @@
     "unsupportedAnnouncement": "Theme-Status nicht verfügbar.",
     "finishedAnnouncement": "Prüfung des veröffentlichten Themes abgeschlossen.",
     "productTemplatesGuidance": "Aktivieren Sie die Insignia-Storefront-Einbettung einmal für die automatische Platzierung in unterstützten Produktvorlagen. Nutzen Sie den optionalen Anpassungs-App-Block für eine bestimmte Position.",
+    "addCustomizationBlock": "Anpassungsblock hinzufügen",
     "unpublishedThemesGuidance": "Öffnen Sie das Theme unter Onlineshop → Themes und fügen Sie Insignia hinzu. Die hier angezeigten Status gelten nur für das veröffentlichte Theme.",
     "compatibilityGuidance": "Die automatische Platzierung unterstützt Horizon und Dawn. Testen Sie in angepassten Themes die Produkt- und Schnellkauf-Schaltflächen oder nutzen Sie den optionalen App-Block."
   },

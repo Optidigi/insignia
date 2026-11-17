@@ -119,6 +119,7 @@
     "unsupportedAnnouncement": "Theme status is not available.",
     "finishedAnnouncement": "Published theme check finished.",
     "productTemplatesGuidance": "Enable the Insignia storefront embed once for automatic placement on supported product templates. Use the optional customization app block for a specific position.",
+    "addCustomizationBlock": "Add the customization block",
     "unpublishedThemesGuidance": "Open the theme from Online Store → Themes to add Insignia. Statuses here apply only to the published theme.",
     "compatibilityGuidance": "Automatic placement supports Horizon and Dawn. For custom themes, test product and quick-add controls, or use the optional app block."
   },

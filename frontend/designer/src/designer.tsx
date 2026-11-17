@@ -553,7 +553,10 @@ function DesignerSession({
   function colorName(entry: ProductConfig['colors'][number] | undefined): string {
     if (!entry) return t('customer:options.genericLabel');
     if (entry.nameSource === 'admin-preview-product-image') return previewProductImageLabel ?? entry.name;
-    return entry.nameSource === 'generic-selection' ? t('customer:options.selectionFallback') : entry.name;
+    // The single generic row of a one-option product is named by that option (e.g. "Color"), as in Quantities/Review.
+    return entry.nameSource === 'generic-selection'
+      ? (config.optionPresentation?.columnOption.label ?? t('customer:options.selectionFallback'))
+      : entry.name;
   }
   useEffect(() => () => runtime.cancel(), [runtime]);
   useLayoutEffect(() => {
