@@ -229,3 +229,51 @@ isolatedTest('representative editor exports, including text, render inside the i
     assert.equal(Math.max(preview.width ?? 0, preview.height ?? 0), 512, name);
   }
 });
+/** First and last preview columns holding a dark pixel, or undefined when the preview is blank. */
+async function inkSpan(preview: Uint8Array): Promise<[number, number] | undefined> {
+  const { default: sharp } = await import('sharp');
+  const { data, info } = await sharp(preview)
+    .flatten({ background: 'white' })
+    .greyscale()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  let first = -1;
+  let last = -1;
+  for (let x = 0; x < info.width; x++)
+    for (let y = 0; y < info.height; y++)
+      if ((data[y * info.width + x] ?? 255) < 128) {
+        if (first < 0) first = x;
+        last = x;
+        break;
+      }
+  return first < 0 ? undefined : [first, last];
+}
+isolatedTest('SVG text renders real glyphs from the bundled fonts, not missing-glyph boxes', async () => {
+  const text = (family: string, glyphs: string) =>
+    Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="100"><rect width="400" height="100" fill="white"/><text x="10" y="70" font-family="${family}" font-size="60" fill="black">${glyphs}</text></svg>`,
+    );
+  for (const family of ['Arial, sans-serif', 'Helvetica', 'Times New Roman, serif', 'Courier New, monospace']) {
+    const narrow = await inkSpan((await inspectArtwork(text(family, 'llll'))).preview);
+    const wide = await inkSpan((await inspectArtwork(text(family, 'WWWW'))).preview);
+    assert.ok(narrow && wide, `${family}: text produced no dark pixels`);
+    // Missing-glyph boxes share one width; real proportional glyphs differ several-fold, monospace ones do not.
+    const ratio = (wide[1] - wide[0]) / (narrow[1] - narrow[0]);
+    if (family.includes('Courier')) assert.ok(ratio < 1.3, `${family}: monospace ratio ${ratio}`);
+    else assert.ok(ratio > 2.5, `${family}: glyph width ratio ${ratio} looks like missing-glyph boxes`);
+  }
+});
+isolatedTest('SVG fonts stay local: @font-face, @import and url() font sources are rejected', async () => {
+  for (const body of [
+    "<style>@font-face { font-family: x; src: url('https://example.com/x.woff') }</style><text font-family='x'>A</text>",
+    "<style>@font-face { font-family: x; src: local('Arial') }</style><text font-family='x'>A</text>",
+    "<style>@import url('https://fonts.googleapis.com/css?family=Roboto');</style><text>A</text>",
+    `<text style="font-family: x; src: url('https://example.com/x.woff')">A</text>`,
+    '<text font-family="url(https://example.com/x.woff)">A</text>',
+  ])
+    await assert.rejects(
+      inspectArtwork(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20">${body}</svg>`)),
+      { code: 'REJECTED' },
+      body,
+    );
+});

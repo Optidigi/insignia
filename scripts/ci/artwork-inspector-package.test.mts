@@ -19,6 +19,8 @@ async function fixture(parent: string) {
   );
   for (const file of ['sandbox.js', 'child.js', 'isolation-probe.js', 'runtime-mounts.js'])
     await writeFile(join(worker, 'dist/artwork', file), 'export {};\n');
+  await mkdir(join(worker, 'dist/artwork/fonts'));
+  await writeFile(join(worker, 'dist/artwork/fonts/fonts.conf'), '<fontconfig/>\n');
   await writeFile(join(worker, 'node_modules/decoder/index.js'), 'export {};\n');
   await symlink('decoder', join(worker, 'node_modules/alias'));
   return worker;
@@ -81,6 +83,13 @@ test('inspector packaging refuses credential files and dependencies escaping the
     await assert.rejects(
       packageInspector({ workerPackage: worker, destination: join(scratch, 'escape'), ...identity }),
       /escaped/,
+    );
+    await rm(join(worker, 'node_modules/escape'));
+    // Without the bundled sandbox fonts, SVG text would render as missing-glyph boxes.
+    await rm(join(worker, 'dist/artwork/fonts/fonts.conf'));
+    await assert.rejects(
+      packageInspector({ workerPackage: worker, destination: join(scratch, 'fontless'), ...identity }),
+      /fonts\.conf/,
     );
   } finally {
     await rm(scratch, { recursive: true, force: true });

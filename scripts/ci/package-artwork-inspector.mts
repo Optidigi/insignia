@@ -34,6 +34,7 @@ export async function packageInspector({
     'artwork/child.js',
     'artwork/isolation-probe.js',
     'artwork/runtime-mounts.js',
+    'artwork/fonts/fonts.conf',
   ])
     assert.ok((await lstat(join(worker, 'dist', name))).isFile(), 'Built inspector entrypoint and sandbox required');
   await mkdir(output, { mode: 0o700 });
