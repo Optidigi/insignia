@@ -11,7 +11,8 @@
  * half remains) and the ids it would destroy. With --apply it destroys them through the existing
  * lifecycle operation (SigningKeyLifecycle.destroyInactiveInstallationKeys), which re-checks the
  * deactivation under row locks. Public keys stay, so the generation's recorded orders still verify.
- * Output is one JSON line; no key material or connection string is ever printed.
+ * Output is one JSON line; no key material or connection string is ever printed. It imports
+ * packages/database/dist: build that package first (corepack pnpm --filter @insignia/database build).
  */
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';

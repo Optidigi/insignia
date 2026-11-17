@@ -124,7 +124,7 @@ After the worker change, a failed `orders/create`, `orders/paid`, `orders/update
 
 **Migration 71: deactivation destroys the generation's signing keys (spec §5.5).** Not deployed yet. No image depends on it; apply it before or with the image that carries it.
 1. Apply `20261120000100_deactivated_installation_signing_keys.sql` through the schema owner (schema 70 to 71). It adds a `SECURITY DEFINER` trigger on `installation_generations`: when `deactivated_at` is first set (uninstall processing, or a reinstall deactivating the previous generation), the same transaction sets that generation's signing keys to `destroyed` and scrubs their private halves. Public keys, fingerprints and windows stay, so that generation's recorded orders still verify. The function is revoked from `PUBLIC` and granted to no role; no grant delta and no ACL digest change.
-2. It does not sweep generations deactivated earlier. For one named generation, run the operator command as the schema owner, first as a dry run:
+2. It does not sweep generations deactivated earlier. For one named generation, run the operator command as the schema owner, first as a dry run. The script imports `packages/database/dist`, so run it from a checkout of this commit after `corepack pnpm install --frozen-lockfile && corepack pnpm --filter @insignia/database build`:
    ```
    DATABASE_URL=<schema owner> node scripts/database/destroy-generation-signing-keys.mts --shop <tenant shop uuid> --generation <n>
    DATABASE_URL=<schema owner> node scripts/database/destroy-generation-signing-keys.mts --shop <tenant shop uuid> --generation <n> --apply

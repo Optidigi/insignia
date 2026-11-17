@@ -230,7 +230,7 @@ test("a config claiming this installation's own generation without its keys stil
   }
 });
 
-test('a config that changes after it was read is never overwritten; the pending key waits for the next publish', async () => {
+test('a config that changes after it was read is never overwritten; the next publish resumes and replaces it', async () => {
   const concurrent = earlierInstallationConfig('33333333333343338333333333333333');
   const { f, automatic, stages } = await reported((f) => ({
     signer: {
@@ -251,6 +251,38 @@ test('a config that changes after it was read is never overwritten; the pending 
       [[1, 'pending']],
     );
     assert.deepEqual(stages, ['SIGNING_PUBLISH_CONFIG']);
+    // The next publish resumes the pending key; the earlier installation's config is still published.
+    assert.equal(await automatic.ensure(actor(), 'SYNTHETIC_ID_TOKEN', 'Asia/Tokyo'), 'PROVISIONED');
+    assert.deepEqual(
+      f.rows.map((row) => [row.id, row.state]),
+      [[1, 'active']],
+    );
+    assert.equal(f.publicValue(), (await f.lifecycle.desiredPublicConfig(f.scope)).value);
+    assert.deepEqual(stages, ['SIGNING_PUBLISH_CONFIG']);
+  } finally {
+    await f.close();
+  }
+});
+
+test("a resumed run with this installation's own stale config still stops", async () => {
+  const { f, automatic, stages } = await reported();
+  try {
+    await f.ports.signer.provision({
+      version: 1,
+      scope: f.scope,
+      keyId: 1,
+      firstDay: today - 1,
+      lastDay: NON_EXPIRING_LAST_DAY,
+    });
+    const own = earlierInstallationConfig(f.scope.authorizationGeneration.replaceAll('-', ''));
+    f.setPublicValue(own);
+    assert.equal(await automatic.ensure(actor(), 'SYNTHETIC_ID_TOKEN', 'Asia/Tokyo'), 'STOPPED');
+    assert.equal(f.publicValue(), own);
+    assert.deepEqual(
+      f.rows.map((row) => [row.id, row.state]),
+      [[1, 'pending']],
+    );
+    assert.deepEqual(stages, ['SIGNING_PRIOR_CONFIG']);
   } finally {
     await f.close();
   }

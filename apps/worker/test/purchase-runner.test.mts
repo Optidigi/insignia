@@ -1,5 +1,7 @@
+import type { HistoricalPurchaseOffer, VerifiedOrder } from '@insignia/application';
 import type { DurableCore } from '@insignia/database';
 import { orderFixture } from './support/order-fixture.mts';
+import { signedOrderFixture } from './support/signed-order-fixture.mts';
 
 type Observation = Parameters<DurableCore['purchases']['reconcile']>[0];
 type Failure = Parameters<DurableCore['purchases']['failPurchaseReconciliation']>[0];
@@ -15,20 +17,40 @@ function observation(value: Observation | Failure | undefined): Observation {
   return value;
 }
 
-const customizedLine = {
-  lineId: 'gid://shopify/LineItem/1',
+const plainLine = {
+  lineId: 'gid://shopify/LineItem/2',
   productId: 'gid://shopify/Product/1',
   variantId: 'gid://shopify/ProductVariant/1',
   quantity: 1,
   currentQuantity: 1,
   originalUnitPriceMinor: '100',
   sellingPlanId: null,
-  attributes: [{ key: '_insignia_line_v3', value: 'synthetic-carrier' }],
+  attributes: [],
 };
-const plainLine = { ...customizedLine, lineId: 'gid://shopify/LineItem/2', attributes: [] };
+const origin = { creatorAppId: 'gid://shopify/App/77', sourceName: 'web', checkoutTokenDigest: 'a'.repeat(64) };
 
-/** A runner whose release preparation always rejects, as on a store whose checkout Functions are absent. */
-function unpreparedRunner(read: (target: { orderId: string }, count: number) => ReturnType<typeof orderFixture>) {
+/**
+ * A correctly signed customized order without provider context, read by installation generation 2.
+ * `offerGeneration` '2' is this installation's own offer (binding needs checkout admission); '1' is
+ * the earlier installation's, deactivated after the order was placed.
+ */
+function signed(offerGeneration: '1' | '2') {
+  const { order, offer } = signedOrderFixture();
+  offer.quote = { ...offer.quote, installationGeneration: offerGeneration };
+  offer.installationWindow = {
+    generation: offerGeneration,
+    startedAt: offer.installationWindow.startedAt,
+    deactivatedAt: offerGeneration === '1' ? '2026-10-21T00:00:00.000Z' : null,
+  };
+  const customized = { ...order, country: null, marketId: null, contextVerified: false, checkoutOrigin: origin };
+  return { order: customized, offer };
+}
+
+/** A runner whose release preparation rejects until `prepare()`, as on a store without its checkout Functions. */
+function unpreparedRunner(
+  read: (target: { orderId: string }, count: number) => VerifiedOrder,
+  offer: HistoricalPurchaseOffer | null = null,
+) {
   const calls: string[] = [];
   const reads = new Map<string, number>();
   const facts: Observation[] = [];
@@ -69,7 +91,7 @@ function unpreparedRunner(read: (target: { orderId: string }, count: number) => 
         },
         getOffer: async () => {
           calls.push('offer');
-          return null;
+          return offer;
         },
         reconcile: async (observation) => {
           calls.push(`fact:${observation.order.orderId}`);
@@ -79,9 +101,9 @@ function unpreparedRunner(read: (target: { orderId: string }, count: number) => 
       },
     }),
     checkout: {
-      admit: async () => {
+      admit: async ({ order }) => {
         calls.push('admit');
-        return null;
+        return { creatorAppId: origin.creatorAppId, enforcementObservedAt: order.observedAt };
       },
     },
     prepareRelease: async (target) => {
@@ -135,37 +157,75 @@ test('without release evidence, orders with no Insignia customization still comp
   );
 });
 
-test('a customized order that needs checkout admission fails closed without release evidence', async () => {
-  const { runner, calls } = unpreparedRunner(() => orderFixture({ lines: [customizedLine, plainLine] }));
+test('an order whose binding reaches checkout admission fails closed without release evidence', async () => {
+  const { order, offer } = signed('2');
+  const { runner, calls, facts } = unpreparedRunner(() => order, offer);
   assert.equal(await runner.discoverChanges(), 0);
-  assert.deepEqual(calls, ['order:gid://shopify/Order/1', 'prepare:gid://shopify/Order/1', 'discovery-failed']);
+  // A dry run on the observation finds that admission is needed; nothing is admitted or stored.
+  assert.deepEqual(calls, [
+    'order:gid://shopify/Order/1',
+    'offer',
+    'prepare:gid://shopify/Order/1',
+    'discovery-failed',
+  ]);
   calls.length = 0;
   await assert.rejects(runner.processInbox('inbox'), /PURCHASE_RECONCILIATION_UNAVAILABLE/);
-  assert.deepEqual(calls, ['order:gid://shopify/Order/1', 'prepare:gid://shopify/Order/1', 'recover']);
+  assert.deepEqual(calls, ['order:gid://shopify/Order/1', 'offer', 'prepare:gid://shopify/Order/1', 'recover']);
+  assert.deepEqual(facts, []);
 });
 
-test('once prepared, a customized order is observed again after collection before admission', async () => {
-  const { runner, calls, facts, prepare } = unpreparedRunner((_, count) =>
-    orderFixture({ lines: [customizedLine], observedAt: `2026-10-13T00:0${count}:00Z` }),
+test('once prepared, an order is observed again after collection and only then admitted', async () => {
+  const { order, offer } = signed('2');
+  const { runner, calls, facts, prepare } = unpreparedRunner(
+    (_, count) => ({ ...order, observedAt: `2027-01-01T00:0${count}:00.000Z` }),
+    offer,
   );
   prepare();
   await runner.processInbox('inbox');
   assert.deepEqual(calls, [
     'order:gid://shopify/Order/1',
+    'offer',
     'prepare:gid://shopify/Order/1',
     'order:gid://shopify/Order/1',
+    'offer',
+    'admit',
     'fact:gid://shopify/Order/1',
   ]);
   // The stored observation is the read that follows collection, never the earlier one.
-  assert.equal(facts[0]?.order.observedAt, '2026-10-13T00:02:00Z');
+  assert.equal(facts[0]?.order.observedAt, '2027-01-01T00:02:00.000Z');
+  assert.equal(facts[0]?.exception, null);
+  assert.equal(facts[0]?.bindings[0]?.evidence?.kind, 'signed_offer_order_match');
 });
 
-test('a customized order with verified provider context proceeds to binding without release evidence', async () => {
-  const { runner, calls } = unpreparedRunner(() =>
-    orderFixture({ lines: [customizedLine], contextVerified: true, country: 'NL', marketId: 'gid://shopify/Market/1' }),
+test("an earlier installation's customized order is recorded unbound without release evidence and never blocks the window", async () => {
+  const { order, offer } = signed('1');
+  const { runner, calls, facts } = unpreparedRunner(() => order, offer);
+  assert.equal(await runner.discoverChanges(), 2);
+  assert.deepEqual(calls, [
+    'order:gid://shopify/Order/1',
+    'offer',
+    'fact:gid://shopify/Order/1',
+    'order:gid://shopify/Order/2',
+    'offer',
+    'fact:gid://shopify/Order/2',
+    'complete',
+  ]);
+  // Generation 2's checkout enforcement never vouches for generation 1's cart.
+  assert.deepEqual(
+    facts.map((fact) => [fact.exception, fact.bindings.length]),
+    [
+      ['CHECKOUT_ENFORCEMENT_UNVERIFIED', 0],
+      ['CHECKOUT_ENFORCEMENT_UNVERIFIED', 0],
+    ],
   );
+});
+
+test('a customized order whose binding fails before admission needs no release evidence', async () => {
+  const { order } = signed('2');
+  const { runner, calls, facts } = unpreparedRunner(() => order, null);
   await runner.processInbox('inbox');
-  assert.deepEqual(calls, ['order:gid://shopify/Order/1', 'fact:gid://shopify/Order/1']);
+  assert.deepEqual(calls, ['order:gid://shopify/Order/1', 'offer', 'fact:gid://shopify/Order/1']);
+  assert.equal(facts[0]?.exception, 'AUTHORIZATION_HISTORY_UNAVAILABLE');
 });
 
 test('purchase webhook is processed only after an independent owned order read; failed read remains recoverable', async () => {

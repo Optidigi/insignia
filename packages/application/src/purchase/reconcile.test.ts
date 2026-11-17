@@ -588,6 +588,31 @@ describe('verified purchase reconciliation', () => {
       }),
     );
   });
+  it('never admits a prior-installation order through the current installation checkout enforcement', async () => {
+    const { order, ports, offer } = fixture();
+    order.installationGeneration = '2';
+    order.country = null;
+    order.marketId = null;
+    order.contextVerified = false;
+    order.checkoutOrigin = {
+      creatorAppId: 'gid://shopify/App/77',
+      sourceName: 'web',
+      checkoutTokenDigest: 'a'.repeat(64),
+    };
+    offer.installationWindow.deactivatedAt = '2026-10-21T00:00:00.000Z';
+    const checkout = {
+      admit: vi.fn(async () => ({ creatorAppId: 'gid://shopify/App/77', enforcementObservedAt: order.observedAt })),
+    };
+    await reconcilePurchase(
+      { shopId: 'shop', installationGeneration: '2', orderId: order.orderId },
+      { ...ports, checkout },
+    );
+    // Generation 2's Functions say nothing about the checkout that enforced generation 1's cart.
+    expect(checkout.admit).not.toHaveBeenCalled();
+    expect(ports.store.reconcile).toHaveBeenCalledWith(
+      expect.objectContaining({ exception: 'CHECKOUT_ENFORCEMENT_UNVERIFIED', bindings: [] }),
+    );
+  });
   it('does not authorize a new order using an old installation after deactivation', async () => {
     const { order, ports, offer } = fixture();
     order.installationGeneration = '2';

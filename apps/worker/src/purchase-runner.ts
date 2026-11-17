@@ -2,9 +2,11 @@ import { type PurchasePorts, reconcilePurchase, type VerifiedOrder } from '@insi
 import { type DurableCore, webhookIdParsingSupported } from '@insignia/database';
 import type { ShopifyOrderChangesPage, ShopifyOrderChangesTarget } from '@insignia/shopify';
 
-/** Mirrors `reconcilePurchase`: a customized order without complete verified context binds through
- * checkout admission. A partial context fails there anyway; it still waits for evidence here. */
-function needsCheckoutAdmission(order: VerifiedOrder): boolean {
+type OrderTarget = { shopId: string; installationGeneration: string; orderId: string };
+type Observation = Parameters<PurchasePorts['store']['reconcile']>[0];
+
+/** Only a customized order without complete verified context can reach checkout admission. */
+function mayNeedCheckoutAdmission(order: VerifiedOrder): boolean {
   return (
     order.lines.some((line) => line.attributes.some((attribute) => attribute.key.startsWith('_insignia_'))) &&
     !(order.contextVerified && order.country !== null && order.marketId !== null)
@@ -24,32 +26,55 @@ export function createPurchaseRunner(input: {
 }) {
   // Receipt hints need exact 64-bit ids; a runtime that cannot read them must not start (or close receipts).
   if (!webhookIdParsingSupported()) throw new Error('PURCHASE_RUNNER_JSON_SOURCE_UNSUPPORTED');
-  const orders = {
-    ...input.orders,
-    async read(target: { shopId: string; installationGeneration: string; orderId: string }) {
-      const order = await input.orders.read(target);
-      // Release evidence serves only checkout admission. An order no admission can reach (nothing
-      // Insignia on it, or full provider context) reconciles without it, so a store without its
-      // checkout Functions (a reinstall before its first publish) still settles ordinary orders.
-      if (!input.checkout || !input.prepareRelease || !needsCheckoutAdmission(order)) return order;
-      // Fails closed: no evidence, no observation. Collection precedes the observation admission
-      // uses, which keeps its existing fresh SELECT and enforcement checks afterward.
-      await input.prepareRelease(target);
-      return input.orders.read(target);
-    },
-  };
+  const offers: PurchasePorts['offers'] = { get: (target) => input.core.purchases.getOffer(target) };
+  /**
+   * Release evidence serves only checkout admission, so it is prepared only when binding reaches
+   * admission. Other orders (ordinary ones, ones with verified context, an earlier installation's
+   * orders) reconcile without it: a store without its checkout Functions (a reinstall before its
+   * first publish) still completes its windows. An order that reaches admission fails closed without
+   * evidence, and is observed again after collection, so admission keeps its fresh SELECT and
+   * enforcement checks on an observation that follows collection.
+   */
+  async function reconcile(target: OrderTarget, store: PurchasePorts['store']) {
+    const scoped = {
+      shopId: target.shopId,
+      installationGeneration: target.installationGeneration,
+      orderId: target.orderId,
+    };
+    const order = await input.orders.read(scoped);
+    const observed = { read: async () => order };
+    const { checkout, prepareRelease } = input;
+    if (!checkout || !prepareRelease || !mayNeedCheckoutAdmission(order))
+      return reconcilePurchase(target, { checkout, orders: observed, offers, store });
+    // A dry run on the same observation: nothing is admitted and nothing is stored.
+    let reachesAdmission = false;
+    let dryRun: Observation | undefined;
+    await reconcilePurchase(target, {
+      checkout: {
+        async admit() {
+          reachesAdmission = true;
+          return null;
+        },
+      },
+      orders: observed,
+      offers,
+      store: {
+        async reconcile(observation) {
+          dryRun = observation;
+        },
+      },
+    });
+    if (!reachesAdmission && dryRun) return store.reconcile(dryRun);
+    await prepareRelease(scoped);
+    return reconcilePurchase(target, { checkout, orders: input.orders, offers, store });
+  }
   async function processInbox(inboxId: string) {
     const hint = await input.core.purchases.claimPurchaseReconciliationHint(inboxId);
     if (!hint) return 'deferred' as const;
     try {
-      await reconcilePurchase(hint, {
-        checkout: input.checkout,
-        orders,
-        offers: { get: (target) => input.core.purchases.getOffer(target) },
-        store: {
-          reconcile: (observation) =>
-            input.core.purchases.reconcile({ ...observation, inboxId, claimToken: hint.claimToken }),
-        },
+      await reconcile(hint, {
+        reconcile: (observation) =>
+          input.core.purchases.reconcile({ ...observation, inboxId, claimToken: hint.claimToken }),
       });
     } catch {
       await input.core.purchases.failPurchaseReconciliation({
@@ -78,14 +103,9 @@ export function createPurchaseRunner(input: {
           )
             throw new Error('INVALID_DISCOVERY_PAGE');
           for (const order of page.orders)
-            await reconcilePurchase(
+            await reconcile(
               { ...claim, orderId: order.orderId },
-              {
-                checkout: input.checkout,
-                orders,
-                offers: { get: (target) => input.core.purchases.getOffer(target) },
-                store: { reconcile: (observation) => input.core.purchases.reconcile(observation) },
-              },
+              { reconcile: (observation) => input.core.purchases.reconcile(observation) },
             );
           await input.core.purchases.completePurchaseDiscovery({ ...claim, nextCursor: page.nextCursor });
           processed += page.orders.length;

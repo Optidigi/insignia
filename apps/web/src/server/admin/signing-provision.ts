@@ -364,13 +364,29 @@ export async function provisionSigningKey(
     assert.ok(rows.filter((row) => row.state !== 'destroyed' && row.id !== plan.keyId).length < 4);
     const prior = await operation('READ_CONFIG_BEFORE', () => admin.read({ ...tenant, field: 'public_config' }));
     enter('PRIOR_CONFIG');
-    // The published config is the expected one, or an earlier publication that this run's pending
-    // key, its retirement shortening, a revocation or an epoch bump has since only tightened.
-    if (rows.some((row) => row.state !== 'destroyed')) {
+    // Owner decision, 17 November 2026: uninstall removes the Functions but not this shop metafield,
+    // so a reinstall finds the earlier installation's config. While this installation has no key but
+    // this plan's own pending one (a first provisioning, or its resumed stopped run), a config bound
+    // to another authorization generation (immutable and unique per installation generation) is
+    // replaced by compare-and-set on its digest below; it can admit nothing for this installation.
+    const kept = rows.filter((row) => row.state !== 'destroyed');
+    const earlier =
+      prior !== null && kept.every((row) => row.id === plan.keyId && row.state === 'pending')
+        ? publishedAuthorizationGeneration(prior.value)
+        : null;
+    if (prior !== null && earlier !== null && earlier !== scope.authorizationGeneration.replaceAll('-', ''))
+      // The public config holds no secrets; keep what the publication below replaces, and why.
+      await ports.journal.record('published-config-tolerance', {
+        publishedSha256: createHash('sha256').update(prior.value).digest('hex'),
+        compareDigest: prior.compareDigest,
+        differences: [`earlier installation config ${earlier} replaced`],
+      });
+    else if (kept.length) {
+      // The published config is the expected one, or an earlier publication that this run's pending
+      // key, its retirement shortening, a revocation or an epoch bump has since only tightened.
       const expected = await lifecycle.desiredPublicConfig(scope, ports.now());
       const differences = ports.app.rotationRepublishDifferences(expected, prior?.value ?? null, plan.keyId);
       assert.ok(differences);
-      // The public config holds no secrets; keep what the publication below replaces, and why.
       if (differences.length)
         await ports.journal.record('published-config-tolerance', {
           publishedSha256:
@@ -378,20 +394,10 @@ export async function provisionSigningKey(
           compareDigest: prior?.compareDigest ?? null,
           differences,
         });
-    } else if (prior !== null) {
-      // Owner decision, 17 November 2026: uninstall removes the Functions but not this shop
-      // metafield, so a reinstall finds the earlier installation's config. A config bound to another
-      // authorization generation (immutable and unique per installation generation) is replaced by
-      // compare-and-set on its digest below; it can admit nothing for this installation. One that
-      // claims this installation's own generation while it has no keys still stops.
-      const published = publishedAuthorizationGeneration(prior.value);
-      assert.ok(published && published !== scope.authorizationGeneration.replaceAll('-', ''));
-      await ports.journal.record('published-config-tolerance', {
-        publishedSha256: createHash('sha256').update(prior.value).digest('hex'),
-        compareDigest: prior.compareDigest,
-        differences: ['earlier installation config replaced'],
-      });
     }
+    // No key at all: nothing may be published yet, except an earlier installation's config (above).
+    // A config claiming this installation's own generation, or none, stops.
+    else assert.equal(prior, null);
     let ready:
       | {
           artifactScope: SigningApplication.FunctionArtifactScope;

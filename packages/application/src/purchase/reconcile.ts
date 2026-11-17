@@ -127,6 +127,9 @@ async function bind(
       !/^[a-f0-9]{64}$/.test(origin.checkoutTokenDigest)
     )
       fail('CHECKOUT_ORIGIN_UNVERIFIED');
+    // Admission observes the reading installation's Functions now. It cannot vouch for the checkout
+    // that enforced an earlier installation's cart, so such an order is recorded unbound.
+    if (offer.quote.installationGeneration !== order.installationGeneration) fail('CHECKOUT_ENFORCEMENT_UNVERIFIED');
     const admission = await checkout.admit({ order });
     if (
       !admission ||
