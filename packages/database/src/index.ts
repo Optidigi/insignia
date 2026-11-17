@@ -11,6 +11,7 @@ export { type BuyerProposal, type BuyerRepository, type BuyerScope, BuyerStateEr
 export { CONFIG_DRAFT_STORAGE_VERSION, type ConfigRecord, type RevisionRecord } from './repositories/config.js';
 export type { CustomerPrivacyProcessing, CustomerPrivacyRepository } from './repositories/customer-privacy.js';
 export { createMerchantPreviewRepository } from './repositories/merchant-preview.js';
+export { PublicationAnchorConflictError } from './repositories/production-publication.js';
 export {
   OperatorCommandError,
   type OperatorHoldInspection,

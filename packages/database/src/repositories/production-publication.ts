@@ -83,6 +83,12 @@ export type PublicationAdvanceResult =
   /** #466: the operation's hold was claimed or restored as abandoned; nothing was read or written. */
   | { kind: 'ABANDONED'; phase: ProgressPhase };
 
+/** The product's Shopify enforcement anchors contradict durable publication state in a way no
+ * publication can explain. Publication stops before any write; it needs support, not a retry. */
+export class PublicationAnchorConflictError extends Error {
+  override readonly name = 'PublicationAnchorConflictError';
+}
+
 const uuidHex = (uuid: string) => uuid.replaceAll('-', '');
 const productGid = (id: string) => `gid://shopify/Product/${id}`;
 export function publicationProjection(value: unknown): Projection {
@@ -121,17 +127,49 @@ export function exactPublicationField(observed: Observed | null, target: Target,
     /^[a-f0-9]{64}$/.test(observed.compareDigest)
   );
 }
+const REGISTRATION_ANCHOR = /^([0-9a-f]{32}):([1-9][0-9]*):(ready|pending)$/;
+const POLICY_ANCHOR = /^([0-9a-f]{32}):([1-9][0-9]*):(required|optional)$/;
+
+/** Anchors exactly as a deactivated generation's publication leaves them, finished or stopped by its
+ * uninstall. A publication writes `pending` registration, then policy, then `ready` registration,
+ * each with its own (product-monotonic) sequence; a `pending` one may sit over the prior policy,
+ * which an earlier deactivated generation may have written, or over none (a first publication). */
+function deactivatedLeftover(
+  registration: RegExpExecArray,
+  policy: RegExpExecArray | null,
+  policyPresent: boolean,
+  generationHex: string,
+  deactivated: ReadonlySet<string>,
+): boolean {
+  const [, hex, sequence, state] = registration;
+  if (!hex || hex === generationHex || !deactivated.has(hex)) return false;
+  if (state === 'ready') return policy?.[1] === hex && policy[2] === sequence;
+  if (!policyPresent) return true;
+  if (!policy?.[1] || !policy[2] || !sequence || policy[1] === generationHex || !deactivated.has(policy[1]))
+    return false;
+  return policy[1] === hex ? BigInt(policy[2]) <= BigInt(sequence) : BigInt(policy[2]) < BigInt(sequence);
+}
+
+/** The mode this generation's product anchors enforce. Spec §5.5: a reinstall is a new generation and
+ * never revives an old installation's authorizations. Anchors a deactivated generation's publication
+ * left (finished or stopped by its uninstall) are therefore no prior policy of the current one
+ * (null): the publication replaces them by compare-and-set on their digests, as a first publication
+ * with an owned hold. Anything else that is not the current generation's coherent ready policy is a
+ * typed conflict, never a guess. */
 function parsePrior(
   registration: Observed | null,
   policy: Observed | null,
   generationHex: string,
+  deactivatedGenerationHexes: ReadonlySet<string>,
 ): ProductPolicyMode | null {
   if (!registration && !policy) return null;
-  if (!registration || !policy) throw new Error('Partial product enforcement anchors require operator hold');
-  const r = /^([0-9a-f]{32}):([1-9][0-9]*):ready$/.exec(registration.value);
-  const p = /^([0-9a-f]{32}):([1-9][0-9]*):(required|optional)$/.exec(policy.value);
-  if (!r || !p || r[1] !== generationHex || p[1] !== generationHex || r[2] !== p[2])
-    throw new Error('Product enforcement anchors drifted or belong to another installation');
+  const r = registration ? REGISTRATION_ANCHOR.exec(registration.value) : null;
+  const p = policy ? POLICY_ANCHOR.exec(policy.value) : null;
+  if (r && deactivatedLeftover(r, p, !!policy, generationHex, deactivatedGenerationHexes)) return null;
+  if (!registration || !policy)
+    throw new PublicationAnchorConflictError('Partial product enforcement anchors require operator hold');
+  if (r?.[3] !== 'ready' || !p || r[1] !== generationHex || p[1] !== generationHex || r[2] !== p[2])
+    throw new PublicationAnchorConflictError('Product enforcement anchors drifted or belong to another installation');
   return p[3] as ProductPolicyMode;
 }
 
@@ -261,9 +299,25 @@ export class PgProductionPublication {
       this.remote.read(this.target(tenant, 'registration', productId)),
       this.remote.read(this.target(tenant, 'policy', productId)),
     ]);
-    const priorMode = parsePrior(priorRegistration, priorPolicy, uuidHex(first.authorization_generation));
+    // Read outside the prepare transaction, like the remote anchors it judges. That is safe: a
+    // generation is deactivated once and never reactivated (a reinstall starts a new one), so the set
+    // only grows: a stale read can only refuse (typed), never admit, and the
+    // transaction below rechecks under lock that the current generation (whose hex is never in this
+    // set) and effective record are unchanged before anything is journaled.
+    const deactivated = await sql<{ authorization_generation: string }>`SELECT authorization_generation::text
+      FROM installation_generations WHERE shop_id=${input.shopId} AND deactivated_at IS NOT NULL`.execute(
+      this.database,
+    );
+    const priorMode = parsePrior(
+      priorRegistration,
+      priorPolicy,
+      uuidHex(first.authorization_generation),
+      new Set(deactivated.rows.map((row) => uuidHex(row.authorization_generation))),
+    );
     if ((first.effective_operation_id === null) !== (priorMode === null))
-      throw new Error('Remote product management state conflicts with durable effective record');
+      throw new PublicationAnchorConflictError(
+        'Remote product management state conflicts with durable effective record',
+      );
     if (first.effective_operation_id) {
       const prior = await sql<{ expected_projection: unknown; operation_sequence: string; status: string }>`
         SELECT expected_projection, operation_sequence::text, status FROM publication_operations
@@ -309,7 +363,7 @@ export class PgProductionPublication {
         ) ||
         !exactPublicationField(priorPolicy, this.target(tenant, 'policy', productId), old.policy)
       )
-        throw new Error('Remote product policy differs from durable effective publication');
+        throw new PublicationAnchorConflictError('Remote product policy differs from durable effective publication');
     }
 
     return this.database.transaction().execute(async (tx) => {
@@ -341,6 +395,12 @@ export class PgProductionPublication {
         row.effective_operation_id !== first.effective_operation_id
       )
         throw new Error('Publication installation or revision changed while preparing');
+      // The config row lock orders this against the publish command that moves the pointer: a request
+      // superseded while unprepared (an abandoned unprepared intent) never prepares afterwards.
+      const pointer = await sql<{ revision_id: string }>`SELECT revision_id FROM m5_current_publication_pointer
+        WHERE shop_id=${input.shopId} AND config_id=${input.configId}`.execute(tx);
+      if (pointer.rows[0] && pointer.rows[0].revision_id !== input.revisionId)
+        throw new Error('A newer publication request exists');
       const replay = await sql<{ revision_id: string; mode: ProductPolicyMode; phase: ProgressPhase }>`
         SELECT o.revision_id, p.mode, p.phase FROM publication_operations o
         JOIN m4_publication_progress p USING (shop_id, config_id, operation_id)

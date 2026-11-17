@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { MerchantDraftSchema, PublishedConfigSchema } from '@insignia/contracts';
 import type { DurableCore } from '@insignia/database';
-import { CONFIG_DRAFT_STORAGE_VERSION, createDurableCore } from '@insignia/database';
+import { CONFIG_DRAFT_STORAGE_VERSION, createDurableCore, PublicationAnchorConflictError } from '@insignia/database';
 import { Pool } from 'pg';
 import { handleAdminRequest } from '../../src/server/admin/http.ts';
 import { createMerchantConfigService } from '../../src/server/merchant-config.ts';
@@ -737,6 +737,251 @@ test('durable editor CAS, exact-key replay, independent products, immutable geom
       'an old-generation immutable intent must not resume in the new installation',
     );
   } finally {
+    await core.close();
+  }
+});
+
+async function waitForLockWait(pool: Pool) {
+  for (let i = 0; i < 300; i++) {
+    const waiting = await pool.query<{ count: string }>(
+      `SELECT count(*)::text AS count FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock'`,
+    );
+    if (waiting.rows[0]?.count !== '0') return;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  throw new Error('the publish command never waited for the config lock');
+}
+
+test('a committed publish that never prepared is abandoned after its bound and never wedges the product', {
+  skip: !database,
+  timeout: 30000,
+}, async () => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  const sql = new Pool({ connectionString: database });
+  const shopId = randomUUID();
+  const shop = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
+  const shopifyShopId = String(BigInt(`0x${randomUUID().replaceAll('-', '').slice(0, 12)}`) + 1n);
+  const staff = actor(shopId, shop, shopifyShopId);
+  await core.transactions.run((tx) =>
+    core.tenants.createShop(tx, {
+      shopId,
+      shopDomain: shop,
+      shopifyShopId,
+      externalInstallationId: staff.installationId,
+    }),
+  );
+  let failPrepare = false;
+  let anchorConflict = false;
+  const prepared: string[] = [];
+  const service = createMerchantConfigService({
+    core,
+    catalog: {
+      async get(_actor, id) {
+        return [productA, productB].includes(id) ? item(id) : null;
+      },
+      async shopCurrency() {
+        return 'USD';
+      },
+    },
+    async eligibility() {
+      return { allowed: true, reason: null };
+    },
+    capturePublicationPreviews: (actor, input) => captureSyntheticPublicationPreviews(core, actor, input),
+    publication() {
+      return {
+        async prepare(input) {
+          // E.g. the reinstall anchor failure: the durable command committed, no operation exists.
+          if (failPrepare) throw new Error('synthetic prepare failure after the command committed');
+          if (anchorConflict)
+            throw new PublicationAnchorConflictError(
+              'Product enforcement anchors drifted or belong to another installation',
+            );
+          prepared.push(input.revisionId);
+          return { operationId: input.operationId, phase: 'prepared' };
+        },
+        async advance() {
+          return { kind: 'REMOTE_READY_ACTIVATION_PENDING', phase: 'activation-pending' };
+        },
+      };
+    },
+  });
+  async function configured(productId: string, image: string) {
+    const created = await service.create(staff, productId, `create-${image}`);
+    assert.equal(created.kind, 'created');
+    const draft = baseDraft();
+    required(required(draft.geometry.views[0]).image).revisionId = image;
+    required(draft.geometry.views[0]).variantImages = [];
+    required(required(draft.geometry.views[0]).placements[0]).variantOverrides = [];
+    const saved = await service.save(staff, productId, {
+      configId: created.configId,
+      draftVersion: '1',
+      draft,
+      idempotencyKey: `save-${image}`,
+    });
+    assert.equal(saved.kind, 'saved');
+    return { configId: created.configId, draft, draftVersion: saved.draftVersion };
+  }
+  async function failedPublish(productId: string, configId: string, draftVersion: string, key: string) {
+    failPrepare = true;
+    await assert.rejects(
+      service.publish(staff, productId, { configId, draftVersion, idempotencyKey: key }),
+      /synthetic prepare failure/,
+    );
+    failPrepare = false;
+    return required(await core.configs.getCurrentPublication(shopId, configId)).revisionId;
+  }
+  const age = (configId: string) =>
+    sql.query(
+      `UPDATE m5_current_publication_pointer SET updated_at=now()-interval '11 minutes'
+        WHERE shop_id=$1 AND config_id=$2`,
+      [shopId, configId],
+    );
+  const state = async (productId: string) => required(readConfig(await service.read(staff, productId))).publication;
+  try {
+    // Closed tab: the original key is gone; only fresh requests arrive.
+    const a = await configured(productA, 'product_111');
+    const publishA = (idempotencyKey: string) =>
+      service.publish(staff, productA, { configId: a.configId, draftVersion: a.draftVersion, idempotencyKey });
+    const stale = await failedPublish(productA, a.configId, a.draftVersion, 'publish-closed-tab-original');
+    assert.equal((await state(productA)).state, 'PUBLISH_REQUESTED');
+    // The bound is measured by the database clock alone: an application clock ahead of it never
+    // abandons a request that may still be running.
+    const realNow = Date.now;
+    Date.now = () => realNow() + 11 * 60_000;
+    try {
+      assert.equal((await state(productA)).state, 'PUBLISH_REQUESTED');
+    } finally {
+      Date.now = realNow;
+    }
+    assert.equal(
+      (await publishA('publish-closed-tab-too-early')).kind,
+      'conflict',
+      'a fresh unprepared request may still be running: no second request',
+    );
+    await age(a.configId);
+    const abandoned = await state(productA);
+    assert.equal(abandoned.state, 'ABANDONED_RESTORED');
+    assert.equal(abandoned.revisionId, stale);
+    assert.equal(abandoned.requestKey, 'publish-closed-tab-original');
+    const fresh = await publishA('publish-closed-tab-fresh');
+    assert.equal(fresh.kind, 'accepted');
+    assert.notEqual(fresh.revisionId, stale);
+    assert.deepEqual(prepared, [fresh.revisionId]);
+    assert.equal((await state(productA)).revisionId, fresh.revisionId);
+    assert.deepEqual(
+      await publishA('publish-closed-tab-original'),
+      { kind: 'conflict', message: 'A newer publication request exists' },
+      'the superseded original key never resumes',
+    );
+    assert.deepEqual(prepared, [fresh.revisionId]);
+
+    // Reverse lock order: a prepare holding the config row lock creates the operation first; the
+    // publish command waiting on that lock then sees a prepared request and is refused (409).
+    await age(a.configId);
+    const holder = await sql.connect();
+    let blocked: Promise<unknown> | undefined;
+    try {
+      await holder.query('BEGIN');
+      await holder.query('SELECT config_id FROM product_configs WHERE shop_id=$1 AND config_id=$2 FOR UPDATE', [
+        shopId,
+        a.configId,
+      ]);
+      await holder.query(
+        `INSERT INTO publication_operations (shop_id, config_id, operation_id, revision_id, installation_generation,
+          operation_sequence, expected_projection, expected_projection_digest) VALUES ($1,$2,$3,$3,1,1,'{}',$4)`,
+        [shopId, a.configId, fresh.revisionId, '0'.repeat(64)],
+      );
+      await holder.query(
+        'INSERT INTO m4_publication_progress (shop_id, config_id, operation_id, phase, mode) VALUES ($1,$2,$3,$4,$5)',
+        [shopId, a.configId, fresh.revisionId, 'prepared', 'required'],
+      );
+      blocked = publishA('publish-behind-prepare');
+      await waitForLockWait(sql);
+      await holder.query('COMMIT');
+    } finally {
+      holder.release();
+    }
+    assert.deepEqual(await blocked, { kind: 'conflict', message: 'A publication request is already in progress' });
+
+    // Draft changed since the abandoned request: its own key reports the abandonment and never
+    // prepares; the next publish of the current draft supersedes it.
+    const b = await configured(productB, 'product_222');
+    const old = await failedPublish(productB, b.configId, b.draftVersion, 'publish-changed-original');
+    const changed = structuredClone(b.draft);
+    changed.labels.methods[sharedId] = 'Embroidery';
+    const resaved = await service.save(staff, productB, {
+      configId: b.configId,
+      draftVersion: b.draftVersion,
+      draft: changed,
+      idempotencyKey: 'save-changed-after-intent',
+    });
+    assert.equal(resaved.kind, 'saved');
+    await age(b.configId);
+    assert.deepEqual(
+      await service.publish(staff, productB, {
+        configId: b.configId,
+        draftVersion: b.draftVersion,
+        idempotencyKey: 'publish-changed-original',
+      }),
+      { kind: 'accepted', revisionId: old, state: 'ABANDONED_RESTORED' },
+    );
+    assert.equal(prepared.includes(old), false);
+    const current = await service.publish(staff, productB, {
+      configId: b.configId,
+      draftVersion: resaved.draftVersion,
+      idempotencyKey: 'publish-changed-current',
+    });
+    assert.equal(current.kind, 'accepted');
+    const projected = await state(productB);
+    assert.equal(projected.revisionId, current.revisionId);
+    assert.equal(projected.sourceDraftVersion, resaved.draftVersion);
+
+    // Another installation generation: its unprepared command never resumes, nor does it block.
+    const again = await service.save(staff, productB, {
+      configId: b.configId,
+      draftVersion: resaved.draftVersion,
+      draft: b.draft,
+      idempotencyKey: 'save-before-reinstall',
+    });
+    assert.equal(again.kind, 'saved');
+    await age(b.configId); // The synthetic prepare creates no operation: let the accepted intent lapse.
+    await failedPublish(productB, b.configId, again.draftVersion, 'publish-before-reinstall');
+    await core.transactions.run((tx) =>
+      core.tenants.startInstallation(tx, shopId, 'gid://shopify/AppInstallation/456'),
+    );
+    const reinstalled = { ...staff, installationGeneration: '2', installationId: 'gid://shopify/AppInstallation/456' };
+    const before = prepared.length;
+    assert.equal(
+      (
+        await service.publish(reinstalled, productB, {
+          configId: b.configId,
+          draftVersion: again.draftVersion,
+          idempotencyKey: 'publish-before-reinstall',
+        })
+      ).kind,
+      'invalid',
+      'an earlier generation command never resumes',
+    );
+    assert.equal(prepared.length, before);
+    const afterReinstall = await service.publish(reinstalled, productB, {
+      configId: b.configId,
+      draftVersion: again.draftVersion,
+      idempotencyKey: 'publish-after-reinstall',
+    });
+    assert.equal(afterReinstall.kind, 'accepted');
+    assert.equal(prepared.at(-1), afterReinstall.revisionId);
+
+    // Product anchors no publication can explain: a typed refusal the editor shows, never a 503.
+    await age(b.configId);
+    anchorConflict = true;
+    const refused = await service.publish(reinstalled, productB, {
+      configId: b.configId,
+      draftVersion: again.draftVersion,
+      idempotencyKey: 'publish-anchor-conflict',
+    });
+    assert.equal(refused.kind === 'invalid' && refused.code, 'PUBLICATION_UNAVAILABLE');
+  } finally {
+    await sql.end();
     await core.close();
   }
 });
