@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { Writable } from 'node:stream';
 import { test } from 'node:test';
-import { createObservability } from '../dist/index.js';
+import { createObservability, describeUnexpectedError } from '../dist/index.js';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -553,4 +553,105 @@ test('a stopped publication preparation logs only its bounded step name', () => 
   assert.throws(() => logger.warn('publication_preparation_stopped', { preparationStage: 'secret text' }));
   assert.throws(() => logger.warn('publication_preparation_stopped', {}));
   assert.doesNotMatch(output, /SECRET|secret text/);
+});
+
+test('an unexpected admin failure logs only its route, method, class, code and own-code site', () => {
+  let output = '';
+  const stream = new Writable({
+    write(chunk, _encoding, callback) {
+      output += chunk;
+      callback();
+    },
+  });
+  const { logger } = createObservability({ stream });
+  logger.error('admin_request_failed', {
+    adminFailure: {
+      adminRoute: 'product-config-command',
+      httpMethod: 'POST',
+      errorClass: 'DatabaseError',
+      errorCode: '42P01',
+      errorSite: 'dist/server/chunks/merchant-config_Ab1-c.mjs:120',
+      correlationId: '01234567-89ab-4cde-8123-456789abcdef',
+      // @ts-expect-error Deliberately inject private content to prove runtime omission.
+      message: 'SECRET',
+    },
+    shopId: '01234567-89ab-4cde-8123-456789abcdef',
+  });
+  const entry = parseRecord(lastLine(output));
+  assert.deepEqual(entry, {
+    level: 50,
+    time: entry.time,
+    event: 'admin_request_failed',
+    adminRoute: 'product-config-command',
+    httpMethod: 'POST',
+    errorClass: 'DatabaseError',
+    errorCode: '42P01',
+    errorSite: 'dist/server/chunks/merchant-config_Ab1-c.mjs:120',
+    correlationId: '01234567-89ab-4cde-8123-456789abcdef',
+  });
+  logger.error('admin_request_failed', {
+    adminFailure: { adminRoute: 'catalog', httpMethod: 'GET', errorClass: 'Error' },
+  });
+  assert.deepEqual(Object.keys(parseRecord(lastLine(output))).sort(), [
+    'adminRoute',
+    'errorClass',
+    'event',
+    'httpMethod',
+    'level',
+    'time',
+  ]);
+  const valid = { adminRoute: 'catalog', httpMethod: 'GET', errorClass: 'Error' } as const;
+  const invalidFailures: unknown[] = [
+    {},
+    { ...valid, adminRoute: '/api/admin/products/123/config' },
+    { ...valid, httpMethod: 'SECRET' },
+    { ...valid, errorClass: 'connection to db.secret.example failed' },
+    { ...valid, errorClass: `E${'x'.repeat(64)}` },
+    { ...valid, errorCode: 'secret text' },
+    { ...valid, errorCode: `E${'X'.repeat(64)}` },
+    { ...valid, errorSite: '/home/secret/apps/web/src/server/x.ts:1' },
+    { ...valid, errorSite: 'dist/server/x.mjs:1 password=secret' },
+    { ...valid, errorSite: 'dist/server/x.mjs?token=secret:1' },
+    { ...valid, errorSite: `dist/${'a/'.repeat(120)}x.mjs:1` },
+    { ...valid, correlationId: 'secret text' },
+  ];
+  for (const invalid of invalidFailures)
+    assert.throws(() => logger.error('admin_request_failed', { adminFailure: invalid as never }));
+  assert.doesNotMatch(output, /SECRET|secret/);
+});
+
+test('an unexpected error is reduced to its class, short code and first own-code frame', () => {
+  const error = Object.assign(new TypeError('token=SECRET for shop.myshopify.com'), { code: 'ERR_SECRET_THING' });
+  error.stack = [
+    'TypeError: token=SECRET for shop.myshopify.com',
+    '    at Parser.parse (/srv/insignia/web/node_modules/.pnpm/pg@8.16.3/node_modules/pg/lib/parser.js:10:3)',
+    '    at node:internal/process/task_queues:105:5',
+    '    at read (file:///srv/insignia/web/dist/server/chunks/merchant-config_Ab1-c.mjs?v=SECRET:120:7)',
+    '    at handle (/srv/insignia/web/dist/server/entry.mjs:9:1)',
+  ].join('\n');
+  assert.deepEqual(describeUnexpectedError(error), {
+    errorClass: 'TypeError',
+    errorCode: 'ERR_SECRET_THING',
+    errorSite: 'dist/server/chunks/merchant-config_Ab1-c.mjs:120',
+  });
+  const workspace = new Error('x');
+  workspace.stack =
+    'Error: x\n    at Object.<anonymous> (/srv/insignia/web/node_modules/@insignia/database/dist/core.js:44:9)';
+  assert.deepEqual(describeUnexpectedError(workspace), {
+    errorClass: 'Error',
+    errorSite: '@insignia/database/dist/core.js:44',
+  });
+  const source = new Error('x');
+  source.stack = 'Error: x\n    at /home/someone/insignia/apps/web/src/server/admin/http.ts:451:11';
+  assert.deepEqual(describeUnexpectedError(source), {
+    errorClass: 'Error',
+    errorSite: 'apps/web/src/server/admin/http.ts:451',
+  });
+  class Bad extends Error {}
+  Object.defineProperty(Bad, 'name', { value: 'not a class name' });
+  const thirdParty = Object.assign(new Bad('x'), { code: 'lower case secret' });
+  thirdParty.stack = 'Error: x\n    at f (/srv/insignia/web/node_modules/pg/lib/client.js:1:1)';
+  assert.deepEqual(describeUnexpectedError(thirdParty), { errorClass: 'Error' });
+  assert.deepEqual(describeUnexpectedError('SECRET'), { errorClass: 'Error' });
+  assert.deepEqual(describeUnexpectedError(null), { errorClass: 'Error' });
 });

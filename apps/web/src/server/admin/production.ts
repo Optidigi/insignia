@@ -778,6 +778,9 @@ export function createProductionAdminServices(
     recordConfigRejection({ action, code }) {
       authenticationLogger.info('admin_config_rejected', { configAction: action, rejectionCode: code });
     },
+    recordAdminFailure(adminFailure) {
+      authenticationLogger.error('admin_request_failed', { adminFailure });
+    },
     async authenticate(request, options = {}) {
       const correlationId = randomUUID();
       const diagnostic: AdminAuthenticationDiagnostic = (authStage, detail) =>

@@ -5,6 +5,7 @@ import { Counter, Gauge, Registry } from 'prom-client';
 const EVENTS = new Set([
   'admin_authentication',
   'admin_config_rejected',
+  'admin_request_failed',
   'artwork_request_timing',
   'buyer_request_failed',
   'buyer_request_rejected',
@@ -31,6 +32,8 @@ export type RuntimeEvent =
   | 'admin_authentication'
   /** Info: a product configuration command was rejected (422) by one named validation rule. */
   | 'admin_config_rejected'
+  /** Error: an admin API request failed unexpectedly (503); names the route, error class and own-code site only. */
+  | 'admin_request_failed'
   | 'artwork_request_timing'
   | 'buyer_request_failed'
   /** An expected 4xx outcome: buyer-actionable (info) or BUSY, transient and retryable (warn). */
@@ -153,6 +156,80 @@ const ADMIN_CONFIG_ACTIONS = ['create', 'save', 'publish', 'reconcile', 'command
 export type AdminConfigAction = (typeof ADMIN_CONFIG_ACTIONS)[number];
 /** The web app owns the code vocabulary; the log admits only its bounded upper-snake-case shape. */
 const REJECTION_CODE = /^[A-Z][A-Z0-9_]{2,63}$/;
+
+export const ADMIN_FAILURE_ROUTES = [
+  'catalog',
+  'product-config',
+  'product-config-command',
+  'readiness',
+  'billing',
+  'setup-status',
+  'methods',
+  'method',
+  'signing',
+] as const;
+const HTTP_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] as const;
+/** A code identifier, never message text. */
+const ERROR_CLASS = /^[A-Za-z][A-Za-z0-9_]{0,63}$/;
+/** Upper-case codes such as ECONNRESET, ERR_INVALID_ARG_TYPE or a PostgreSQL SQLSTATE (42P01). */
+const ERROR_CODE = /^[A-Z0-9][A-Z0-9_]{2,63}$/;
+/** A relative path into Insignia's own code and a line number; no absolute prefix, query or text. */
+const ERROR_SITE =
+  /^(?:@insignia\/)?[A-Za-z0-9_.[\]-]+(?:\/[A-Za-z0-9_.[\]-]+){0,15}\.(?:[cm]?js|[cm]?ts):[1-9][0-9]{0,6}$/;
+/** An unexpected admin failure, reduced before it crosses into the log; see describeUnexpectedError. */
+export type AdminFailureDiagnostic = {
+  adminRoute: (typeof ADMIN_FAILURE_ROUTES)[number];
+  httpMethod: (typeof HTTP_METHODS)[number];
+  errorClass: string;
+  errorCode?: string;
+  errorSite?: string;
+  correlationId?: string;
+};
+export type UnexpectedErrorDiagnostic = Pick<AdminFailureDiagnostic, 'errorClass' | 'errorCode' | 'errorSite'>;
+
+/** Reduce a stack frame location to a path relative to Insignia's own code, or null for a
+ * third-party, runtime-internal or unrecognized frame. Only the path and line survive. */
+function ownCodeSite(frame: string): string | null {
+  const location = /\(?((?:file:\/\/)?\/[^\s()]*?)(?:\?[^\s():]*)?:(\d+):\d+\)?$/.exec(frame.trim());
+  const [, located, line] = location ?? [];
+  if (!located || !line) return null;
+  const path = located.replace(/^file:\/\//, '');
+  const modules = path.lastIndexOf('/node_modules/');
+  let relative: string | null = null;
+  if (modules >= 0) {
+    const dependency = path.slice(modules + '/node_modules/'.length);
+    if (dependency.startsWith('@insignia/')) relative = dependency;
+  } else {
+    const anchor = ['/apps/', '/packages/', '/dist/']
+      .map((segment) => path.lastIndexOf(segment))
+      .find((index) => index >= 0);
+    if (anchor !== undefined) relative = path.slice(anchor + 1);
+  }
+  const site = relative ? `${relative}:${line}` : null;
+  return site && site.length <= 200 && ERROR_SITE.test(site) ? site : null;
+}
+
+/** Name an unexpected error without its message: constructor name, a short code and the first
+ * stack frame in Insignia's own code. Messages may carry shop, customer or provider text. */
+export function describeUnexpectedError(error: unknown): UnexpectedErrorDiagnostic {
+  if (typeof error !== 'object' || error === null) return { errorClass: 'Error' };
+  const name: unknown = (error as { constructor?: { name?: unknown } }).constructor?.name;
+  const code: unknown = (error as { code?: unknown }).code;
+  const stack: unknown = (error as { stack?: unknown }).stack;
+  const site =
+    typeof stack === 'string'
+      ? stack
+          .split('\n')
+          .slice(1, 51)
+          .map(ownCodeSite)
+          .find((value) => value !== null)
+      : undefined;
+  return {
+    errorClass: typeof name === 'string' && ERROR_CLASS.test(name) ? name : 'Error',
+    ...(typeof code === 'string' && ERROR_CODE.test(code) ? { errorCode: code } : {}),
+    ...(site ? { errorSite: site } : {}),
+  };
+}
 
 const BUYER_STAGES = [
   'config',
@@ -340,6 +417,8 @@ export interface RuntimeLogDetails {
   providerCode?: AdminProviderDiagnosticCode;
   configAction?: AdminConfigAction;
   rejectionCode?: string;
+  /** admin_request_failed only. */
+  adminFailure?: AdminFailureDiagnostic;
   correlationId?: string;
   inboxId?: string;
   shopId?: string;
@@ -481,6 +560,29 @@ function eventDetails(event: RuntimeEvent, input: RuntimeLogDetails) {
     )
       throw new Error('Invalid configuration rejection diagnostic');
     return { configAction: input.configAction, rejectionCode: input.rejectionCode };
+  }
+  if (event === 'admin_request_failed') {
+    const f = input.adminFailure;
+    if (
+      !f ||
+      !ADMIN_FAILURE_ROUTES.includes(f.adminRoute) ||
+      !HTTP_METHODS.includes(f.httpMethod) ||
+      typeof f.errorClass !== 'string' ||
+      !ERROR_CLASS.test(f.errorClass) ||
+      (f.errorCode !== undefined && (typeof f.errorCode !== 'string' || !ERROR_CODE.test(f.errorCode))) ||
+      (f.errorSite !== undefined &&
+        (typeof f.errorSite !== 'string' || f.errorSite.length > 200 || !ERROR_SITE.test(f.errorSite))) ||
+      (f.correlationId !== undefined && (typeof f.correlationId !== 'string' || !UUID.test(f.correlationId)))
+    )
+      throw new Error('Invalid admin failure diagnostic');
+    return {
+      adminRoute: f.adminRoute,
+      httpMethod: f.httpMethod,
+      errorClass: f.errorClass,
+      ...(f.errorCode === undefined ? {} : { errorCode: f.errorCode }),
+      ...(f.errorSite === undefined ? {} : { errorSite: f.errorSite }),
+      ...(f.correlationId === undefined ? {} : { correlationId: f.correlationId }),
+    };
   }
   if (event === 'publication_preparation_stopped') {
     if (typeof input.preparationStage !== 'string' || !REJECTION_CODE.test(input.preparationStage))

@@ -1,5 +1,6 @@
 import { CommandDigestConflictError } from '@insignia/application';
 import { MethodConfigurationSchema } from '@insignia/contracts';
+import { type AdminFailureDiagnostic, describeUnexpectedError } from '@insignia/observability';
 import { AdminOnlineIdentityError, ShopifyAdminUnavailableError } from '@insignia/shopify';
 import type { ConfigRejectionCode } from '../../shared/config-rejection.ts';
 import { SelectedSetupAuthorityError } from '../selected-product.ts';
@@ -177,6 +178,36 @@ function configRejected(
 ): Response {
   services.recordConfigRejection?.({ action, code });
   return adminJson(422, { ...body, code });
+}
+
+const FAILURE_ROUTES = {
+  list: 'catalog',
+  readiness: 'readiness',
+  billing: 'billing',
+  'setup-status': 'setup-status',
+  methods: 'methods',
+  method: 'method',
+  signing: 'signing',
+} as const satisfies Record<Exclude<AdminRoute['kind'], 'config'>, AdminFailureDiagnostic['adminRoute']>;
+const FAILURE_METHODS: readonly string[] = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
+
+/** Unexpected failures are recorded by route template and reduced error only; recording never changes the response. */
+function recordFailure(services: AdminServices, request: Request, route: AdminRoute, error: unknown): void {
+  if (!services.recordAdminFailure || !FAILURE_METHODS.includes(request.method)) return;
+  try {
+    services.recordAdminFailure({
+      adminRoute:
+        route.kind === 'config'
+          ? request.method === 'GET'
+            ? 'product-config'
+            : 'product-config-command'
+          : FAILURE_ROUTES[route.kind],
+      httpMethod: request.method as AdminFailureDiagnostic['httpMethod'],
+      ...describeUnexpectedError(error),
+    });
+  } catch {
+    // Observation is best effort; the caller still receives the same 503.
+  }
 }
 
 /** Authenticated API boundary. A bare document route contains no private data. */
@@ -458,6 +489,7 @@ export async function handleAdminRequest(
     if (error instanceof CommandDigestConflictError)
       return adminJson(409, { kind: 'conflict', message: 'Command key was used for a different request' });
     if (busyWithoutEffect(request, error)) return adminBusy();
+    recordFailure(services, request, route, error);
     return adminJson(503, { error: 'Admin service unavailable' });
   }
 }
