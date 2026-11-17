@@ -55,3 +55,29 @@ test('#442 item 6: a saved library price reads with two decimals', { timeout: 20
   assert.equal(await price.inputValue(), '12.50');
   assert.equal(await lastBarEvent(f.page), 'hide');
 });
+
+test('an unsaved new method opens the product picker and saves the selection with the method', {
+  timeout: 30000,
+}, async (t) => {
+  const f = await methodsFixture(t, { empty: true, shopifyModal: true });
+  await f.open('/admin/methods/new');
+  await f.page.getByRole('textbox', { name: /^Method name/ }).fill('Embroidery');
+  await f.page.getByRole('textbox', { name: 'Price per location per item', exact: true }).fill('4');
+  await f.page.getByRole('button', { name: 'Select products', exact: true }).click();
+  const picker = f.page.locator('s-modal[data-method-dialog]').filter({ hasText: 'Select products' });
+  await picker.waitFor({ state: 'visible' });
+  assert.equal(f.writes.length, 0, 'opening the picker does not save the draft');
+  await picker.getByRole('checkbox', { name: 'Synthetic selected hoodie', exact: true }).check();
+  await picker.getByRole('button', { name: 'Select', exact: true }).click();
+  await picker.waitFor({ state: 'detached' });
+  await f.page.locator('[data-shopify-host-modal-scrim]').waitFor({ state: 'detached' });
+  assert.equal(f.writes.length, 0, 'the selection stays in the unsaved draft');
+  await f.page.getByRole('link', { name: 'Synthetic selected hoodie', exact: true }).waitFor();
+  const response = f.page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' && new URL(response.url()).pathname.startsWith('/api/admin/methods'),
+  );
+  await f.page.locator('[data-shopify-host-save-bar="method-draft-save-bar"] button', { hasText: 'Save' }).click();
+  assert.equal((await response).status(), 201);
+  assert.equal(f.records()[0]?.configuration.productIds.length, 1);
+});

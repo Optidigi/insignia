@@ -3,11 +3,18 @@ import type { EditorMethod, PlacementProduct } from '@insignia/contracts';
 export type PlacementMethodCatalog = { methods: MethodConfiguration[]; products: MethodProduct[] };
 const productIdentity = (id: string) => id.replace(/^gid:\/\/shopify\/Product\//, '');
 
-/** Existing product snapshots win. Catalog assignment only supplies additional choices. */
+const methodName = (name: string) => name.trim().toLocaleLowerCase();
+
+/**
+ * Existing product snapshots win. Catalog assignment only supplies additional choices.
+ * Method names are unique in the dialog (as when adding a product method), so a library method
+ * named like a product snapshot under another ID is not offered as a second identical row.
+ */
 export function availablePlacementMethods(product: PlacementProduct, catalog: PlacementMethodCatalog): EditorMethod[] {
   const methods = new Map(product.methods.map((method) => [method.id, structuredClone(method)]));
+  const names = new Set(product.methods.map((method) => methodName(method.name)));
   for (const method of catalog.methods) {
-    if (methods.has(method.id)) continue;
+    if (methods.has(method.id) || names.has(methodName(method.name))) continue;
     const assigned = assignedProducts(method, catalog.products).some(
       (candidate) => productIdentity(candidate.id) === productIdentity(product.id),
     );

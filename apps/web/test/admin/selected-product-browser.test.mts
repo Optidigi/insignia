@@ -347,6 +347,58 @@ test('applying Manage methods retires its Shopify backdrop so real clicks reach 
   await f.page.locator('s-modal').filter({ hasText: 'Publish setup' }).waitFor({ state: 'visible' });
 });
 
+test('a product method and a same-named library method appear once in Manage methods, across untick, re-tick and Done', {
+  timeout: 30000,
+}, async (t) => {
+  const f = await fixture(t, { shopifyModal: true });
+  // The library holds its own "Printing" (another ID, another price) assigned to this product.
+  await f.page.route('**/api/admin/methods?view=catalog', (route) =>
+    route.fulfill({
+      json: {
+        ...catalog,
+        methods: [
+          ...catalog.methods,
+          {
+            version: '1',
+            currency: 'USD',
+            configuration: {
+              id: '0d6f3c1e-3f5a-4d0b-9a59-2e3f4f8b1c11',
+              name: 'printing',
+              explanation: '',
+              pricing: 'fixed',
+              amount: '5.00',
+              assignment: 'manual',
+              productIds: ['111'],
+              tags: [],
+              tagMatch: 'any',
+            },
+          },
+        ],
+      },
+    }),
+  );
+  await f.open();
+  const dialog = f.page.locator('s-modal[data-method-dialog]').filter({ has: f.page.locator('.pm-manager') });
+  const rows = dialog.locator('.pm-manager__method');
+  const open = async () => {
+    const loaded = f.page.waitForResponse((response) => response.url().endsWith('/api/admin/methods?view=catalog'));
+    await f.page.getByRole('button', { name: 'Manage methods', exact: true }).click();
+    await loaded;
+    await dialog.locator('.pm-manager__method').first().waitFor();
+  };
+  await open();
+  assert.deepEqual(await rows.allInnerTexts(), ['$3.50Edit price']);
+  const box = dialog.getByRole('checkbox', { name: 'Printing', exact: true });
+  await box.uncheck();
+  await box.check();
+  await dialog.getByRole('button', { name: 'Done', exact: true }).click();
+  await dialog.waitFor({ state: 'detached' });
+
+  await open();
+  assert.deepEqual(await rows.allInnerTexts(), ['$3.50Edit price']);
+  assert.equal(await box.isChecked(), true);
+});
+
 test('Save draft and open library saves, then retires the dialog and save bar before navigating', {
   timeout: 30000,
 }, async (t) => {

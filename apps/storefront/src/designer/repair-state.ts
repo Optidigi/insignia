@@ -32,6 +32,7 @@ type RepairCopy =
   | 'customer:recovery.earlierSession'
   | 'customer:recovery.earlierSessionHelp'
   | 'customer:recovery.earlierSessionExpiredHelp'
+  | 'customer:recovery.unavailableHelp'
   | 'customer:recovery.startNew'
   | 'customer:recovery.reopenFromCart'
   | 'customer:recovery.removeGroup'
@@ -52,12 +53,19 @@ const removeGroup: RepairOffer = { action: 'remove-group', label: 'customer:reco
 const removeAll: RepairOffer = { action: 'remove-all', label: 'customer:recovery.removeAll', primary: false };
 const retry: RepairOffer = { action: 'retry', label: 'common:actions.retry', primary: false };
 
-/** A cart review: with nothing in the cart to remove, the customization is simply unavailable. */
+/**
+ * A cart review: with nothing in the cart to remove, the customization is simply unavailable. With nothing to start
+ * either (e.g. the product has no published customization), the buyer is told so in plain words.
+ */
 function review(start: RepairCopy | undefined, canRemoveGroup: boolean, canRemoveAll: boolean): RepairView {
   return {
     heading: canRemoveAll ? 'customer:recovery.repairRequired' : 'customer:chrome.unavailable',
     label: 'customer:recovery.repairRequired',
-    ...(canRemoveAll ? { help: 'customer:recovery.repairHelp' as const } : {}),
+    ...(canRemoveAll
+      ? { help: 'customer:recovery.repairHelp' as const }
+      : start
+        ? {}
+        : { help: 'customer:recovery.unavailableHelp' as const }),
     actions: [
       ...(start ? [{ action: 'start' as const, label: start, primary: true }] : []),
       ...(canRemoveGroup ? [removeGroup] : []),

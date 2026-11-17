@@ -1900,7 +1900,8 @@ test('expired-offer recovery rejects a subsequent external cart change before ac
 });
 
 async function withProductDesigner(
-  cfg: BuyerConfig,
+  /** `null`: the product has no published customization (the config read answers 404). */
+  cfg: BuyerConfig | null,
   run: (context: {
     page: Page;
     ui: FrameLocator;
@@ -1932,7 +1933,8 @@ async function withProductDesigner(
     await page.route('**/cart.js', (route) => route.fulfill({ json: { items: [], currency: 'EUR' } }));
     await page.route('**/apps/insignia/v1/**', (route) => {
       const path = new URL(route.request().url()).pathname;
-      if (path.endsWith('/config')) return route.fulfill({ json: cfg });
+      if (path.endsWith('/config'))
+        return cfg ? route.fulfill({ json: cfg }) : route.fulfill({ status: 404, json: { error: 'Not found' } });
       // Opening an editable Designer warms the tab's session; it is not a private data request.
       if (path.endsWith('/sessions')) {
         sessions++;
@@ -2498,6 +2500,20 @@ test('missing critical physical production facts require repair without issuing 
       assert.equal(await ui.getByRole('button', { name: 'Add artwork', exact: true }).count(), 0);
       assert.equal(privateRequests(), 0);
       assert.equal(sessions(), 0, 'an unavailable Designer warms no session');
+    },
+    false,
+    chromium,
+    'unavailable',
+  );
+});
+
+test('a product without published customization explains in buyer terms that customization is unavailable', async () => {
+  await withProductDesigner(
+    null,
+    async ({ ui, sessions }) => {
+      await ui.getByText("Customization isn't available for this product right now.", { exact: true }).waitFor();
+      assert.equal(await ui.getByRole('button', { name: 'Retry', exact: true }).count(), 1);
+      assert.equal(sessions(), 0);
     },
     false,
     chromium,

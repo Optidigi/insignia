@@ -558,6 +558,7 @@
       "customer_recovery_earlierSession": "Titolo sessione precedente",
       "customer_recovery_earlierSessionHelp": "Spiegazione sessione precedente",
       "customer_recovery_earlierSessionExpiredHelp": "Spiegazione sessione precedente (scaduta)",
+      "customer_recovery_unavailableHelp": "Spiegazione personalizzazione non disponibile",
       "customer_recovery_draftUnavailable": "Avviso di personalizzazione precedente non disponibile",
       "customer_startup_loading": "Messaggio di caricamento",
       "customer_startup_failure": "Messaggio di errore di caricamento",

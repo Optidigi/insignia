@@ -2610,6 +2610,7 @@ export const adminParameterContracts = {
   'settings:translations.fields.customer_recovery_sessionQuota': {},
   'settings:translations.fields.customer_recovery_startNew': {},
   'settings:translations.fields.customer_recovery_unavailable': {},
+  'settings:translations.fields.customer_recovery_unavailableHelp': {},
   'settings:translations.fields.customer_recovery_undo': {},
   'settings:translations.fields.customer_recovery_unsupportedMarket': {},
   'settings:translations.fields.customer_resume_continue': {},

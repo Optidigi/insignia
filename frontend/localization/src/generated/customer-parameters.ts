@@ -226,6 +226,7 @@ export const customerParameterContracts = {
   'customer:recovery.sessionQuota': {},
   'customer:recovery.startNew': {},
   'customer:recovery.unavailable': {},
+  'customer:recovery.unavailableHelp': {},
   'customer:recovery.undo': {},
   'customer:recovery.unsupportedMarket': {},
   'customer:resume.continue': {},

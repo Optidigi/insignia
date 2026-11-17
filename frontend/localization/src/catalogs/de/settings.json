@@ -555,6 +555,7 @@
       "customer_recovery_earlierSession": "Überschrift für frühere Sitzung",
       "customer_recovery_earlierSessionHelp": "Erklärung für frühere Sitzung",
       "customer_recovery_earlierSessionExpiredHelp": "Erklärung für frühere Sitzung (abgelaufen)",
+      "customer_recovery_unavailableHelp": "Erklärung Personalisierung nicht verfügbar",
       "customer_recovery_draftUnavailable": "Hinweis frühere Gestaltung nicht verfügbar",
       "customer_startup_loading": "Lademeldung",
       "customer_startup_failure": "Fehlermeldung beim Laden",

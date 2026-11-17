@@ -273,7 +273,8 @@
     "remainingItems": "Articoli personalizzati rimanenti",
     "earlierSession": "Personalizzato in una sessione precedente",
     "earlierSessionHelp": "Il carrello contiene articoli personalizzati in una sessione precedente. Restano nel carrello, ma non possono essere modificati qui. Apri il carrello per completare l’acquisto oppure rimuovili per personalizzare di nuovo.",
-    "earlierSessionExpiredHelp": "Il carrello contiene articoli personalizzati in una sessione precedente i cui prezzi sono scaduti, quindi non possono essere acquistati. Rimuovili per personalizzare di nuovo."
+    "earlierSessionExpiredHelp": "Il carrello contiene articoli personalizzati in una sessione precedente i cui prezzi sono scaduti, quindi non possono essere acquistati. Rimuovili per personalizzare di nuovo.",
+    "unavailableHelp": "La personalizzazione non è al momento disponibile per questo prodotto."
   },
   "language": {
     "label": "Lingua",
