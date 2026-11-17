@@ -54,6 +54,7 @@ test('observed native origin binds only the closed release profile and validated
 });
 
 for (const [releaseProfile, expectedVersion] of [
+  ['native-reinstall-eb2ce476', '1232902225921'],
   ['native-cartfix-3075eac9', '1227332452353'],
   ['native-uifix-565679f7', '1226879205377'],
   ['native-allorders-c0bb261a', '1225110192129'],

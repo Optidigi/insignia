@@ -74,6 +74,8 @@ import performanceBinding from '../../deployment/m5-runtime/native-performance-r
 };
 import recoveryModules from '../../deployment/m5-runtime/native-recovery-module-baseline.json' with { type: 'json' };
 import recoveryBinding from '../../deployment/m5-runtime/native-recovery-release-binding.json' with { type: 'json' };
+import reinstallModules from '../../deployment/m5-runtime/native-reinstall-module-baseline.json' with { type: 'json' };
+import reinstallBinding from '../../deployment/m5-runtime/native-reinstall-release-binding.json' with { type: 'json' };
 import repairMessagesModules from '../../deployment/m5-runtime/native-repair-messages-module-baseline.json' with {
   type: 'json',
 };
@@ -442,6 +444,20 @@ test('functions renew candidate preserves identities and changes only theme and 
       };
       assert.deepEqual(unversioned(config), unversioned(oldConfig));
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
+  }
+});
+test('reinstall-batch candidate changes only the theme module', () => {
+  assert.equal(reinstallModules.length, 14);
+  assert.equal(reinstallBinding.moduleHash, 'b9a12a0f9530912250809b5389f0dad4e9e361dfce8c6530be411317994a71fe');
+  assert.equal(reinstallBinding.versionId, '1232902225921');
+  assert.deepEqual(new Set(reinstallBinding.versionIds), new Set([...cartFixBinding.versionIds, '1232902225921']));
+  const prior = new Map(cartFixModules.map((m) => [m.handle, m]));
+  assert.equal(prior.size, 14);
+  for (const module of reinstallModules) {
+    const old = required(prior.get(module.handle));
+    if (module.type === 'theme_app_extension')
+      assert.deepEqual({ ...module, config: undefined }, { ...old, config: undefined });
+    else assert.deepEqual(module, old);
   }
 });
 test('cart-fix candidate changes only the theme module', () => {

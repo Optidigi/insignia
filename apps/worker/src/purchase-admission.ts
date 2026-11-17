@@ -32,6 +32,7 @@ export function resolveNativePurchaseQualification(input: {
   const profile = resolveRuntimeReleaseProfile(input.releaseProfile);
   if (
     ![
+      'native-reinstall-eb2ce476',
       'native-cartfix-3075eac9',
       'native-uifix-565679f7',
       'native-allorders-c0bb261a',

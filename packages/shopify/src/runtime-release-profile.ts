@@ -1,6 +1,7 @@
 /** Deployment selects a closed reviewed target, never release authority.
  * Every consumer still independently reads and qualifies trusted release evidence. */
 export type RuntimeReleaseProfileName =
+  | 'native-reinstall-eb2ce476'
   | 'native-cartfix-3075eac9'
   | 'native-uifix-565679f7'
   | 'native-allorders-c0bb261a'
@@ -40,6 +41,11 @@ export type RuntimeReleaseProfileName =
   | 'lean-markets-7b17cd9'
   | 'lean-privacy-theme-23fd116';
 const profiles = Object.freeze({
+  'native-reinstall-eb2ce476': Object.freeze({
+    name: 'native-reinstall-eb2ce476' as const,
+    activeVersionRef: '1232902225921',
+    functionsSourceCommit: 'aa3b6166eb2b4679f27e1b7f128d914137ba8412',
+  }),
   'native-cartfix-3075eac9': Object.freeze({
     name: 'native-cartfix-3075eac9' as const,
     activeVersionRef: '1227332452353',
