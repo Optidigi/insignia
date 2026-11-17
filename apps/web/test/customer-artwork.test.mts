@@ -244,3 +244,119 @@ test('handled artwork-link outcomes are not recorded as unexpected failures', as
   assert.equal(await statusFor(), 409);
   assert.deepEqual(recorded, []);
 });
+
+const customerRequest = (body: unknown, token: string) =>
+  new Request('https://insignia.test/api/customer-artwork/v1', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  });
+async function customerCapability(links: CustomerArtworkHttpServices['links']) {
+  const grant = await links.issue(
+    { kind: 'merchant', shopId: 'shop-one', installationGeneration: '1' },
+    { purchaseId, requestId },
+  );
+  return String(grant.url.split('capability=')[1]);
+}
+async function snapshot(response: Response) {
+  return { status: response.status, headers: [...response.headers], body: await response.text() };
+}
+
+test('an unexpected customer-artwork failure records one buyer failure and keeps the same 503', async () => {
+  const recorded: unknown[] = [];
+  const { services, links } = fixture();
+  const capability = await customerCapability(links);
+  services.recordBuyerFailure = (failure) => recorded.push(failure);
+  services.view = async () => {
+    throw Object.assign(new RangeError(linkSecret), { code: 'ERR_INJECTED_FAILURE' });
+  };
+  const failed = await handleCustomerArtworkRequest(customerRequest({ action: 'view' }, capability), services);
+  const expected = {
+    status: 503,
+    headers: [
+      ['cache-control', 'private, no-store'],
+      ['content-type', 'application/json'],
+      ['referrer-policy', 'no-referrer'],
+      ['x-content-type-options', 'nosniff'],
+    ],
+    body: JSON.stringify({ error: 'Customer artwork temporarily unavailable' }),
+  };
+  assert.deepEqual(await snapshot(failed), expected);
+  services.view = async () => {
+    throw new TypeError(linkSecret);
+  };
+  assert.deepEqual(
+    await snapshot(await handleCustomerArtworkRequest(customerRequest({ action: 'view' }, capability), services)),
+    expected,
+  );
+  assert.equal(recorded.length, 2);
+  for (const failure of recorded as Record<string, unknown>[]) {
+    assert.deepEqual(Object.keys(failure).sort(), ['buyerStage', 'correlationId', 'errorClass']);
+    assert.equal(failure.buyerStage, 'customer-artwork');
+    assert.match(String(failure.correlationId), /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+  }
+  assert.deepEqual(
+    (recorded as Record<string, unknown>[]).map((failure) => failure.errorClass),
+    ['UnexpectedFailure', 'TypeError'],
+  );
+  assert.doesNotMatch(
+    JSON.stringify(recorded),
+    new RegExp(`SECRET|myshopify|gid:|10485042479387|ERR_INJECTED|shop-one|${capability}|${purchaseId}`, 'i'),
+  );
+
+  services.recordBuyerFailure = () => {
+    throw new Error('recorder down');
+  };
+  assert.deepEqual(
+    await snapshot(await handleCustomerArtworkRequest(customerRequest({ action: 'view' }, capability), services)),
+    expected,
+  );
+});
+
+test('handled customer-artwork outcomes are not recorded as unexpected failures', async () => {
+  const recorded: unknown[] = [];
+  const { services, links } = fixture();
+  const capability = await customerCapability(links);
+  services.recordBuyerFailure = (failure) => recorded.push(failure);
+  const status = async (body: unknown, token = capability) =>
+    (await handleCustomerArtworkRequest(customerRequest(body, token), services)).status;
+  assert.equal(
+    (await handleCustomerArtworkRequest(customerRequest({ action: 'view' }, capability), undefined)).status,
+    503,
+  );
+  assert.equal(await status({ action: 'view' }, ''), 401);
+  assert.equal(await status({ action: 'view', shopId: 'another-shop' }), 422);
+  // An unknown capability and a refused attachment are the link's own handled outcome.
+  assert.equal(await status({ action: 'view' }, 'b'.repeat(64)), 409);
+  assert.equal(
+    await status({
+      action: 'attach',
+      assetId: purchaseId,
+      groupIndex: 0,
+      placementId: 'front',
+      expectedVersion: 0,
+      requestId,
+    }),
+    409,
+  );
+  // Processing not composed is a handled 503.
+  assert.equal(await status({ action: 'status', assetId: purchaseId }), 503);
+  let thrown: unknown;
+  const fail = async () => {
+    throw thrown;
+  };
+  services.artwork = { begin: fail, complete: fail, status: fail, preview: fail };
+  for (const [code, expected] of [
+    ['INVALID_INPUT', 422],
+    ['UNAVAILABLE', 503],
+    ['EXPIRED', 410],
+    ['NOT_FOUND', 404],
+    ['NOT_USABLE', 409],
+    ['CONFLICT', 409],
+  ] as const) {
+    thrown = Object.assign(new Error(linkSecret), { code });
+    assert.equal(await status({ action: 'status', assetId: purchaseId }), expected);
+  }
+  assert.equal(await status({ action: 'status', assetId: 'not-an-asset' }), 422);
+  assert.deepEqual(recorded, []);
+});

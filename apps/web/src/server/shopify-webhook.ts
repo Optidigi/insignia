@@ -6,6 +6,7 @@ import {
   type ShopifyWebhookQueuePort,
 } from '@insignia/application';
 import { InvalidShopifyWebhookError, MAX_SHOPIFY_WEBHOOK_BODY_BYTES, verifyShopifyWebhook } from '@insignia/shopify';
+import { recordSystemFailure, type SystemFailureRecorder } from './observability.ts';
 
 export class WebhookBodyTooLargeError extends Error {
   constructor() {
@@ -56,6 +57,8 @@ export async function handleShopifyWebhook(
     getHandoff?: () => Promise<{ ingress: ShopifyWebhookIngressPort; queue: ShopifyWebhookQueuePort }>;
     metrics?: { webhook(outcome: 'received' | 'duplicate' | 'rejected' | 'enqueue_failure'): void };
     onAccepted?: (input: { inboxId: string; kind: 'received' | 'duplicate' | 'processed' }) => Promise<void>;
+    /** Unexpected handoff failure (503) observation: route and reduced error only. */
+    recordSystemFailure?: SystemFailureRecorder;
   },
 ): Promise<Response> {
   if (request.method !== 'POST') return new Response(null, { status: 405, headers: { allow: 'POST' } });
@@ -77,6 +80,13 @@ export async function handleShopifyWebhook(
     dependencies.metrics?.webhook(error instanceof ShopifyQueueHandoffError ? 'enqueue_failure' : 'rejected');
     const status =
       error instanceof WebhookBodyTooLargeError ? 413 : error instanceof InvalidShopifyWebhookError ? 401 : 503;
+    // Queue loss and an expired payload are classified 503s with their own counter or body.
+    if (
+      status === 503 &&
+      !(error instanceof ShopifyQueueHandoffError) &&
+      !(error instanceof ShopifyWebhookExpiredError)
+    )
+      recordSystemFailure(dependencies.recordSystemFailure, 'shopify-webhook', error);
     return new Response(
       JSON.stringify({
         error:
@@ -92,4 +102,24 @@ export async function handleShopifyWebhook(
       },
     );
   }
+}
+
+/** Builds the handler's dependencies per request. A setup failure is the route's own unexpected 503;
+ * every built request is delegated to the handler unchanged. */
+export async function handleShopifyWebhookRoute(
+  request: Request,
+  setup: () => Parameters<typeof handleShopifyWebhook>[1],
+  record?: SystemFailureRecorder,
+): Promise<Response> {
+  let dependencies: Parameters<typeof handleShopifyWebhook>[1];
+  try {
+    dependencies = setup();
+  } catch (error) {
+    recordSystemFailure(record, 'shopify-webhook-setup', error);
+    return new Response(JSON.stringify({ error: 'handoff_unavailable' }), {
+      status: 503,
+      headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
+    });
+  }
+  return handleShopifyWebhook(request, dependencies);
 }

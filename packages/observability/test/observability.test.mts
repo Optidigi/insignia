@@ -312,6 +312,33 @@ test('an unexpected guest artwork failure logs as a buyer failure at the artwork
   const entry = parseRecord(output.trim());
   assert.equal(entry.buyerStage, 'artwork');
   assert.equal(entry.errorClass, 'UnexpectedFailure');
+  // Guest session issue and the emailed customer-artwork link are buyer-side too.
+  for (const buyerStage of ['artwork-session', 'customer-artwork'] as const) {
+    logger.error('buyer_request_failed', {
+      correlationId: '01234567-89ab-4cde-8123-456789abcdef',
+      buyerStage,
+      errorClass: 'TypeError',
+    });
+    assert.deepEqual(parseRecord(lastLine(output)), {
+      level: 50,
+      time: parseRecord(lastLine(output)).time,
+      event: 'buyer_request_failed',
+      buyerStage,
+      correlationId: '01234567-89ab-4cde-8123-456789abcdef',
+      errorClass: 'TypeError',
+    });
+  }
+  for (const buyerStage of ['artwork-sessions', 'customer', '/api/customer-artwork/v1']) {
+    assert.throws(
+      () =>
+        logger.error('buyer_request_failed', {
+          correlationId: '01234567-89ab-4cde-8123-456789abcdef',
+          buyerStage: buyerStage as never,
+          errorClass: 'TypeError',
+        }),
+      /Invalid buyer failure diagnostic/,
+    );
+  }
 });
 
 test('expected buyer outcomes log as rejections with the same finite fields; BUSY logs at warn', () => {
@@ -620,7 +647,13 @@ test('an unexpected admin failure logs only its route, method, class, code and o
     'level',
     'time',
   ]);
-  for (const adminRoute of ['preferences', 'merchant-media', 'merchant-artwork', 'artwork-link'] as const) {
+  for (const adminRoute of [
+    'preferences',
+    'merchant-media',
+    'merchant-artwork',
+    'artwork-link',
+    'purchases',
+  ] as const) {
     logger.error('admin_request_failed', { adminFailure: { adminRoute, httpMethod: 'POST', errorClass: 'Error' } });
     assert.equal(parseRecord(lastLine(output)).adminRoute, adminRoute);
   }
@@ -638,10 +671,71 @@ test('an unexpected admin failure logs only its route, method, class, code and o
     { ...valid, errorSite: 'dist/server/x.mjs?token=secret:1' },
     { ...valid, errorSite: `dist/${'a/'.repeat(120)}x.mjs:1` },
     { ...valid, correlationId: 'secret text' },
+    { ...valid, adminRoute: 'purchase' },
   ];
   for (const invalid of invalidFailures)
     assert.throws(() => logger.error('admin_request_failed', { adminFailure: invalid as never }));
   assert.doesNotMatch(output, /SECRET|secret/);
+});
+
+test('an unexpected webhook or operator failure logs only its route, class, code and own-code site', () => {
+  let output = '';
+  const { logger } = createObservability({
+    stream: new Writable({
+      write(chunk, _encoding, callback) {
+        output += chunk;
+        callback();
+      },
+    }),
+  });
+  logger.error('system_request_failed', {
+    systemFailure: {
+      systemRoute: 'shopify-webhook',
+      errorClass: 'DatabaseError',
+      errorCode: '57P01',
+      errorSite: 'dist/server/chunks/shopify-webhook_Ab1-c.mjs:88',
+      // @ts-expect-error Private payloads must be omitted at runtime too.
+      message: 'hmac=SECRET for shop.myshopify.com',
+    },
+    ...({ shopDomain: 'shop.myshopify.com' } as object),
+  });
+  const entry = parseRecord(lastLine(output));
+  assert.deepEqual(entry, {
+    level: 50,
+    time: entry.time,
+    event: 'system_request_failed',
+    systemRoute: 'shopify-webhook',
+    errorClass: 'DatabaseError',
+    errorCode: '57P01',
+    errorSite: 'dist/server/chunks/shopify-webhook_Ab1-c.mjs:88',
+  });
+  for (const systemRoute of ['shopify-webhook', 'shopify-webhook-setup', 'internal-metrics'] as const) {
+    logger.error('system_request_failed', { systemFailure: { systemRoute, errorClass: 'Error' } });
+    assert.deepEqual(Object.keys(parseRecord(lastLine(output))).sort(), [
+      'errorClass',
+      'event',
+      'level',
+      'systemRoute',
+      'time',
+    ]);
+    assert.equal(parseRecord(lastLine(output)).systemRoute, systemRoute);
+  }
+  const valid = { systemRoute: 'internal-metrics', errorClass: 'Error' } as const;
+  const invalidFailures: unknown[] = [
+    undefined,
+    {},
+    { ...valid, systemRoute: '/api/webhooks/uninstall/abc' },
+    { ...valid, systemRoute: 'catalog' },
+    { ...valid, errorClass: 'connection to db.secret.example failed' },
+    { ...valid, errorCode: 'secret text' },
+    { ...valid, errorSite: '/home/secret/apps/web/src/server/x.ts:1' },
+  ];
+  for (const invalid of invalidFailures)
+    assert.throws(
+      () => logger.error('system_request_failed', { systemFailure: invalid as never }),
+      /Invalid system failure diagnostic/,
+    );
+  assert.doesNotMatch(output, /SECRET|secret|myshopify|message/);
 });
 
 test('an unexpected error is reduced to its class, short code and first own-code frame', () => {

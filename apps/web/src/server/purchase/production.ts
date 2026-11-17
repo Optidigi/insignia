@@ -3,11 +3,12 @@ import { loadArtworkStorageProfile } from '@insignia/storage';
 import { Pool } from 'pg';
 import { adminServices } from '../admin/runtime.ts';
 import { createFrozenPreviewReader } from '../merchant-preview/read.ts';
-import { createPurchaseServices, type PurchaseServices } from './service.ts';
+import type { PurchaseHttpServices } from './http.ts';
+import { createPurchaseServices } from './service.ts';
 /** An integrated source is not an activation grant. Missing native context remains an explicit binding exception. */
 export async function createProductionPurchaseServices(
   env: NodeJS.ProcessEnv = process.env,
-): Promise<PurchaseServices | undefined> {
+): Promise<PurchaseHttpServices | undefined> {
   if (env.INSIGNIA_M8_PURCHASE_ENABLED !== '1') return undefined;
   const required = (key: string) => {
     const value = env[key];
@@ -36,7 +37,7 @@ export async function createProductionPurchaseServices(
           prefix: required('ARTWORK_R2_PREFIX'),
         })
       : undefined;
-    return createPurchaseServices({
+    const services = createPurchaseServices({
       core,
       appOrigin,
       authenticate: async (request, options) => (await adminServices()?.authenticate(request, options)) ?? null,
@@ -58,6 +59,8 @@ export async function createProductionPurchaseServices(
           ? createFrozenPreviewReader({ store: core.merchantPreviews, storage })
           : undefined,
     });
+    // Unexpected failures share the admin logger (admin_request_failed), as the other staff routes do.
+    return { ...services, recordAdminFailure: (failure) => adminServices()?.recordAdminFailure?.(failure) };
   } catch (error) {
     await core.close();
     throw error;

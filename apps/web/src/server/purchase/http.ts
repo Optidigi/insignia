@@ -10,14 +10,33 @@ import {
   PurchaseStatisticsSchema,
   PurchaseViewSchema,
 } from '@insignia/contracts';
+import type { AdminFailureDiagnostic } from '@insignia/observability';
 import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminActor } from '../admin/contracts.js';
-import { ADMIN_BUSY_RETRY_AFTER_SECONDS, mutationOrigin, shopifyBusy, validActor } from '../admin/http.ts';
+import {
+  ADMIN_BUSY_RETRY_AFTER_SECONDS,
+  mutationOrigin,
+  recordAdminFailure,
+  shopifyBusy,
+  validActor,
+} from '../admin/http.ts';
 import { artworkJsonBody } from '../artwork/body.ts';
 import { canReadPurchaseRecords } from './access.ts';
 import type { PurchaseServices } from './service.ts';
 
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+/** The purchase service's own message-classified unavailability; a 503, but not an unexpected failure. */
+const CLASSIFIED_UNAVAILABLE: ReadonlySet<string> = new Set([
+  'UNAVAILABLE',
+  'SEARCH_UNAVAILABLE',
+  'SEARCH_INCOMPLETE',
+  'STORE_CALENDAR_UNAVAILABLE',
+  'UNSUPPORTED_CURRENCY',
+]);
+export type PurchaseHttpServices = PurchaseServices & {
+  /** Unexpected-failure (503) observation: route template, method and reduced error only. */
+  recordAdminFailure?(failure: AdminFailureDiagnostic): void;
+};
 class HttpError extends Error {
   readonly status: number;
   readonly code: string;
@@ -29,7 +48,7 @@ class HttpError extends Error {
 }
 export async function handlePurchaseRequest(
   request: Request,
-  services: PurchaseServices | undefined,
+  services: PurchaseHttpServices | undefined,
   route = '',
 ): Promise<Response> {
   const requestId = randomUUID();
@@ -45,6 +64,8 @@ export async function handlePurchaseRequest(
       },
     });
   };
+  // Authentication failures are observed by the authenticator (admin_authentication), not recorded here.
+  let authenticated = false;
   try {
     if (!services) throw new HttpError(503, 'UNAVAILABLE');
     if (!/^Bearer [^\s]{1,8192}$/.test(request.headers.get('Authorization') ?? ''))
@@ -67,6 +88,7 @@ export async function handlePurchaseRequest(
       response.headers.set('Retry-After', String(ADMIN_BUSY_RETRY_AFTER_SECONDS));
       return response;
     }
+    authenticated = true;
     if (!validActor(actor, Date.now())) throw new HttpError(401, 'UNAUTHORIZED');
     if (!canReadPurchaseRecords(actor)) throw new HttpError(403, 'PERMISSION_REQUIRED');
     const url = new URL(request.url);
@@ -192,6 +214,14 @@ export async function handlePurchaseRequest(
               ARTWORK_UNAVAILABLE: 410,
             } as Record<string, number>
           )[code] ?? 503);
+    if (
+      services &&
+      authenticated &&
+      status === 503 &&
+      !(error instanceof HttpError) &&
+      !CLASSIFIED_UNAVAILABLE.has(code)
+    )
+      recordAdminFailure(services, request, 'purchases', error);
     return respond(
       {
         code: status === 503 ? 'UNAVAILABLE' : code,

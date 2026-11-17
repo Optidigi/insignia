@@ -1,6 +1,7 @@
 import { createCustomerArtworkLinks } from '@insignia/application';
 import { adminServices } from '../admin/runtime.ts';
 import { artworkServices } from '../artwork/runtime.ts';
+import { webObservability } from '../observability.ts';
 import { webRuntime } from '../runtime.ts';
 import type { CustomerArtworkHttpServices } from './http.ts';
 import { createCustomerArtworkRuntimeView } from './view.ts';
@@ -39,6 +40,7 @@ export async function customerArtworkServices(): Promise<CustomerArtworkHttpServ
           await assertAccess(actor);
         },
         recordAdminFailure: (failure) => adminServices()?.recordAdminFailure?.(failure),
+        recordBuyerFailure: (failure) => webObservability.logger.error('buyer_request_failed', failure),
         async ensureInspectionReady() {
           if (!upload?.ensureInspectionReady) throw new Error('Artwork inspection unavailable');
           await upload.ensureInspectionReady();
