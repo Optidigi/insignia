@@ -102,6 +102,8 @@ async function openMerchantPage(
     readDenied?: boolean;
     /** The first N preference reads answer 503, as while a fresh install's offline token is still being set up. */
     preferencesUnavailable?: number;
+    /** The billing read's answer; `fail` is a 503. Defaults to an allowed plan. */
+    billing?: Record<string, unknown> | 'fail';
   },
 ): Promise<Page> {
   const { source, server, browser } = await browserFixture(t);
@@ -111,6 +113,13 @@ async function openMerchantPage(
   page.on('pageerror', (error) => errors.push(error.message));
   t.after(() => assert.deepEqual(errors, [], 'Merchant page must not throw unhandled browser errors'));
   await page.addInitScript((read) => {
+    // Record top-level navigations instead of leaving the synthetic admin.
+    const opened: [string, string][] = [];
+    Object.assign(window, { openedForTest: opened });
+    window.open = (url, target) => {
+      opened.push([String(url), String(target)]);
+      return null;
+    };
     window.shopify = {
       config: { shop: 'example.myshopify.com' },
       idToken: async () => 'synthetic-home-guide',
@@ -159,7 +168,11 @@ async function openMerchantPage(
       ? route.fulfill({ status: 503, json: { error: 'Setup status unavailable' } })
       : route.fulfill({ json: { hasPublishedProduct: scenario.product === 'published' } }),
   );
-  await page.route(/\/api\/admin\/billing$/, (route) => route.fulfill({ json: { newActionsAllowed: true } }));
+  await page.route(/\/api\/admin\/billing$/, (route) =>
+    scenario.billing === 'fail'
+      ? route.fulfill({ status: 503, json: { error: 'Billing status unavailable' } })
+      : route.fulfill({ json: scenario.billing ?? { newActionsAllowed: true } }),
+  );
   await page.route(/\/api\/purchases\/v1\/statistics$/, (route) => route.fulfill({ json: statistics }));
   await page.route(/\/api\/purchases\/v1\?/, (route) =>
     route.fulfill({ json: ordersPage(scenario.orders === 'test-only' ? [testOrder] : []) }),
@@ -411,3 +424,69 @@ test('right after install a briefly unavailable preferences read is retried befo
   await page.getByRole('heading', { name: 'Get started with Insignia' }).waitFor({ timeout: 15000 });
   assert.equal(await page.getByText('Open Insignia in Shopify', { exact: true }).count(), 0);
 });
+
+const pricingPlans = 'https://admin.shopify.com/store/example/charges/insignia-1/pricing_plans';
+const billingView = (status: 'inactive' | 'unavailable' | 'trial', newActionsAllowed: boolean) => ({
+  status,
+  observedAt: status === 'unavailable' ? null : '2026-11-17T10:00:00.000Z',
+  trialEndsAt: null,
+  currentCycle: null,
+  scheduledCancellation: false,
+  pendingChange: false,
+  newActionsAllowed,
+  standardPrice: { amount: '49.99', currency: 'USD', intervalDays: 30 },
+  recurringPrice: null,
+  developmentTerms: false,
+  managementUrl: pricingPlans,
+});
+/** Resolves once this document has received a billing answer, however early it arrived. */
+const billingAnswered = (page: Page) =>
+  page.waitForFunction(() =>
+    performance.getEntriesByType('resource').some((entry) => entry.name.endsWith('/api/admin/billing')),
+  );
+const opened = (page: Page) =>
+  page.evaluate(() => (window as unknown as { openedForTest: [string, string][] }).openedForTest);
+
+test('Home opens Shopify plan selection once per session when the store definitively has no plan, and keeps the banner', {
+  timeout: 30000,
+}, async (t) => {
+  const page = await openMerchantPage(t, '/admin/home', { embed: 'active', billing: billingView('inactive', false) });
+  await page.getByText('Review your plan', { exact: true }).waitFor();
+  await page.waitForFunction(() => (window as unknown as { openedForTest: unknown[] }).openedForTest.length > 0);
+  assert.deepEqual(await opened(page), [[pricingPlans, '_top']]);
+  assert.match(
+    (await page.getByRole('link', { name: 'View billing' }).getAttribute('href')) ?? '',
+    /\/admin\/settings\/billing$/,
+    'the banner and Billing link stay as the fallback',
+  );
+
+  // Returning to the app (focus) re-reads billing but does not prompt again.
+  const reread = page.waitForResponse(/\/api\/admin\/billing$/);
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event('blur'));
+    window.dispatchEvent(new Event('focus'));
+  });
+  await reread;
+  await page.waitForTimeout(300);
+  assert.equal((await opened(page)).length, 1);
+  // A merchant who comes back without choosing a plan is not sent away again in this session.
+  await page.reload();
+  await page.getByText('Review your plan', { exact: true }).waitFor();
+  await billingAnswered(page);
+  await page.waitForTimeout(500);
+  assert.deepEqual(await opened(page), []);
+  await page.getByText('Review your plan', { exact: true }).waitFor();
+});
+
+for (const [name, billing] of [
+  ['an unverified plan', billingView('unavailable', false)],
+  ['a failed billing read', 'fail'],
+  ['an active trial', billingView('trial', true)],
+] as const)
+  test(`Home never opens plan selection for ${name}`, { timeout: 30000 }, async (t) => {
+    const page = await openMerchantPage(t, '/admin/home', { embed: 'active', billing });
+    await page.getByRole('heading', { name: 'Get started with Insignia' }).waitFor();
+    await billingAnswered(page);
+    await page.waitForTimeout(500);
+    assert.deepEqual(await opened(page), []);
+  });
