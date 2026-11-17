@@ -1,0 +1,24 @@
+Bundled read-only fonts for SVG text in the artwork inspection sandbox; the build copies this
+directory to dist/artwork/fonts. fonts.conf is Insignia's own sandbox-only fontconfig.
+
+Unmodified TTFs and copyright files extracted from these Ubuntu archive packages:
+  fonts-liberation  1:2.1.5-3build1  deb sha256 47f156bc945cfc69cf2f2a0c19b8c82b67a685738d3846673462de6a73266e1b  (SIL OFL 1.1; LICENSE-liberation)
+  fonts-dejavu-core 2.37-8build1     deb sha256 f4606b12eb41ddf7932d3a1ebc2019f9bbf90d0824943a2dc0c77a00f43019f2  (Bitstream Vera; LICENSE-dejavu)
+
+File sha256:
+e1d733afbbfce842a1b43dced0c9885a76a4e67290dc7e690c4e9b76ebfc7d23  DejaVuSans-Bold.ttf
+b4c632e3cdf9acc7f28758fb5a323c8524d7fc6660d46904d9b6cbe2809c419c  DejaVuSans.ttf
+3f704f75238454f68a8202e5098cb0687887480dd63d3dc20b34bdbdfa9d9f3f  DejaVuSerif-Bold.ttf
+a52c2a69dfc93d0b511b98c1019a57eb3d6a62d328bdf1387f00851b02e3a315  DejaVuSerif.ttf
+291872531f0e8013df602c412fc570241860e41b1fa1b7972537c27a19024d4d  LiberationMono-BoldItalic.ttf
+50464e64aaadea741fb9516748aee296d570439406be11d63df22294e77ba867  LiberationMono-Bold.ttf
+35c3116d4366eb0e58494d8e432d4ee0c60c5735c7f775ffc096008bd2907c74  LiberationMono-Italic.ttf
+d18235f1e874771f4eaec3ddd6ddb4db849d334bdc6930c5c2185d9344834e62  LiberationMono-Regular.ttf
+64263238517af60213cdb469165fc7e9acd0c09c35f4155f924a379f97125a57  LiberationSans-BoldItalic.ttf
+b72c65e551d653b54217ffad0d1454ce0657e4e8d4a28bcc79e0acd2598f4bf3  LiberationSans-Bold.ttf
+4ccb79043bd3a6d131b5a53901abb21261b1417f6052b38a9fa9716a4e5a3d81  LiberationSans-Italic.ttf
+075e71be4c58beda172ecb574a799308f04c3d054c6a5b7434954d3b0f1b28d8  LiberationSans-Regular.ttf
+10ec0fa22bc6f12a239d600c051752884d155997aafd19ebc24c4f4a8d2b98d0  LiberationSerif-BoldItalic.ttf
+bb033fae52dcbf67a55494a08829aaa788324624d72a195af7f93da3061c928f  LiberationSerif-Bold.ttf
+c1882fbb05e78537b9c39dad3c07c4f231c987a3747b20c8745737aed50cd488  LiberationSerif-Italic.ttf
+350f4ffd773cae53560c63dca3d89a5070595614fde12f772bf43feb63d81064  LiberationSerif-Regular.ttf

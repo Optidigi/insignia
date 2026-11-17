@@ -64,6 +64,10 @@ export async function runArtworkSandbox(
     '--setenv',
     'RAYON_NUM_THREADS',
     '1',
+    // SVG text uses only the bundled read-only fonts under /runtime/artwork/fonts; the host has none in here.
+    '--setenv',
+    'FONTCONFIG_FILE',
+    '/runtime/artwork/fonts/fonts.conf',
     '--ro-bind',
     '/usr/lib',
     '/usr/lib',
