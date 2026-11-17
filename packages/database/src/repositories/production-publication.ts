@@ -121,15 +121,29 @@ export function exactPublicationField(observed: Observed | null, target: Target,
     /^[a-f0-9]{64}$/.test(observed.compareDigest)
   );
 }
+/** The mode this generation's product anchors enforce. Spec §5.5: a reinstall is a new generation and
+ * never revives an old installation's authorizations. Coherent anchors left by one of this shop's
+ * deactivated generations are therefore no prior policy of the current one (null): the publication
+ * replaces them by compare-and-set on their digests, as a first publication with an owned hold. */
 function parsePrior(
   registration: Observed | null,
   policy: Observed | null,
   generationHex: string,
+  deactivatedGenerationHexes: ReadonlySet<string>,
 ): ProductPolicyMode | null {
   if (!registration && !policy) return null;
   if (!registration || !policy) throw new Error('Partial product enforcement anchors require operator hold');
   const r = /^([0-9a-f]{32}):([1-9][0-9]*):ready$/.exec(registration.value);
   const p = /^([0-9a-f]{32}):([1-9][0-9]*):(required|optional)$/.exec(policy.value);
+  const earlier = r?.[1];
+  if (
+    earlier &&
+    earlier !== generationHex &&
+    earlier === p?.[1] &&
+    r?.[2] === p[2] &&
+    deactivatedGenerationHexes.has(earlier)
+  )
+    return null;
   if (!r || !p || r[1] !== generationHex || p[1] !== generationHex || r[2] !== p[2])
     throw new Error('Product enforcement anchors drifted or belong to another installation');
   return p[3] as ProductPolicyMode;
@@ -261,7 +275,16 @@ export class PgProductionPublication {
       this.remote.read(this.target(tenant, 'registration', productId)),
       this.remote.read(this.target(tenant, 'policy', productId)),
     ]);
-    const priorMode = parsePrior(priorRegistration, priorPolicy, uuidHex(first.authorization_generation));
+    const deactivated = await sql<{ authorization_generation: string }>`SELECT authorization_generation::text
+      FROM installation_generations WHERE shop_id=${input.shopId} AND deactivated_at IS NOT NULL`.execute(
+      this.database,
+    );
+    const priorMode = parsePrior(
+      priorRegistration,
+      priorPolicy,
+      uuidHex(first.authorization_generation),
+      new Set(deactivated.rows.map((row) => uuidHex(row.authorization_generation))),
+    );
     if ((first.effective_operation_id === null) !== (priorMode === null))
       throw new Error('Remote product management state conflicts with durable effective record');
     if (first.effective_operation_id) {

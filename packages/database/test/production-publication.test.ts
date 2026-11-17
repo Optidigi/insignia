@@ -106,6 +106,58 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
     return { shopId, configId, revisionId, generation, authorizationGeneration, productId };
   }
 
+  async function publishAndActivateWith(
+    publisher: PgProductionPublication,
+    f: Awaited<ReturnType<typeof fixture>>,
+    mode: 'required' | 'optional',
+  ) {
+    const operationId = randomUUID();
+    await publisher.prepare({ ...f, operationId, mode });
+    for (let i = 0; i < 5; i++) await publisher.advance(f.shopId, f.configId, operationId);
+    await database.transaction().execute(async (tx) => {
+      expect(await createPublicationRepository(tx).activate(f.shopId, f.configId, operationId)).toBe('stale');
+      await sql`UPDATE m4_publication_progress SET phase='active', version=version+1,
+        activation_evidence='synthetic-admission-only'
+        WHERE shop_id=${f.shopId} AND config_id=${f.configId} AND operation_id=${operationId}`.execute(tx);
+    });
+    expect(await publisher.advance(f.shopId, f.configId, operationId)).toEqual({
+      kind: 'OPERATOR_HOLD',
+      phase: 'active',
+    });
+    await database.transaction().execute(async (tx) => {
+      expect(await createPublicationRepository(tx).activate(f.shopId, f.configId, operationId)).toBe('activated');
+    });
+    expect(await publisher.advance(f.shopId, f.configId, operationId)).toEqual({ kind: 'ACTIVE', phase: 'active' });
+    return operationId;
+  }
+
+  /** Reinstall as the next generation with its own pending key (the copied public key is synthetic). */
+  async function reinstall(f: Awaited<ReturnType<typeof fixture>>) {
+    const generation = await database
+      .transaction()
+      .execute((tx) => createTenantRepository(tx).startInstallation(tx, f.shopId, 'synthetic-reinstalled'));
+    await sql`INSERT INTO signing_keys (shop_id, installation_generation, authorization_generation,
+      key_id, public_key, public_key_fingerprint, private_envelope, wrapping_key_id, state,
+      first_valid_day, last_valid_day)
+      SELECT key.shop_id, ${generation}::bigint, installation.authorization_generation,
+        key.key_id, key.public_key, key.public_key_fingerprint, '{"kid":"synthetic-reinstall"}'::jsonb,
+        'synthetic-reinstall', 'pending', key.first_valid_day, key.last_valid_day
+      FROM signing_keys key JOIN installation_generations installation ON installation.shop_id=key.shop_id
+      WHERE key.shop_id=${f.shopId} AND key.installation_generation=${f.generation}::bigint
+        AND installation.generation=${generation}::bigint`.execute(database);
+    const identity = await sql<{ authorization_generation: string }>`SELECT authorization_generation::text
+      FROM installation_generations WHERE shop_id=${f.shopId} AND generation=${generation}::bigint`.execute(database);
+    const authorizationGeneration = identity.rows[0]?.authorization_generation;
+    if (!authorizationGeneration) throw new Error('missing reinstalled authorization generation');
+    return { generation, authorizationGeneration };
+  }
+
+  function cell(remote: FakeRemote, field: Field): Cell {
+    const found = remote.cells.get(field);
+    if (!found) throw new Error(`missing ${field}`);
+    return found;
+  }
+
   it('rejects an M4-shaped legacy journal activation without M4 progress evidence', async () => {
     const f = await fixture();
     const operationId = randomUUID();
@@ -289,19 +341,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
     const publisher = new PgProductionPublication(database, remote, '101');
     const oldOperation = randomUUID();
     await publisher.prepare({ ...f, operationId: oldOperation, mode: 'required' });
-    const generation = await database
-      .transaction()
-      .execute((tx) => createTenantRepository(tx).startInstallation(tx, f.shopId, 'synthetic-reinstalled'));
     // Deactivation destroyed the old generation's private halves; the new one has its own (synthetic) envelope.
-    await sql`INSERT INTO signing_keys (shop_id, installation_generation, authorization_generation,
-      key_id, public_key, public_key_fingerprint, private_envelope, wrapping_key_id, state,
-      first_valid_day, last_valid_day)
-      SELECT key.shop_id, ${generation}::bigint, installation.authorization_generation,
-        key.key_id, key.public_key, key.public_key_fingerprint, '{"kid":"synthetic-reinstall"}'::jsonb,
-        'synthetic-reinstall', 'pending', key.first_valid_day, key.last_valid_day
-      FROM signing_keys key JOIN installation_generations installation ON installation.shop_id=key.shop_id
-      WHERE key.shop_id=${f.shopId} AND key.installation_generation=${f.generation}::bigint
-        AND installation.generation=${generation}::bigint`.execute(database);
+    await reinstall(f);
     const newOperation = randomUUID();
     expect(await publisher.prepare({ ...f, operationId: newOperation, mode: 'required' })).toEqual({
       operationId: newOperation,
@@ -321,6 +362,72 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
         USING (shop_id, config_id, operation_id)
       WHERE operation.shop_id=${f.shopId} AND operation.operation_id=${oldOperation}`.execute(database);
     expect(preserved.rows[0]).toEqual({ generation: f.generation, phase: 'prepared', status: 'superseded' });
+  });
+
+  it('publishes after reinstall by replacing the earlier generation product anchors by compare-and-set', async () => {
+    const f = await fixture();
+    const remote = new FakeRemote();
+    const publisher = new PgProductionPublication(database, remote, '101', {
+      established: async () => ({ isFresh: () => true }),
+    });
+    await publishAndActivateWith(publisher, f, 'required');
+    const oldHex = f.authorizationGeneration.replaceAll('-', '');
+    const old = {
+      registration: cell(remote, 'registration'),
+      policy: cell(remote, 'policy'),
+      public_config: cell(remote, 'public_config'),
+    };
+    expect(old.policy.value).toBe(`${oldHex}:1:required`);
+    const next = await reinstall(f);
+    const newHex = next.authorizationGeneration.replaceAll('-', '');
+    const operationId = randomUUID();
+    // Before the fix: 'Product enforcement anchors drifted or belong to another installation'.
+    expect(await publisher.prepare({ ...f, operationId, mode: 'required' })).toEqual({
+      operationId,
+      phase: 'prepared',
+    });
+    const progress = await sql<{
+      prior_mode: string | null;
+      prior_registration_digest: string | null;
+      prior_policy_digest: string | null;
+      prior_public_config_digest: string | null;
+    }>`SELECT prior_mode, prior_registration_digest, prior_policy_digest, prior_public_config_digest
+      FROM m4_publication_progress WHERE shop_id=${f.shopId} AND operation_id=${operationId}`.execute(database);
+    // The earlier generation's policy is no prior policy of this one: first publication (owned hold).
+    expect(progress.rows[0]).toEqual({
+      prior_mode: null,
+      prior_registration_digest: old.registration.compareDigest,
+      prior_policy_digest: old.policy.compareDigest,
+      prior_public_config_digest: old.public_config.compareDigest,
+    });
+    for (let i = 0; i < 4; i++)
+      expect((await publisher.advance(f.shopId, f.configId, operationId)).kind).toBe('PENDING');
+    expect(await publisher.advance(f.shopId, f.configId, operationId)).toEqual({
+      kind: 'REMOTE_READY_ACTIVATION_PENDING',
+      phase: 'activation-pending',
+    });
+    expect(cell(remote, 'policy').value).toBe(`${newHex}:2:required`);
+    expect(cell(remote, 'registration').value).toBe(`${newHex}:2:ready`);
+    expect(JSON.parse(cell(remote, 'public_config').value).generationHex).toBe(newHex);
+  });
+
+  it('still stops on product anchors bound to an authorization generation the shop never deactivated', async () => {
+    const f = await fixture();
+    const remote = new FakeRemote();
+    const publisher = new PgProductionPublication(database, remote, '101', {
+      established: async () => ({ isFresh: () => true }),
+    });
+    await publishAndActivateWith(publisher, f, 'required');
+    const foreign = randomUUID().replaceAll('-', '');
+    for (const field of ['registration', 'policy'] as const) {
+      const anchor = cell(remote, field);
+      const value = anchor.value.replace(/^[0-9a-f]{32}/, foreign);
+      remote.cells.set(field, { ...anchor, value, compareDigest: createHash('sha256').update(value).digest('hex') });
+    }
+    await reinstall(f);
+    await expect(publisher.prepare({ ...f, operationId: randomUUID(), mode: 'required' })).rejects.toThrow(
+      'Product enforcement anchors drifted or belong to another installation',
+    );
   });
 
   it('recovers after a write timeout at every durable remote stage', async () => {
@@ -350,25 +457,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
     const publisher = new PgProductionPublication(database, remote, '101', {
       established: async () => ({ isFresh: () => true }),
     });
-    const publishAndActivate = async (mode: 'required' | 'optional') => {
-      const operationId = randomUUID();
-      await publisher.prepare({ ...f, operationId, mode });
-      for (let i = 0; i < 5; i++) await publisher.advance(f.shopId, f.configId, operationId);
-      await database.transaction().execute(async (tx) => {
-        expect(await createPublicationRepository(tx).activate(f.shopId, f.configId, operationId)).toBe('stale');
-        await sql`UPDATE m4_publication_progress SET phase='active', version=version+1,
-          activation_evidence='synthetic-admission-only'
-          WHERE shop_id=${f.shopId} AND config_id=${f.configId} AND operation_id=${operationId}`.execute(tx);
-      });
-      expect(await publisher.advance(f.shopId, f.configId, operationId)).toEqual({
-        kind: 'OPERATOR_HOLD',
-        phase: 'active',
-      });
-      await database.transaction().execute(async (tx) => {
-        expect(await createPublicationRepository(tx).activate(f.shopId, f.configId, operationId)).toBe('activated');
-      });
-      expect(await publisher.advance(f.shopId, f.configId, operationId)).toEqual({ kind: 'ACTIVE', phase: 'active' });
-    };
+    const publishAndActivate = (mode: 'required' | 'optional') => publishAndActivateWith(publisher, f, mode);
     await publishAndActivate('optional');
     const registration = remote.cells.get('registration');
     const policy = remote.cells.get('policy');
