@@ -70,6 +70,8 @@ import performanceCandidate from '../../deployment/m5-runtime/native-performance
 };
 import recoveryModules from '../../deployment/m5-runtime/native-recovery-module-baseline.json' with { type: 'json' };
 import recoveryCandidate from '../../deployment/m5-runtime/native-recovery-release-binding.json' with { type: 'json' };
+import reinstallModules from '../../deployment/m5-runtime/native-reinstall-module-baseline.json' with { type: 'json' };
+import reinstallBinding from '../../deployment/m5-runtime/native-reinstall-release-binding.json' with { type: 'json' };
 import repairMessagesModules from '../../deployment/m5-runtime/native-repair-messages-module-baseline.json' with {
   type: 'json',
 };
@@ -188,6 +190,16 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  // Same Functions, non-theme modules, blocks and snippets as cartfix; theme assets change (PR 553).
+  'native-reinstall-eb2ce476': {
+    versionId: reinstallBinding.versionId,
+    versionTag: reinstallBinding.versionTag,
+    versionIds: reinstallBinding.versionIds,
+    moduleHash: reinstallBinding.moduleHash,
+    modules: reinstallModules,
+    grants: [...grants, 'read_orders', 'read_all_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   // Same Functions, non-theme modules, blocks and locales as uifix; only theme assets change (PR 546).
   'native-cartfix-3075eac9': {
     versionId: cartFixBinding.versionId,
