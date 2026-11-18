@@ -9,6 +9,8 @@ import a11yQuantityBinding from '../../deployment/m5-runtime/native-a11y-quantit
 };
 import allOrdersModules from '../../deployment/m5-runtime/native-allorders-module-baseline.json' with { type: 'json' };
 import allOrdersBinding from '../../deployment/m5-runtime/native-allorders-release-binding.json' with { type: 'json' };
+import batchModules from '../../deployment/m5-runtime/native-batch-module-baseline.json' with { type: 'json' };
+import batchBinding from '../../deployment/m5-runtime/native-batch-release-binding.json' with { type: 'json' };
 import behaviorModules from '../../deployment/m5-runtime/native-behavior-module-baseline.json' with { type: 'json' };
 import behaviorCandidate from '../../deployment/m5-runtime/native-behavior-release-binding.json' with { type: 'json' };
 import buyerFixesModules from '../../deployment/m5-runtime/native-buyer-fixes-module-baseline.json' with {
@@ -192,6 +194,16 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  // Same Functions (incl. merchant-facing titles), non-theme modules, blocks, snippets and locales as names; theme assets change (PR 574).
+  'native-batch-9b677033': {
+    versionId: batchBinding.versionId,
+    versionTag: batchBinding.versionTag,
+    versionIds: batchBinding.versionIds,
+    moduleHash: batchBinding.moduleHash,
+    modules: batchModules,
+    grants: [...grants, 'read_orders', 'read_all_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   // Same Function wasm, queries, targets, non-theme modules, blocks, snippets and locales as reinstall; theme assets change and both
   // Function modules carry merchant-facing title/description (PR 566).
   'native-names-b8616d2a': {
