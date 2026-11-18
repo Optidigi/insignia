@@ -545,8 +545,7 @@
     "editPrice": "Modifica il prezzo",
     "editPrices": "Modifica i prezzi",
     "perSize": "Per dimensione di decorazione",
-    "addAMethodForThisProductOrCreateAReusableMethodInYourLibrary": "Aggiungi una tecnica a questo prodotto oppure crea una tecnica riutilizzabile nella raccolta.",
-    "saveDraftAndOpenLibrary": "Salva la bozza e apri la raccolta",
+    "addAMethodForThisProductOrCreateAReusableMethodInYourLibrary": "Aggiungi una tecnica alla raccolta. Sarà disponibile per tutti i prodotti.",
     "noMethodsMatchTheseFilters": "Nessuna tecnica corrisponde a questi filtri.",
     "showAllMethods": "Mostra tutte le tecniche",
     "pricePerPlacementPerGarment": "Prezzo per posizione e per articolo",
@@ -567,7 +566,7 @@
     "nameDuplicate": "Esiste già una tecnica con questo nome. Sceglila dall'elenco.",
     "methodAddFailed": "Non è stato possibile aggiungere questa tecnica. Riprova.",
     "methodsUnavailable": "Rimuovi le tecniche non disponibili o ricarica la raccolta prima di continuare.",
-    "methodNameDetails": "Aggiunta solo a questo prodotto. Imposta i prezzi per le posizioni nel passaggio successivo.",
+    "methodNameDetails": "Aggiunta alla raccolta di tecniche e disponibile per tutti i prodotti. Imposta i prezzi per le posizioni nel passaggio successivo.",
     "forPlacement": "Per {{placementName}}",
     "thisPlacement": "questa posizione",
     "enabledMethods_one": "{{formattedCount}} tecnica attivata",
@@ -719,7 +718,6 @@
       "reviewCopiedSetup": "Controlla la configurazione per {{productName}}"
     }
   },
-  "placementSetupCopyEntry": {},
   "placementSetupCopyReview": {
     "imageUnavailable": "Immagine non disponibile",
     "viewsToCopy": "Viste da copiare",
@@ -1107,7 +1105,7 @@
     "realReviewCurrency": "Controlla i prezzi nella valuta del negozio",
     "realCalibrateImage": "Calibra immagine",
     "realDimensionsRequired": "Calibra questa immagine per definire le dimensioni di produzione. Misura una larghezza nota sul capo, come la larghezza del torace.",
-    "realReviewMethods": "Controlla i metodi non assegnati o eliminati prima di pubblicare.",
+    "realReviewMethods": "Controlla i metodi eliminati prima di pubblicare.",
     "realKeepMethod": "Mantieni metodo",
     "realRemoveMethod": "Rimuovi metodo",
     "realCapacityExceeded": "Questa configurazione supera i limiti supportati: 16 viste, 32 posizioni, 32 metodi, 64 dimensioni di decorazione, 250 varianti e 100 modifiche di immagine o allineamento per vista o posizione.",

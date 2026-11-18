@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { MerchantDraftSchema } from '@insignia/contracts';
 import { required } from './support/fixtures.mts';
-import { draft, editName, fixture, hostSave } from './support/selected-browser.mts';
+import { draft, editName, fixture, hostSave, routeMethodLibrary } from './support/selected-browser.mts';
 
 // Scope: real built UI/client/Polaris in an isolated browser with synthetic provider HTTP and App Bridge doubles (#442).
 // These are not native Shopify observations.
@@ -105,6 +105,7 @@ test('#442 item 3: Enter in the Add method name field adds exactly one method; a
   timeout: 20000,
 }, async (t) => {
   const f = await fixture(t);
+  const library = await routeMethodLibrary(f.page);
   await f.open();
   await f.page.getByRole('button', { name: 'Manage methods', exact: true }).click();
   const dialog = f.page.locator('s-modal[data-method-dialog]');
@@ -123,4 +124,5 @@ test('#442 item 3: Enter in the Add method name field adds exactly one method; a
   await dialog.locator('section[aria-label*="Embroidery"]').waitFor();
   await dialog.getByRole('button', { name: 'Back to methods', exact: true }).click();
   assert.equal(await dialog.getByRole('checkbox', { name: 'Embroidery', exact: true }).count(), 1);
+  assert.equal(library.posts.length, 1, 'one library create for repeated Enter');
 });

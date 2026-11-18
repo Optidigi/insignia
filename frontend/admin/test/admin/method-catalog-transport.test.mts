@@ -78,26 +78,60 @@ test('Method command journals cannot be resumed under another authorization gene
   assert.equal(calls, 0);
 });
 
-test('API reload preserves manual picker identities, checked selections and assignment counts', async () => {
+test('API reload keeps stored legacy product identities, and method usage comes from product setups', async () => {
   const { methodConfigurationForPicker } = await import('../../src/islands/method-catalog-transport.ts');
-  const { assignedProducts } = await import('../../examples/admin/support/method-configuration.mts');
-  const { readMethodReturnContext } = await import('../../examples/admin/support/method-return-context.mts');
+  const { productsUsing } = await import('../../examples/admin/support/method-configuration.mts');
   const record = { ...configuration, productIds: ['111'] };
-  const selected = methodConfigurationForPicker(record);
   const product = { id: 'gid://shopify/Product/111', title: 'Shirt', image: '', tags: [], setup: [] };
-  assert.deepEqual(selected.productIds, [product.id]);
-  assert.equal(selected.productIds.includes(product.id), true);
-  assert.deepEqual(assignedProducts(record, [product]), [product]);
-  assert.deepEqual(
-    assignedProducts(selected, [{ ...product, id: '111' }]).map((item) => item.id),
-    ['111'],
-  );
-  assert.equal(
-    readMethodReturnContext(
-      '?productId=111&returnTo=%2Fadmin%2Fproducts%2F111%2Fconfig%3Fview%3Dfront%26placement%3Dchest%26chooseMethods%3D1',
-      [product],
-    )?.productId,
-    product.id,
+  assert.deepEqual(methodConfigurationForPicker(record).productIds, [product.id]);
+  assert.deepEqual(productsUsing(record, [product]), []);
+  const using = { ...product, setup: [{ methodId: id, locations: 1, pricedLocations: 1 }] };
+  assert.deepEqual(productsUsing({ ...record, productIds: [] }, [product, using]), [using]);
+});
+
+test("the editor's Add method creates one library method with the Methods page's command and a reusable identity", async () => {
+  const { createLibraryMethod } = await import('../../src/islands/method-catalog-transport.ts');
+  const sends: { path: string; init: RequestInit }[] = [];
+  const created = { ...configuration, name: 'Flock', pricing: 'product' as const, amount: '' };
+  let lost = true;
+  const request = async (path: string, init?: RequestInit) => {
+    assert.ok(init);
+    sends.push({ path, init });
+    if (lost) {
+      lost = false;
+      throw new Error('Lost reply');
+    }
+    return { kind: 'created', method: { configuration: created, version: '1' } };
+  };
+  const input = { id, key: 'b7e4ad31-6f0b-4a43-9a4b-8d1f5f3c2e10', name: 'Flock', authority: scope.authority, currency: scope.currency, request };
+  await assert.rejects(createLibraryMethod(input), /Lost reply/);
+  const method = await createLibraryMethod(input);
+  assert.deepEqual(method, { configuration: created, version: '1' });
+  assert.equal(sends.length, 2);
+  for (const { path, init } of sends) {
+    const headers = new Headers(init.headers);
+    assert.equal(path, '/api/admin/methods');
+    assert.equal(init.method, 'POST');
+    assert.equal(headers.get('Idempotency-Key'), input.key);
+    assert.equal(headers.get('X-Insignia-Method-Authority'), scope.authority);
+    assert.equal(headers.get('X-Insignia-Method-Currency'), 'USD');
+    assert.deepEqual(JSON.parse(String(init.body)), {
+      configuration: {
+        id,
+        name: 'Flock',
+        explanation: '',
+        pricing: 'product',
+        amount: '',
+        assignment: 'manual',
+        productIds: [],
+        tags: [],
+        tagMatch: 'any',
+      },
+    });
+  }
+  await assert.rejects(
+    createLibraryMethod({ ...input, request: async () => ({ kind: 'created', method: { configuration: { ...created, id: 'cc756ade-f50a-4f5c-94b7-fd320a7a75e7' }, version: '1' } }) }),
+    /identity mismatch/,
   );
 });
 

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import {
-  AdminConfigViewSchema,
   MerchantDraftSchema,
   MerchantPreferencesViewSchema,
   MethodCatalogViewSchema,
@@ -39,6 +38,7 @@ import {
   type ProductMethodBindings,
 } from './selected-product-bindings';
 import { createSelectedProductCopyPorts } from './selected-product-copy';
+import { createLibraryMethod } from './method-catalog-transport';
 import { createSelectedProductMedia } from './selected-product-media';
 import {
   isMerchantPublicationContinuing,
@@ -90,6 +90,8 @@ function SelectedProductContainer({ productId }: { productId: string }) {
   const currentProduct = useRef<PlacementProduct | null>(null);
   const records = useRef<VersionedMethodConfiguration[]>([]);
   const currency = useRef<string | null>(null);
+  /** The catalogue's write authority, sent with an editor-created library method. */
+  const methodAuthority = useRef('');
   const canEdit = useRef(false);
   const selectionScope = useRef('');
   const requestVersion = useRef(0);
@@ -161,7 +163,7 @@ function SelectedProductContainer({ productId }: { productId: string }) {
               }
             : previous,
         );
-        const reviewed = currentProductMethodReviews(bindings.current, records.current, fresh.product);
+        const reviewed = currentProductMethodReviews(bindings.current, records.current);
         if (reviewed !== bindings.current) updateBindings(reviewed);
         if (!owned.hasPending())
           setRemote((previous) =>
@@ -200,6 +202,7 @@ function SelectedProductContainer({ productId }: { productId: string }) {
     media.current = null;
     bindings.current = {};
     records.current = [];
+    methodAuthority.current = '';
     currentProduct.current = null;
     canEdit.current = false;
     setInitial(null);
@@ -298,11 +301,11 @@ function SelectedProductContainer({ productId }: { productId: string }) {
       selectionScope.current = `${prefs.shop}:${prefs.authority}`;
       currency.current = catalogue.currency;
       records.current = catalogue.methods;
+      methodAuthority.current = catalogue.authority ?? '';
       const parsedDraft = MerchantDraftSchema.safeParse(value.config?.draft);
       bindings.current = currentProductMethodReviews(
         parsedDraft.success ? (parsedDraft.data.selectedSetup?.methodBindings ?? {}) : {},
         catalogue.methods,
-        value.product,
       );
       currentProduct.current = product;
       setView(value);
@@ -464,35 +467,35 @@ function SelectedProductContainer({ productId }: { productId: string }) {
           },
           async loadMethods(signal) {
             const version = requestVersion.current;
-            const [catalogue, freshValue] = await Promise.all([
-              authorizedRequest('/api/admin/methods?view=catalog', { signal }),
-              authorizedRequest(`/api/admin/products/${productId.split('/').at(-1)}/config`, { signal }),
-            ]);
+            const catalogue = await authorizedRequest('/api/admin/methods?view=catalog', { signal });
             if (version !== requestVersion.current) throw new Error('Product context changed');
-            const fresh = AdminConfigViewSchema.parse(freshValue);
             const parsed = MethodCatalogViewSchema.parse(catalogue);
             records.current = parsed.methods;
+            if (parsed.authority) methodAuthority.current = parsed.authority;
             if (parsed.currency !== currency.current) throw new Error('Review changed shop currency');
-            if (
-              parsed.methods.some((entry) => entry.configuration.assignment === 'tags') &&
-              fresh.product.tags === undefined
-            )
-              throw new Error('Product tags unavailable');
             return {
               methods: parsed.methods
                 .filter((entry) => entry.configuration.pricing !== 'fixed' || entry.currency === adapter!.currency)
                 .map((entry) => entry.configuration),
-              products: [
-                {
-                  id: fresh.product.id,
-                  title: fresh.product.title,
-                  image: fresh.product.imageUrl ?? '',
-                  tags: fresh.product.tags ?? [],
-                  collections: fresh.product.collections ?? [],
-                  setup: fresh.product.methodSetup ?? [],
-                },
-              ],
             };
+          },
+          async createMethod(input) {
+            const version = requestVersion.current;
+            const shopCurrency = currency.current;
+            if (shopCurrency !== 'USD' && shopCurrency !== 'EUR') throw new Error('Shop currency unavailable');
+            const created = await createLibraryMethod({
+              ...input,
+              authority: methodAuthority.current,
+              currency: shopCurrency,
+              request: authorizedRequest,
+            });
+            if (version !== requestVersion.current) throw new Error('Product context changed');
+            records.current = [
+              ...records.current.filter((entry) => entry.configuration.id !== created.configuration.id),
+              created,
+            ];
+            const { id, name, pricing, amount, explanation } = created.configuration;
+            return { id, name, pricing, amount, explanation };
           },
           methodsApplied(placementId, change, choices, editedIds, editedCells) {
             const next = applyMethodImport({

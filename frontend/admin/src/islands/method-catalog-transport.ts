@@ -150,6 +150,47 @@ export function createMethodCatalogTransport(input: {
   };
 }
 
+/**
+ * The product editor's "Add method" creates a library method with the same POST command the Methods page sends.
+ * The caller keeps `id`/`key` for a retry of the same name, so a lost response cannot create a second copy.
+ */
+export async function createLibraryMethod(input: {
+  id: string;
+  key: string;
+  name: string;
+  authority: string;
+  currency: 'USD' | 'EUR';
+  request?: RequestPort;
+}): Promise<VersionedMethodConfiguration> {
+  if (!/^[a-f0-9]{64}$/.test(input.authority)) throw new Error('Method authority unavailable');
+  const configuration = MethodConfigurationSchema.parse({
+    id: input.id,
+    name: input.name,
+    explanation: '',
+    pricing: 'product',
+    amount: '',
+    assignment: 'manual',
+    productIds: [],
+    tags: [],
+    tagMatch: 'any',
+  });
+  const result = await (input.request ?? authenticatedJson)('/api/admin/methods', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Idempotency-Key': input.key,
+      'X-Insignia-Method-Authority': input.authority,
+      'X-Insignia-Method-Currency': input.currency,
+    },
+    body: JSON.stringify({ configuration }),
+  });
+  const parsed = z
+    .strictObject({ kind: z.enum(['created', 'saved']), method: VersionedMethodConfigurationSchema })
+    .parse(result);
+  if (parsed.method.configuration.id !== configuration.id) throw new Error('Method receipt identity mismatch');
+  return parsed.method;
+}
+
 /** API IDs are canonical decimals; selected picker identities use Shopify GIDs. */
 export function methodConfigurationForPicker(configuration: MethodConfiguration): MethodConfiguration {
   return {

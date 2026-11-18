@@ -91,7 +91,6 @@ test('selected propagation preserves per-cell and text overrides without flatten
       version: '2',
       currency: 'USD',
     },
-    true,
     'USD',
   );
   assert.equal(next.product.methods[0]?.pricing, 'product');
@@ -103,7 +102,7 @@ test('selected propagation preserves per-cell and text overrides without flatten
   );
 });
 
-test('a global Method save updates durable inherited drafts once, gates removed assignments, and leaves published history unchanged', {
+test('a global Method save updates durable inherited drafts once, ignores legacy assignment values, asks keep/remove on deletion and leaves published history unchanged', {
   skip: !process.env.DATABASE_URL,
 }, async () => {
   const core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
@@ -138,16 +137,7 @@ test('a global Method save updates durable inherited drafts once, gates removed 
         shopifyShopId: actor.shopId.split('/').at(-1),
       }),
     );
-    let tagReads = 0;
-    const methods = createMethodLibrary(core, {
-      currency: async () => 'USD',
-      productTags: async (current, productIds) => {
-        assert.equal(current.tenantShopId, tenant);
-        assert.deepEqual(productIds, ['111']);
-        tagReads++;
-        return { '111': ['shirts'] };
-      },
-    });
+    const methods = createMethodLibrary(core, { currency: async () => 'USD' });
     assert.ok(methods.saveConfiguration);
     assert.equal((await methods.saveConfiguration(actor, value, null, 'inherit-create')).kind, 'created');
     const draft = selectedProductDraft(setup(methodId), source);
@@ -202,36 +192,62 @@ test('a global Method save updates durable inherited drafts once, gates removed 
     assert.deepEqual(await core.configs.getRevision(tenant, revisionId), frozen);
     await methods.saveConfiguration(actor, change, '1', 'inherit-update');
     assert.equal((await core.configs.getConfig(tenant, configId))?.draftVersion, '2');
+    // Legacy assignment values are stored but never limit availability or ask for a review.
+    const unassigned = { ...change, productIds: [] };
+    assert.equal((await methods.saveConfiguration(actor, unassigned, '2', 'inherit-unassign')).kind, 'saved');
+    const tagged = { ...change, assignment: 'tags' as const, productIds: [], tags: ['hoodie'] };
+    assert.equal((await methods.saveConfiguration(actor, tagged, '3', 'inherit-tag-mismatch')).kind, 'saved');
+    record = await core.configs.getConfig(tenant, configId);
+    assert.ok(record);
+    updated = MerchantDraftSchema.parse(record.draftValue);
+    assert.equal(updated.selectedSetup?.methodBindings.print?.review, null);
+    assert.deepEqual(
+      selectedPublicationProblems(updated).filter((problem) => problem.includes('method')),
+      [],
+    );
+    // A stored legacy unassigned review does not block publication and resolves on the next library change.
+    assert.ok(updated.selectedSetup);
+    const legacy = selectedProductDraft(
+      {
+        ...updated.selectedSetup,
+        methodBindings: {
+          print: {
+            ...updated.selectedSetup.methodBindings.print!,
+            review: { reason: 'unassigned', catalogVersion: '3', decision: 'pending', assignmentKey: 'a'.repeat(64) },
+          },
+        },
+      },
+      updated,
+    );
+    assert.deepEqual(
+      selectedPublicationProblems(legacy).filter((problem) => problem.includes('method')),
+      [],
+    );
+    await core.transactions.run(async (tx) => {
+      const result = await core.configs.updateDraft(tx, {
+        shopId: tenant,
+        configId,
+        expectedVersion: record!.draftVersion,
+        schemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
+        draftValue: legacy,
+      });
+      assert.equal(result.kind, 'updated');
+    });
     assert.equal(
-      (await methods.saveConfiguration(actor, { ...change, productIds: [] }, '2', 'inherit-unassign')).kind,
+      (await methods.saveConfiguration(actor, { ...tagged, amount: '4.50' }, '4', 'inherit-legacy')).kind,
       'saved',
     );
     record = await core.configs.getConfig(tenant, configId);
     assert.ok(record);
-    updated = MerchantDraftSchema.parse(record.draftValue);
-    assert.equal(updated.selectedSetup?.methodBindings.print?.review?.decision, 'pending');
-    assert.ok(selectedPublicationProblems(updated).some((problem) => problem.includes('Review the unassigned')));
-    const matched = { ...change, assignment: 'tags' as const, productIds: [], tags: ['shirts'] };
-    assert.equal((await methods.saveConfiguration(actor, matched, '3', 'inherit-tag-match')).kind, 'saved');
-    record = await core.configs.getConfig(tenant, configId);
-    assert.ok(record);
     assert.equal(MerchantDraftSchema.parse(record.draftValue).selectedSetup?.methodBindings.print?.review, null);
-    const mismatched = { ...matched, tags: ['hoodie'] };
-    assert.equal((await methods.saveConfiguration(actor, mismatched, '4', 'inherit-tag-mismatch')).kind, 'saved');
-    assert.equal((await methods.saveConfiguration(actor, mismatched, '4', 'inherit-tag-mismatch')).kind, 'saved');
-    assert.equal(tagReads, 2, 'An exact replay does not depend on another provider read');
-    record = await core.configs.getConfig(tenant, configId);
-    assert.ok(record);
-    assert.equal(
-      MerchantDraftSchema.parse(record.draftValue).selectedSetup?.methodBindings.print?.review?.reason,
-      'unassigned',
-    );
     assert.equal((await methods.delete(actor, methodId, '5', 'inherit-delete')).kind, 'deleted');
     record = await core.configs.getConfig(tenant, configId);
     assert.ok(record);
     updated = MerchantDraftSchema.parse(record.draftValue);
     assert.equal(updated.selectedSetup?.product.methods[0]?.name, 'Printing');
     assert.equal(updated.selectedSetup?.methodBindings.print?.review?.reason, 'deleted');
+    assert.equal(updated.selectedSetup?.methodBindings.print?.review?.decision, 'pending');
+    assert.ok(selectedPublicationProblems(updated).includes('Review the deleted method before publication.'));
     const retained = record.draftValue;
     const retainedVersion = record.draftVersion;
     assert.equal(
@@ -289,7 +305,6 @@ test('catalogue prices in a different currency never reinterpret existing draft 
       version: '2',
       currency: 'EUR',
     },
-    true,
     'USD',
   );
   assert.equal(next.product.methods[0]?.name, 'Printing');

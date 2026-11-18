@@ -378,12 +378,7 @@ const server = createServer(async (request, reply) => {
       } else if (url.pathname.endsWith('/style.css')) {
         reply.setHeader('content-type', 'text/css');
         reply.end(
-          (
-            await Promise.all([
-              readFile(new URL('./support/method-workflow-preview.css', import.meta.url), 'utf8'),
-              readFile(new URL('./support/method-product-picker.css', import.meta.url), 'utf8'),
-            ])
-          ).join('\n'),
+          await readFile(new URL('./support/method-workflow-preview.css', import.meta.url), 'utf8'),
         );
       } else {
         reply.statusCode = 404;

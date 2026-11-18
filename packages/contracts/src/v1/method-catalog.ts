@@ -1,5 +1,3 @@
-import { sha256 } from '@noble/hashes/sha2.js';
-import { utf8ToBytes } from '@noble/hashes/utils.js';
 import { z } from 'zod';
 
 const id = z.uuid().transform((value) => value.toLowerCase());
@@ -49,6 +47,8 @@ export const MethodConfigurationSchema = z
     explanation: description,
     pricing: z.enum(['fixed', 'product']),
     amount,
+    // Legacy assignment fields: accepted and stored, but ignored. Every live library Method is available on every
+    // product (owner decision, 18 Nov 2026).
     assignment: z.enum(['manual', 'tags']),
     productIds: z.array(productId).max(10000),
     tags: z.array(z.string().trim().min(1).max(255)).max(100),
@@ -99,6 +99,7 @@ export const MethodDraftBindingSchema = z.strictObject({
   prices: z.record(z.string().min(1).max(256), MethodDraftFieldSchema),
   review: z
     .strictObject({
+      // `unassigned` is a legacy stored reason; it is treated as resolved and never blocks publication.
       reason: z.enum(['unassigned', 'deleted']),
       catalogVersion: version,
       decision: z.enum(['pending', 'keep']),
@@ -110,30 +111,3 @@ export const MethodDraftBindingSchema = z.strictObject({
     .nullable(),
 });
 export type MethodDraftBinding = z.infer<typeof MethodDraftBindingSchema>;
-
-/** Assignment provides choices; it never configures placements or mutates publication. */
-export function methodAssignedToProduct(
-  method: MethodConfiguration,
-  product: { id: string; tags: readonly string[] },
-): boolean {
-  const normalize = (value: string) => value.replace(/^gid:\/\/shopify\/Product\//, '');
-  return method.assignment === 'manual'
-    ? method.productIds.some((id) => normalize(id) === normalize(product.id))
-    : method.tags.length > 0 &&
-        (method.tagMatch === 'all'
-          ? method.tags.every((tag) => product.tags.includes(tag))
-          : method.tags.some((tag) => product.tags.includes(tag)));
-}
-
-/** Current rule/assignment identity; unrelated name/default edits never invalidate an explicit Keep. */
-export function methodAssignmentReviewKey(method: MethodConfiguration | null, assigned: boolean): string {
-  // Keys match the canonical JSON order used by durable commands.
-  const value = method
-    ? {
-        assigned,
-        assignment: method.assignment,
-        ...(method.assignment === 'tags' ? { tagMatch: method.tagMatch, tags: [...method.tags].sort() } : {}),
-      }
-    : { deleted: true };
-  return Array.from(sha256(utf8ToBytes(JSON.stringify(value))), (byte) => byte.toString(16).padStart(2, '0')).join('');
-}

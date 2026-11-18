@@ -91,7 +91,7 @@ test('unused retained Method snapshots cannot create an unresolvable publication
   const value = selected();
   assert.ok(
     selectedPublicationProblems(selectedProductDraft(value, original)).some((problem) =>
-      problem.includes('Review the unassigned'),
+      problem.includes('Review the deleted method'),
     ),
   );
   value.product.methods.push({ id: 'stitch', name: 'Stitch', pricing: 'fixed', amount: '2.50' });
@@ -127,7 +127,6 @@ for (const kind of ['missing', 'rebound'] as const)
         { tenantShopId: 'shop' },
         incoming,
         'USD',
-        [],
         prior,
       ),
       /inheritance metadata/,
@@ -144,7 +143,6 @@ test('an explicit keep or removal resolves the same retained Method review witho
     { tenantShopId: 'shop' },
     kept,
     'USD',
-    [],
     prior,
   );
   assert.deepEqual(selectedPublicationProblems(selectedProductDraft(accepted, original)), []);
@@ -154,15 +152,7 @@ test('an explicit keep or removal resolves the same retained Method review witho
   removed.methodBindings = {};
   required(required(removed.product.views[0]).placements[0]).methodIds = [];
   await assert.doesNotReject(
-    reconcileIncomingSelectedSetup(
-      emptyCatalog(),
-      fixtureTransaction,
-      { tenantShopId: 'shop' },
-      removed,
-      'USD',
-      [],
-      prior,
-    ),
+    reconcileIncomingSelectedSetup(emptyCatalog(), fixtureTransaction, { tenantShopId: 'shop' }, removed, 'USD', prior),
   );
 });
 
@@ -291,12 +281,12 @@ test('a fabricated deleted review cannot detach a live unassigned Method from fu
     },
   });
   await assert.rejects(
-    reconcileIncomingSelectedSetup(core, fixtureTransaction, { tenantShopId: 'shop' }, proposed, 'USD', [], prior),
+    reconcileIncomingSelectedSetup(core, fixtureTransaction, { tenantShopId: 'shop' }, proposed, 'USD', prior),
     /inheritance metadata/,
   );
 });
 
-test('direct publication rechecks current product tags before capture or provider preparation and requires an explicit saved review', {
+test('a library Method publishes on any product whatever its legacy tag rule, and a stored unassigned review never blocks publication', {
   skip: !process.env.DATABASE_URL,
 }, async () => {
   const core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
@@ -336,7 +326,7 @@ test('direct publication rechecks current product tags before capture or provide
     const before = selected();
     required(before.methodBindings.print).review = null;
     const admitted = await core.transactions.run((tx) =>
-      reconcileIncomingSelectedSetup(core, tx, actor, before, 'USD', ['shirts']),
+      reconcileIncomingSelectedSetup(core, tx, actor, before, 'USD'),
     );
     const draft = selectedProductDraft(admitted, original);
     await core.transactions.run((tx) =>
@@ -380,56 +370,65 @@ test('direct publication rechecks current product tags before capture or provide
       },
       publication: unexpected,
     });
-    const rejected = await service.publish(actor, 'gid://shopify/Product/111', {
-      configId,
-      draftVersion: '1',
-      idempotencyKey: 'publish-after-tag-removal',
-      authority: sha256CanonicalJson(scope),
-    });
-    assert.equal(rejected.kind, 'invalid');
-    assert.ok('noEffect' in rejected && rejected.noEffect);
-    assert.equal(captures, 0);
-    assert.equal(preparations, 0);
-    assert.equal(required(await core.configs.getConfig(tenant, configId)).draftVersion, '1');
-    assert.equal(
-      (
-        await service.save(actor, 'gid://shopify/Product/111', {
-          configId,
-          draftVersion: '1',
-          draft,
-          idempotencyKey: 'save-tag-review',
-          authority: sha256CanonicalJson(scope),
-        })
-      ).kind,
-      'saved',
-    );
-    const reviewed = MerchantDraftSchema.parse(required(await core.configs.getConfig(tenant, configId)).draftValue);
-    assert.equal(reviewed.selectedSetup?.methodBindings.print?.review?.decision, 'pending');
-    assert.ok(selectedPublicationProblems(reviewed).some((problem) => problem.includes('Review the unassigned')));
-    required(required(required(reviewed.selectedSetup).methodBindings.print).review).decision = 'keep';
-    assert.deepEqual(
-      await service.save(actor, 'gid://shopify/Product/111', {
-        configId,
-        draftVersion: '2',
-        draft: reviewed,
-        idempotencyKey: 'keep-tagged-method',
-        authority: sha256CanonicalJson(scope),
-      }),
-      { kind: 'saved', draftVersion: '3' },
-    );
-    // The confirmed method may now enter capture; this fixture deliberately supplies
-    // no captured assets, so the independent complete-preview boundary still stops it.
+    // The product has no `shirts` tag; the legacy rule no longer limits availability. This fixture deliberately
+    // supplies no captured assets, so the independent complete-preview boundary stops after method admission.
     await assert.rejects(
       service.publish(actor, 'gid://shopify/Product/111', {
         configId,
-        draftVersion: '3',
-        idempotencyKey: 'publish-confirmed-tagged-method',
+        draftVersion: '1',
+        idempotencyKey: 'publish-untagged-product',
         authority: sha256CanonicalJson(scope),
       }),
       /Complete customer previews are unavailable/,
     );
     assert.equal(captures, 1);
+    // A draft saved before 18 Nov 2026 can still carry a pending `unassigned` review.
+    const legacy = structuredClone(draft);
+    required(required(legacy.selectedSetup).methodBindings.print).review = {
+      reason: 'unassigned',
+      catalogVersion: '1',
+      decision: 'pending',
+      assignmentKey: 'a'.repeat(64),
+    };
+    await core.transactions.run(async (tx) =>
+      assert.equal(
+        (
+          await core.configs.updateDraft(tx, {
+            shopId: tenant,
+            configId,
+            expectedVersion: '1',
+            schemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
+            draftValue: legacy,
+          })
+        ).kind,
+        'updated',
+      ),
+    );
+    assert.deepEqual(selectedPublicationProblems(legacy), []);
+    await assert.rejects(
+      service.publish(actor, 'gid://shopify/Product/111', {
+        configId,
+        draftVersion: '2',
+        idempotencyKey: 'publish-legacy-unassigned-review',
+        authority: sha256CanonicalJson(scope),
+      }),
+      /Complete customer previews are unavailable/,
+    );
+    assert.equal(captures, 2);
     assert.equal(preparations, 0);
+    // The next save clears the resolved legacy review.
+    assert.deepEqual(
+      await service.save(actor, 'gid://shopify/Product/111', {
+        configId,
+        draftVersion: '2',
+        draft: legacy,
+        idempotencyKey: 'save-legacy-unassigned-review',
+        authority: sha256CanonicalJson(scope),
+      }),
+      { kind: 'saved', draftVersion: '3' },
+    );
+    const saved = MerchantDraftSchema.parse(required(await core.configs.getConfig(tenant, configId)).draftValue);
+    assert.equal(saved.selectedSetup?.methodBindings.print?.review, null);
   } finally {
     await core.close();
   }

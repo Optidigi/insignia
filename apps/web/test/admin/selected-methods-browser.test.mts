@@ -17,7 +17,7 @@ test('real selected Method editing exposes Shopify save state and saves the exac
   assert.equal(f.records()[0]?.configuration.productIds[0], '111');
 });
 
-test('selected Method cancel restores the saved name and manual assignment reload keeps its real Shopify identity', {
+test('selected Method cancel restores the saved name and reload keeps stored legacy product identities', {
   timeout: 20000,
 }, async (t) => {
   const f = await methodsFixture(t);
@@ -77,6 +77,9 @@ test('selected Method delete confirmation cancels without a mutation and explici
     return f.page.locator('s-modal').filter({ hasText: 'Delete Printing?' });
   }
   let modal = await requestDeletion();
+  // Deleting a library method removes it from every product; configured drafts keep a copy for keep/remove review.
+  await modal.getByText('This method will no longer be available on any product.', { exact: false }).waitFor();
+  await modal.getByText('require keep/remove review before publication', { exact: false }).waitFor();
   await modal.getByRole('button', { name: 'Cancel', exact: true }).click();
   await modal.waitFor({ state: 'hidden' });
   assert.equal(f.writes.length, 0);
@@ -172,6 +175,24 @@ test('a delayed Method save fences stale host actions and injected input from re
   assert.equal(await f.page.locator('s-modal[data-method-dialog]').count(), 0);
 });
 
+test('every library Method is shown as available on all products, without an assignment step', {
+  timeout: 20000,
+}, async (t) => {
+  const f = await methodsFixture(t);
+  await f.open();
+  await f.page.getByText('Available on all products', { exact: true }).first().waitFor();
+  assert.equal(await f.page.getByRole('combobox', { name: 'Assignment', exact: true }).count(), 0);
+  await f.page.getByRole('link', { name: 'Printing', exact: true }).click();
+  await f.page.getByRole('textbox', { name: /^Method name/ }).waitFor();
+  await f.page.getByText("Available on every product. Add it to placements in each product's setup.").waitFor();
+  await f.page.getByText('All products', { exact: true }).waitFor();
+  await f.page.getByText('Used by 1 product', { exact: true }).waitFor();
+  await f.page.getByRole('link', { name: 'Synthetic selected hoodie', exact: true }).waitFor();
+  for (const removed of ['Choose products', 'Match by tags', 'Select products', 'Select from collections'])
+    assert.equal(await f.page.getByText(removed, { exact: true }).count(), 0, removed);
+  assert.equal(f.writes.length, 0);
+});
+
 test('selected Methods keeps catalogue names scannable and fits narrow screens before opening an editable detail', {
   timeout: 20000,
 }, async (t) => {
@@ -237,7 +258,14 @@ test('explicit same-amount Method review adopts the changed shop currency and su
   assert.equal(f.writes.length, 1);
 });
 
-test('suspending the product picker keeps concurrent method dialogs uniquely addressable', {
+async function openDeletion(page: import('playwright').Page) {
+  await page
+    .locator('s-menu#method-detail-actions s-button[tone="critical"]')
+    .evaluate((button: HTMLElementTagNameMap['s-button']) => button.click());
+  return page.locator('s-modal[data-method-dialog]').filter({ hasText: 'Delete Printing?' });
+}
+
+test('Keep editing after a back navigation returns to the open delete dialog without writing', {
   timeout: 30000,
 }, async (t) => {
   const f = await methodsFixture(t, { shopifyModal: true });
@@ -245,120 +273,32 @@ test('suspending the product picker keeps concurrent method dialogs uniquely add
   await f.page.getByRole('link', { name: 'Printing', exact: true }).click();
   const name = f.page.getByRole('textbox', { name: /^Method name/ });
   await name.fill('Unsaved method name');
-  await f.page.getByRole('button', { name: 'Select products', exact: true }).click();
-  const picker = f.page.locator('s-modal[data-method-dialog]').filter({ hasText: 'Select products' });
-  await picker.waitFor({ state: 'visible' });
-  await f.page.goBack();
-  const dialogs = f.page.locator('s-modal[data-method-dialog]');
-  await f.page.getByRole('heading', { name: 'Discard unsaved changes?', exact: true }).waitFor();
-  const ids = await dialogs.evaluateAll((elements) => elements.map((element) => (element as HTMLElement).id));
-  assert.equal(ids.length, 2, 'The suspended product picker and leave confirmation stay mounted together');
-  assert.ok(ids.every(Boolean), 'Every open Method dialog needs an ID for Shopify host routing');
-  assert.equal(new Set(ids).size, 2, 'Concurrent Method dialogs need distinct Shopify host IDs');
-});
-
-test('a resumed product picker survives its delayed host dismissal without writing the draft', {
-  timeout: 30000,
-}, async (t) => {
-  const f = await methodsFixture(t, { shopifyModal: true, deferShopifyModalDismiss: true });
-  await f.open();
-  await f.page.getByRole('link', { name: 'Printing', exact: true }).click();
-  await f.page.getByRole('textbox', { name: /^Method name/ }).fill('Unsaved method name');
-  await f.page.getByRole('button', { name: 'Select products', exact: true }).click();
-  const picker = f.page.locator('s-modal[data-method-dialog]').filter({ hasText: 'Select products' });
-  await picker.waitFor({ state: 'visible' });
-  const pickerId = await picker.getAttribute('id');
-
+  const deletion = await openDeletion(f.page);
+  await deletion.waitFor({ state: 'visible' });
   await f.page.goBack();
   const leave = f.page.locator('s-modal[data-method-dialog]').filter({ hasText: 'Discard unsaved changes?' });
   await leave.waitFor({ state: 'visible' });
   await leave.getByRole('button', { name: 'Keep editing', exact: true }).click();
   await leave.waitFor({ state: 'detached' });
-
-  await f.page.evaluate(() => window.finishShopifyModalDismiss());
-  await picker.waitFor({ state: 'visible' });
-  await f.page.locator('[data-shopify-host-modal-scrim]').waitFor({ state: 'attached' });
-  assert.equal(await picker.getAttribute('id'), pickerId);
-  assert.equal(f.writes.length, 0);
-
-  await picker.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await picker.waitFor({ state: 'detached' });
+  await deletion.waitFor({ state: 'visible' });
+  await deletion.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await deletion.waitFor({ state: 'detached' });
   await f.page.locator('[data-shopify-host-modal-scrim]').waitFor({ state: 'detached' });
+  assert.equal(await name.inputValue(), 'Unsaved method name');
   assert.equal(f.writes.length, 0);
 });
 
-declare global {
-  interface Window {
-    resumeQa009PickerShow(): void;
-    cancelQa009PickerShow(): void;
-  }
-}
-
-test('pending picker dismissal is delivered after leave confirmation resumes its owner', {
-  timeout: 30000,
-}, async (t) => {
-  const f = await methodsFixture(t, { shopifyModal: true });
-  await f.page.addInitScript(() => {
-    const modal = window.shopify?._internal?.modal;
-    if (!modal) throw new Error('Expected Shopify modal fixture');
-    const originalShow = modal.show.bind(modal);
-    let held = false;
-    modal.show = async (id, options) => {
-      await originalShow(id, options);
-      if (held) return;
-      held = true;
-      const cancel = options?.buttons?.find(
-        (button) =>
-          !!button &&
-          typeof button === 'object' &&
-          'label' in button &&
-          button.label === 'Cancel' &&
-          'onAction' in button,
-      );
-      if (!cancel || typeof cancel !== 'object' || !('onAction' in cancel) || typeof cancel.onAction !== 'function')
-        throw new Error('Expected Cancel');
-      const action = cancel.onAction;
-      window.cancelQa009PickerShow = () => {
-        action();
-      };
-      await new Promise<void>((resolve) => {
-        window.resumeQa009PickerShow = resolve;
-      });
-    };
-  });
-  await f.open();
-  await f.page.getByRole('link', { name: 'Printing', exact: true }).click();
-  await f.page.getByRole('textbox', { name: /^Method name/ }).fill('Unsaved method name');
-  await f.page.getByRole('button', { name: 'Select products', exact: true }).click();
-  await f.page.waitForFunction(() => typeof window.cancelQa009PickerShow === 'function');
-  await f.page.evaluate(() => window.cancelQa009PickerShow());
-  await f.page.goBack();
-  const leave = f.page.locator('s-modal[data-method-dialog]').filter({ hasText: 'Discard unsaved changes?' });
-  await leave.waitFor({ state: 'visible' });
-  await f.page.evaluate(() => window.resumeQa009PickerShow());
-  await f.page.getByRole('button', { name: 'Keep editing', exact: true }).click();
-  await leave.waitFor({ state: 'detached' });
-  await f.page
-    .locator('s-modal[data-method-dialog]')
-    .filter({ hasText: 'Select products' })
-    .waitFor({ state: 'detached' });
-  assert.equal(await f.page.getByRole('textbox', { name: /^Method name/ }).inputValue(), 'Unsaved method name');
-  assert.equal(await f.page.locator('[data-shopify-host-modal-scrim]').count(), 0);
-  assert.equal(f.writes.length, 0);
-});
-
-test('applying the product picker retires its Shopify backdrop so a real click reaches the host save bar', {
+test('closing a Method dialog retires its Shopify backdrop so a real click reaches the host save bar', {
   timeout: 30000,
 }, async (t) => {
   const f = await methodsFixture(t, { shopifyModal: true });
   await f.open(`/admin/methods/${methodId}`);
-  await f.page.getByRole('button', { name: 'Select products', exact: true }).click();
-  const picker = f.page.locator('s-modal[data-method-dialog]').filter({ hasText: 'Select products' });
-  await picker.waitFor({ state: 'visible' });
+  await f.page.getByRole('textbox', { name: /^Method name/ }).fill('Screen printing');
+  const deletion = await openDeletion(f.page);
+  await deletion.waitFor({ state: 'visible' });
   await f.page.locator('[data-shopify-host-modal-scrim]').waitFor({ state: 'attached' });
-  await picker.getByRole('checkbox', { name: 'Synthetic selected hoodie', exact: true }).uncheck();
-  await picker.getByRole('button', { name: 'Select', exact: true }).click();
-  await picker.waitFor({ state: 'detached' });
+  await deletion.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await deletion.waitFor({ state: 'detached' });
   await f.page.locator('[data-shopify-host-modal-scrim]').waitFor({ state: 'detached' });
 
   // A real pointer click: a leftover backdrop would intercept it.
@@ -369,7 +309,9 @@ test('applying the product picker retires its Shopify backdrop so a real click r
   await f.page.locator('[data-shopify-host-save-bar="method-draft-save-bar"] button', { hasText: 'Save' }).click();
   assert.equal((await response).status(), 200);
   await f.page.getByText('Method saved.', { exact: true }).waitFor();
-  assert.deepEqual(f.records()[0]?.configuration.productIds, []);
+  assert.equal(f.records()[0]?.configuration.name, 'Screen printing');
+  // Stored legacy assignment values round-trip unchanged.
+  assert.deepEqual(f.records()[0]?.configuration.productIds, ['111']);
 });
 
 test('discarding to leave the Method editor retires the dialog and save bar before navigating', {

@@ -641,8 +641,7 @@
     "editPrice": "Editar precio",
     "editPrices": "Editar precios",
     "perSize": "Por tamaño",
-    "addAMethodForThisProductOrCreateAReusableMethodInYourLibrary": "Añade una técnica a este producto o crea una técnica reutilizable en la biblioteca.",
-    "saveDraftAndOpenLibrary": "Guardar borrador y abrir la biblioteca",
+    "addAMethodForThisProductOrCreateAReusableMethodInYourLibrary": "Añade una técnica a tu biblioteca. Estará disponible en todos los productos.",
     "noMethodsMatchTheseFilters": "Ninguna técnica coincide con estos filtros.",
     "showAllMethods": "Mostrar todas las técnicas",
     "pricePerPlacementPerGarment": "Precio por zona y artículo",
@@ -662,7 +661,7 @@
     "nameDuplicate": "Ya hay una técnica con este nombre. Selecciónala en la lista.",
     "methodAddFailed": "No se pudo añadir esta técnica. Vuelve a intentarlo.",
     "methodsUnavailable": "Quita las técnicas no disponibles o vuelve a cargar la biblioteca antes de continuar.",
-    "methodNameDetails": "Solo se añade a este producto. A continuación, define los precios de sus zonas.",
+    "methodNameDetails": "Se añade a tu biblioteca de técnicas y está disponible en todos los productos. A continuación, define los precios de sus zonas.",
     "forPlacement": "Para {{placementName}}",
     "thisPlacement": "esta zona",
     "enabledMethods_one": "{{formattedCount}} técnica activada",
@@ -1202,7 +1201,7 @@
     "realReviewCurrency": "Revisar precios en la moneda de la tienda",
     "realCalibrateImage": "Calibrar imagen",
     "realDimensionsRequired": "Calibra esta imagen para definir las dimensiones de producción. Mide un ancho conocido de la prenda, como el ancho del pecho.",
-    "realReviewMethods": "Revisa los métodos no asignados o eliminados antes de publicar.",
+    "realReviewMethods": "Revisa los métodos eliminados antes de publicar.",
     "realKeepMethod": "Conservar método",
     "realRemoveMethod": "Eliminar método",
     "realCapacityExceeded": "Esta configuración supera los límites admitidos: 16 vistas, 32 posiciones, 32 técnicas, 64 tamaños del diseño, 250 variantes y 100 ajustes de imagen o alineación por vista o posición.",
@@ -1242,6 +1241,5 @@
       "mediaUrlNotCanonical": "Una imagen de producto de este borrador está desactualizada. Recarga la página para actualizar las imágenes. Al recargar se descartan los cambios que no hayas guardado.",
       "reloadAndDiscard": "Descartar cambios y recargar"
     }
-  },
-  "placementSetupCopyEntry": {}
+  }
 }

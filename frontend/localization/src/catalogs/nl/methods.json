@@ -16,18 +16,12 @@
       "allPricing": "Alle prijzen",
       "fixedPrice": "Vaste prijs",
       "productSpecific": "Productspecifieke prijzen",
-      "assignment": "Toewijzing",
-      "allAssignments": "Alle toewijzingen",
-      "manual": "Handmatig",
-      "byTag": "Op tag",
       "setup": "Configuratie",
       "allMethods": "Alle methoden",
       "needsSetup": "Moet nog worden ingesteld",
-      "noProductsAssigned": "Geen producten toegewezen",
       "configured": "Geconfigureerd",
       "clear": "Filters wissen",
       "editPricing": "Prijsfilter bewerken",
-      "editAssignment": "Toewijzingsfilter bewerken",
       "editSetup": "Configuratiefilter bewerken"
     },
     "sorting": {
@@ -61,18 +55,16 @@
       "results_other": "{{formattedCount}} methoden",
       "products_one": "{{formattedCount}} product",
       "products_other": "{{formattedCount}} producten",
-      "available_one": "{{formattedCount}} beschikbaar",
-      "available_other": "{{formattedCount}} beschikbaar",
       "needsSetup_one": "{{formattedCount}} moet nog worden ingesteld",
       "needsSetup_other": "{{formattedCount}} moeten nog worden ingesteld",
       "pageRange": "{{first}}–{{last}} van {{formattedCount}} methoden",
       "limit": "Limiet van {{formattedCount}} methoden bereikt. Verwijder een methode voordat je er nog een maakt.",
       "more_one": "En nog {{formattedCount}} methode.",
-      "more_other": "En nog {{formattedCount}} methoden."
+      "more_other": "En nog {{formattedCount}} methoden.",
+      "allProductsAvailable": "Beschikbaar voor alle producten"
     },
     "setup": {
-      "noMatchingProducts": "Geen overeenkomende producten",
-      "notAssigned": "Niet toegewezen"
+      "notUsed": "Nog niet gebruikt"
     },
     "empty": {
       "noMethodsFound": "Geen methoden gevonden",
@@ -90,10 +82,7 @@
   "workflow": {
     "title": "Decoratiemethoden",
     "createTitle": "Methode maken",
-    "productSetup": "Productconfiguratie",
     "actions": {
-      "removeProduct": "{{productName}} verwijderen",
-      "removeTag": "Tag {{tagName}} verwijderen",
       "exportAll": "Alle methoden exporteren",
       "methodsBreadcrumb": "Methoden",
       "create": "Methode maken",
@@ -121,24 +110,20 @@
       "defaultPricing": "Standaardprijzen",
       "pricing": "Prijzen",
       "productAvailability": "Beschikbaarheid voor producten",
-      "assignment": "Toewijzing",
       "pricePerLocation": "Prijs per decoratieplek per artikel",
       "priceHelp": "Per decoratieplek, per artikel. Vul 0 in voor gratis decoratie.",
-      "productsMustMatch": "Producten moeten overeenkomen",
-      "searchTags": "Tags zoeken",
-      "searchAssignedProducts": "Toegewezen producten zoeken",
       "productSetup": "Productconfiguratie",
       "translationLanguage": "Vertaaltaal",
       "defaultText": "Standaardtekst",
       "realExplanation": "Beschrijving (optioneel)",
-      "realExplanationHelp": "Zichtbaar voor winkeliers en klanten die deze decoratiemethode kiezen."
+      "realExplanationHelp": "Zichtbaar voor winkeliers en klanten die deze decoratiemethode kiezen.",
+      "searchProductsUsing": "Producten met deze methode zoeken"
     },
     "copy": {
       "duplicateNameError": "Voer een methodenaam van maximaal 80 tekens in.",
       "duplicateStorageError": "Je browser kon deze kopie niet opslaan. Probeer het opnieuw.",
       "nameRequired": "Voer een methodenaam van maximaal 80 tekens in.",
       "priceRequired": "Voer een prijs van 0 tot en met 99.999,99 in.",
-      "tagRequired": "Kies ten minste één producttag.",
       "duplicateWarning": "Er bestaat al een methode met deze naam. Kies een andere naam zodat klanten de methoden van elkaar kunnen onderscheiden.",
       "duplicateWarningShort": "Er bestaat al een methode met deze naam. Kies een andere naam als klanten de methoden van elkaar moeten kunnen onderscheiden.",
       "defaultsDescription": "Standaardwaarden worden gekopieerd wanneer je een methode aan een product toevoegt. Bestaande productprijzen blijven ongewijzigd.",
@@ -155,59 +140,39 @@
       "setupLimitReached": "Limiet van {{formattedCount}} methoden bereikt. Verwijder een methode voordat je er nog een maakt.",
       "needsSetupCount_one": "{{formattedCount}} moet nog worden ingesteld",
       "needsSetupCount_other": "{{formattedCount}} moeten nog worden ingesteld",
-      "assignmentChanges": "Wijzigingen in toewijzingen: {{added}} toegevoegd, {{removed}} verwijderd.",
-      "matchingProducts_one": "{{formattedCount}} product komt momenteel overeen.",
-      "matchingProducts_other": "{{formattedCount}} producten komen momenteel overeen.",
       "productPageRange": "{{first}}–{{last}} van {{formattedCount}}",
       "unsavedChanges": "Niet-opgeslagen methodewijzigingen",
       "removeOneHeading": "{{methodName}} verwijderen?",
       "removeManyHeading_one": "{{formattedCount}} geselecteerde methode verwijderen?",
       "removeManyHeading_other": "{{formattedCount}} geselecteerde methoden verwijderen?",
-      "noProductAssignmentsRemoved": "Er worden geen producttoewijzingen verwijderd.",
-      "removeOneAvailability_one": "De beschikbaarheid in de bibliotheek wordt verwijderd voor {{formattedCount}} product.",
-      "removeOneAvailability_other": "De beschikbaarheid in de bibliotheek wordt verwijderd voor {{formattedCount}} producten.",
-      "removeManyAvailability_one": "De methoden zijn niet langer beschikbaar in de bibliotheek voor {{formattedCount}} product.",
-      "removeManyAvailability_other": "De methoden zijn niet langer beschikbaar in de bibliotheek voor {{formattedCount}} producten.",
       "setupFixedPrice": "Stel op alle geselecteerde producten dezelfde prijs in voor elke decoratieplek en elk decoratieformaat.",
       "setupProductPrice": "Stel per product prijzen in voor elke decoratieplek en elk decoratieformaat.",
-      "tagMatchSummary": "Tagregel ‘{{match}}’ voor: {{tags}}. Als tags later veranderen, kunnen ook de bijpassende producten veranderen.",
       "translationFallback": "Laat een vertaling leeg om de standaardtekst te gebruiken.",
       "currencyReview": "De opgeslagen prijs is {{amount}}, maar de winkel gebruikt nu {{currency}}. Voer een gecontroleerde prijs in de huidige valuta in en sla deze op.",
       "realDefaultsDescription": "Gewijzigde standaardprijzen werken door in overgenomen productconcepten. Productspecifieke prijzen blijven behouden; publiceer elk product afzonderlijk.",
       "realFixedPriceDescription": "Gebruik één overgenomen standaardprijs voor productposities en formaten.",
-      "realLeaveSavedData": "Gepubliceerde producten en bestellingen blijven ongewijzigd. Ingestelde concepten behouden de methode en vereisen bevestiging om deze te behouden of te verwijderen vóór publicatie."
+      "realLeaveSavedData": "Gepubliceerde producten en bestellingen blijven ongewijzigd. Ingestelde concepten behouden de methode en vereisen bevestiging om deze te behouden of te verwijderen vóór publicatie.",
+      "availableOnAllProducts": "Beschikbaar voor elk product. Voeg de methode toe aan decoratieplekken in de instellingen van elk product.",
+      "removeOneFromAllProducts": "Deze methode is dan voor geen enkel product meer beschikbaar.",
+      "removeManyFromAllProducts": "Deze methoden zijn dan voor geen enkel product meer beschikbaar."
     },
     "pricing": {
       "fixed": "Vaste prijs",
       "productSpecific": "Productspecifieke prijzen",
       "perPlacement": "Productspecifieke prijzen worden per product beheerd."
     },
-    "assignment": {
-      "manual": "Producten kiezen",
-      "manualHelp": "Maak deze methode beschikbaar om toe te voegen aan de geselecteerde productconfiguraties.",
-      "tags": "Toewijzen op basis van tags",
-      "tagsHelp": "Bied deze methode aan in productconfiguraties die aan de tags voldoen. Bestaande productkopieën blijven ongewijzigd.",
-      "selectProducts": "Producten selecteren",
-      "selectCollections": "Selecteren uit collecties",
-      "chooseTags": "Tags kiezen",
-      "anyTag": "Ten minste één geselecteerde tag",
-      "allTags": "Alle geselecteerde tags"
-    },
     "filter": {
-      "filterAssigned": "Toegewezen producten filteren",
       "allProducts": "Alle producten",
       "needsSetup": "Moet nog worden ingesteld",
       "configured": "Geconfigureerd",
       "noProductMatch": "Geen producten komen overeen met deze zoekopdracht of configuratiefilter.",
-      "clearProductFilters": "Productfilters wissen"
+      "clearProductFilters": "Productfilters wissen",
+      "filterProducts": "Producten filteren"
     },
     "empty": {
-      "noTags": "Geen tags gevonden.",
-      "noProductsForTags": "Geen producten komen overeen met deze tags.",
-      "chooseTags": "Kies tags om overeenkomende producten te vinden.",
-      "selectProducts": "Selecteer de producten waarvoor deze methode beschikbaar mag zijn.",
       "noProducts": "Geen producten komen overeen met deze zoekopdracht of configuratiefilter.",
-      "loadFailure": "Methoden konden niet worden geladen."
+      "loadFailure": "Methoden konden niet worden geladen.",
+      "notUsed": "Nog geen enkel product gebruikt deze methode."
     },
     "readiness": {
       "configureLocations": "Decoratieplekken instellen",
@@ -218,9 +183,7 @@
     "duplicate": {
       "title": "Methode dupliceren",
       "submit": "Dupliceren",
-      "name": "Naam van methode",
-      "copyTagRule": "Tagregel kopiëren",
-      "copySelectedProducts": "Geselecteerde producten kopiëren"
+      "name": "Naam van methode"
     }
   },
   "summary": {
@@ -232,77 +195,18 @@
     "free": "Gratis",
     "perPlacementPerGarment": "per decoratieplek, per artikel",
     "availableTo": "Beschikbaar voor",
-    "manualAssignment": "handmatig geselecteerde producten",
-    "noTagsSelected": "zonder geselecteerde tags",
-    "matchingTags_one": "· Tagregel: ‘{{match}}’ ({{formattedCount}} geselecteerde tag)",
-    "matchingTags_other": "· Tagregel: ‘{{match}}’ ({{formattedCount}} geselecteerde tags)",
-    "configured": "{{formattedCount}} geconfigureerd",
     "needsSetup_one": "{{formattedCount}} moet nog worden ingesteld",
     "needsSetup_other": "{{formattedCount}} moeten nog worden ingesteld",
     "reviewProducts": "Producten controleren die nog moeten worden ingesteld",
-    "viewAssignedProducts": "Toegewezen producten bekijken",
-    "reviewTagRules": "Tagregels controleren",
-    "assignProducts": "Producten toewijzen",
-    "products_one": "{{formattedCount}} product",
-    "products_other": "{{formattedCount}} producten"
+    "allProducts": "Alle producten",
+    "viewProductsUsing": "Producten met deze methode bekijken",
+    "productsUsing_one": "Gebruikt door {{formattedCount}} product",
+    "productsUsing_other": "Gebruikt door {{formattedCount}} producten"
   },
   "picker": {
-    "backToFilters": "Terug naar filters",
     "backToMethods": "Terug naar methoden",
-    "collection": "Collectie",
-    "collections": "Collecties",
-    "tags": "Tags",
-    "clear": "Wissen",
-    "searchCollections": "Collecties zoeken",
-    "searchTags": "Tags zoeken",
-    "noCollections": "Geen collecties gevonden.",
-    "noTags": "Geen tags gevonden.",
-    "select": "Selecteren",
-    "addProducts": "Producten toevoegen",
-    "editCollectionFilter": "Collectiefilter bewerken",
-    "editTagFilter": "Tagfilter bewerken",
-    "collectionFilter": "Collectie: {{collectionName}}",
-    "tagFilter": "Tag: {{tagName}}",
-    "clearSelection": "Selectie wissen",
-    "selectAllProducts": "Alle producten op deze pagina selecteren",
-    "showAllProducts": "Alle producten weergeven",
-    "selected_one": "{{formattedCount}} geselecteerd",
-    "selected_other": "{{formattedCount}} geselecteerd",
     "previousProducts": "Vorige productresultaten",
-    "nextProducts": "Volgende productresultaten",
-    "previousCollections": "Vorige collectieresultaten",
-    "nextCollections": "Volgende collectieresultaten",
-    "collectionsDetail": "De huidige producten worden eenmalig toegevoegd. Latere wijzigingen in de collectie werken niet door in deze methode.",
-    "products": "Producten",
-    "searchProducts": "Producten zoeken",
-    "addFilter": "Filter toevoegen",
-    "showAllResults": "Alle resultaten weergeven",
-    "showSelected": "Geselecteerde weergeven",
-    "selectedWithUnavailable_one": "{{formattedSelectedCount}} geselecteerd, waaronder {{formattedUnavailableCount}} niet-beschikbaar product",
-    "selectedWithUnavailable_other": "{{formattedSelectedCount}} geselecteerd, waaronder {{formattedUnavailableCount}} niet-beschikbare producten",
-    "pageRange": "{{first}}–{{last}} van {{formattedCount}}",
-    "noCollectionsWithProducts": "Geen collecties met producten gevonden.",
-    "collectionsSelectedAdding_one": "{{formattedCollectionCount}} collectie geselecteerd. Nieuw toe te voegen producten: {{formattedNewProductCount}}.",
-    "collectionsSelectedAdding_other": "{{formattedCollectionCount}} collecties geselecteerd. Nieuw toe te voegen producten: {{formattedNewProductCount}}.",
-    "collectionsSelectedAllAlready_one": "{{formattedCollectionCount}} collectie geselecteerd. Alle producten zijn al geselecteerd.",
-    "collectionsSelectedAllAlready_other": "{{formattedCollectionCount}} collecties geselecteerd. Alle producten zijn al geselecteerd.",
-    "empty": {
-      "noProductsAvailable": "Geen producten beschikbaar",
-      "noSelectedProductsMatch": "Geen geselecteerde producten komen overeen",
-      "noMatchingProducts": "Geen overeenkomende producten",
-      "unavailableAssignments_one": "{{formattedCount}} geselecteerd product is niet meer beschikbaar.",
-      "unavailableAssignments_other": "{{formattedCount}} geselecteerde producten zijn niet meer beschikbaar.",
-      "catalogUnavailable": "Producten konden niet worden geladen.",
-      "selectedSearchNoMatch": "Geen geselecteerde producten komen overeen met deze zoekopdracht.",
-      "tryDifferentSearch": "Probeer een andere zoekopdracht of filter."
-    },
-    "matchingProducts_one": "{{formattedCount}} product gevonden",
-    "matchingProducts_other": "{{formattedCount}} producten gevonden",
-    "searchBy": {
-      "all": "Alle velden",
-      "productTitle": "Producttitel",
-      "productId": "Product-ID"
-    }
+    "nextProducts": "Volgende productresultaten"
   },
   "library": {
     "removeHeading": "{{methodName}} verwijderen?",

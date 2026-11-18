@@ -1,12 +1,12 @@
 import { LANGUAGE_OPTIONS } from '@insignia/ui-localization/core';
 import { useEffect, useMemo, useReducer, useRef, useState } from 'preact/hooks';
 import {
-  assignedProducts,
   type MethodConfiguration,
   type MethodProduct,
   methodErrors,
   newMethod,
   productReadiness,
+  productsUsing,
 } from '../../examples/admin/support/method-configuration.mts';
 import Dialog from '../../examples/admin/support/method-dialog.tsx';
 import MethodIndex from '../../examples/admin/support/method-index.tsx';
@@ -15,8 +15,6 @@ import {
   duplicateConfiguration,
   methodPreviewLimit,
 } from '../../examples/admin/support/method-management.mts';
-import ProductPicker from '../../examples/admin/support/method-product-picker.tsx';
-import { readMethodReturnContext } from '../../examples/admin/support/method-return-context.mts';
 import MethodSummary from '../../examples/admin/support/method-summary.tsx';
 import { canonicalPriceText, currencyPrefix } from '../../examples/admin/support/method-workflow-prices.mts';
 import {
@@ -91,10 +89,7 @@ export default function SelectedMethods({
     return id;
   }
   const { t, formatLocale } = useAdminLocale();
-  const returnContext = readMethodReturnContext(location.search, products);
-  function emptyMethod() {
-    return { ...newMethod(), productIds: returnContext ? [returnContext.productId] : [] };
-  }
+  const emptyMethod = newMethod;
   const initialId = location.pathname.startsWith(`${indexPath}/`) ? location.pathname.slice(indexPath.length + 1) : '';
   const initialWorkflow = useMemo(
     () =>
@@ -119,13 +114,6 @@ export default function SelectedMethods({
   const methods = workflow.methods;
   const editor = workflow.editor;
   const errors = workflow.errors;
-  const productPicker =
-    workflow.dialog.kind === 'product-picker'
-      ? workflow.dialog
-      : workflow.dialog.kind === 'leave' && workflow.dialog.resume.kind === 'product-picker'
-        ? workflow.dialog.resume
-        : null;
-  const productPickerSuspended = workflow.dialog.kind === 'leave' && workflow.dialog.resume.kind === 'product-picker';
   const removing = workflow.dialog.kind === 'remove' ? workflow.dialog.targets : null;
   const duplicateDialog = workflow.dialog.kind === 'duplicate' ? workflow.dialog : null;
   const duplicating = duplicateDialog;
@@ -134,7 +122,6 @@ export default function SelectedMethods({
   const [productPage, setProductPage] = useState(0);
   const [productSetup, setProductSetup] = useState('all');
   const productList = useRef<HTMLDivElement>(null);
-  const tagButton = useRef<HTMLElementTagNameMap['s-button']>(null);
   const [notice, setNotice] = useState<MethodNotice | null>(null);
   const main = useRef<HTMLDivElement>(null);
   const current = methods.find((method) => method.id === editor?.id);
@@ -148,7 +135,8 @@ export default function SelectedMethods({
   const historyPosition = useRef(0);
   const restoringHistory = useRef(false);
   const allowedTraversal = useRef(false);
-  const matched = editor ? assignedProducts(editor, products) : [];
+  // Every product can add any library method; the list shows the products whose setup uses it.
+  const matched = editor ? productsUsing(editor, products) : [];
   const filteredProducts = matched.filter(
     (product) =>
       product.title.toLocaleLowerCase(formatLocale).includes(productQuery.trim().toLocaleLowerCase(formatLocale)) &&
@@ -158,11 +146,6 @@ export default function SelectedMethods({
   const safePage = Math.min(productPage, pageCount - 1);
   const visibleProducts = filteredProducts.slice(safePage * 8, (safePage + 1) * 8);
   const needingSetup = editor ? matched.filter((product) => !productReadiness(editor, product).ready).length : 0;
-  const availableTags = [...new Set(products.flatMap((product) => product.tags))].sort();
-  const [tagQuery, setTagQuery] = useState('');
-  const filteredTags = [...new Set([...availableTags, ...(editor?.tags ?? [])])].filter((tag) =>
-    tag.toLocaleLowerCase(formatLocale).includes(tagQuery.trim().toLocaleLowerCase(formatLocale)),
-  );
 
   function focusPage() {
     requestAnimationFrame(() => {
@@ -174,7 +157,7 @@ export default function SelectedMethods({
     setTranslationLocale('');
     if (push) {
       historyPosition.current++;
-      history.pushState({ methodPosition: historyPosition.current }, '', `${path}${returnContext?.search ?? ''}`);
+      history.pushState({ methodPosition: historyPosition.current }, '', path);
     }
     const id = path.startsWith(`${indexPath}/`) ? path.slice(indexPath.length + 1) : '';
     const nextEditor =
@@ -183,7 +166,6 @@ export default function SelectedMethods({
     setProductQuery('');
     setProductPage(0);
     setProductSetup('all');
-    setTagQuery('');
     focusPage();
   }
   function requestNavigation(target: MethodWorkflowNavigationTarget) {
@@ -226,9 +208,7 @@ export default function SelectedMethods({
     history.replaceState(
       { methodPosition: 0 },
       '',
-      missing || location.pathname === '/admin/settings/methods'
-        ? `${indexPath}${returnContext?.search ?? ''}`
-        : location.href,
+      missing || location.pathname === '/admin/settings/methods' ? indexPath : location.href,
     );
     const beforeUnload = (event: BeforeUnloadEvent) => {
       if (dirtyRef.current) event.preventDefault();
@@ -362,11 +342,7 @@ export default function SelectedMethods({
       : [...currentState.methods, value];
     if ((await persistMethods(next)) !== 'saved') return;
     sendWorkflow({ type: 'method-saved', sessionId: currentState.editorSessionId, method: value });
-    history.replaceState(
-      { methodPosition: historyPosition.current },
-      '',
-      `${indexPath}/${value.id}${returnContext?.search ?? ''}`,
-    );
+    history.replaceState({ methodPosition: historyPosition.current }, '', `${indexPath}/${value.id}`);
     setNotice({ kind: 'saved', created: !currentEditor.id });
   }
   function discardEditor() {
@@ -401,12 +377,7 @@ export default function SelectedMethods({
     if (dialog.kind !== 'duplicate' || currentState.methods.length >= methodPreviewLimit) return;
     if (claimedDialogCommits.current.has(dialog.id)) return;
     const copy = {
-      ...duplicateConfiguration(
-        dialog.source,
-        currentState.methods,
-        operationIdentity(dialog.id),
-        dialog.copyAssignment,
-      ),
+      ...duplicateConfiguration(dialog.source, currentState.methods, operationIdentity(dialog.id)),
       name: dialog.name.trim(),
     };
     const invalid = methodErrors(copy);
@@ -459,9 +430,6 @@ export default function SelectedMethods({
     methods.some(
       (method) => method.id !== editor.id && method.name.toLocaleLowerCase() === editor.name.trim().toLocaleLowerCase(),
     );
-  const affectedProductCount = removing
-    ? new Set(removing.flatMap((method) => assignedProducts(method, products).map((product) => product.id))).size
-    : 0;
   return (
     <div
       class="method-workflow"
@@ -496,18 +464,12 @@ export default function SelectedMethods({
             {t('methods:workflow.actions.exportAll')}
           </s-button>
         )}
-        {returnContext && (
-          <s-link slot="breadcrumb-actions" href={returnContext.returnTo}>
-            {t('methods:workflow.productSetup')}
+        {editor ? (
+          <s-link slot="breadcrumb-actions" href={indexPath}>
+            {t('methods:workflow.actions.methodsBreadcrumb')}
           </s-link>
-        )}
-        {editor
-          ? !returnContext && (
-              <s-link slot="breadcrumb-actions" href={indexPath}>
-                {t('methods:workflow.actions.methodsBreadcrumb')}
-              </s-link>
-            )
-          : methods.length > 0 && (
+        ) : (
+          methods.length > 0 && (
               <s-button
                 slot="primary-action"
                 variant="primary"
@@ -516,7 +478,8 @@ export default function SelectedMethods({
               >
                 {t('methods:workflow.actions.create')}
               </s-button>
-            )}
+            )
+        )}
         {editor && current && (
           <s-button
             slot="secondary-actions"
@@ -756,154 +719,7 @@ export default function SelectedMethods({
                 </s-section>
                 <s-section heading={t('methods:workflow.fields.productAvailability')}>
                   <s-stack gap="base">
-                    <s-choice-list
-                      label={t('methods:workflow.fields.assignment')}
-                      labelAccessibilityVisibility="exclusive"
-                      name="method-assignment"
-                      values={[editor.assignment]}
-                      onChange={(event) => {
-                        sendWorkflow({
-                          type: 'assignment-mode-changed',
-                          sessionId: workflow.editorSessionId,
-                          value: event.currentTarget.values[0] === 'tags' ? 'tags' : 'manual',
-                        });
-                        setProductQuery('');
-                        setProductPage(0);
-                        setProductSetup('all');
-                      }}
-                    >
-                      <s-choice value="manual">
-                        {t('methods:workflow.assignment.manual')}
-                        <s-text slot="details">{t('methods:workflow.assignment.manualHelp')}</s-text>
-                      </s-choice>
-                      <s-choice value="tags">
-                        {t('methods:workflow.assignment.tags')}
-                        <s-text slot="details">{t('methods:workflow.assignment.tagsHelp')}</s-text>
-                      </s-choice>
-                    </s-choice-list>
-                    {editor.assignment === 'manual' ? (
-                      <s-stack direction="inline" gap="small">
-                        <s-button
-                          onClick={() =>
-                            sendWorkflow({ type: 'product-picker-opened', id: crypto.randomUUID(), browse: 'products' })
-                          }
-                        >
-                          {t('methods:workflow.assignment.selectProducts')}
-                        </s-button>
-                        <s-button
-                          variant="tertiary"
-                          onClick={() =>
-                            sendWorkflow({
-                              type: 'product-picker-opened',
-                              id: crypto.randomUUID(),
-                              browse: 'collections',
-                            })
-                          }
-                        >
-                          {t('methods:workflow.assignment.selectCollections')}
-                        </s-button>
-                      </s-stack>
-                    ) : (
-                      <s-stack gap="base">
-                        <s-select
-                          label={t('methods:workflow.fields.productsMustMatch')}
-                          name="tag-match"
-                          value={editor.tagMatch}
-                          onChange={(event) =>
-                            sendWorkflow({
-                              type: 'tag-match-changed',
-                              sessionId: workflow.editorSessionId,
-                              value: event.currentTarget.value === 'all' ? 'all' : 'any',
-                            })
-                          }
-                        >
-                          <s-option value="any">{t('methods:workflow.assignment.anyTag')}</s-option>
-                          <s-option value="all">{t('methods:workflow.assignment.allTags')}</s-option>
-                        </s-select>
-                        <div data-invalid={!!errors.tags} tabIndex={-1}>
-                          <s-button ref={tagButton} commandFor="method-tags" icon="plus">
-                            {t('methods:workflow.assignment.chooseTags')}
-                          </s-button>
-                          <s-popover id="method-tags" inlineSize="280px">
-                            <s-box padding="base">
-                              <s-stack gap="base">
-                                <s-search-field
-                                  label={t('methods:workflow.fields.searchTags')}
-                                  labelAccessibilityVisibility="exclusive"
-                                  placeholder={t('methods:workflow.fields.searchTags')}
-                                  value={tagQuery}
-                                  onInput={(event) => setTagQuery(event.currentTarget.value)}
-                                />
-                                <div class="method-tag-scroll">
-                                  <s-stack gap="small">
-                                    {filteredTags.length ? (
-                                      filteredTags.map((tag) => (
-                                        <s-checkbox
-                                          key={tag}
-                                          label={tag}
-                                          checked={editor.tags.includes(tag)}
-                                          onChange={(event) =>
-                                            sendWorkflow({
-                                              type: 'tag-toggled',
-                                              sessionId: workflow.editorSessionId,
-                                              tag,
-                                              checked: event.currentTarget.checked,
-                                            })
-                                          }
-                                        />
-                                      ))
-                                    ) : (
-                                      <s-text>{t('methods:workflow.empty.noTags')}</s-text>
-                                    )}
-                                  </s-stack>
-                                </div>
-                              </s-stack>
-                            </s-box>
-                          </s-popover>
-                          {errors.tags && (
-                            <s-paragraph tone="critical">{t('methods:workflow.copy.tagRequired')}</s-paragraph>
-                          )}
-                        </div>
-                        {editor.tags.length > 0 && (
-                          <s-stack direction="inline" gap="small">
-                            {editor.tags.map((tag) => (
-                              <s-chip
-                                removable
-                                key={tag}
-                                accessibilityLabel={t('methods:workflow.actions.removeTag', { tagName: tag })}
-                                onRemove={() =>
-                                  sendWorkflow({
-                                    type: 'tag-toggled',
-                                    sessionId: workflow.editorSessionId,
-                                    tag,
-                                    checked: false,
-                                  })
-                                }
-                              >
-                                {tag}
-                              </s-chip>
-                            ))}
-                          </s-stack>
-                        )}
-                      </s-stack>
-                    )}
-                    {current &&
-                      (() => {
-                        const before = new Set(assignedProducts(current, products).map((product) => product.id));
-                        const after = new Set(matched.map((product) => product.id));
-                        const added = [...after].filter((id) => !before.has(id)).length;
-                        const removed = [...before].filter((id) => !after.has(id)).length;
-                        return added || removed ? (
-                          <s-box padding="small" background="subdued" borderRadius="base">
-                            <s-text>
-                              {t('methods:workflow.copy.assignmentChanges', {
-                                added: new Intl.NumberFormat(formatLocale).format(added),
-                                removed: new Intl.NumberFormat(formatLocale).format(removed),
-                              })}
-                            </s-text>
-                          </s-box>
-                        ) : null;
-                      })()}
+                    <s-paragraph color="subdued">{t('methods:workflow.copy.availableOnAllProducts')}</s-paragraph>
                     <s-divider />
                     <div id="method-products" class="method-product-heading" ref={productList} tabIndex={-1}>
                       <s-heading>
@@ -922,13 +738,7 @@ export default function SelectedMethods({
                       )}
                     </div>
                     {!matched.length ? (
-                      <s-paragraph color="subdued">
-                        {editor.assignment === 'tags'
-                          ? editor.tags.length
-                            ? t('methods:workflow.empty.noProductsForTags')
-                            : t('methods:workflow.empty.chooseTags')
-                          : t('methods:workflow.empty.selectProducts')}
-                      </s-paragraph>
+                      <s-paragraph color="subdued">{t('methods:workflow.empty.notUsed')}</s-paragraph>
                     ) : (
                       <>
                         {needingSetup > 0 && (
@@ -941,7 +751,7 @@ export default function SelectedMethods({
                         {(matched.length > 8 || needingSetup > 0 || productQuery || productSetup !== 'all') && (
                           <AdminIndexToolbar
                             id="method-assigned-products"
-                            label={t('methods:workflow.fields.searchAssignedProducts')}
+                            label={t('methods:workflow.fields.searchProductsUsing')}
                             value={productQuery}
                             maxLength={100}
                             onInput={(value) => {
@@ -953,7 +763,7 @@ export default function SelectedMethods({
                               formattedCount: new Intl.NumberFormat(formatLocale).format(filteredProducts.length),
                             })}
                             filter={{
-                              label: t('methods:workflow.filter.filterAssigned'),
+                              label: t('methods:workflow.filter.filterProducts'),
                               text:
                                 productSetup === 'all'
                                   ? t('methods:workflow.fields.productSetup')
@@ -989,11 +799,7 @@ export default function SelectedMethods({
                                   <s-stack gap="none">
                                     <s-link
                                       tone="neutral"
-                                      href={
-                                        product.id === returnContext?.productId
-                                          ? returnContext.returnTo
-                                          : `/admin/products/${product.configurationProductId ?? product.id}/config`
-                                      }
+                                      href={`/admin/products/${product.configurationProductId ?? product.id}/config`}
                                     >
                                       <s-text type="strong">{product.title}</s-text>
                                     </s-link>
@@ -1006,11 +812,7 @@ export default function SelectedMethods({
                                       </s-paragraph>
                                     ) : (
                                       <s-link
-                                        href={
-                                          product.id === returnContext?.productId
-                                            ? returnContext.returnTo
-                                            : `/admin/products/${product.configurationProductId ?? product.id}/config`
-                                        }
+                                        href={`/admin/products/${product.configurationProductId ?? product.id}/config`}
                                       >
                                         {t(
                                           setup.reason === 'configure-locations'
@@ -1021,22 +823,6 @@ export default function SelectedMethods({
                                     )}
                                   </s-stack>
                                 </div>
-                                {editor.assignment === 'manual' && (
-                                  <s-button
-                                    icon="x"
-                                    variant="tertiary"
-                                    accessibilityLabel={t('methods:workflow.actions.removeProduct', {
-                                      productName: product.title,
-                                    })}
-                                    onClick={() =>
-                                      sendWorkflow({
-                                        type: 'manual-products-selected',
-                                        sessionId: workflow.editorSessionId,
-                                        productIds: editor.productIds.filter((id) => id !== product.id),
-                                      })
-                                    }
-                                  />
-                                )}
                               </div>
                             );
                           })}
@@ -1093,15 +879,6 @@ export default function SelectedMethods({
                 count={matched.length}
                 needsSetup={needingSetup}
                 onReview={(needsOnly) => {
-                  if (!matched.length && editor.assignment === 'manual') {
-                    sendWorkflow({ type: 'product-picker-opened', id: crypto.randomUUID(), browse: 'products' });
-                    return;
-                  }
-                  if (!matched.length && editor.assignment === 'tags') {
-                    tagButton.current?.scrollIntoView({ block: 'center', behavior: 'instant' });
-                    tagButton.current?.focus({ preventScroll: true });
-                    return;
-                  }
                   setProductSetup(needsOnly ? 'needs' : 'all');
                   setProductPage(0);
                   setProductQuery('');
@@ -1126,17 +903,6 @@ export default function SelectedMethods({
           />
         )}
       </s-page>
-      {productPicker && editor && (
-        <ProductPicker
-          key={productPicker.id}
-          initialBrowse={productPicker.browse}
-          products={products}
-          selected={editor.productIds}
-          suspended={productPickerSuspended}
-          onClose={() => sendWorkflow({ type: 'product-picker-canceled', id: productPicker.id })}
-          onApply={(ids) => sendWorkflow({ type: 'product-picker-applied', id: productPicker.id, productIds: ids })}
-        />
-      )}
       {workflow.dialog.kind === 'leave' && (
         <Dialog
           heading={t('methods:workflow.copy.leaveHeading')}
@@ -1188,49 +954,6 @@ export default function SelectedMethods({
             {methods.some(
               (method) => method.name.toLocaleLowerCase() === duplicating.name.trim().toLocaleLowerCase(),
             ) && <s-banner tone="warning">{t('methods:workflow.copy.duplicateWarningShort')}</s-banner>}
-            <s-checkbox
-              label={
-                duplicating.source.assignment === 'tags'
-                  ? t('methods:workflow.duplicate.copyTagRule')
-                  : t('methods:workflow.duplicate.copySelectedProducts')
-              }
-              checked={duplicating.copyAssignment}
-              onChange={(event) =>
-                sendWorkflow({
-                  type: 'duplicate-assignment-toggled',
-                  id: duplicating.id,
-                  checked: event.currentTarget.checked,
-                })
-              }
-            />
-            {duplicating.copyAssignment && (
-              <s-box padding="small" background="subdued" borderRadius="base">
-                <s-stack gap="small">
-                  <s-text>
-                    {(() => {
-                      const count = assignedProducts(duplicating.source, products).length;
-                      return t('methods:workflow.copy.matchingProducts', {
-                        count,
-                        formattedCount: new Intl.NumberFormat(formatLocale).format(count),
-                      });
-                    })()}
-                  </s-text>
-                  {duplicating.source.assignment === 'tags' && (
-                    <s-paragraph>
-                      {t('methods:workflow.copy.tagMatchSummary', {
-                        match:
-                          duplicating.source.tagMatch === 'all'
-                            ? t('methods:workflow.assignment.allTags')
-                            : t('methods:workflow.assignment.anyTag'),
-                        tags: new Intl.ListFormat(formatLocale, { type: 'conjunction' }).format(
-                          duplicating.source.tags,
-                        ),
-                      })}
-                    </s-paragraph>
-                  )}
-                </s-stack>
-              </s-box>
-            )}
           </s-stack>
         </Dialog>
       )}
@@ -1273,17 +996,9 @@ export default function SelectedMethods({
               </s-paragraph>
             )}
             <s-paragraph>
-              {affectedProductCount === 0
-                ? t('methods:workflow.copy.noProductAssignmentsRemoved')
-                : removing.length === 1
-                  ? t('methods:workflow.copy.removeOneAvailability', {
-                      count: affectedProductCount,
-                      formattedCount: new Intl.NumberFormat(formatLocale).format(affectedProductCount),
-                    })
-                  : t('methods:workflow.copy.removeManyAvailability', {
-                      count: affectedProductCount,
-                      formattedCount: new Intl.NumberFormat(formatLocale).format(affectedProductCount),
-                    })}{' '}
+              {removing.length === 1
+                ? t('methods:workflow.copy.removeOneFromAllProducts')
+                : t('methods:workflow.copy.removeManyFromAllProducts')}{' '}
               {t(production ? 'methods:workflow.copy.realLeaveSavedData' : 'methods:workflow.copy.leaveSavedData')}
             </s-paragraph>
             {dirty && <s-paragraph>{t('methods:workflow.copy.leaveCurrentChanges')}</s-paragraph>}

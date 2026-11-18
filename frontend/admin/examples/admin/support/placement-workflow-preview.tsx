@@ -6,7 +6,7 @@ import { placementProductSchema } from './placement-workflow-model.mts';
 import { readPlacementPreviewProduct, readPlacementPreviewState, readPlacementSetupExample, writePlacementPreviewProduct } from './placement-preview-storage.mts';
 import { publishPlacementPreviewProduct } from './placement-publication.mts';
 import { launchCustomerPreview } from './placement-customer-preview.mts';
-import { loadPlacementMethodCatalog } from './placement-method-library.mts';
+import { createPlacementPreviewMethod, loadPlacementMethodCatalog } from './placement-method-library.mts';
 import { createDemoPlacementSetupCopyPorts } from './placement-setup-copy-demo.mts';
 import { applyPlacementSetupExample } from './placement-workflow-examples.mts';
 const setupExample = readPlacementSetupExample;
@@ -36,7 +36,7 @@ async function start() {
       <AdminLocaleProvider controller={getAdminLocaleController(document)}>
         <PlacementEditor initial={data} adapter={{ kind: 'demo', currency: 'EUR', selectionScope: example,
           publication: readPlacementPreviewState(example, data.id), revision: () => readPlacementPreviewState(example, data.id)?.revision ?? 0,
-          pending: () => false, loadMethods: loadPlacementMethodCatalog, copyPorts: createDemoPlacementSetupCopyPorts(), preview: (source, error, options) => launchCustomerPreview(source, error, { ...options, hostUrl: 'http://127.0.0.1:5173' }),
+          pending: () => false, loadMethods: loadPlacementMethodCatalog, createMethod: createPlacementPreviewMethod, copyPorts: createDemoPlacementSetupCopyPorts(), preview: (source, error, options) => launchCustomerPreview(source, error, { ...options, hostUrl: 'http://127.0.0.1:5173' }),
           save: async (product) => { if (!writePlacementPreviewProduct(example, product)) throw new Error('Demo storage unavailable'); },
           publish: async (product, revision) => publishPlacementPreviewProduct(example, product, undefined, revision),
         }} />

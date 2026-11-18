@@ -78,14 +78,69 @@ test('equal-valued explicit price overrides survive undo with their provenance, 
   );
 });
 
-test('current tag mismatch is visible before save while prices/text and original draft stay untouched',()=>{
- const original=MethodDraftBindingSchema.parse({catalogMethodId:methodId,observedVersion:'1',name:{source:'catalog',value:'Print'},explanation:{source:'catalog',value:'Full colour'},translations:{},prices:{default:{source:'catalog',value:'3.50'}},review:null});
- const current=VersionedMethodConfigurationSchema.parse({...record,configuration:{...record.configuration,assignment:'tags',productIds:[],tags:['shirts'],tagMatch:'any'}});
- const flagged=currentProductMethodReviews({[methodId]:original},[current],{id:product.id,tags:[]});
- assert.equal(flagged[methodId]?.review?.reason,'unassigned');assert.equal(flagged[methodId]?.review?.decision,'pending');assert.equal(original.review,null);
- assert.deepEqual(flagged[methodId]?.prices,original.prices);assert.deepEqual(flagged[methodId]?.name,original.name);
- const kept=reviewProductMethod(product,flagged,methodId,'keep').bindings;
- assert.equal(currentProductMethodReviews(kept,[{...current,version:'2',configuration:{...current.configuration,name:'New name',amount:'9.00'}}],{id:product.id,tags:[]})[methodId]?.review?.decision,'keep');
- assert.equal(currentProductMethodReviews(kept,[{...current,configuration:{...current.configuration,tags:['other']}}],{id:product.id,tags:[]})[methodId]?.review?.decision,'pending');
- assert.throws(()=>currentProductMethodReviews({[methodId]:original},[current],{id:product.id}),/tags unavailable/);
+test('library methods need no assignment review; only a deletion asks keep/remove before save', () => {
+  const original = MethodDraftBindingSchema.parse({
+    catalogMethodId: methodId,
+    observedVersion: '1',
+    name: { source: 'catalog', value: 'Print' },
+    explanation: { source: 'catalog', value: 'Full colour' },
+    translations: {},
+    prices: { default: { source: 'catalog', value: '3.50' } },
+    review: null,
+  });
+  // A legacy tag rule the product does not match no longer limits availability.
+  const tagged = VersionedMethodConfigurationSchema.parse({
+    ...record,
+    configuration: { ...record.configuration, assignment: 'tags', productIds: [], tags: ['shirts'], tagMatch: 'any' },
+  });
+  const bindings = { [methodId]: original };
+  assert.equal(currentProductMethodReviews(bindings, [tagged]), bindings);
+  // A stored legacy unassigned review resolves without touching prices or text.
+  const legacy = {
+    ...original,
+    review: { reason: 'unassigned' as const, catalogVersion: '1', decision: 'pending' as const },
+  };
+  const resolved = currentProductMethodReviews({ [methodId]: legacy }, [tagged]);
+  assert.equal(resolved[methodId]?.review, null);
+  assert.deepEqual(resolved[methodId]?.prices, original.prices);
+  assert.equal(legacy.review.decision, 'pending');
+  // Deleting the library method still asks keep/remove.
+  const deleted = currentProductMethodReviews(bindings, []);
+  assert.equal(deleted[methodId]?.review?.reason, 'deleted');
+  assert.equal(deleted[methodId]?.review?.decision, 'pending');
+  const kept = reviewProductMethod(product, deleted, methodId, 'keep').bindings;
+  assert.equal(currentProductMethodReviews(kept, [])[methodId]?.review?.decision, 'keep');
+});
+
+test('every library method is offered on every product, whatever its legacy assignment values', async () => {
+  const { availablePlacementMethods } = await import('../../src/islands/selected-method-choices.ts');
+  const other = placementProductSchema.parse({
+    id: 'gid://shopify/Product/222',
+    title: 'Cap',
+    images: [],
+    views: [],
+    methods: [],
+  });
+  const unassigned = { ...record.configuration, productIds: [] };
+  const tagged = {
+    ...record.configuration,
+    id: '22222222-2222-4222-8222-222222222222',
+    name: 'Embroidery',
+    assignment: 'tags' as const,
+    productIds: [],
+    tags: ['shirts'],
+  };
+  assert.deepEqual(
+    availablePlacementMethods(other, { methods: [unassigned, tagged] }).map((method) => method.name),
+    ['Print', 'Embroidery'],
+  );
+  // Existing product snapshots still win over a library method of the same name.
+  const withSnapshot = {
+    ...other,
+    methods: [{ id: 'local', name: 'print', pricing: 'product' as const, amount: '' }],
+  };
+  assert.deepEqual(
+    availablePlacementMethods(withSnapshot, { methods: [unassigned, tagged] }).map((method) => method.id),
+    ['local', tagged.id],
+  );
 });

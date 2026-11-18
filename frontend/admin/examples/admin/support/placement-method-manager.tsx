@@ -77,7 +77,7 @@ function priceStateMessage(reason: ReturnType<typeof priceState>, t: ReturnType<
 export default function PlacementMethodManager({
   methods: initialMethods,
   product,
-  onOpenLibrary,
+  createMethod,
   placement,
   initialMethodId,
   sessionId,
@@ -91,7 +91,8 @@ export default function PlacementMethodManager({
   loadCatalog: (signal: AbortSignal) => Promise<PlacementMethodCatalog>;
   methods: EditorMethod[];
   product?: PlacementProduct;
-  onOpenLibrary?(): void;
+  /** Creates a library method (available on every product); a retry of the same name reuses `id` and `key`. */
+  createMethod(input: { id: string; key: string; name: string }): Promise<EditorMethod>;
   placement: EditorPlacement;
   initialMethodId?: string;
   sessionId: string;
@@ -123,6 +124,7 @@ export default function PlacementMethodManager({
   stateRef.current = state;
   const nextCatalogRequestId = useRef(0);
   const claimedCommit = useRef(false);
+  const createIdentity = useRef<{ id: string; key: string; name: string } | null>(null);
   function send(event: PlacementMethodManagerEvent) {
     const next = placementMethodManagerReducer(stateRef.current, event);
     stateRef.current = next;
@@ -240,28 +242,32 @@ export default function PlacementMethodManager({
     return () => cancelAnimationFrame(firstFrame);
   }, [errors, screen]);
 
-  function createProductMethod() {
+  async function createLibraryMethod() {
     const current = stateRef.current;
-    if (current.screen.kind !== 'create' || current.status !== 'open') return;
-    const method: EditorMethod = {
-      id: crypto.randomUUID(),
-      name: current.createName.trim(),
-      pricing: 'product',
-      amount: '',
-    };
-    const next = send({
-      type: 'product-method-created',
-      sessionId,
-      name: current.createName,
-      method,
-    });
-    if (next.nameError) return;
+    if (current.screen.kind !== 'create' || current.status !== 'open' || current.creating) return;
+    if (!send({ type: 'create-requested', sessionId }).creating) return;
+    const name = current.createName.trim();
+    // A retry of the same name repeats the same command, so a lost response cannot add a second library method.
+    const identity =
+      createIdentity.current?.name === name
+        ? createIdentity.current
+        : { id: crypto.randomUUID(), key: crypto.randomUUID(), name };
+    createIdentity.current = identity;
+    let method: EditorMethod;
+    try {
+      method = await createMethod(identity);
+    } catch {
+      send({ type: 'create-failed', sessionId });
+      return;
+    }
+    createIdentity.current = null;
+    if (send({ type: 'library-method-created', sessionId, method }).creating) return;
     setQuery('');
     setFilter('all');
     focusPriceInput.current = 'first';
   }
 
-  addByEnter.current = createProductMethod;
+  addByEnter.current = () => void createLibraryMethod();
 
   function openPrices(methodId: string) {
     if (!stateRef.current.draft.methodIds.includes(methodId)) return;
@@ -325,10 +331,16 @@ export default function PlacementMethodManager({
               : 'small-100'
       }
       onClose={onClose}
-      onBack={screen.kind !== 'methods' && !hasInitialPriceMethod ? backToMethods : undefined}
+      onBack={screen.kind !== 'methods' && !hasInitialPriceMethod && !state.creating ? backToMethods : undefined}
       actions={
         screen.kind === 'create' ? (
-          <s-button slot="primary-action" variant="primary" disabled={!newName.trim()} onClick={createProductMethod}>
+          <s-button
+            slot="primary-action"
+            variant="primary"
+            disabled={!newName.trim() || state.creating}
+            loading={state.creating}
+            onClick={() => void createLibraryMethod()}
+          >
             {translateUi('editor:placementMethodManager.addMethod')}
           </s-button>
         ) : emptyLibrary ? (
@@ -532,11 +544,6 @@ export default function PlacementMethodManager({
                             'editor:placementMethodManager.addAMethodForThisProductOrCreateAReusableMethodInYourLibrary',
                           )}
                         </s-paragraph>
-                        {onOpenLibrary && (
-                          <s-button variant="secondary" onClick={onOpenLibrary}>
-                            {translateUi('editor:placementMethodManager.saveDraftAndOpenLibrary')}
-                          </s-button>
-                        )}
                       </div>
                     ) : (
                       <div class="pm-manager__empty">

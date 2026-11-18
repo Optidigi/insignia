@@ -533,8 +533,7 @@
     "editPrice": "Edit price",
     "editPrices": "Edit prices",
     "perSize": "Per size",
-    "addAMethodForThisProductOrCreateAReusableMethodInYourLibrary": "Add a method for this product, or create a reusable method in your library.",
-    "saveDraftAndOpenLibrary": "Save draft and open library",
+    "addAMethodForThisProductOrCreateAReusableMethodInYourLibrary": "Add a method to your library. It becomes available on every product.",
     "noMethodsMatchTheseFilters": "No methods match these filters.",
     "showAllMethods": "Show all methods",
     "pricePerPlacementPerGarment": "Price per placement per item",
@@ -554,7 +553,7 @@
     "nameDuplicate": "A method with this name is already available. Choose it from the list.",
     "methodAddFailed": "This method could not be added. Try again.",
     "methodsUnavailable": "Remove unavailable methods or reload the library before continuing.",
-    "methodNameDetails": "Only added to this product. Set its placement prices next.",
+    "methodNameDetails": "Added to your method library and available on every product. Set its placement prices next.",
     "forPlacement": "For {{placementName}}",
     "thisPlacement": "this placement",
     "enabledMethods_one": "{{formattedCount}} method enabled",
@@ -695,7 +694,6 @@
       "reviewCopiedSetup": "Review setup for {{productName}}"
     }
   },
-  "placementSetupCopyEntry": {},
   "placementSetupCopyReview": {
     "imageUnavailable": "Image unavailable",
     "viewsToCopy": "Views to copy",
@@ -1071,7 +1069,7 @@
     "realReviewCurrency": "Review prices in the shop currency",
     "realCalibrateImage": "Calibrate image",
     "realDimensionsRequired": "Calibrate this image to define production dimensions. Measure a known width on the garment, such as the chest width.",
-    "realReviewMethods": "Review unassigned or deleted methods before publication.",
+    "realReviewMethods": "Review deleted methods before publication.",
     "realKeepMethod": "Keep method",
     "realRemoveMethod": "Remove method",
     "realCapacityExceeded": "This configuration exceeds the supported limits: 16 views, 32 placements, 32 methods, 64 decoration sizes, 250 variants, and 100 image or alignment overrides per view or placement.",

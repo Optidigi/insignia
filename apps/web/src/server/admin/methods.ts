@@ -7,7 +7,7 @@ import {
   type DurableTransaction,
   sha256CanonicalJson,
 } from '@insignia/database';
-import { type MethodProductTags, reconcileSelectedMethodDrafts } from '../selected-method-reconciliation.ts';
+import { reconcileSelectedMethodDrafts } from '../selected-method-reconciliation.ts';
 import type { AdminActor, MethodConfigurationOutcome, MethodLibrary, MethodOutcome } from './contracts.js';
 
 export class MethodAuthorizationError extends Error {}
@@ -17,7 +17,6 @@ export class MethodCurrencyConflictError extends Error {}
 export function createMethodLibrary(
   core: DurableCore,
   options: {
-    productTags?: (actor: AdminActor, productIds: string[]) => Promise<MethodProductTags>;
     currency?: (actor: AdminActor) => Promise<string>;
   } = {},
 ): MethodLibrary {
@@ -29,29 +28,6 @@ export function createMethodLibrary(
     if (!scope || scope.shopDomain !== actor.shop || `gid://shopify/Shop/${scope.shopifyShopId}` !== actor.shopId)
       throw new MethodAuthorizationError('Current tenant installation required');
     return scope;
-  }
-  async function prepareProductTags(
-    actor: AdminActor,
-    methodId: string,
-    expectedVersion: string | null,
-    next?: MethodConfiguration,
-  ): Promise<MethodProductTags> {
-    const products = await core.transactions.run(async (tx) => {
-      if (!actor.canRead || !actor.canEdit) throw new Error('Edit permission required');
-      await authorized(actor, tx);
-      const current = (await core.methodCatalog.listConfigurations(tx, actor.tenantShopId)).find(
-        (entry) => entry.configuration.id === methodId,
-      );
-      // Replays/stale commands must reach durable dedup without depending on a fresh provider read.
-      if (!current || current.version !== expectedVersion || (next ?? current.configuration).assignment !== 'tags')
-        return [];
-      return (await core.configs.listSelectedForMethod(tx, actor.tenantShopId, methodId)).map(
-        (record) => record.externalProductId,
-      );
-    });
-    if (!products.length) return {};
-    if (!options.productTags) throw new Error('Current product assignment tags unavailable');
-    return options.productTags(actor, [...new Set(products)]);
   }
   function authority(scope: ActiveAuthorizationScope) {
     return sha256CanonicalJson(scope);
@@ -158,7 +134,6 @@ export function createMethodLibrary(
         throw new MethodCurrencyConflictError('Shop currency changed. Review the Method price before saving.');
       if (value.pricing === 'fixed' && currency !== 'USD' && currency !== 'EUR')
         throw new Error('Current Method currency unavailable');
-      const productTags = await prepareProductTags(actor, value.id, expectedVersion, value);
       return core.transactions.run(async (tx) => {
         const scope = await authorized(actor, tx);
         if (expectedAuthority !== undefined && authority(scope) !== expectedAuthority)
@@ -194,7 +169,6 @@ export function createMethodLibrary(
                 shopId: actor.tenantShopId,
                 methodId: value.id,
                 current: method,
-                productTags,
               });
             return JSON.stringify(
               method
@@ -237,7 +211,6 @@ export function createMethodLibrary(
     async rename(actor, id, version, value, key) {
       identity(id, version);
       const validName = name(value);
-      const productTags = await prepareProductTags(actor, id, version);
       return command(actor, 'rename', key, { id, version, name: validName }, async (tx) => {
         const method = await core.methodCatalog.rename(tx, actor.tenantShopId, id, version, validName);
         if (method) {
@@ -251,7 +224,6 @@ export function createMethodLibrary(
             shopId: actor.tenantShopId,
             methodId: id,
             current,
-            productTags,
           });
         }
         return method ? { kind: 'saved', method } : conflict();
@@ -272,7 +244,6 @@ export function createMethodLibrary(
             shopId: actor.tenantShopId,
             methodId: id,
             current: null,
-            productTags: {},
           });
           return { kind: 'deleted' };
         },

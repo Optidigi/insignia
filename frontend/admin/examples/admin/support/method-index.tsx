@@ -12,10 +12,10 @@ import AdminResourceTable, {
 } from '../../../src/components/AdminResourceTable.tsx';
 import { useAdminLocale } from '../../../src/shared/admin-i18n.js';
 import {
-  assignedProducts,
   type MethodConfiguration,
   type MethodProduct,
   productReadiness,
+  productsUsing,
 } from './method-configuration.mts';
 import { downloadMethodSummary, methodPreviewLimit } from './method-management.mts';
 import { formatPrice, parsePrice } from './method-workflow-prices.mts';
@@ -40,8 +40,8 @@ function MethodPriceSummary({ method, currency = 'EUR' }: { method: MethodConfig
   return <s-text>{pricingLabel(method, t, formatLocale, currency)}</s-text>;
 }
 
-type Filters = { pricing: string; assignment: string; setup: string };
-const emptyFilters: Filters = { pricing: 'all', assignment: 'all', setup: 'all' };
+type Filters = { pricing: string; setup: string };
+const emptyFilters: Filters = { pricing: 'all', setup: 'all' };
 const perPage = 25;
 export default function MethodIndex({
   methods,
@@ -81,37 +81,25 @@ export default function MethodIndex({
   const summaries = useMemo(
     () =>
       methods.map((method) => {
-        const eligible = assignedProducts(method, products);
-        const using = products.filter((product) =>
-          product.setup.some((setup) => setup.methodId === method.id && setup.locations > 0),
-        );
-        const scope = [...new Map([...eligible, ...using].map((product) => [product.id, product])).values()];
+        // Every product can add any method; counts describe the products that use it.
+        const using = productsUsing(method, products);
         return {
           method,
-          count: scope.length,
-          available: eligible.length,
           used: using.length,
-          needs: scope.filter((product) => !productReadiness(method, product).ready).length,
+          needs: using.filter((product) => !productReadiness(method, product).ready).length,
         };
       }),
     [methods, products],
   );
   const matching = summaries
-    .filter(({ method, count, needs }) => {
+    .filter(({ method, used, needs }) => {
       const queryText = query.trim().toLocaleLowerCase(formatLocale);
-      if (
-        !`${method.name} ${method.explanation} ${method.assignment === 'tags' ? method.tags.join(' ') : ''}`
-          .toLocaleLowerCase(formatLocale)
-          .includes(queryText)
-      )
-        return false;
+      if (!`${method.name} ${method.explanation}`.toLocaleLowerCase(formatLocale).includes(queryText)) return false;
       return (
         (filters.pricing === 'all' || filters.pricing === method.pricing) &&
-        (filters.assignment === 'all' || filters.assignment === method.assignment) &&
         (filters.setup === 'all' ||
           (filters.setup === 'needs' && needs > 0) ||
-          (filters.setup === 'unassigned' && count === 0) ||
-          (filters.setup === 'ready' && count > 0 && !needs))
+          (filters.setup === 'ready' && used > 0 && !needs))
       );
     })
     .sort((a, b) => {
@@ -261,22 +249,12 @@ export default function MethodIndex({
                         <s-option value="product">{t('methods:index.filters.productSpecific')}</s-option>
                       </s-select>
                       <s-select
-                        label={t('methods:index.filters.assignment')}
-                        value={filters.assignment}
-                        onChange={(event) => changeFilters({ assignment: event.currentTarget.value })}
-                      >
-                        <s-option value="all">{t('methods:index.filters.allAssignments')}</s-option>
-                        <s-option value="manual">{t('methods:index.filters.manual')}</s-option>
-                        <s-option value="tags">{t('methods:index.filters.byTag')}</s-option>
-                      </s-select>
-                      <s-select
                         label={t('methods:index.filters.setup')}
                         value={filters.setup}
                         onChange={(event) => changeFilters({ setup: event.currentTarget.value })}
                       >
                         <s-option value="all">{t('methods:index.filters.allMethods')}</s-option>
                         <s-option value="needs">{t('methods:index.filters.needsSetup')}</s-option>
-                        <s-option value="unassigned">{t('methods:index.filters.noProductsAssigned')}</s-option>
                         <s-option value="ready">{t('methods:index.filters.configured')}</s-option>
                       </s-select>
                       {filterCount > 0 && (
@@ -306,17 +284,6 @@ export default function MethodIndex({
                             : t('methods:index.filters.productSpecific')}
                         </AdminFilterChip>
                       )}
-                      {filters.assignment !== 'all' && (
-                        <AdminFilterChip
-                          toolbarId="methods"
-                          label={t('methods:index.filters.editAssignment')}
-                          onRemove={() => changeFilters({ assignment: 'all' })}
-                        >
-                          {filters.assignment === 'manual'
-                            ? t('methods:index.filters.manual')
-                            : t('methods:index.filters.byTag')}
-                        </AdminFilterChip>
-                      )}
                       {filters.setup !== 'all' && (
                         <AdminFilterChip
                           toolbarId="methods"
@@ -325,9 +292,7 @@ export default function MethodIndex({
                         >
                           {filters.setup === 'needs'
                             ? t('methods:index.filters.needsSetup')
-                            : filters.setup === 'unassigned'
-                              ? t('methods:index.filters.noProductsAssigned')
-                              : t('methods:index.filters.configured')}
+                            : t('methods:index.filters.configured')}
                         </AdminFilterChip>
                       )}
                     </s-stack>
@@ -414,7 +379,7 @@ export default function MethodIndex({
                     </ResourceTableHeader>
                   </ResourceTableHead>
                   <ResourceTableBody>
-                    {visible.map(({ method, count, available, used, needs }) => (
+                    {visible.map(({ method, used, needs }) => (
                       <ResourceTableRow
                         key={method.id}
                         clickDelegate={`method-${method.id}`}
@@ -462,15 +427,10 @@ export default function MethodIndex({
                                 <dt>{t('methods:index.columns.productsUsing')}</dt>
                                 <dd>{numberFormat.format(used)}</dd>
                                 <dt>{t('methods:summary.availableTo')}</dt>
-                                <dd>
-                                  {t('methods:index.counts.products', {
-                                    count: available,
-                                    formattedCount: numberFormat.format(available),
-                                  })}
-                                </dd>
+                                <dd>{t('methods:summary.allProducts')}</dd>
                                 <dt>{t('methods:index.columns.productSetup')}</dt>
                                 <dd>
-                                  {count > 0 ? (
+                                  {used > 0 ? (
                                     <s-badge tone={needs ? 'warning' : 'neutral'}>
                                       {needs
                                         ? t('methods:index.counts.needsSetup', {
@@ -479,10 +439,8 @@ export default function MethodIndex({
                                           })
                                         : t('methods:index.filters.configured')}
                                     </s-badge>
-                                  ) : method.assignment === 'tags' ? (
-                                    t('methods:index.setup.noMatchingProducts')
                                   ) : (
-                                    t('methods:index.setup.notAssigned')
+                                    t('methods:index.setup.notUsed')
                                   )}
                                 </dd>
                               </dl>
@@ -500,21 +458,12 @@ export default function MethodIndex({
                             })}
                           </s-text>
                           <div class="method-index-assignment">
-                            <s-text color="subdued">
-                              {t('methods:index.counts.available', {
-                                count: available,
-                                formattedCount: numberFormat.format(available),
-                              })}
-                            </s-text>
+                            <s-text color="subdued">{t('methods:index.counts.allProductsAvailable')}</s-text>
                           </div>
                         </ResourceTableCell>
                         <ResourceTableCell>
-                          {!count ? (
-                            <s-text color="subdued">
-                              {method.assignment === 'tags'
-                                ? t('methods:index.setup.noMatchingProducts')
-                                : t('methods:index.setup.notAssigned')}
-                            </s-text>
+                          {!used ? (
+                            <s-text color="subdued">{t('methods:index.setup.notUsed')}</s-text>
                           ) : (
                             <s-badge tone={needs ? 'warning' : 'neutral'}>
                               {needs

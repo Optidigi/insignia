@@ -8,8 +8,10 @@ import {
   MerchantDraftSchema,
   MerchantPreferencesViewSchema,
   MethodCatalogViewSchema,
+  MethodConfigurationSchema,
   type SelectedProductSetup,
   SelectedProductSetupSchema,
+  type VersionedMethodConfiguration,
 } from '@insignia/contracts';
 import { type Browser, chromium, type Page } from 'playwright';
 import type { ConfigView } from '../../../src/shared/admin-view.ts';
@@ -603,6 +605,35 @@ async function routePolaris(target: Page | import('playwright').BrowserContext, 
     );
 }
 
+/** A stateful synthetic method library: a POST creates a library method that later catalogue reads include. */
+async function routeMethodLibrary(page: Page, initial: VersionedMethodConfiguration[] = catalog.methods) {
+  let methods = structuredClone(initial);
+  const posts: { key: string | null; authority: string | null; currency: string | null; body: unknown }[] = [];
+  const receipts = new Map<string, unknown>();
+  await page.route('**/api/admin/methods**', async (route) => {
+    const request = route.request();
+    if (request.method() === 'GET') return route.fulfill({ json: { ...catalog, methods } });
+    assert.equal(request.method(), 'POST');
+    const key = request.headers()['idempotency-key'] ?? null;
+    const body = request.postDataJSON();
+    posts.push({
+      key,
+      authority: request.headers()['x-insignia-method-authority'] ?? null,
+      currency: request.headers()['x-insignia-method-currency'] ?? null,
+      body,
+    });
+    let receipt = key ? receipts.get(key) : undefined;
+    if (!receipt) {
+      const record = { configuration: MethodConfigurationSchema.parse(body.configuration), version: '1' };
+      methods = [...methods, record];
+      receipt = { kind: 'created', method: record };
+      if (key) receipts.set(key, receipt);
+    }
+    return route.fulfill({ status: 201, json: receipt });
+  });
+  return { posts, methods: () => methods };
+}
+
 export {
   artifacts,
   assertRetiredBeforeNavigation,
@@ -618,6 +649,7 @@ export {
   polarisUrl,
   preferences,
   product,
+  routeMethodLibrary,
   routePolaris,
   selectedConfigView,
   setup,

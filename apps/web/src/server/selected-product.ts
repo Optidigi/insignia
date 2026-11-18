@@ -342,9 +342,10 @@ export function selectedPublicationProblems(draft: MerchantDraft, catalog?: Cata
   const configuredMethods = new Set(
     product.views.flatMap((view) => view.placements.flatMap((placement) => placement.methodIds)),
   );
+  // A stored legacy `unassigned` review is resolved: every library Method is available on every product.
   for (const [localId, binding] of Object.entries(setup.methodBindings))
-    if (configuredMethods.has(localId) && binding.review?.decision === 'pending')
-      problems.push('Review the unassigned or deleted method before publication.');
+    if (configuredMethods.has(localId) && binding.review?.reason === 'deleted' && binding.review.decision === 'pending')
+      problems.push('Review the deleted method before publication.');
   for (const view of product.views) {
     if (!view.imageUrl || !product.images.some((image) => image.url === view.imageUrl))
       problems.push('Choose a product preview image for every view.');

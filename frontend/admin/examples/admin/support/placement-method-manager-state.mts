@@ -28,6 +28,8 @@ export interface PlacementMethodManagerState {
   catalog: PlacementMethodCatalog;
   screen: PlacementMethodManagerScreen;
   createName: string;
+  /** "Add method" is waiting for the library to create the method. */
+  creating: boolean;
   nameError: PlacementMethodNameError | null;
   errors: Record<string, 'price-invalid'>;
   unavailableError: 'methods-unavailable' | null;
@@ -70,6 +72,7 @@ export function createPlacementMethodManagerState(
       : { kind: 'loading', attempt: 0, requestId: 0 },
     screen: initialMethod ? { kind: 'prices', methodId: initialMethod.id } : { kind: 'methods' },
     createName: '',
+    creating: false,
     nameError: null,
     errors: {},
     unavailableError: null,
@@ -88,7 +91,9 @@ export type PlacementMethodManagerEvent =
   | { type: 'prices-screen-opened'; sessionId: string; methodId: string }
   | { type: 'create-screen-opened'; sessionId: string }
   | { type: 'create-name-edited'; sessionId: string; value: string }
-  | { type: 'product-method-created'; sessionId: string; name: string; method: EditorMethod }
+  | { type: 'create-requested'; sessionId: string }
+  | { type: 'library-method-created'; sessionId: string; method: EditorMethod }
+  | { type: 'create-failed'; sessionId: string }
   | { type: 'apply-requested'; sessionId: string };
 
 function isCurrentOpenSession(state: PlacementMethodManagerState, sessionId: string): boolean {
@@ -237,7 +242,7 @@ export function placementMethodManagerReducer(
       };
     }
     case 'methods-screen-selected':
-      return { ...state, screen: { kind: 'methods' }, unavailableError: null };
+      return state.creating ? state : { ...state, screen: { kind: 'methods' }, unavailableError: null };
     case 'prices-screen-opened':
       return state.draft.methodIds.includes(event.methodId)
         ? { ...state, screen: { kind: 'prices', methodId: event.methodId }, unavailableError: null }
@@ -247,11 +252,12 @@ export function placementMethodManagerReducer(
         ? { ...state, screen: { kind: 'create' }, createName: '', nameError: null }
         : state;
     case 'create-name-edited':
-      return state.screen.kind === 'create' ? { ...state, createName: event.value, nameError: null } : state;
-    case 'product-method-created': {
-      if (state.screen.kind !== 'create' || state.catalog.kind !== 'ready' || event.method.pricing !== 'product')
-        return state;
-      const name = event.name.trim();
+      return state.screen.kind === 'create' && !state.creating
+        ? { ...state, createName: event.value, nameError: null }
+        : state;
+    case 'create-requested': {
+      if (state.screen.kind !== 'create' || state.catalog.kind !== 'ready' || state.creating) return state;
+      const name = state.createName.trim();
       if (
         !name ||
         name.length > 80 ||
@@ -259,9 +265,15 @@ export function placementMethodManagerReducer(
       )
         return { ...state, nameError: 'name-invalid' };
       if (!normalizedUniqueName(name, state.methods)) return { ...state, nameError: 'name-duplicate' };
+      return { ...state, creating: true, nameError: null };
+    }
+    case 'create-failed':
+      return state.creating ? { ...state, creating: false, nameError: 'method-add-failed' } : state;
+    case 'library-method-created': {
+      if (state.screen.kind !== 'create' || !state.creating) return state;
       if (state.methods.some((method) => method.id === event.method.id))
-        return { ...state, nameError: 'method-add-failed' };
-      const method = { ...event.method, name };
+        return { ...state, creating: false, nameError: 'method-add-failed' };
+      const method = { ...event.method };
       const methodIds = state.draft.methodIds.includes(method.id)
         ? state.draft.methodIds
         : [...state.draft.methodIds, method.id];
@@ -273,11 +285,12 @@ export function placementMethodManagerReducer(
         editedMethodIds: addEditedMethodId(state, method.id),
         screen: state.draft.sizes.length ? { kind: 'prices', methodId: method.id } : { kind: 'methods' },
         createName: '',
+        creating: false,
         nameError: null,
       };
     }
     case 'apply-requested':
-      if (state.screen.kind === 'create' || state.catalog.kind === 'loading') return state;
+      if (state.screen.kind === 'create' || state.creating || state.catalog.kind === 'loading') return state;
       return applyStagedMethods(state);
   }
 }

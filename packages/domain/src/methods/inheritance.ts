@@ -1,6 +1,7 @@
 /** Explicit inheritance belongs to mutable drafts, never published revisions. */
 export type MethodField = { source: 'catalog' | 'product'; value: string };
 export type MethodReview = {
+  /** `unassigned` is a legacy stored reason only. */
   reason: 'unassigned' | 'deleted';
   catalogVersion: string;
   decision: 'pending' | 'keep';
@@ -31,38 +32,27 @@ const inherited = (field: MethodField, value: string): MethodField => ({
   value: field.source === 'catalog' ? value : field.value,
 });
 
+/**
+ * Every live library Method is available on every product (owner decision, 18 Nov 2026), so only deletion asks for
+ * a keep/remove review. A stored legacy `unassigned` review resolves once its library Method is live.
+ */
 export function reconcileMethodBinding(
   previous: MethodDraftBinding,
   current: CurrentMethod | null,
-  assigned: boolean,
-  assignmentKey?: string,
   updatePrices = true,
 ): MethodDraftBinding {
   // Keeping a deleted catalog copy makes it independent, even if that UUID is later reused.
-  if (previous.review?.reason === 'deleted') {
-    current = null;
-    assignmentKey = previous.review.assignmentKey;
-  }
+  const deleted = previous.review?.reason === 'deleted' ? previous.review : null;
+  if (deleted) current = null;
   if (current && current.configuration.id !== previous.catalogMethodId)
     throw new Error('Method catalog identity mismatch');
   const value = current?.configuration;
   const version = current?.version ?? previous.observedVersion;
-  const reason = !current ? 'deleted' : !assigned ? 'unassigned' : null;
-  const review: MethodReview | null =
-    reason === null
-      ? null
-      : {
-          reason,
-          catalogVersion: version,
-          ...(assignmentKey === undefined ? {} : { assignmentKey }),
-          decision:
-            previous.review?.reason === reason &&
-            (assignmentKey === undefined
-              ? previous.review.catalogVersion === version
-              : previous.review.assignmentKey === assignmentKey)
-              ? previous.review.decision
-              : 'pending',
-        };
+  const review: MethodReview | null = current
+    ? null
+    : deleted
+      ? { ...deleted }
+      : { reason: 'deleted', catalogVersion: version, decision: 'pending' };
   const resolvedName = inherited(previous.name, value?.name ?? previous.name.value);
   const resolvedExplanation = inherited(previous.explanation, value?.explanation ?? previous.explanation.value);
   const translations: MethodDraftBinding['translations'] = Object.fromEntries(

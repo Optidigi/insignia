@@ -348,7 +348,7 @@
     "realReviewCurrency": "Prijzen in de winkelvaluta controleren",
     "realCalibrateImage": "Afbeelding kalibreren",
     "realDimensionsRequired": "Kalibreer deze afbeelding om de productiematen vast te leggen. Meet een bekende breedte op het kledingstuk, zoals de borstbreedte.",
-    "realReviewMethods": "Controleer niet-toegewezen of verwijderde methoden voordat je publiceert.",
+    "realReviewMethods": "Controleer verwijderde methoden voordat je publiceert.",
     "realKeepMethod": "Methode behouden",
     "realRemoveMethod": "Methode verwijderen",
     "realCapacityExceeded": "Deze configuratie overschrijdt de ondersteunde limieten: 16 weergaven, 32 locaties, 32 methoden, 64 decoratieformaten, 250 varianten en 100 afbeeldings- of uitlijningsaanpassingen per weergave of locatie.",
@@ -708,8 +708,7 @@
     "editPrice": "Prijs bewerken",
     "editPrices": "Prijzen bewerken",
     "perSize": "Per decoratieformaat",
-    "addAMethodForThisProductOrCreateAReusableMethodInYourLibrary": "Voeg een methode toe aan dit product of maak een herbruikbare methode in je bibliotheek.",
-    "saveDraftAndOpenLibrary": "Concept opslaan en bibliotheek openen",
+    "addAMethodForThisProductOrCreateAReusableMethodInYourLibrary": "Voeg een methode toe aan je bibliotheek. Die is dan beschikbaar voor elk product.",
     "noMethodsMatchTheseFilters": "Geen methoden komen overeen met deze filters.",
     "showAllMethods": "Alle methoden weergeven",
     "pricePerPlacementPerGarment": "Prijs per decoratieplek per artikel",
@@ -729,7 +728,7 @@
     "nameDuplicate": "Deze methode is al beschikbaar. Kies deze uit de lijst.",
     "methodAddFailed": "Deze methode kon niet worden toegevoegd. Probeer het opnieuw.",
     "methodsUnavailable": "Verwijder niet-beschikbare methoden of laad de bibliotheek opnieuw voordat je verdergaat.",
-    "methodNameDetails": "Alleen aan dit product toegevoegd. Stel hierna de prijzen per decoratieplek in.",
+    "methodNameDetails": "Wordt toegevoegd aan je methodebibliotheek en is beschikbaar voor elk product. Stel hierna de prijzen per decoratieplek in.",
     "forPlacement": "Voor {{placementName}}",
     "thisPlacement": "deze decoratieplek",
     "enabledMethods_one": "{{formattedCount}} methode ingeschakeld",
@@ -1206,6 +1205,5 @@
     "retrySaving": "Opnieuw opslaan",
     "reviewLatestSavedDraft": "Nieuwste opgeslagen concept controleren",
     "reloadCurrentDraft": "Huidig concept opnieuw laden"
-  },
-  "placementSetupCopyEntry": {}
+  }
 }

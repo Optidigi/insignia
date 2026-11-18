@@ -1,9 +1,6 @@
 import {
   MerchantDraftSchema,
-  type MethodConfiguration,
   type MethodDraftBinding,
-  methodAssignedToProduct,
-  methodAssignmentReviewKey,
   type SelectedProductSetup,
   type VersionedMethodConfiguration,
 } from '@insignia/contracts';
@@ -11,8 +8,6 @@ import { type DurableCore, type DurableTransaction, sha256CanonicalJson } from '
 import { reconcileMethodBinding } from '@insignia/domain';
 import { selectedProductDraft } from './selected-product.ts';
 
-export type MethodProductTags = Record<string, string[]>;
-const numericProductId = (value: string) => value.replace(/^gid:\/\/shopify\/Product\//, '');
 const cellKey = (placementId: string, sizeId: string) => JSON.stringify([placementId, sizeId]);
 
 /** Apply catalogue changes only where explicit bindings prove inheritance. */
@@ -20,7 +15,6 @@ export function reconcileSelectedMethodSetup(
   source: SelectedProductSetup,
   methodId: string,
   current: VersionedMethodConfiguration | null,
-  assigned: boolean,
   shopCurrency: string,
 ): SelectedProductSetup {
   const bindings: Record<string, MethodDraftBinding> = { ...source.methodBindings };
@@ -37,12 +31,11 @@ export function reconcileSelectedMethodSetup(
   };
   for (const [localId, previous] of Object.entries(bindings)) {
     if (previous.catalogMethodId !== methodId) continue;
-    const assignmentKey = methodAssignmentReviewKey(current?.configuration ?? null, assigned);
     const priceCurrencyMatches =
       current === null ||
       current.currency === shopCurrency ||
       (current.currency === undefined && current.configuration.pricing === 'product');
-    const binding = reconcileMethodBinding(previous, current, assigned, assignmentKey, priceCurrencyMatches);
+    const binding = reconcileMethodBinding(previous, current, priceCurrencyMatches);
     bindings[localId] = binding;
     const index = product.methods.findIndex((method) => method.id === localId);
     const method = product.methods[index];
@@ -99,25 +92,12 @@ export async function reconcileSelectedMethodDrafts(input: {
   shopId: string;
   methodId: string;
   current: VersionedMethodConfiguration | null;
-  productTags: MethodProductTags;
 }) {
   const records = await input.core.configs.listSelectedForMethod(input.transaction, input.shopId, input.methodId, true);
   for (const record of records) {
     const draft = MerchantDraftSchema.parse(record.draftValue);
     if (!draft.selectedSetup) continue;
-    const method: MethodConfiguration | null = input.current?.configuration ?? null;
-    const tags = input.productTags[numericProductId(record.externalProductId)];
-    if (method?.assignment === 'tags' && tags === undefined)
-      throw new Error('Current product assignment tags unavailable');
-    const assigned =
-      method !== null && methodAssignedToProduct(method, { id: record.externalProductId, tags: tags ?? [] });
-    const setup = reconcileSelectedMethodSetup(
-      draft.selectedSetup,
-      input.methodId,
-      input.current,
-      assigned,
-      draft.shopCurrency,
-    );
+    const setup = reconcileSelectedMethodSetup(draft.selectedSetup, input.methodId, input.current, draft.shopCurrency);
     if (JSON.stringify(setup) === JSON.stringify(draft.selectedSetup)) continue;
     const updated = await input.core.configs.updateDraft(input.transaction, {
       shopId: input.shopId,
@@ -145,7 +125,6 @@ export async function reconcileIncomingSelectedSetup(
   actor: { tenantShopId: string },
   source: SelectedProductSetup,
   shopCurrency: string,
-  authoritativeTags?: readonly string[],
   previous?: SelectedProductSetup,
 ): Promise<SelectedProductSetup> {
   const retained = new Set(source.product.methods.map((method) => method.id));
@@ -172,8 +151,6 @@ export async function reconcileIncomingSelectedSetup(
   }
   for (const methodId of new Set(Object.values(source.methodBindings).map((binding) => binding.catalogMethodId))) {
     const current = catalog.get(methodId) ?? null;
-    if (current?.configuration.assignment === 'tags' && authoritativeTags === undefined)
-      throw new SelectedMethodReviewRequiredError('Current product assignment tags unavailable');
     const bindings = Object.values(source.methodBindings).filter((binding) => binding.catalogMethodId === methodId);
     if (
       current?.configuration.pricing === 'fixed' &&
@@ -181,27 +158,31 @@ export async function reconcileIncomingSelectedSetup(
       bindings.some((binding) => Object.values(binding.prices).some((field) => field.source === 'catalog'))
     )
       throw new SelectedMethodReviewRequiredError('Review Method prices in the current shop currency before saving.');
-    const assigned =
-      current !== null &&
-      methodAssignedToProduct(current.configuration, { id: source.product.id, tags: authoritativeTags ?? [] });
-    setup = reconcileSelectedMethodSetup(setup, methodId, current, assigned, shopCurrency);
+    setup = reconcileSelectedMethodSetup(setup, methodId, current, shopCurrency);
   }
   return setup;
 }
 
-/** New publication must use current inherited facts, without changing its frozen candidate. */
+/**
+ * New publication must use current inherited facts, without changing its frozen candidate. A stored legacy
+ * `unassigned` review is resolved, so it never makes a candidate stale.
+ */
 export async function selectedMethodPublicationIsCurrent(
   core: DurableCore,
   transaction: DurableTransaction,
   actor: { tenantShopId: string },
   source: SelectedProductSetup,
   shopCurrency: string,
-  authoritativeTags?: readonly string[],
 ): Promise<boolean> {
   const configured = new Set(
     source.product.views.flatMap((view) => view.placements.flatMap((placement) => placement.methodIds)),
   );
-  const bindings = Object.entries(source.methodBindings).filter(([id]) => configured.has(id));
+  const bindings = Object.entries(source.methodBindings)
+    .filter(([id]) => configured.has(id))
+    .map(([id, binding]): [string, MethodDraftBinding] => [
+      id,
+      binding.review?.reason === 'unassigned' ? { ...binding, review: null } : binding,
+    ]);
   if (!bindings.length) return true;
   const candidate = { ...source, methodBindings: Object.fromEntries(bindings) };
   try {
@@ -211,7 +192,6 @@ export async function selectedMethodPublicationIsCurrent(
       actor,
       candidate,
       shopCurrency,
-      authoritativeTags,
       candidate,
     );
     return sha256CanonicalJson(candidate) === sha256CanonicalJson(reconciled);
