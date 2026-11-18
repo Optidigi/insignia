@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
+  artworkDeletionWarning,
   formatShopDateTime,
   PurchaseListViewSchema,
   PurchaseOriginalDownloadSchema,
@@ -16,6 +17,18 @@ test('order times show in the shop time zone with its label, or labelled UTC whe
   assert.equal(shown('en-US', created, 'America/New_York', utc), 'Nov 16, 2026, 04:46 PM EST');
   assert.equal(shown('en-GB', created, 'Europe/Amsterdam', utc), '16 Nov 2026, 22:46 CET');
   assert.equal(shown('en-US', created, undefined, utc), 'Nov 16, 2026, 9:46 PM UTC');
+});
+
+test('deletion warnings start 30 days before an order’s artwork is deleted and turn urgent at 7 (spec §10.4)', () => {
+  const now = Date.parse('2026-11-18T12:00:00.000Z');
+  const inDays = (days: number) => new Date(now + days * 86400000).toISOString();
+  assert.equal(artworkDeletionWarning(inDays(180), now), null);
+  assert.equal(artworkDeletionWarning(inDays(30.01), now), null);
+  assert.equal(artworkDeletionWarning(inDays(30), now), 'warning');
+  assert.equal(artworkDeletionWarning(inDays(7.01), now), 'warning');
+  assert.equal(artworkDeletionWarning(inDays(7), now), 'critical');
+  assert.equal(artworkDeletionWarning(inDays(0.5), now), 'critical');
+  assert.equal(artworkDeletionWarning(inDays(0), now), null);
 });
 
 const list = { version: 'm8-purchase-list-v1', items: [], nextCursor: null };

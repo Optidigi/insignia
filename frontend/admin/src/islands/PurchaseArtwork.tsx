@@ -24,7 +24,7 @@ import { authenticatedJson, isShopifyBusy } from '../shared/admin-request';
 import { artworkStatus } from '../shared/artwork-status';
 import { ordersReturnPath } from '../shared/orders-return-path';
 import { startOriginalArtworkDownload } from '../shared/original-artwork-download';
-import { formatShopDateTime } from '../shared/purchase-presentation.ts';
+import { artworkDeletionWarning, formatShopDateTime } from '../shared/purchase-presentation.ts';
 import { localizedPurchaseMoney } from '../shared/purchase-view';
 import { initialRemoteReadState, remoteReadReducer } from '../shared/remote-read-state';
 import { attachmentReducer, initialAttachmentState } from './purchase-attachment-state';
@@ -71,6 +71,7 @@ function Placement({
     placement.currentExpiresAt && Date.parse(placement.currentExpiresAt) < Date.parse(group.payloadExpiresAt)
       ? placement.currentExpiresAt
       : group.payloadExpiresAt;
+  const deletionWarning = artworkDeletionWarning(accessExpiresAt, Date.now());
   const [preview, setPreview] = useState<{
     url: string;
     expiresAt: string;
@@ -316,8 +317,8 @@ function Placement({
           </s-grid>
         </s-query-container>
         {retentionExpired && <s-text color="subdued">{t('orders:purchaseArtwork.placement.retentionEnded')}</s-text>}
-        {assetUsable && !retentionExpired && Date.parse(accessExpiresAt) - Date.now() <= 7 * 86400000 && (
-          <s-banner tone="warning">
+        {assetUsable && !retentionExpired && deletionWarning && (
+          <s-banner tone={deletionWarning}>
             {t('orders:purchaseArtwork.placement.deleteSoon', {
               date: formatShopDateTime(formatLocale, accessExpiresAt, timeZone, (date) =>
                 t('orders:artworkHistory.dateUtc', { date }),

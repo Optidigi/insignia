@@ -143,7 +143,14 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('customer purchase artwork aut
     const f = await fixture();
     const first = await f.repo.issue(f.scope, f.request);
     expect(first?.slots.map((slot) => slot.placementId)).toEqual(['front']);
-    expect(first?.expiresAt).toBe(f.expiresAt.toISOString());
+    // The link lasts as long as the recorded order's design: six months from collection, not the 7-day draft.
+    const design = (
+      await sql<{
+        expires_at: Date;
+      }>`SELECT expires_at FROM purchase_design_payloads WHERE purchase_id=${f.purchaseId}::uuid`.execute(db)
+    ).rows[0];
+    expect(first?.expiresAt).toBe(design?.expires_at.toISOString());
+    expect(+design!.expires_at).toBeGreaterThan(+f.expiresAt + 150 * 86400000);
     expect(await f.repo.issue(f.scope, f.request)).toEqual(first);
     expect(await f.repo.issue(f.scope, { ...f.request, requestId: randomUUID(), purpose: 'paid-email' })).toBeNull();
     await expect(f.repo.issue({ ...f.scope, shopId: randomUUID() }, f.request)).rejects.toThrow(
@@ -178,6 +185,19 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('customer purchase artwork aut
     const purchase = await createPurchaseRepository(db).get(f.scope, f.purchaseId);
     expect(purchase?.originalTotalMinor).toBe('2001');
     expect(purchase?.artworkEvents).toHaveLength(1);
+    // Artwork supplied through the link is the order's artwork: kept with the order, not 7 days.
+    const kept = (
+      await sql<{
+        expires_at: Date;
+        deadline: Date;
+        unused: Date;
+      }>`SELECT a.expires_at,least(public.purchased_retention_deadline(a.collected_at),p.expires_at) AS deadline,w.expires_at AS unused FROM artwork_assets a,purchase_design_payloads p,artwork_assets w WHERE a.asset_id=${assetId}::uuid AND p.purchase_id=${f.purchaseId}::uuid AND w.asset_id=${wrong}::uuid`.execute(
+        db,
+      )
+    ).rows[0]!;
+    expect(kept.expires_at).toEqual(kept.deadline);
+    expect(purchase?.artworkEvents[0]?.expiresAt).toBe(kept.expires_at.toISOString());
+    expect(+kept.unused).toBeLessThanOrEqual(Date.now() + 7 * 86400000);
   });
   it('revokes immediately, rejects expired payloads and deactivated installations without resurrecting missing work', async () => {
     const f = await fixture();

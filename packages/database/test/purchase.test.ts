@@ -1355,4 +1355,176 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
     const locked = await repo.lockArtwork(scope, { purchaseId: purchase.purchaseId, expectedVersion: 1 });
     expect(locked.artworkState).toBe('ARTWORK_LOCKED');
   });
+  // Spec §10.4: 7 days is for unfinished work; a recorded order keeps its production detail until six
+  // calendar months after collection (less a 2-day time-zone margin), never longer.
+  async function retention(purchaseId: string, assetIds: string[]) {
+    const payload = (
+      await sql<{
+        expires_at: Date;
+        deadline: Date;
+        max: Date;
+      }>`SELECT expires_at,public.purchased_retention_deadline(collected_at) AS deadline,collected_at+interval '6 months' AS max FROM purchase_design_payloads WHERE purchase_id=${purchaseId}::uuid`.execute(
+        db,
+      )
+    ).rows[0]!;
+    const assets = (
+      await sql<{
+        asset_id: string;
+        expires_at: Date;
+        deadline: Date;
+        week: Date;
+      }>`SELECT asset_id::text,expires_at,least(public.purchased_retention_deadline(collected_at),${payload.expires_at}::timestamptz) AS deadline,collected_at+interval '7 days' AS week FROM artwork_assets WHERE asset_id=ANY(${assetIds}::uuid[])`.execute(
+        db,
+      )
+    ).rows;
+    return { payload, assets: Object.fromEntries(assets.map((a) => [a.asset_id, a])) };
+  }
+  function referencing(input: PurchaseObservation, assetId: string) {
+    const payload = input.bindings[0]!.designPayload as {
+      request: { groups: { group: { design: { placements: { artwork: unknown }[] } } }[] };
+    };
+    payload.request.groups[0]!.group.design.placements[0]!.artwork = { kind: 'revision', revisionId: assetId };
+  }
+  it('keeps a recorded unpaid order’s artwork and design six calendar months; unreferenced uploads keep 7 days', async () => {
+    const { input, fixture, now } = await bound(),
+      repo = createPurchaseRepository(db),
+      pool = new Pool({ connectionString: process.env.DATABASE_URL }),
+      store = createArtworkRepository(pool);
+    try {
+      input.order.financialStatus = 'PENDING';
+      const used = await asset(fixture.shopId, 'guest', now),
+        draft = await asset(fixture.shopId, 'guest', now);
+      referencing(input, used);
+      const p = requirePurchase(await repo.reconcile(input));
+      expect(p.firstPaidAt).toBeNull();
+      const { payload, assets } = await retention(p.purchaseId, [used, draft]);
+      expect(payload.expires_at).toEqual(payload.deadline);
+      expect(+payload.expires_at).toBeLessThanOrEqual(+payload.max);
+      expect(+payload.expires_at).toBeGreaterThan(+now + 170 * 86400000);
+      expect(p.bindings[0]?.payloadExpiresAt).toBe(payload.expires_at.toISOString());
+      expect(assets[used]?.expires_at).toEqual(assets[used]?.deadline);
+      expect(+assets[draft]!.expires_at).toBeLessThanOrEqual(+assets[draft]!.week);
+      // The inspector's retention sweep, eight days on: the abandoned upload goes, the order's stays.
+      const later = new Date(+now + 8 * 86400000);
+      expect(await store.markDeleting(used, later)).toBeNull();
+      expect((await store.markDeleting(draft, later))?.assetId).toBe(draft);
+      await repo.cleanupDue(1000);
+      const kept = await repo.get(input.order, p.purchaseId);
+      expect(kept?.bindings[0]?.designPayload).not.toBeNull();
+      expect(kept?.artworkState).toBe('READY');
+    } finally {
+      await pool.end();
+    }
+  });
+  it('extends merchant replacement artwork with its attachment, never past the order’s design', async () => {
+    const { input, fixture, now } = await bound(),
+      repo = createPurchaseRepository(db),
+      scope = { shopId: fixture.shopId, installationGeneration: '1', kind: 'merchant' as const };
+    const p = requirePurchase(await repo.reconcile(input));
+    const replacement = await asset(fixture.shopId, 'merchant', now);
+    const attached = await repo.appendArtwork(scope, {
+      purchaseId: p.purchaseId,
+      expectedVersion: 0,
+      groupIndex: 0,
+      placementId: 'front',
+      assetId: replacement,
+      ownerHash: 'b'.repeat(64),
+    });
+    const { payload, assets } = await retention(p.purchaseId, [replacement]);
+    expect(assets[replacement]?.expires_at).toEqual(assets[replacement]?.deadline);
+    expect(+assets[replacement]!.expires_at).toBeLessThanOrEqual(+payload.expires_at);
+    expect(attached.artworkEvents[0]?.expiresAt).toBe(assets[replacement]?.expires_at.toISOString());
+  });
+  it('backfills already-recorded orders once and guards every deadline against other changes', async () => {
+    const { input, fixture, now } = await bound(),
+      repo = createPurchaseRepository(db);
+    const used = await asset(fixture.shopId, 'guest', now);
+    referencing(input, used);
+    const p = requirePurchase(await repo.reconcile(input));
+    const extended = await retention(p.purchaseId, [used]);
+    // Rewind to the pre-migration state: recorded with the session's 7-day deadlines.
+    await db.transaction().execute(async (tx) => {
+      await sql`ALTER TABLE artwork_assets DISABLE TRIGGER artwork_identity_guard`.execute(tx);
+      await sql`ALTER TABLE purchase_design_payloads DISABLE TRIGGER purchase_payload_guard`.execute(tx);
+      await sql`UPDATE artwork_assets SET expires_at=collected_at+interval '7 days' WHERE asset_id=${used}::uuid`.execute(
+        tx,
+      );
+      await sql`UPDATE purchase_design_payloads SET expires_at=collected_at+interval '7 days' WHERE purchase_id=${p.purchaseId}::uuid`.execute(
+        tx,
+      );
+      await sql`ALTER TABLE purchase_design_payloads ENABLE TRIGGER purchase_payload_guard`.execute(tx);
+      await sql`ALTER TABLE artwork_assets ENABLE TRIGGER artwork_identity_guard`.execute(tx);
+    });
+    const backfill = async () =>
+      (
+        await sql<{
+          changed: number;
+        }>`SELECT public.retain_purchased_detail(${p.purchaseId}::uuid) AS changed`.execute(db)
+      ).rows[0]?.changed;
+    expect(await backfill()).toBe(2);
+    expect(await backfill()).toBe(0);
+    expect(await retention(p.purchaseId, [used])).toEqual(extended);
+    // No writer can shorten a deadline or pass the six-month CHECK; new uploads start at 7 days at most.
+    await expect(
+      sql`UPDATE artwork_assets SET expires_at=expires_at-interval '1 day' WHERE asset_id=${used}::uuid`.execute(db),
+    ).rejects.toThrow(/immutable/);
+    await expect(
+      sql`UPDATE purchase_design_payloads SET expires_at=collected_at+interval '6 months 1 day' WHERE purchase_id=${p.purchaseId}::uuid`.execute(
+        db,
+      ),
+    ).rejects.toThrow(/check constraint/);
+    await expect(
+      sql`UPDATE artwork_assets SET expires_at=collected_at+interval '6 months 1 day' WHERE asset_id=${used}::uuid`.execute(
+        db,
+      ),
+    ).rejects.toThrow(/check constraint/);
+    const late = randomUUID();
+    await expect(
+      sql`INSERT INTO artwork_assets(asset_id,shop_id,installation_generation,owner_hash,owner_kind,declared_mime,declared_bytes,state,quarantine_key,original_key,preview_key,collected_at,upload_until,expires_at) VALUES(${late}::uuid,${fixture.shopId},1,${'a'.repeat(64)},'guest','image/png',10,'UPLOADING',${`q/${late}`},${`o/${late}`},${`p/${late}`},clock_timestamp(),clock_timestamp()+interval '5 minutes',clock_timestamp()+interval '8 days')`.execute(
+        db,
+      ),
+    ).rejects.toThrow(/at most 7 days/);
+  });
+  it('a month-end deadline still erases in any session time zone', async () => {
+    const fixture = await purchaseFixture(db),
+      purchaseId = randomUUID();
+    // A UTC day whose next day clamps to the same day six months on (e.g. 30 Aug -> 28 Feb).
+    const days = (year: number, month: number) => new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    const today = new Date();
+    let collected = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - 2, 23));
+    while (
+      !(
+        collected.getUTCDate() >= days(collected.getUTCFullYear(), collected.getUTCMonth() + 6) &&
+        collected.getUTCDate() < days(collected.getUTCFullYear(), collected.getUTCMonth())
+      )
+    )
+      collected = new Date(+collected - 86400000);
+    await sql`INSERT INTO purchase_orders(purchase_id,shop_id,installation_generation,order_id,order_created_at,currency,original_total_minor) VALUES(${purchaseId}::uuid,${fixture.shopId},1,${`gid://shopify/Order/${BigInt(`0x${purchaseId.replaceAll('-', '').slice(0, 12)}`)}`},clock_timestamp(),'USD',2001)`.execute(
+      db,
+    );
+    await sql`INSERT INTO purchase_bindings VALUES(${fixture.shopId},1,${purchaseId}::uuid,${fixture.quote.quoteId}::uuid,${fixture.authorization.setId}::uuid,'{}'::jsonb)`.execute(
+      db,
+    );
+    await sql`INSERT INTO purchase_design_payloads VALUES(${fixture.shopId},1,${purchaseId}::uuid,${fixture.authorization.setId}::uuid,${collected},clock_timestamp()+interval '1 day','{"request":{"groups":[]}}'::jsonb,NULL)`.execute(
+      db,
+    );
+    await db.transaction().execute(async (tx) => {
+      await sql`SET LOCAL TimeZone='Pacific/Kiritimati'`.execute(tx);
+      const bound = (
+        await sql<{
+          local: Date;
+          utc: Date;
+          kept: Date;
+        }>`SELECT collected_at+interval '6 months' AS local,(collected_at AT TIME ZONE 'UTC'+interval '6 months') AT TIME ZONE 'UTC' AS utc,expires_at AS kept FROM purchase_design_payloads WHERE purchase_id=${purchaseId}::uuid`.execute(
+          tx,
+        )
+      ).rows[0]!;
+      // This zone's CHECK bound is a day short of the UTC calendar date; the margin keeps erasure valid.
+      expect(+bound.local).toBeLessThan(+bound.utc);
+      expect(+bound.kept).toBeLessThanOrEqual(+bound.local);
+      await sql`UPDATE purchase_design_payloads SET payload=NULL,erased_at=clock_timestamp() WHERE purchase_id=${purchaseId}::uuid`.execute(
+        tx,
+      );
+    });
+  });
 });
