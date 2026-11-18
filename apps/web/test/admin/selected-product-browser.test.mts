@@ -144,10 +144,11 @@ test('a publication still in progress is continued automatically, then offers Re
   f.page.on('request', (request) => {
     if (api(request)) inFlight++;
   });
-  for (const event of ['requestfinished', 'requestfailed'] as const)
-    f.page.on(event, (request) => {
-      if (api(request)) inFlight--;
-    });
+  const settled = (request: import('playwright').Request) => {
+    if (api(request)) inFlight--;
+  };
+  f.page.on('requestfinished', settled);
+  f.page.on('requestfailed', settled);
   await f.page.clock.install();
   await f.open();
   await f.page
