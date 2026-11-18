@@ -92,3 +92,24 @@ test('handled guest session outcomes are not recorded as unexpected failures', a
   assert.match(issued.headers.get('Cache-Control') ?? '', /no-store/);
   assert.deepEqual(recorded, []);
 });
+
+test('an issued guest session returns only token and expiresAt, even when the issuer returns more', async () => {
+  const minimal = await snapshot(
+    await handleGuestArtworkSession(sessionRequest(), {
+      services: async () => ({ issueGuest: async () => ({ token: 'a.b', expiresAt: '2026-11-17T00:00:00.000Z' }) }),
+    }),
+  );
+  // Production's issuer also returns the derived artwork scope; it must never reach the browser.
+  const issued = {
+    token: 'a.b',
+    expiresAt: '2026-11-17T00:00:00.000Z',
+    scope: { kind: 'guest' as const, shopId: 'shop-1', installationGeneration: 7, ownerHash: 'f'.repeat(64) },
+  };
+  const response = await handleGuestArtworkSession(sessionRequest(), {
+    services: async () => ({ issueGuest: async () => issued }),
+  });
+  const actual = await snapshot(response);
+  assert.equal(actual.status, 200);
+  assert.deepEqual(Object.keys(JSON.parse(actual.body)).sort(), ['expiresAt', 'token']);
+  assert.deepEqual(actual, minimal);
+});
