@@ -374,7 +374,7 @@ test('both admin pages admit the pinned Polaris CDN font without broadening othe
     });
     await page.route('**/api/admin/products?*', (route) => route.fulfill({ json: { products: [], nextCursor: null } }));
     await page.route('**/api/admin/products/111/config', (route) => route.fulfill({ json: selectedConfigView() }));
-    const document = await page.goto(server.base + path);
+    const document = await page.goto(`${server.base}${path}?shop=insignia-rewrite-dev.myshopify.com`);
     const appBridge = page.locator('script').first();
     assert.equal(await appBridge.getAttribute('src'), 'https://cdn.shopify.com/shopifycloud/app-bridge.js');
     for (const forbidden of ['defer', 'async', 'type']) {
@@ -393,7 +393,10 @@ test('both admin pages admit the pinned Polaris CDN font without broadening othe
       'https://cdn.shopify.com/shopifycloud/admin-ui-foundations/icons/',
       'https://cdn.shopify.com/shopifycloud/admin-ui-foundations/experimental/',
     ]);
-    assert.deepEqual(directives['frame-ancestors'], ['https://admin.shopify.com', 'https://*.myshopify.com']);
+    assert.deepEqual(directives['frame-ancestors'], [
+      'https://insignia-rewrite-dev.myshopify.com',
+      'https://admin.shopify.com',
+    ]);
     assert.ok(!required(directives['script-src']).some((value) => value.includes('cloudflare')));
     assert.ok(!required(directives['script-src']).includes("'unsafe-inline'"));
     assert.ok(
