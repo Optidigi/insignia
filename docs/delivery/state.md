@@ -124,7 +124,7 @@ Owner decisions (16 Nov): production starts with a fresh, empty database (dev/te
 
 **Follow-ups.**
 - **Staging app (owner, 16 Nov: decide later; planned right after launch, before the Stitchs/Superfunny pilot).** A separate "Insignia Staging" Shopify app with the same features, scopes (`read_all_orders` and protected data requested again for it), Functions and billing, installed only on dev stores, on its own isolated stack (e.g. `staging.insigniacustomizer.com`, own database, bucket, signing keys, signer and verifier). Changes ship to staging first, then the same image to production. Engineering: the app identity (app ID, client ID, release profiles) currently hard-coded in the verifier, worker admission and release profiles must come from configuration; plus `shopify.app.staging.toml`, its own extension handles, app proxy path and release bindings. About 2–3 days.
-- **Inspector restart.** Done on the host (16 Nov): `ExecStartPre` removes a stale readiness socket and the unit runs with `Restart=on-failure`; since deploy AC these edits are part of the packaged unit template. A code-side cleanup at start would make it independent of the unit file.
+- **Inspector restart.** Done on the host (16 Nov): `ExecStartPre` removes a stale readiness socket and the unit runs with `Restart=on-failure`; the packaged unit template carries them since #569. A code-side cleanup at start would make it independent of the unit file.
 - `/srv/saas/infra/stacks/insignia/` is the production stack since deploy AC.
 
 ### Launch items, 16 November 2026 (evening)
