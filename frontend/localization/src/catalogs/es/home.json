@@ -168,9 +168,7 @@
         "title": "Conectar el tema",
         "description": "Añade el botón de personalización y la revisión del carrito a tu tema.",
         "action": "Abrir la configuración del tema",
-        "button-disabled": "Activa el botón de personalización en tu tema.",
-        "cart-review-disabled": "Activa la revisión del carrito en tu tema.",
-        "both-disabled": "Activa el botón de personalización y la revisión del carrito en tu tema.",
+        "disabled": "Activa el botón de personalización y la revisión del carrito en tu tema.",
         "check": "Comprueba la configuración de la tienda online en tu tema."
       },
       "test": {

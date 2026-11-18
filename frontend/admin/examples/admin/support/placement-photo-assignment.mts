@@ -35,6 +35,8 @@ export interface PlacementPhotoPickerSession {
   imageIds: string[];
   selectionReady: boolean;
   processing: boolean;
+  /** The editor refused the last confirmed assignment (for example while saving); the target stays put. */
+  assignmentRefused: boolean;
 }
 
 export const closedPlacementPhotoPicker: PlacementPhotoPickerSession = {
@@ -49,6 +51,7 @@ export const closedPlacementPhotoPicker: PlacementPhotoPickerSession = {
   imageIds: [],
   selectionReady: false,
   processing: false,
+  assignmentRefused: false,
 };
 
 export type PlacementPhotoPickerEvent =
@@ -67,6 +70,7 @@ export type PlacementPhotoPickerEvent =
   | { type: 'processing-changed'; sessionId: string; pickerRevision: number; processing: boolean }
   | { type: 'context-invalidated'; productId: string; viewId: string; targetRevision: number }
   | { type: 'assignment-advanced'; sessionId: string; nextGroupKey: string; targetRevision: number }
+  | { type: 'assignment-refused'; sessionId: string; pickerRevision: number }
   | { type: 'closed'; sessionId: string };
 
 function currentPicker(state: PlacementPhotoPickerSession, sessionId: string, pickerRevision: number): boolean {
@@ -92,6 +96,7 @@ export function placementPhotoPickerReducer(
         imageIds: [...(event.imageIds ?? [])],
         selectionReady: false,
         processing: false,
+        assignmentRefused: false,
       };
     case 'selection-changed':
       return currentPicker(state, event.sessionId, event.pickerRevision)
@@ -126,7 +131,12 @@ export function placementPhotoPickerReducer(
             imageIds: [],
             selectionReady: false,
             processing: false,
+            assignmentRefused: false,
           }
+        : state;
+    case 'assignment-refused':
+      return currentPicker(state, event.sessionId, event.pickerRevision) && state.intent === 'assign-variant-groups'
+        ? { ...state, assignmentRefused: true }
         : state;
     case 'closed':
       return state.status !== 'closed' && state.sessionId === event.sessionId ? closedPlacementPhotoPicker : state;

@@ -91,3 +91,12 @@ export function productsReducer(state: ProductsState, event: ProductsEvent): Pro
       return { ...state, request: event.request, catalog: { kind: 'loading' }, selectedIds: [], selectionNotice: null };
   }
 }
+
+/** The list shows Shopify's variant total; without it, a truncated vector only proves more than were read. */
+export function productVariantCount(product: CatalogProduct): { count: number; atLeast: boolean } {
+  if (product.variantsCount)
+    return { count: product.variantsCount.count, atLeast: product.variantsCount.precision === 'AT_LEAST' };
+  return product.variantsTruncated
+    ? { count: product.variants.length + 1, atLeast: true }
+    : { count: product.variants.length, atLeast: false };
+}

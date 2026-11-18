@@ -1034,6 +1034,8 @@
       "viewBody_other": "Remove {{viewName}} and its {{formattedCount}} placements from this draft? Product images and existing orders are kept."
     },
     "chooseImageForView": "Choose {{viewName}} image",
+    "chooseImageForViewAppearance": "Choose {{viewName}} image for {{appearanceName}}",
+    "imageNotAssigned": "The image wasn’t assigned to {{appearanceName}}. Wait until saving or publishing finishes, then try again.",
     "viewNameFallback": "view",
     "changeViewImage": "Change view image",
     "addViews": "Add views",

@@ -21,7 +21,7 @@ import {
 } from '../shared/merchant-home-source';
 import { createMerchantPreferencesClient } from '../shared/merchant-preferences-client';
 import { claimPlanSelectionPrompt, planSelectionTarget } from '../shared/plan-prompt';
-import { type ThemeSetupStatus, themeSetupStatus, unknownThemeSetup } from '../shared/storefront-setup';
+import { type ThemeSetupStatus, themeSetupStatus } from '../shared/storefront-setup';
 import MerchantHome from './MerchantHome';
 
 /** Quiet retries of Home's first read while a fresh install's access is still being set up. */
@@ -38,7 +38,7 @@ function guidanceFailureFrom(error: unknown): 'failed' | 'busy' | 'restricted' {
 function MerchantHomeContainer() {
   const [products, setProducts] = useState<HomeProductsPanel>({ state: 'loading' });
   const [orders, setOrders] = useState<HomeOrdersPanel>({ state: 'loading' });
-  const [theme, setTheme] = useState<ThemeSetupStatus>(unknownThemeSetup);
+  const [theme, setTheme] = useState<ThemeSetupStatus>('unknown');
   const [published, setPublished] = useState(false);
   // Both are derived from the same two observations, never stored separately.
   const setup = homeSetupFromTheme(theme, published);
@@ -147,7 +147,7 @@ function MerchantHomeContainer() {
     async function theme() {
       const generation = ++themeGeneration;
       let timer: ReturnType<typeof setTimeout> | undefined;
-      setTheme(unknownThemeSetup());
+      setTheme('unknown');
       if (!bridge?.app?.extensions) return;
       try {
         const result = await Promise.race([

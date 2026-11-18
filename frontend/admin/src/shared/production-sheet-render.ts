@@ -6,6 +6,7 @@ import { authenticatedJson } from './admin-request.js';
 import {
   assertProductionSheetAvailable,
   type ExportMessage,
+  formatProductionMillimetres,
   ProductionSheetError,
   type ProductionWarning,
   productionArtworkAvailable,
@@ -577,8 +578,8 @@ export async function renderProductionSheet(
           {
             value: physical
               ? localization.t('exports:productionSheet.pdf.configuredSize', {
-                  width: new Intl.NumberFormat(localization.formatLocale).format(physical.width),
-                  height: new Intl.NumberFormat(localization.formatLocale).format(physical.height),
+                  width: formatProductionMillimetres(physical.width, localization.formatLocale),
+                  height: formatProductionMillimetres(physical.height, localization.formatLocale),
                 })
               : localization.t('exports:productionSheet.pdf.physicalSizeUnconfigured'),
             size: 20,

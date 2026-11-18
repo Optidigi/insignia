@@ -1159,6 +1159,8 @@
       "viewBody_many": "¿Quitar la vista {{viewName}} de este borrador junto con {{formattedCount}} zonas de diseño? Se conservarán las imágenes del producto y los pedidos existentes."
     },
     "chooseImageForView": "Elegir imagen de {{viewName}}",
+    "chooseImageForViewAppearance": "Elegir imagen de {{viewName}} para {{appearanceName}}",
+    "imageNotAssigned": "La imagen no se ha asignado a {{appearanceName}}. Espera a que termine el guardado o la publicación y vuelve a intentarlo.",
     "viewNameFallback": "vista",
     "changeViewImage": "Cambiar imagen de la vista",
     "addViews": "Añadir vistas",

@@ -167,9 +167,7 @@
         "title": "Je thema koppelen",
         "description": "Voeg de personalisatieknop en de winkelwagencontrole toe aan je thema.",
         "action": "Thema instellen",
-        "button-disabled": "Schakel de personalisatieknop in je thema in.",
-        "cart-review-disabled": "Schakel de winkelwagencontrole in je thema in.",
-        "both-disabled": "Schakel de personalisatieknop en de winkelwagencontrole in je thema in.",
+        "disabled": "Schakel de personalisatieknop en de winkelwagencontrole in je thema in.",
         "check": "Controleer de instellingen van je thema voor de webshop."
       },
       "test": {

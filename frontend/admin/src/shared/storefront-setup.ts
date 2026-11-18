@@ -1,10 +1,9 @@
 import { z } from 'zod';
 
-export type ThemeTaskStatus = 'active' | 'available' | 'unavailable' | 'unknown';
-export type ThemeSetupStatus = { button: ThemeTaskStatus; cart: ThemeTaskStatus };
-export const unknownThemeSetup = (): ThemeSetupStatus => ({ button: 'unknown', cart: 'unknown' });
+/** Status of the one storefront app embed, which owns both automatic Customize button placement and cart review. */
+export type ThemeSetupStatus = 'active' | 'available' | 'unavailable' | 'unknown';
 /** The single definition of "the theme is connected" for Home's setup card and getting-started steps. */
-export const themeConnected = (status: ThemeSetupStatus) => status.button === 'active' && status.cart === 'active';
+export const themeConnected = (status: ThemeSetupStatus) => status === 'active';
 
 const extensionList = z.array(z.object({ type: z.string(), activations: z.array(z.unknown()) }));
 const themeBlock = z.object({
@@ -22,30 +21,26 @@ const themeBlock = z.object({
 /** App Bridge reports published-theme placements, never draft-theme or journey completion. */
 export function themeSetupStatus(input: unknown): ThemeSetupStatus {
   const result = extensionList.safeParse(input);
-  if (!result.success) return unknownThemeSetup();
+  if (!result.success) return 'unknown';
   const records = result.data
     .filter((extension) => extension.type === 'theme_app_extension')
     .flatMap((extension) => extension.activations);
-  function status(handle: string, target: 'section' | 'body'): ThemeTaskStatus {
-    const matches = records.filter(
-      (record) => record !== null && typeof record === 'object' && 'handle' in record && record.handle === handle,
-    );
-    // Ambiguous, missing or invalid records must never produce a positive status or an Add link.
-    if (matches.length !== 1) return 'unknown';
-    const parsed = themeBlock.safeParse(matches[0]);
-    if (!parsed.success || parsed.data.target !== target) return 'unknown';
-    const block = parsed.data;
-    if (
-      (block.status === 'active' && block.activations.length === 0) ||
-      (block.status === 'available' && block.activations.length > 0)
-    )
-      return 'unknown';
-    return block.status;
-  }
-  // The existing body embed now owns both automatic placement and cart repair.
+  // The existing body embed owns both automatic placement and cart repair.
   // A manual section block is an optional placement override, not a setup prerequisite.
-  const storefront = status('cart-repair', 'body');
-  return { button: storefront, cart: storefront };
+  const matches = records.filter(
+    (record) => record !== null && typeof record === 'object' && 'handle' in record && record.handle === 'cart-repair',
+  );
+  // Ambiguous, missing or invalid records must never produce a positive status or an Enable link.
+  if (matches.length !== 1) return 'unknown';
+  const parsed = themeBlock.safeParse(matches[0]);
+  if (!parsed.success || parsed.data.target !== 'body') return 'unknown';
+  const block = parsed.data;
+  if (
+    (block.status === 'active' && block.activations.length === 0) ||
+    (block.status === 'available' && block.activations.length > 0)
+  )
+    return 'unknown';
+  return block.status;
 }
 
 export function storefrontLinks(shop: unknown, apiKey: unknown) {
@@ -62,8 +57,8 @@ export function storefrontLinks(shop: unknown, apiKey: unknown) {
     // Shopify's app block deep link: proposes the optional customization block (blocks/customize.liquid) in the
     // product page's main section; the merchant positions and saves it in the theme editor.
     productBlock: `${editor}?${new URLSearchParams({ template: 'product', addAppBlockId: `${apiKey}/customize`, target: 'mainSection' })}`,
-    cartEditor: `${editor}?context=apps&template=product`,
-    button: `${editor}?${new URLSearchParams({ context: 'apps', template: 'product', activateAppId: `${apiKey}/cart-repair` })}`,
-    cart: `${editor}?${new URLSearchParams({ context: 'apps', template: 'product', activateAppId: `${apiKey}/cart-repair` })}`,
+    embeds: `${editor}?context=apps&template=product`,
+    // The one "Insignia storefront" app embed (handle cart-repair) owns the Customize button and cart review.
+    activate: `${editor}?${new URLSearchParams({ context: 'apps', template: 'product', activateAppId: `${apiKey}/cart-repair` })}`,
   };
 }

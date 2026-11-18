@@ -1069,6 +1069,8 @@
       "size": "Dimensione"
     },
     "chooseImageForView": "Scegli l'immagine di {{viewName}}",
+    "chooseImageForViewAppearance": "Scegli l'immagine di {{viewName}} per {{appearanceName}}",
+    "imageNotAssigned": "L'immagine non è stata assegnata a {{appearanceName}}. Attendi il termine del salvataggio o della pubblicazione, poi riprova.",
     "viewNameFallback": "vista",
     "changeViewImage": "Cambia l'immagine della vista",
     "addViews": "Aggiungi viste",

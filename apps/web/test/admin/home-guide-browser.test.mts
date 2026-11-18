@@ -254,7 +254,7 @@ test('storefront setup asks for a theme save only while a theme change is still 
 }, async (t) => {
   const save = 'Save theme changes in Shopify.';
   const needed = await openMerchantPage(t, '/admin/settings/storefront', { embed: 'available' });
-  await needed.getByText('Not added', { exact: true }).first().waitFor();
+  await needed.getByText('Not enabled', { exact: true }).first().waitFor();
   assert.equal(
     await needed.getByText(save, { exact: true }).count(),
     1,
@@ -262,7 +262,7 @@ test('storefront setup asks for a theme save only while a theme change is still 
   );
 
   const done = await openMerchantPage(t, '/admin/settings/storefront', { embed: 'active' });
-  await done.getByText('Added', { exact: true }).first().waitFor();
+  await done.getByText('Enabled', { exact: true }).first().waitFor();
   assert.equal(await done.getByText(save, { exact: true }).count(), 0, 'nothing to save when everything is enabled');
 
   const unknown = await openMerchantPage(t, '/admin/settings/storefront', { embed: 'unreadable' });
@@ -274,7 +274,7 @@ test('storefront setup links the optional customization block to its Shopify app
   timeout: 30000,
 }, async (t) => {
   const page = await openMerchantPage(t, '/admin/settings/storefront', { embed: 'active' });
-  await page.getByText('Added', { exact: true }).first().waitFor();
+  await page.getByText('Enabled', { exact: true }).first().waitFor();
   const link = page.locator('s-link', { hasText: 'Add the customization block' });
   assert.equal(await link.count(), 1);
   const href = new URL((await link.getAttribute('href')) ?? '');

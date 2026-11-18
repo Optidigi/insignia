@@ -25,6 +25,9 @@ export const AdminCatalogProductSchema = z.object({
     )
     .max(1000),
   variantsTruncated: z.boolean().optional(),
+  variantsCount: z
+    .object({ count: z.number().int().nonnegative(), precision: z.enum(['EXACT', 'AT_LEAST']) })
+    .optional(),
   images: z
     .array(
       z.object({

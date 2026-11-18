@@ -9,15 +9,21 @@ test('one active storefront embed qualifies automatic button placement without a
       activations: [{ target: 'theme/123', themeId: 'gid://shopify/OnlineStoreTheme/123' }],
     }],
   }]);
-  assert.deepEqual(status, { button: 'active', cart: 'active' });
+  assert.equal(status, 'active');
 });
 
-test('automatic setup opens the existing embed activation without a theme write or duplicate manual block', () => {
+test('automatic setup opens the one storefront embed activation without a theme write or duplicate manual block', () => {
   const links = storefrontLinks('example.myshopify.com', '1'.repeat(32));
   assert(links);
-  assert.deepEqual(Object.fromEntries(new URL(links.button).searchParams), {
+  assert.deepEqual(Object.fromEntries(new URL(links.activate).searchParams), {
     context: 'apps', template: 'product', activateAppId: `${'1'.repeat(32)}/cart-repair`,
   });
+  assert.deepEqual(Object.fromEntries(new URL(links.embeds).searchParams), { context: 'apps', template: 'product' });
+  // One embed owns the Customize button and cart review: there is exactly one activation link.
+  assert.deepEqual(
+    Object.values(links).filter((href) => new URL(href).searchParams.has('activateAppId')),
+    [links.activate],
+  );
 });
 
 test('the optional product block link adds the customization block to the product main section', () => {
@@ -35,5 +41,5 @@ test('the optional product block link adds the customization block to the produc
 test('a missing or contradictory embed observation never claims activation', () => {
   for (const value of [[], [{type:'theme_app_extension',activations:[]}], [{
     type:'theme_app_extension',activations:[{handle:'cart-repair',target:'body',status:'active',activations:[]}],
-  }]]) assert.deepEqual(themeSetupStatus(value), {button:'unknown',cart:'unknown'});
+  }]]) assert.equal(themeSetupStatus(value), 'unknown');
 });

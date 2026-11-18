@@ -39,10 +39,8 @@ export function storefrontProductsForExample(example: string): StorefrontPreview
 export const settingsExamples = {
   storefront: [
     ['not-added', 'Before adding Insignia'],
-    ['button-added', 'Customization button added'],
-    ['cart-enabled', 'Cart review enabled first'],
-    ['active', 'Both active in the published theme'],
-    ['unavailable', 'Item unavailable'],
+    ['active', 'Active in the published theme'],
+    ['unavailable', 'Storefront embed unavailable'],
     ['unknown', 'Theme status not available'],
     ['unsupported', 'Status check not supported'],
     ['error', 'Check failed with retry'],

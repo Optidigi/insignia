@@ -456,6 +456,8 @@ test('product search uses the responsive Polaris table with actionable rows and 
                   methodSetup: [],
                   configurationSummary: { state: 'not_configured', methods: [], locations: [] },
                   variants: [{ id: variant, title: 'Blue / Large' }],
+                  variantsTruncated: true,
+                  variantsCount: { count: 42, precision: 'EXACT' },
                 },
               ],
         nextCursor: null,
@@ -493,7 +495,11 @@ test('product search uses the responsive Polaris table with actionable rows and 
   const card = page.locator('#admin-route-content tbody tr');
   assert.equal(await page.getByRole('table', { name: 'Products', exact: true }).count(), 1);
   await card.getByText('Not configured', { exact: true }).waitFor();
-  assert.equal((await card.locator('s-number').innerText()).trim(), '1');
+  assert.equal(
+    (await card.locator('s-number').innerText()).trim(),
+    '42',
+    'the list shows Shopify’s variant total, not the bounded first slice',
+  );
   assert.equal(await page.getByText(/gid:\/\/shopify\//).count(), 0);
   assert.equal(
     await card
@@ -593,8 +599,14 @@ test('settings owns billing and privacy and storefront guidance opens exact unsa
     if (new URL(r.url()).pathname.startsWith('/api/')) requests.push(r.method());
   });
   await page.goto(`${server.base}/admin/settings/storefront`);
-  const button = page.getByRole('link', { name: 'Add to theme: customization button', exact: true });
+  const button = page.getByRole('link', { name: 'Enable in Shopify: Insignia storefront', exact: true });
   await button.waitFor();
+  assert.equal(
+    await page.locator('[data-theme-task]').count(),
+    1,
+    'one storefront embed owns the Customize button and cart review, so setup shows one task',
+  );
+  assert.equal(await page.getByRole('link', { name: /^Enable in Shopify/ }).count(), 1);
   assert.equal(
     await page.locator('s-page > s-link[slot="breadcrumb-actions"]').getAttribute('href'),
     '/admin/settings',
@@ -608,16 +620,6 @@ test('settings owns billing and privacy and storefront guidance opens exact unsa
   assert.equal(link.origin, 'https://example.myshopify.com');
   assert.equal(link.pathname, '/admin/themes/current/editor');
   assert.deepEqual(Object.fromEntries(link.searchParams), {
-    context: 'apps',
-    template: 'product',
-    activateAppId: '11111111111111111111111111111111/cart-repair',
-  });
-  const repair = new URL(
-    required(
-      await page.getByRole('link', { name: 'Enable in Shopify: cart review', exact: true }).getAttribute('href'),
-    ),
-  );
-  assert.deepEqual(Object.fromEntries(repair.searchParams), {
     context: 'apps',
     template: 'product',
     activateAppId: '11111111111111111111111111111111/cart-repair',

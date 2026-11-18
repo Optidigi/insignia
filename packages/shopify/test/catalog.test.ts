@@ -317,3 +317,41 @@ it('omits absent, image-only and invalid swatch colours without guessing from th
     expect((await reader.get(id))?.variants[0]?.selectedOptions).toEqual([{ name: 'Colour', value: 'Blue' }]);
   }
 });
+
+it('lists the Shopify variant count while fetching only the first eight variants', async () => {
+  const { createCatalogTransport } = await import('../src/catalog.js');
+  const requests: string[] = [];
+  let raw: Record<string, unknown> = { ...product, variantsCount: { count: 42, precision: 'EXACT' } };
+  const reader = createCatalogReader(
+    createCatalogTransport({
+      shop: 'synthetic.myshopify.com',
+      accessToken: 'synthetic-token',
+      fetchImpl: async (_url, init) => {
+        requests.push((JSON.parse(String(init?.body)) as { query: string }).query);
+        return Response.json({
+          data: { products: { nodes: [raw], pageInfo: { hasNextPage: false, endCursor: null } } },
+        });
+      },
+    }),
+  );
+  expect((await reader.list({ first: 1 })).products[0]?.variantsCount).toEqual({ count: 42, precision: 'EXACT' });
+  expect(requests[0]).toMatch(/variantsCount\s*\{\s*count precision\s*\}/);
+  expect(requests[0]).toContain('variants(first: 8)');
+  raw = { ...product, variantsCount: { count: 10000, precision: 'AT_LEAST' } };
+  expect((await reader.list({ first: 1 })).products[0]?.variantsCount).toEqual({
+    count: 10000,
+    precision: 'AT_LEAST',
+  });
+  // A missing count stays unknown rather than being guessed from the bounded variant vector.
+  raw = { ...product };
+  expect((await reader.list({ first: 1 })).products[0]?.variantsCount).toBeUndefined();
+  for (const variantsCount of [
+    { count: -1, precision: 'EXACT' },
+    { count: 3, precision: 'ROUGH' },
+    { count: 1.5, precision: 'EXACT' },
+    { count: 0, precision: 'EXACT' },
+  ]) {
+    raw = { ...product, variantsCount };
+    await expect(reader.list({ first: 1 })).rejects.toThrow('variant count');
+  }
+});

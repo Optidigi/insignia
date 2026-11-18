@@ -1060,6 +1060,8 @@
       "viewBody_many": "Supprimer {{viewName}} et ses {{formattedCount}} emplacements de ce brouillon ? Les images du produit et les commandes existantes sont conservées."
     },
     "chooseImageForView": "Choisir l’image {{viewName}}",
+    "chooseImageForViewAppearance": "Choisir l’image {{viewName}} pour {{appearanceName}}",
+    "imageNotAssigned": "L’image n’a pas été attribuée à {{appearanceName}}. Attendez la fin de l’enregistrement ou de la publication, puis réessayez.",
     "viewNameFallback": "vue",
     "changeViewImage": "Modifier l’image de la vue",
     "addViews": "Ajouter des vues",

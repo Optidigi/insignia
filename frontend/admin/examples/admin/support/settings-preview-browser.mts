@@ -229,7 +229,8 @@ if (area === 'storefront') {
           handle,
           name: handle,
           target: handle === 'customize' ? 'section' : 'body',
-          status: example === 'unavailable' && handle === 'customize' ? 'unavailable' : active ? 'active' : 'available',
+          status:
+            example === 'unavailable' && handle === 'cart-repair' ? 'unavailable' : active ? 'active' : 'available',
           activations: active
             ? [
                 {
@@ -244,8 +245,8 @@ if (area === 'storefront') {
             handle: 'insignia',
             type: 'theme_app_extension',
             activations: [
-              block('customize', isProductTestExample || ['active', 'button-added'].includes(example)),
-              block('cart-repair', isProductTestExample || ['active', 'cart-enabled'].includes(example)),
+              block('customize', isProductTestExample || example === 'active'),
+              block('cart-repair', isProductTestExample || example === 'active'),
             ],
           },
         ];
