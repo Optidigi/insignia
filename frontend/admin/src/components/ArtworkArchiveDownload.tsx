@@ -21,6 +21,10 @@ import AdminActionChip from './AdminActionChip';
 import '../styles/artwork-archive-download.css';
 
 type OrderNote = { purchase: PurchaseView; holds: ReturnType<typeof productionOrderWarnings> };
+type HostToast = { show(message: string, options?: { duration?: number }): unknown };
+/** Shopify's toast outlives the dialog it confirms; the embedded admin always provides it. */
+const hostToast = (): HostToast | undefined =>
+  (window as unknown as { shopify?: { toast?: HostToast } }).shopify?.toast;
 
 /** Explicit, bounded preparation. Signed URLs and original bytes are never persisted. */
 export default function ArtworkArchiveDownload({
@@ -37,6 +41,7 @@ export default function ArtworkArchiveDownload({
   compact?: boolean;
 }) {
   const id = useId();
+  const modal = useRef<HTMLElementTagNameMap['s-modal']>(null);
   const localization = useAdminLocale();
   const { t: translateUi } = localization;
   const [result, setResult] = useState<ArtworkArchive | null>(null);
@@ -154,6 +159,13 @@ export default function ArtworkArchiveDownload({
       anchor.click();
       anchor.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+      // The ZIP is handed to the browser: confirm it and close the dialog (hiding it clears the archive).
+      try {
+        hostToast()?.show(translateUi('exports:artworkArchiveDownload.downloaded'));
+      } catch {
+        /* The download itself already succeeded. */
+      }
+      modal.current?.hideOverlay();
     } catch (error) {
       if (!controller.signal.aborted) {
         clear(
@@ -245,6 +257,7 @@ export default function ArtworkArchiveDownload({
         </s-button>
       )}
       <s-modal
+        ref={modal}
         id={id}
         heading={translateUi('exports:artworkArchiveDownload.downloadArtwork')}
         size={purchases.length === 1 ? 'base' : 'large'}
