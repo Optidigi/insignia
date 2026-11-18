@@ -16,7 +16,7 @@
     "@insignia/contracts": "workspace:*",
     "@insignia/ui-localization": "workspace:*",
     "@insignia/visualizer": "workspace:*",
-    "preact": "10.29.8"
+    "preact": "11.2.0"
   },
   "devDependencies": {
     "@types/node": "24.10.0",

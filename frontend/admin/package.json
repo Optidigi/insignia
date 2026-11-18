@@ -19,7 +19,7 @@
     "astro": "7.4.12",
     "fflate": "0.8.2",
     "pdf-lib": "1.17.1",
-    "preact": "10.29.8",
+    "preact": "11.2.0",
     "zod": "4.6.5",
     "@insignia/visualizer": "workspace:*"
   },
