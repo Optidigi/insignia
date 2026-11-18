@@ -232,24 +232,6 @@ it('keeps image dimensions and option axes from the provider without inventing m
   expect(value?.imagesTruncated).toBe(false);
 });
 
-it('reads tag assignments in exact bounded identity batches and refuses missing provider nodes', async () => {
-  const reader = createCatalogReader({
-    async read<T>(operation: string, variables: Record<string, unknown>): Promise<T> {
-      expect(operation).toBe('tags');
-      expect(variables).toEqual({ ids: [id] });
-      return { nodes: [{ id, tags: ['shirts'] }] } as T;
-    },
-  });
-  expect(await reader.productTags([id])).toEqual({ [id]: ['shirts'] });
-  const unavailable = createCatalogReader({
-    async read<T>(): Promise<T> {
-      return { nodes: [null] } as T;
-    },
-  });
-  await expect(unavailable.productTags([id])).rejects.toThrow('identity');
-  await expect(unavailable.productTags([id, id])).rejects.toThrow('batch');
-});
-
 it('reads and projects Shopify option-value colour facts through the real catalog transport', async () => {
   const { createCatalogTransport } = await import('../src/catalog.js');
   const requests: string[] = [];

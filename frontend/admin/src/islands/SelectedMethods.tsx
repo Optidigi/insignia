@@ -342,7 +342,12 @@ export default function SelectedMethods({
       : [...currentState.methods, value];
     if ((await persistMethods(next)) !== 'saved') return;
     sendWorkflow({ type: 'method-saved', sessionId: currentState.editorSessionId, method: value });
-    history.replaceState({ methodPosition: historyPosition.current }, '', `${indexPath}/${value.id}`);
+    // A created method gets its own URL; the query (host context, locale) stays so a reload reopens it.
+    history.replaceState(
+      { methodPosition: historyPosition.current },
+      '',
+      `${indexPath}/${value.id}${location.search}${location.hash}`,
+    );
     setNotice({ kind: 'saved', created: !currentEditor.id });
   }
   function discardEditor() {
