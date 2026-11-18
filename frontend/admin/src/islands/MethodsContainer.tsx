@@ -86,6 +86,7 @@ function MethodsContainer() {
       const methodCurrencies = Object.fromEntries(
         catalog.methods.flatMap((method) => (method.currency ? [[method.configuration.id, method.currency]] : [])),
       );
+      // Product setups give each method's usage counts; every product can add any library method.
       const products: MethodProduct[] = [];
       const cursors = new Set<string>();
       const productIds = new Set<string>();
@@ -97,7 +98,6 @@ function MethodsContainer() {
         for (const item of page.products) {
           if (productIds.has(item.id)) throw new Error('Product catalogue changed during pagination');
           productIds.add(item.id);
-          if (item.collectionsTruncated) throw new Error('Complete product collections unavailable');
           if (item.configurationSummary.state !== 'not_configured' && item.methodSetup === undefined)
             throw new Error('Product method setup unavailable');
           products.push({

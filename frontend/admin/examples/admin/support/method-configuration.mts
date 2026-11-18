@@ -8,6 +8,7 @@ export const methodConfigurationSchema = z.object({
   explanation: z.string(),
   pricing: z.enum(['fixed', 'product']),
   amount: z.string(),
+  // Legacy assignment fields round-trip unchanged; every library method is available on every product.
   assignment: z.enum(['manual', 'tags']),
   productIds: z.array(z.string()),
   tags: z.array(z.string()),
@@ -35,8 +36,8 @@ export const methodPreviewSchema = z.object({
 });
 export type MethodConfiguration = z.infer<typeof methodConfigurationSchema>;
 export type MethodProduct = z.infer<typeof methodProductSchema>;
-export type MethodValidationReason = 'invalid-name' | 'invalid-price' | 'missing-tags';
-export type MethodErrors = Partial<Record<'name' | 'amount' | 'tags', MethodValidationReason>>;
+export type MethodValidationReason = 'invalid-name' | 'invalid-price';
+export type MethodErrors = Partial<Record<'name' | 'amount', MethodValidationReason>>;
 
 export function newMethod(): MethodConfiguration {
   return {
@@ -60,21 +61,11 @@ export function methodErrors(method: MethodConfiguration): MethodErrors {
   )
     errors.name = 'invalid-name';
   if (method.pricing === 'fixed' && parsePrice(method.amount).kind !== 'valid') errors.amount = 'invalid-price';
-  if (method.assignment === 'tags' && !method.tags.length) errors.tags = 'missing-tags';
   return errors;
 }
-export function assignedProducts(method: MethodConfiguration, products: readonly MethodProduct[]): MethodProduct[] {
-  if (method.assignment === 'manual') {
-    const normalize = (id: string) => id.replace(/^gid:\/\/shopify\/Product\//, '');
-    const ids = new Set(method.productIds.map(normalize));
-    return products.filter((product) => ids.has(normalize(product.id)));
-  }
-  if (!method.tags.length) return [];
-  return products.filter((product) =>
-    method.tagMatch === 'all'
-      ? method.tags.every((tag) => product.tags.includes(tag))
-      : method.tags.some((tag) => product.tags.includes(tag)),
-  );
+/** Products whose setup uses this method; every product can add it. */
+export function productsUsing(method: MethodConfiguration, products: readonly MethodProduct[]): MethodProduct[] {
+  return products.filter((product) => product.setup.some((item) => item.methodId === method.id && item.locations > 0));
 }
 export function productReadiness(
   method: MethodConfiguration,

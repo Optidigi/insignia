@@ -1,9 +1,9 @@
 /** Local Methods presentation helpers; not production catalog commands. */
 import {
-  assignedProducts,
   type MethodConfiguration,
   type MethodProduct,
   productReadiness,
+  productsUsing,
 } from './method-configuration.mts';
 import { formatPrice, parsePrice } from './method-workflow-prices.mts';
 
@@ -18,7 +18,6 @@ export function duplicateConfiguration(
   source: MethodConfiguration,
   methods: readonly MethodConfiguration[],
   id: string,
-  copyAssignment = false,
 ): MethodConfiguration {
   const names = new Set(methods.map((method) => method.name.trim().toLocaleLowerCase()));
   let index = 1;
@@ -35,9 +34,11 @@ export function duplicateConfiguration(
     ...source,
     id,
     name,
-    assignment: copyAssignment ? source.assignment : 'manual',
-    productIds: copyAssignment && source.assignment === 'manual' ? [...source.productIds] : [],
-    tags: copyAssignment && source.assignment === 'tags' ? [...source.tags] : [],
+    // A copy starts without the source's legacy assignment values.
+    assignment: 'manual',
+    productIds: [],
+    tags: [],
+    tagMatch: 'any',
   };
 }
 function csvCell(value: string): string {
@@ -54,14 +55,12 @@ export function methodSummaryCsv(methods: readonly MethodConfiguration[], produc
       'Fixed price',
       'Currency',
       'Charging unit',
-      'Assignment',
-      'Tags',
-      'Tag match',
-      'Assigned products',
+      'Available on',
+      'Products using',
       'Products needing setup',
     ],
     ...methods.map((method) => {
-      const scope = assignedProducts(method, products);
+      const scope = productsUsing(method, products);
       const price = parsePrice(method.amount);
       const amount =
         method.pricing === 'fixed' && price.kind === 'valid'
@@ -74,9 +73,7 @@ export function methodSummaryCsv(methods: readonly MethodConfiguration[], produc
         amount,
         method.pricing === 'fixed' ? methodCurrencies[method.id] ?? currency : '',
         method.pricing === 'fixed' ? 'Per location per item' : '',
-        method.assignment === 'manual' ? 'Manual' : 'By tag',
-        method.assignment === 'tags' ? method.tags.join('; ') : '',
-        method.assignment === 'tags' ? method.tagMatch : '',
+        'All products',
         String(scope.length),
         String(scope.filter((product) => !productReadiness(method, product).ready).length),
       ];

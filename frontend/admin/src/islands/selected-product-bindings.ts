@@ -5,33 +5,21 @@ import type {
   PlacementProduct,
   VersionedMethodConfiguration,
 } from '@insignia/contracts';
-import { methodAssignedToProduct, methodAssignmentReviewKey } from '@insignia/contracts';
 import { reconcileMethodBinding } from '@insignia/domain';
 import { canonicalPriceText } from '../../examples/admin/support/method-workflow-prices.mts';
 
 export type ProductMethodBindings = Record<string, MethodDraftBinding>;
 const cellKey = (placementId: string, sizeId: string) => JSON.stringify([placementId, sizeId]);
 
-/** Display assignment review as soon as current product tags are observed, without changing prices/text or saving. */
+/** Display the current library review (deletion only) without changing prices/text or saving. */
 export function currentProductMethodReviews(
   bindings: ProductMethodBindings,
   catalog: readonly VersionedMethodConfiguration[],
-  product: { id: string; tags?: readonly string[] },
 ): ProductMethodBindings {
   let next = bindings;
   for (const [id, binding] of Object.entries(bindings)) {
     const current = catalog.find((method) => method.configuration.id === binding.catalogMethodId) ?? null;
-    if (current?.configuration.assignment === 'tags' && product.tags === undefined)
-      throw new Error('Current product assignment tags unavailable');
-    const assigned =
-      !!current && methodAssignedToProduct(current.configuration, { id: product.id, tags: product.tags ?? [] });
-    const review = reconcileMethodBinding(
-      binding,
-      current,
-      assigned,
-      methodAssignmentReviewKey(current?.configuration ?? null, assigned),
-      false,
-    ).review;
+    const review = reconcileMethodBinding(binding, current, false).review;
     if (
       binding.review?.reason === review?.reason &&
       binding.review?.catalogVersion === review?.catalogVersion &&

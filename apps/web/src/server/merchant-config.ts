@@ -575,7 +575,7 @@ export function createMerchantConfigService(input: {
         authority?: string;
       },
     ): Promise<Outcome> {
-      const catalogProduct = await product(actor, productId);
+      await product(actor, productId);
       let draft: MerchantDraft;
       try {
         draft = validatedDraft(data.draft, actor, productId);
@@ -624,7 +624,6 @@ export function createMerchantConfigService(input: {
                         actor,
                         draft.selectedSetup,
                         draft.shopCurrency,
-                        catalogProduct.tags,
                         previousSetup,
                       ),
                     },
@@ -777,7 +776,6 @@ export function createMerchantConfigService(input: {
               actor,
               selectedSetup,
               snapshot.shopCurrency,
-              catalogProduct.tags,
             );
             return current ? 'current' : 'review';
           });
@@ -788,7 +786,8 @@ export function createMerchantConfigService(input: {
               kind: 'invalid',
               code: 'METHOD_REVIEW_REQUIRED',
               noEffect: true,
-              message: 'Method defaults or assignments changed. Save and review the current draft before publishing.',
+              message:
+                'Method defaults changed or a method was deleted. Save and review the current draft before publishing.',
             };
         }
         const selectedProblems = selectedPublicationProblems(snapshot, catalogProduct);

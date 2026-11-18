@@ -1,6 +1,6 @@
 /** Explicit catalog-to-product snapshots for the loopback preview only. */
-import { assignedProducts, methodErrors, methodPreviewSchema } from './method-configuration.mts';
-import type { EditorMethod, PlacementProduct } from './placement-workflow-model.mts';
+import { methodErrors, methodPreviewSchema, newMethod } from './method-configuration.mts';
+import type { EditorMethod } from './placement-workflow-model.mts';
 
 type MethodCatalog = ReturnType<typeof methodPreviewSchema.parse>;
 
@@ -22,6 +22,19 @@ export async function loadPlacementMethodCatalog(signal: AbortSignal): Promise<M
     ids.add(method.id);
   }
   return { ...data, methods };
+}
+
+/** Demo "Add method": the new method joins the session's method library, like the production POST. */
+export async function createPlacementPreviewMethod(input: { id: string; name: string }): Promise<EditorMethod> {
+  const large = sessionStorage.getItem('insignia-method-catalog') === 'large';
+  const { methods } = await loadPlacementMethodCatalog(AbortSignal.timeout(10_000));
+  if (methods.length >= 100) throw new Error('The method library is full.');
+  const method = { ...newMethod(), id: input.id, name: input.name, pricing: 'product' as const };
+  sessionStorage.setItem(
+    methodCatalogStorageKey(large),
+    JSON.stringify([...methods.filter((item) => item.id !== input.id), method]),
+  );
+  return { id: method.id, name: method.name, pricing: 'product', amount: '' };
 }
 
 export { availablePlacementMethods, importPlacementMethods } from '../../../src/islands/selected-method-choices.ts';

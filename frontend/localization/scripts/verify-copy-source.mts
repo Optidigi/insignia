@@ -619,7 +619,6 @@ async function filesUnder(directory: string, extension: string): Promise<string[
 const selectedSupportComponents = [
   'method-dialog.tsx',
   'method-index.tsx',
-  'method-product-picker.tsx',
   'method-summary.tsx',
   'method-workflow-preview.tsx',
   'placement-copy-destinations.tsx',

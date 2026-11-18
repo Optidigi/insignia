@@ -545,8 +545,7 @@
     "editPrice": "Modifier le prix",
     "editPrices": "Modifier les prix",
     "perSize": "Par taille",
-    "addAMethodForThisProductOrCreateAReusableMethodInYourLibrary": "Ajoutez une technique à ce produit ou créez une technique réutilisable dans votre bibliothèque.",
-    "saveDraftAndOpenLibrary": "Enregistrer le brouillon et ouvrir la bibliothèque",
+    "addAMethodForThisProductOrCreateAReusableMethodInYourLibrary": "Ajoutez une technique à votre bibliothèque. Elle sera disponible pour tous les produits.",
     "noMethodsMatchTheseFilters": "Aucune technique ne correspond à ces filtres.",
     "showAllMethods": "Afficher toutes les techniques",
     "pricePerPlacementPerGarment": "Prix par emplacement et par article",
@@ -566,7 +565,7 @@
     "nameDuplicate": "Une technique portant ce nom est déjà disponible. Choisissez-la dans la liste.",
     "methodAddFailed": "Impossible d’ajouter cette technique. Réessayez.",
     "methodsUnavailable": "Supprimez les techniques indisponibles ou rechargez la bibliothèque avant de continuer.",
-    "methodNameDetails": "Ajoutée à ce produit uniquement. Définissez ensuite ses prix par emplacement.",
+    "methodNameDetails": "Ajoutée à votre bibliothèque de techniques et disponible pour tous les produits. Définissez ensuite ses prix par emplacement.",
     "forPlacement": "Pour {{placementName}}",
     "thisPlacement": "cet emplacement",
     "enabledMethods_one": "{{formattedCount}} technique activée",
@@ -719,7 +718,6 @@
       "copyTo_many": "Copier vers {{formattedCount}} produits"
     }
   },
-  "placementSetupCopyEntry": {},
   "placementSetupCopyReview": {
     "imageUnavailable": "Image indisponible",
     "viewsToCopy": "Vues à copier",
@@ -1107,7 +1105,7 @@
     "realReviewCurrency": "Vérifier les prix dans la devise de la boutique",
     "realCalibrateImage": "Calibrer l’image",
     "realDimensionsRequired": "Calibrez cette image pour définir les dimensions de production. Mesurez une largeur connue sur le vêtement, par exemple la largeur de poitrine.",
-    "realReviewMethods": "Vérifiez les méthodes non attribuées ou supprimées avant de publier.",
+    "realReviewMethods": "Vérifiez les méthodes supprimées avant de publier.",
     "realKeepMethod": "Conserver la méthode",
     "realRemoveMethod": "Supprimer la méthode",
     "realCapacityExceeded": "Cette configuration dépasse les limites prises en charge : 16 vues, 32 emplacements, 32 méthodes, 64 tailles de décoration, 250 variantes et 100 ajustements d’image ou d’alignement par vue ou emplacement.",

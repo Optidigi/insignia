@@ -16,18 +16,12 @@
       "allPricing": "Todos los precios",
       "fixedPrice": "Precio fijo",
       "productSpecific": "Precios específicos por producto",
-      "assignment": "Asignación",
-      "allAssignments": "Todas las asignaciones",
-      "manual": "Manual",
-      "byTag": "Por etiqueta",
       "setup": "Configuración",
       "allMethods": "Todas las técnicas",
       "needsSetup": "Requiere configuración",
-      "noProductsAssigned": "Sin productos asignados",
       "configured": "Configurada",
       "clear": "Borrar filtros",
       "editPricing": "Editar filtro de precio",
-      "editAssignment": "Editar filtro de asignación",
       "editSetup": "Editar filtro de configuración"
     },
     "sorting": {
@@ -61,8 +55,6 @@
       "results_other": "{{formattedCount}} técnicas",
       "products_one": "{{formattedCount}} producto",
       "products_other": "{{formattedCount}} productos",
-      "available_one": "{{formattedCount}} disponible",
-      "available_other": "{{formattedCount}} disponibles",
       "needsSetup_one": "{{formattedCount}} requiere configuración",
       "needsSetup_other": "{{formattedCount}} requieren configuración",
       "pageRange": "{{first}}–{{last}} de {{formattedCount}} técnicas",
@@ -73,12 +65,11 @@
       "more_many": "Y {{formattedCount}} técnicas más.",
       "selected_many": "{{formattedCount}} seleccionadas",
       "results_many": "{{formattedCount}} técnicas",
-      "available_many": "{{formattedCount}} disponibles",
-      "needsSetup_many": "{{formattedCount}} requieren configuración"
+      "needsSetup_many": "{{formattedCount}} requieren configuración",
+      "allProductsAvailable": "Disponible en todos los productos"
     },
     "setup": {
-      "noMatchingProducts": "No hay productos que coincidan",
-      "notAssigned": "No asignada"
+      "notUsed": "Aún no se usa"
     },
     "empty": {
       "noMethodsFound": "No se encontraron técnicas",
@@ -96,10 +87,7 @@
   "workflow": {
     "title": "Técnicas de personalización",
     "createTitle": "Crear técnica",
-    "productSetup": "Configuración del producto",
     "actions": {
-      "removeProduct": "Eliminar {{productName}}",
-      "removeTag": "Eliminar etiqueta {{tagName}}",
       "exportAll": "Exportar todas las técnicas",
       "methodsBreadcrumb": "Técnicas",
       "create": "Crear técnica",
@@ -128,24 +116,20 @@
       "defaultPricing": "Precios predeterminados",
       "pricing": "Precio",
       "productAvailability": "Disponibilidad en productos",
-      "assignment": "Asignación",
       "pricePerLocation": "Precio por zona y por artículo",
       "priceHelp": "Por zona y artículo. Introduce 0 para que la personalización sea gratuita.",
-      "productsMustMatch": "Los productos deben coincidir con",
-      "searchTags": "Buscar etiquetas",
-      "searchAssignedProducts": "Buscar productos asignados",
       "productSetup": "Configuración del producto",
       "translationLanguage": "Idioma de traducción",
       "defaultText": "Texto predeterminado",
       "realExplanation": "Descripción (opcional)",
-      "realExplanationHelp": "Visible para comerciantes y clientes al elegir este método de decoración."
+      "realExplanationHelp": "Visible para comerciantes y clientes al elegir este método de decoración.",
+      "searchProductsUsing": "Buscar productos que usan esta técnica"
     },
     "copy": {
       "duplicateNameError": "Introduce un nombre de hasta 80 caracteres.",
       "duplicateStorageError": "El navegador no pudo guardar esta copia. Vuelve a intentarlo.",
       "nameRequired": "Introduce un nombre de hasta 80 caracteres.",
       "priceRequired": "Introduce un precio entre 0 y 99.999,99.",
-      "tagRequired": "Elige al menos una etiqueta de producto.",
       "duplicateWarning": "Ya existe una técnica con este nombre. Usa otro nombre para que los clientes puedan distinguirlas.",
       "duplicateWarningShort": "Ya existe una técnica con este nombre. Usa otro nombre si los clientes necesitan distinguirlas.",
       "defaultsDescription": "Los valores predeterminados se copian al añadir una técnica a un producto. Los precios de los productos existentes no cambian.",
@@ -162,64 +146,41 @@
       "setupLimitReached": "Se alcanzó el límite de {{formattedCount}} técnicas. Elimina una antes de crear otra.",
       "needsSetupCount_one": "{{formattedCount}} requiere configuración",
       "needsSetupCount_other": "{{formattedCount}} requieren configuración",
-      "assignmentChanges": "Cambios en las asignaciones: {{added}} añadidas, {{removed}} eliminadas.",
-      "matchingProducts_one": "{{formattedCount}} producto coincide actualmente.",
-      "matchingProducts_other": "{{formattedCount}} productos coinciden actualmente.",
       "productPageRange": "{{first}}–{{last}} de {{formattedCount}}",
       "unsavedChanges": "Cambios de la técnica sin guardar",
       "removeOneHeading": "¿Eliminar {{methodName}}?",
       "removeManyHeading_one": "¿Eliminar {{formattedCount}} técnica seleccionada?",
       "removeManyHeading_other": "¿Eliminar {{formattedCount}} técnicas seleccionadas?",
-      "noProductAssignmentsRemoved": "No se eliminarán asignaciones a productos.",
-      "removeOneAvailability_one": "La técnica dejará de estar disponible en {{formattedCount}} producto.",
-      "removeOneAvailability_other": "La técnica dejará de estar disponible en {{formattedCount}} productos.",
-      "removeManyAvailability_one": "Se eliminará la disponibilidad de estas técnicas en {{formattedCount}} producto.",
-      "removeManyAvailability_other": "Se eliminará la disponibilidad de estas técnicas en {{formattedCount}} productos.",
       "setupFixedPrice": "Define el mismo precio por zona y tamaño en todos los productos seleccionados.",
       "setupProductPrice": "Define los precios de cada producto según la zona y el tamaño del diseño.",
-      "tagMatchSummary": "Coincidir con {{match}} de estas etiquetas: {{tags}}. Los cambios futuros en las etiquetas pueden modificar los productos coincidentes.",
-      "matchingProducts_many": "{{formattedCount}} productos coinciden actualmente.",
       "removeManyHeading_many": "¿Eliminar {{formattedCount}} técnicas seleccionadas?",
       "needsSetupCount_many": "{{formattedCount}} requieren configuración",
-      "removeOneAvailability_many": "La técnica dejará de estar disponible en {{formattedCount}} productos.",
-      "removeManyAvailability_many": "Se eliminará la disponibilidad de estas técnicas en {{formattedCount}} productos.",
       "translationFallback": "Deja una traducción vacía para usar el texto predeterminado.",
       "currencyReview": "El precio guardado es {{amount}}, pero la tienda ahora usa {{currency}}. Introduce y guarda un precio revisado en la moneda actual.",
       "realDefaultsDescription": "Los cambios en el precio predeterminado actualizan los borradores que lo heredan. Los precios propios del producto se conservan; publica cada producto por separado.",
       "realFixedPriceDescription": "Usa un precio predeterminado heredado para las ubicaciones y los tamaños del producto.",
-      "realLeaveSavedData": "Los productos publicados y los pedidos no cambian. Los borradores configurados conservan el método y requieren confirmar si se mantiene o se elimina antes de publicar."
+      "realLeaveSavedData": "Los productos publicados y los pedidos no cambian. Los borradores configurados conservan el método y requieren confirmar si se mantiene o se elimina antes de publicar.",
+      "availableOnAllProducts": "Disponible en todos los productos. Añádela a las zonas en la configuración de cada producto.",
+      "removeOneFromAllProducts": "Esta técnica ya no estará disponible en ningún producto.",
+      "removeManyFromAllProducts": "Estas técnicas ya no estarán disponibles en ningún producto."
     },
     "pricing": {
       "fixed": "Precio fijo",
       "productSpecific": "Precios específicos por producto",
       "perPlacement": "Los precios específicos por producto se gestionan en cada producto."
     },
-    "assignment": {
-      "manual": "Elegir productos",
-      "manualHelp": "Permite añadir esta técnica a las configuraciones de los productos seleccionados.",
-      "tags": "Coincidir por etiquetas",
-      "tagsHelp": "Ofrece esta técnica en las configuraciones de los productos que coincidan. Las copias existentes no cambiarán.",
-      "selectProducts": "Seleccionar productos",
-      "selectCollections": "Seleccionar colecciones",
-      "chooseTags": "Elegir etiquetas",
-      "anyTag": "Cualquiera de las etiquetas seleccionadas",
-      "allTags": "Todas las etiquetas seleccionadas"
-    },
     "filter": {
-      "filterAssigned": "Filtrar productos asignados",
       "allProducts": "Todos los productos",
       "needsSetup": "Requiere configuración",
       "configured": "Configurado",
       "noProductMatch": "Ningún producto coincide con esta búsqueda o filtro de configuración.",
-      "clearProductFilters": "Borrar filtros de productos"
+      "clearProductFilters": "Borrar filtros de productos",
+      "filterProducts": "Filtrar productos"
     },
     "empty": {
-      "noTags": "No se encontraron etiquetas.",
-      "noProductsForTags": "Ningún producto coincide con estas etiquetas.",
-      "chooseTags": "Elige etiquetas para encontrar productos que coincidan.",
-      "selectProducts": "Selecciona los productos que pueden usar esta técnica.",
       "noProducts": "Ningún producto coincide con esta búsqueda o filtro de configuración.",
-      "loadFailure": "No se pudieron cargar las técnicas."
+      "loadFailure": "No se pudieron cargar las técnicas.",
+      "notUsed": "Ningún producto usa esta técnica todavía."
     },
     "readiness": {
       "configureLocations": "Configurar zonas",
@@ -231,9 +192,7 @@
     "duplicate": {
       "title": "Duplicar técnica",
       "submit": "Duplicar",
-      "name": "Nombre de la técnica",
-      "copyTagRule": "Copiar regla de etiquetas",
-      "copySelectedProducts": "Copiar productos seleccionados"
+      "name": "Nombre de la técnica"
     }
   },
   "summary": {
@@ -245,86 +204,20 @@
     "free": "Gratis",
     "perPlacementPerGarment": "por zona y por artículo",
     "availableTo": "Disponible para",
-    "manualAssignment": "seleccionada manualmente",
-    "noTagsSelected": "sin etiquetas seleccionadas",
-    "matchingTags_one": "coincide con {{match}} de las {{formattedCount}} etiquetas seleccionadas",
-    "matchingTags_other": "coincide con {{match}} de las {{formattedCount}} etiquetas seleccionadas",
-    "configured": "{{formattedCount}} configuradas",
     "needsSetup_one": "{{formattedCount}} requiere configuración",
     "needsSetup_other": "{{formattedCount}} requieren configuración",
     "reviewProducts": "Revisar los productos que necesitan configuración",
-    "viewAssignedProducts": "Ver productos asignados",
-    "reviewTagRules": "Revisar reglas de etiquetas",
-    "assignProducts": "Asignar productos",
-    "products_one": "{{formattedCount}} producto",
-    "products_other": "{{formattedCount}} productos",
-    "matchingTags_many": "coincide con {{match}} de las {{formattedCount}} etiquetas seleccionadas",
     "needsSetup_many": "{{formattedCount}} requieren configuración",
-    "products_many": "{{formattedCount}} productos"
+    "allProducts": "Todos los productos",
+    "viewProductsUsing": "Ver productos que usan esta técnica",
+    "productsUsing_one": "Usada en {{formattedCount}} producto",
+    "productsUsing_other": "Usada en {{formattedCount}} productos",
+    "productsUsing_many": "Usada en {{formattedCount}} productos"
   },
   "picker": {
-    "backToFilters": "Volver a los filtros",
     "backToMethods": "Volver a las técnicas",
-    "collection": "Colección",
-    "collections": "Colecciones",
-    "tags": "Etiquetas",
-    "clear": "Borrar",
-    "searchCollections": "Buscar colecciones",
-    "searchTags": "Buscar etiquetas",
-    "noCollections": "No se encontraron colecciones.",
-    "noTags": "No se encontraron etiquetas.",
-    "select": "Seleccionar",
-    "addProducts": "Añadir productos",
-    "editCollectionFilter": "Editar filtro de colección",
-    "editTagFilter": "Editar filtro de etiquetas",
-    "collectionFilter": "Colección: {{collectionName}}",
-    "tagFilter": "Etiqueta: {{tagName}}",
-    "clearSelection": "Borrar selección",
-    "selectAllProducts": "Seleccionar todos los productos de esta página",
-    "showAllProducts": "Mostrar todos los productos",
-    "selected_one": "{{formattedCount}} seleccionado",
-    "selected_other": "{{formattedCount}} seleccionados",
     "previousProducts": "Resultados de productos anteriores",
-    "nextProducts": "Resultados de productos siguientes",
-    "previousCollections": "Resultados de colecciones anteriores",
-    "nextCollections": "Resultados de colecciones siguientes",
-    "collectionsDetail": "Añade los productos actuales una sola vez. Los cambios futuros en la colección no actualizarán esta técnica.",
-    "products": "Productos",
-    "searchProducts": "Buscar productos",
-    "addFilter": "Añadir filtro",
-    "showAllResults": "Mostrar todos los resultados",
-    "showSelected": "Mostrar seleccionados",
-    "selectedWithUnavailable_one": "{{formattedSelectedCount}} seleccionados, incluido {{formattedUnavailableCount}} producto no disponible",
-    "selectedWithUnavailable_other": "{{formattedSelectedCount}} seleccionados, incluidos {{formattedUnavailableCount}} productos no disponibles",
-    "pageRange": "{{first}}–{{last}} de {{formattedCount}}",
-    "noCollectionsWithProducts": "No se encontraron colecciones con productos.",
-    "collectionsSelectedAdding_one": "{{formattedCollectionCount}} colección seleccionada. Productos nuevos para añadir: {{formattedNewProductCount}}.",
-    "collectionsSelectedAdding_other": "{{formattedCollectionCount}} colecciones seleccionadas. Productos nuevos para añadir: {{formattedNewProductCount}}.",
-    "collectionsSelectedAllAlready_one": "{{formattedCollectionCount}} colección seleccionada. Ya están seleccionados todos los productos.",
-    "collectionsSelectedAllAlready_other": "{{formattedCollectionCount}} colecciones seleccionadas. Ya están seleccionados todos los productos.",
-    "empty": {
-      "noProductsAvailable": "No hay productos disponibles",
-      "noSelectedProductsMatch": "Ninguno de los productos seleccionados coincide",
-      "noMatchingProducts": "No hay productos que coincidan",
-      "unavailableAssignments_one": "{{formattedCount}} producto seleccionado ya no está disponible.",
-      "unavailableAssignments_other": "{{formattedCount}} productos seleccionados ya no están disponibles.",
-      "catalogUnavailable": "No se pudieron cargar los productos.",
-      "selectedSearchNoMatch": "Ninguno de los productos seleccionados coincide con esta búsqueda.",
-      "tryDifferentSearch": "Prueba con otra búsqueda o filtro.",
-      "unavailableAssignments_many": "{{formattedCount}} productos seleccionados ya no están disponibles."
-    },
-    "matchingProducts_one": "Se encontró {{formattedCount}} producto",
-    "matchingProducts_other": "Se encontraron {{formattedCount}} productos",
-    "searchBy": {
-      "all": "Todos los campos",
-      "productTitle": "Título del producto",
-      "productId": "ID del producto"
-    },
-    "collectionsSelectedAdding_many": "{{formattedCollectionCount}} colecciones seleccionadas. Productos nuevos para añadir: {{formattedNewProductCount}}.",
-    "collectionsSelectedAllAlready_many": "{{formattedCollectionCount}} colecciones seleccionadas. Ya están seleccionados todos los productos.",
-    "selected_many": "{{formattedCount}} seleccionados",
-    "matchingProducts_many": "Se encontraron {{formattedCount}} productos",
-    "selectedWithUnavailable_many": "{{formattedSelectedCount}} seleccionados, incluidos {{formattedUnavailableCount}} productos no disponibles"
+    "nextProducts": "Resultados de productos siguientes"
   },
   "library": {
     "removeHeading": "¿Eliminar {{methodName}}?",
@@ -368,10 +261,5 @@
       "noMethodsDescription": "Añade los servicios que ofrece tu tienda. Reutilízalos al configurar los productos."
     },
     "copyNote": "Los cambios se aplican a las nuevas configuraciones de producto. Las configuraciones existentes conservan su propia copia."
-  },
-  "methodDialog": {},
-  "methodIndex": {},
-  "methodProductPicker": {},
-  "methodSummary": {},
-  "methodWorkflowPreview": {}
+  }
 }

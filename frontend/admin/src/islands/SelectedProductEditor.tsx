@@ -11,7 +11,6 @@ import { configRejectionFrom } from '../shared/config-rejection.ts';
 import { productEditorReturnPath } from '../shared/products-return-path.ts';
 import { storefrontProductTestSetupHref } from '../shared/storefront-product-test.ts';
 import Dialog from '../../examples/admin/support/method-dialog.tsx';
-import { methodLibraryHref } from '../../examples/admin/support/method-return-context.mts';
 import { currencyPrefix, formatPrice, parsePrice } from '../../examples/admin/support/method-workflow-prices.mts';
 import { parseDecimalNumber } from '../../examples/admin/support/decimal-input.mts';
 import {
@@ -125,6 +124,8 @@ export interface ProductEditorAdapter {
   save(product: PlacementProduct): Promise<PlacementProduct | void>;
   publish(product: PlacementProduct, expectedRevision: number): Promise<ProductPublicationResult>;
   loadMethods(signal: AbortSignal): Promise<PlacementMethodCatalog>;
+  /** "Add method" creates a library method, available on every product. Retries reuse `id` and `key`. */
+  createMethod(input: { id: string; key: string; name: string }): Promise<EditorMethod>;
   copyPorts: PlacementSetupCopyPorts;
   upload?(image: EditorProductImage): Promise<EditorProductImage>;
   preview: typeof import('../../examples/admin/support/placement-customer-preview.mts').launchCustomerPreview;
@@ -4346,17 +4347,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
           loadCatalog={adapter.loadMethods}
           currency={adapter.currency}
           product={product}
-          onOpenLibrary={async () => {
-            if (!(await saveDraft(true)) || !view) return;
-            await leavePage({
-              href: methodLibraryHref(product.id, view.id, placement.id),
-              saveBarId: productSaveBarId,
-              closeDialog: () => dispatchDialog({ type: 'dialog-closed', id: methodDialog.id }),
-              disarm: () => {
-                dirtyRef.current = false;
-              },
-            });
-          }}
+          createMethod={adapter.createMethod}
           placement={placement}
           initialMethodId={methodDialog.initialMethodId}
           sessionId={methodDialog.id}

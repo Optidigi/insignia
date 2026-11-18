@@ -16,18 +16,12 @@
       "allPricing": "All pricing",
       "fixedPrice": "Fixed price",
       "productSpecific": "Product-specific prices",
-      "assignment": "Assignment",
-      "allAssignments": "All assignments",
-      "manual": "Manual",
-      "byTag": "By tag",
       "setup": "Setup",
       "allMethods": "All methods",
       "needsSetup": "Needs setup",
-      "noProductsAssigned": "No products assigned",
       "configured": "Configured",
       "clear": "Clear filters",
       "editPricing": "Edit pricing filter",
-      "editAssignment": "Edit assignment filter",
       "editSetup": "Edit setup filter"
     },
     "sorting": {
@@ -61,18 +55,16 @@
       "results_other": "{{formattedCount}} methods",
       "products_one": "{{formattedCount}} product",
       "products_other": "{{formattedCount}} products",
-      "available_one": "{{formattedCount}} available",
-      "available_other": "{{formattedCount}} available",
       "needsSetup_one": "{{formattedCount}} need setup",
       "needsSetup_other": "{{formattedCount}} need setup",
       "pageRange": "{{first}}–{{last}} of {{formattedCount}} methods",
       "limit": "Limit of {{formattedCount}} methods reached. Delete a method before creating another.",
       "more_one": "And {{formattedCount}} more method.",
-      "more_other": "And {{formattedCount}} more methods."
+      "more_other": "And {{formattedCount}} more methods.",
+      "allProductsAvailable": "Available on all products"
     },
     "setup": {
-      "noMatchingProducts": "No matching products",
-      "notAssigned": "Not assigned"
+      "notUsed": "Not used yet"
     },
     "empty": {
       "noMethodsFound": "No methods found",
@@ -90,10 +82,7 @@
   "workflow": {
     "title": "Decoration methods",
     "createTitle": "Create method",
-    "productSetup": "Product setup",
     "actions": {
-      "removeProduct": "Remove {{productName}}",
-      "removeTag": "Remove tag {{tagName}}",
       "exportAll": "Export all methods",
       "methodsBreadcrumb": "Methods",
       "create": "Create method",
@@ -121,24 +110,20 @@
       "defaultPricing": "Default pricing",
       "pricing": "Pricing",
       "productAvailability": "Product availability",
-      "assignment": "Assignment",
       "pricePerLocation": "Price per location per item",
       "priceHelp": "Per placement, per garment. Enter 0 for free decoration.",
-      "productsMustMatch": "Products must match",
-      "searchTags": "Search tags",
-      "searchAssignedProducts": "Search assigned products",
       "productSetup": "Product setup",
       "translationLanguage": "Translation language",
       "defaultText": "Default text",
       "realExplanation": "Description (optional)",
-      "realExplanationHelp": "Shown to merchants and customers choosing this decoration method."
+      "realExplanationHelp": "Shown to merchants and customers choosing this decoration method.",
+      "searchProductsUsing": "Search products using this method"
     },
     "copy": {
       "duplicateNameError": "Enter a method name of up to 80 characters.",
       "duplicateStorageError": "Your browser could not save this copy. Try again.",
       "nameRequired": "Enter a method name of up to 80 characters.",
       "priceRequired": "Enter a price from 0 to 99,999.99.",
-      "tagRequired": "Choose at least one product tag.",
       "duplicateWarning": "A method with this name already exists. Use a distinct name so customers can tell them apart.",
       "duplicateWarningShort": "A method with this name already exists. Use a distinct name if customers need to tell them apart.",
       "defaultsDescription": "Defaults are copied when a method is added to a product. Existing product prices stay unchanged.",
@@ -155,59 +140,39 @@
       "setupLimitReached": "Limit of {{formattedCount}} methods reached. Delete a method before creating another.",
       "needsSetupCount_one": "{{formattedCount}} need setup",
       "needsSetupCount_other": "{{formattedCount}} need setup",
-      "assignmentChanges": "Assignment changes: {{added}} added, {{removed}} removed.",
-      "matchingProducts_one": "{{formattedCount}} product currently matches.",
-      "matchingProducts_other": "{{formattedCount}} products currently match.",
       "productPageRange": "{{first}}–{{last}} of {{formattedCount}}",
       "unsavedChanges": "Unsaved method changes",
       "removeOneHeading": "Delete {{methodName}}?",
       "removeManyHeading_one": "Delete {{formattedCount}} selected method?",
       "removeManyHeading_other": "Delete {{formattedCount}} selected methods?",
-      "noProductAssignmentsRemoved": "No product assignments will be removed.",
-      "removeOneAvailability_one": "Library availability will be removed for {{formattedCount}} product.",
-      "removeOneAvailability_other": "Library availability will be removed for {{formattedCount}} products.",
-      "removeManyAvailability_one": "Library availability for these methods will be removed for {{formattedCount}} product.",
-      "removeManyAvailability_other": "Library availability for these methods will be removed for {{formattedCount}} products.",
       "setupFixedPrice": "Set the same price for each placement and size on all selected products.",
       "setupProductPrice": "Set prices for each product by placement and decoration size.",
-      "tagMatchSummary": "Match {{match}} of: {{tags}}. Future tag changes can change the matched products.",
       "translationFallback": "Leave a translation blank to use the default text.",
       "currencyReview": "The saved price is {{amount}}, but the shop now uses {{currency}}. Enter and save a reviewed price in the current currency.",
       "realDefaultsDescription": "Default changes update inherited product drafts. Product-specific prices stay unchanged; publish each product separately.",
       "realFixedPriceDescription": "Use one inherited default price for product placements and sizes.",
-      "realLeaveSavedData": "Published products and orders stay unchanged. Configured drafts retain the method and require keep/remove review before publication."
+      "realLeaveSavedData": "Published products and orders stay unchanged. Configured drafts retain the method and require keep/remove review before publication.",
+      "availableOnAllProducts": "Available on every product. Add it to placements in each product's setup.",
+      "removeOneFromAllProducts": "This method will no longer be available on any product.",
+      "removeManyFromAllProducts": "These methods will no longer be available on any product."
     },
     "pricing": {
       "fixed": "Fixed price",
       "productSpecific": "Product-specific prices",
       "perPlacement": "Product-specific prices are managed on each product."
     },
-    "assignment": {
-      "manual": "Choose products",
-      "manualHelp": "Make this method available to add in the selected product setups.",
-      "tags": "Match by tags",
-      "tagsHelp": "Offer this method in matching product setups. Existing product copies stay unchanged.",
-      "selectProducts": "Select products",
-      "selectCollections": "Select from collections",
-      "chooseTags": "Choose tags",
-      "anyTag": "Any selected tag",
-      "allTags": "All selected tags"
-    },
     "filter": {
-      "filterAssigned": "Filter assigned products",
       "allProducts": "All products",
       "needsSetup": "Needs setup",
       "configured": "Configured",
       "noProductMatch": "No products match this search or setup filter.",
-      "clearProductFilters": "Clear product filters"
+      "clearProductFilters": "Clear product filters",
+      "filterProducts": "Filter products"
     },
     "empty": {
-      "noTags": "No tags found.",
-      "noProductsForTags": "No products match these tags.",
-      "chooseTags": "Choose tags to find matching products.",
-      "selectProducts": "Select the products that can use this method.",
       "noProducts": "No products match this search or setup filter.",
-      "loadFailure": "Methods could not be loaded."
+      "loadFailure": "Methods could not be loaded.",
+      "notUsed": "No products use this method yet."
     },
     "readiness": {
       "configureLocations": "Configure locations",
@@ -218,9 +183,7 @@
     "duplicate": {
       "title": "Duplicate method",
       "submit": "Duplicate",
-      "name": "Method name",
-      "copyTagRule": "Copy tag rule",
-      "copySelectedProducts": "Copy selected products"
+      "name": "Method name"
     }
   },
   "summary": {
@@ -232,77 +195,18 @@
     "free": "Free",
     "perPlacementPerGarment": "per placement, per garment",
     "availableTo": "Available to",
-    "manualAssignment": "selected manually",
-    "noTagsSelected": "with no tags selected",
-    "matchingTags_one": "matching {{match}} of {{formattedCount}} selected tag",
-    "matchingTags_other": "matching {{match}} of {{formattedCount}} selected tags",
-    "configured": "{{formattedCount}} configured",
     "needsSetup_one": "{{formattedCount}} need setup",
     "needsSetup_other": "{{formattedCount}} need setup",
     "reviewProducts": "Review products needing setup",
-    "viewAssignedProducts": "View assigned products",
-    "reviewTagRules": "Review tag rules",
-    "assignProducts": "Assign products",
-    "products_one": "{{formattedCount}} product",
-    "products_other": "{{formattedCount}} products"
+    "allProducts": "All products",
+    "viewProductsUsing": "View products using this method",
+    "productsUsing_one": "Used by {{formattedCount}} product",
+    "productsUsing_other": "Used by {{formattedCount}} products"
   },
   "picker": {
-    "backToFilters": "Back to filters",
     "backToMethods": "Back to methods",
-    "collection": "Collection",
-    "collections": "Collections",
-    "tags": "Tags",
-    "clear": "Clear",
-    "searchCollections": "Search collections",
-    "searchTags": "Search tags",
-    "noCollections": "No collections found.",
-    "noTags": "No tags found.",
-    "select": "Select",
-    "addProducts": "Add products",
-    "editCollectionFilter": "Edit collection filter",
-    "editTagFilter": "Edit tag filter",
-    "collectionFilter": "Collection: {{collectionName}}",
-    "tagFilter": "Tag: {{tagName}}",
-    "clearSelection": "Clear selection",
-    "selectAllProducts": "Select all products on this page",
-    "showAllProducts": "Show all products",
-    "selected_one": "{{formattedCount}} selected",
-    "selected_other": "{{formattedCount}} selected",
     "previousProducts": "Previous product results",
-    "nextProducts": "Next product results",
-    "previousCollections": "Previous collection results",
-    "nextCollections": "Next collection results",
-    "collectionsDetail": "Adds current products once. Future collection changes won't update this method.",
-    "products": "Products",
-    "searchProducts": "Search products",
-    "addFilter": "Add filter",
-    "showAllResults": "Show all results",
-    "showSelected": "Show selected",
-    "selectedWithUnavailable_one": "{{formattedSelectedCount}} selected, including {{formattedUnavailableCount}} unavailable product",
-    "selectedWithUnavailable_other": "{{formattedSelectedCount}} selected, including {{formattedUnavailableCount}} unavailable products",
-    "pageRange": "{{first}}–{{last}} of {{formattedCount}}",
-    "noCollectionsWithProducts": "No collections with products found.",
-    "collectionsSelectedAdding_one": "{{formattedCollectionCount}} collection selected. New products to add: {{formattedNewProductCount}}.",
-    "collectionsSelectedAdding_other": "{{formattedCollectionCount}} collections selected. New products to add: {{formattedNewProductCount}}.",
-    "collectionsSelectedAllAlready_one": "{{formattedCollectionCount}} collection selected. All products are already selected.",
-    "collectionsSelectedAllAlready_other": "{{formattedCollectionCount}} collections selected. All products are already selected.",
-    "empty": {
-      "noProductsAvailable": "No products available",
-      "noSelectedProductsMatch": "No selected products match",
-      "noMatchingProducts": "No matching products",
-      "unavailableAssignments_one": "{{formattedCount}} selected product is no longer available.",
-      "unavailableAssignments_other": "{{formattedCount}} selected products are no longer available.",
-      "catalogUnavailable": "Products could not be loaded.",
-      "selectedSearchNoMatch": "No selected products match this search.",
-      "tryDifferentSearch": "Try a different search or filter."
-    },
-    "matchingProducts_one": "{{formattedCount}} product found",
-    "matchingProducts_other": "{{formattedCount}} products found",
-    "searchBy": {
-      "all": "All fields",
-      "productTitle": "Product title",
-      "productId": "Product ID"
-    }
+    "nextProducts": "Next product results"
   },
   "library": {
     "removeHeading": "Remove {{methodName}}?",
@@ -346,10 +250,5 @@
       "noMethodsDescription": "Add the services your store offers. Reuse them in product setup."
     },
     "copyNote": "Changes apply to new product setups. Existing setups keep their own copy."
-  },
-  "methodDialog": {},
-  "methodIndex": {},
-  "methodProductPicker": {},
-  "methodSummary": {},
-  "methodWorkflowPreview": {}
+  }
 }

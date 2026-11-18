@@ -10,14 +10,12 @@ export type MethodWorkflowNavigationTarget =
 
 export type MethodWorkflowSubDialog =
   | { kind: 'closed' }
-  | { kind: 'product-picker'; id: string; browse: 'products' | 'collections' }
   | { kind: 'remove'; id: string; targets: MethodConfiguration[] }
   | {
       kind: 'duplicate';
       id: string;
       source: MethodConfiguration;
       name: string;
-      copyAssignment: boolean;
       error: MethodDuplicateFailureReason | null;
     };
 export type MethodWorkflowDialog =
@@ -75,22 +73,14 @@ export type MethodWorkflowEvent =
     }
   | { type: 'pricing-kind-changed'; sessionId: string; value: MethodConfiguration['pricing'] }
   | { type: 'default-price-edited'; sessionId: string; value: string }
-  | { type: 'assignment-mode-changed'; sessionId: string; value: MethodConfiguration['assignment'] }
-  | { type: 'tag-match-changed'; sessionId: string; value: MethodConfiguration['tagMatch'] }
-  | { type: 'tag-toggled'; sessionId: string; tag: string; checked: boolean }
-  | { type: 'manual-products-selected'; sessionId: string; productIds: string[] }
   | { type: 'validation-failed'; sessionId: string; errors: MethodErrors }
   | { type: 'draft-discarded'; sessionId: string }
   | { type: 'method-saved'; sessionId: string; method: MethodConfiguration }
-  | { type: 'product-picker-opened'; id: string; browse: 'products' | 'collections' }
-  | { type: 'product-picker-canceled'; id: string }
-  | { type: 'product-picker-applied'; id: string; productIds: string[] }
   | { type: 'removal-opened'; id: string; targets: MethodConfiguration[] }
   | { type: 'removal-canceled'; id: string }
   | { type: 'methods-deleted'; id: string; methodIds: string[] }
   | { type: 'duplicate-opened'; id: string; source: MethodConfiguration; suggestedName: string }
   | { type: 'duplicate-name-edited'; id: string; value: string }
-  | { type: 'duplicate-assignment-toggled'; id: string; checked: boolean }
   | { type: 'duplicate-failed'; id: string; reason: MethodDuplicateFailureReason }
   | { type: 'duplicate-canceled'; id: string }
   | { type: 'method-duplicated'; id: string; method: MethodConfiguration }
@@ -146,27 +136,6 @@ export function methodWorkflowReducer(state: MethodWorkflowState, event: MethodW
       return state.editor && state.editorSessionId === event.sessionId
         ? { ...state, editor: { ...state.editor, amount: event.value }, errors: clearError(state.errors, 'amount') }
         : state;
-    case 'assignment-mode-changed':
-      return state.editor && state.editorSessionId === event.sessionId
-        ? { ...state, editor: { ...state.editor, assignment: event.value }, errors: clearError(state.errors, 'tags') }
-        : state;
-    case 'tag-match-changed':
-      return state.editor && state.editorSessionId === event.sessionId
-        ? { ...state, editor: { ...state.editor, tagMatch: event.value } }
-        : state;
-    case 'tag-toggled': {
-      if (!state.editor || state.editorSessionId !== event.sessionId) return state;
-      const tags = event.checked
-        ? state.editor.tags.includes(event.tag)
-          ? state.editor.tags
-          : [...state.editor.tags, event.tag]
-        : state.editor.tags.filter((tag) => tag !== event.tag);
-      return { ...state, editor: { ...state.editor, tags }, errors: clearError(state.errors, 'tags') };
-    }
-    case 'manual-products-selected':
-      return state.editor && state.editorSessionId === event.sessionId
-        ? { ...state, editor: { ...state.editor, productIds: [...event.productIds] } }
-        : state;
     case 'validation-failed':
       return state.editor && state.editorSessionId === event.sessionId
         ? { ...state, errors: { ...event.errors } }
@@ -184,23 +153,10 @@ export function methodWorkflowReducer(state: MethodWorkflowState, event: MethodW
         : [...state.methods, method];
       return { ...state, methods, editor: method, errors: {} };
     }
-    case 'product-picker-opened':
-      return state.editor && state.dialog.kind === 'closed'
-        ? { ...state, dialog: { kind: 'product-picker', id: event.id, browse: event.browse } }
-        : state;
-    case 'product-picker-canceled':
     case 'duplicate-canceled':
     case 'removal-canceled':
       return state.dialog.kind !== 'closed' && state.dialog.kind !== 'leave' && state.dialog.id === event.id
         ? { ...state, dialog: { kind: 'closed' } }
-        : state;
-    case 'product-picker-applied':
-      return state.dialog.kind === 'product-picker' && state.dialog.id === event.id && state.editor
-        ? {
-            ...state,
-            editor: { ...state.editor, productIds: [...event.productIds] },
-            dialog: { kind: 'closed' },
-          }
         : state;
     case 'removal-opened':
       return state.dialog.kind === 'closed'
@@ -226,7 +182,6 @@ export function methodWorkflowReducer(state: MethodWorkflowState, event: MethodW
               id: event.id,
               source: structuredClone(event.source),
               name: event.suggestedName,
-              copyAssignment: false,
               error: null,
             },
           }
@@ -234,10 +189,6 @@ export function methodWorkflowReducer(state: MethodWorkflowState, event: MethodW
     case 'duplicate-name-edited':
       return state.dialog.kind === 'duplicate' && state.dialog.id === event.id
         ? { ...state, dialog: { ...state.dialog, name: event.value, error: null } }
-        : state;
-    case 'duplicate-assignment-toggled':
-      return state.dialog.kind === 'duplicate' && state.dialog.id === event.id
-        ? { ...state, dialog: { ...state.dialog, copyAssignment: event.checked } }
         : state;
     case 'duplicate-failed':
       return state.dialog.kind === 'duplicate' && state.dialog.id === event.id

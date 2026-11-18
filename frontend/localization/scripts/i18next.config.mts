@@ -12,7 +12,6 @@ const config = {
       'frontend/admin/src/**/*.{ts,tsx}',
       'frontend/admin/examples/admin/support/method-dialog.tsx',
       'frontend/admin/examples/admin/support/method-index.tsx',
-      'frontend/admin/examples/admin/support/method-product-picker.tsx',
       'frontend/admin/examples/admin/support/method-summary.tsx',
       'frontend/admin/examples/admin/support/method-workflow-preview.tsx',
       'frontend/admin/examples/admin/support/placement-copy-destinations.tsx',

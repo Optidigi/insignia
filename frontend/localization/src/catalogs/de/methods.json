@@ -16,18 +16,12 @@
       "allPricing": "Alle Preise",
       "fixedPrice": "Festpreis",
       "productSpecific": "Produktspezifische Preise",
-      "assignment": "Zuordnung",
-      "allAssignments": "Alle Zuordnungen",
-      "manual": "Manuell",
-      "byTag": "Nach Tags",
       "setup": "Einrichtung",
       "allMethods": "Alle Verfahren",
       "needsSetup": "Einrichtung erforderlich",
-      "noProductsAssigned": "Keine Produkte zugeordnet",
       "configured": "Eingerichtet",
       "clear": "Filter löschen",
       "editPricing": "Preisfilter bearbeiten",
-      "editAssignment": "Zuordnungsfilter bearbeiten",
       "editSetup": "Einrichtungsfilter bearbeiten"
     },
     "sorting": {
@@ -61,18 +55,16 @@
       "results_other": "{{formattedCount}} Verfahren",
       "products_one": "{{formattedCount}} Produkt",
       "products_other": "{{formattedCount}} Produkte",
-      "available_one": "{{formattedCount}} verfügbar",
-      "available_other": "{{formattedCount}} verfügbar",
       "needsSetup_one": "Für {{formattedCount}} ist eine Einrichtung erforderlich",
       "needsSetup_other": "Für {{formattedCount}} ist eine Einrichtung erforderlich",
       "pageRange": "{{first}}–{{last}} von {{formattedCount}} Verfahren",
       "limit": "Limit von {{formattedCount}} Verfahren erreicht. Löschen Sie ein Verfahren, bevor Sie ein weiteres erstellen.",
       "more_one": "Und {{formattedCount}} weiteres Verfahren.",
-      "more_other": "Und {{formattedCount}} weitere Verfahren."
+      "more_other": "Und {{formattedCount}} weitere Verfahren.",
+      "allProductsAvailable": "Für alle Produkte verfügbar"
     },
     "setup": {
-      "noMatchingProducts": "Keine passenden Produkte",
-      "notAssigned": "Nicht zugeordnet"
+      "notUsed": "Noch nicht verwendet"
     },
     "empty": {
       "noMethodsFound": "Keine Verfahren gefunden",
@@ -90,10 +82,7 @@
   "workflow": {
     "title": "Veredelungsverfahren",
     "createTitle": "Verfahren erstellen",
-    "productSetup": "Produkteinrichtung",
     "actions": {
-      "removeProduct": "{{productName}} entfernen",
-      "removeTag": "Tag {{tagName}} entfernen",
       "exportAll": "Alle Verfahren exportieren",
       "methodsBreadcrumb": "Verfahren",
       "create": "Verfahren erstellen",
@@ -121,24 +110,20 @@
       "defaultPricing": "Preisvorgaben",
       "pricing": "Preise",
       "productAvailability": "Für Produkte verfügbar",
-      "assignment": "Zuordnung",
       "pricePerLocation": "Preis pro Veredelungsposition und Artikel",
       "priceHelp": "Pro Veredelungsposition und Produkt. Geben Sie 0 für eine kostenlose Veredelung ein.",
-      "productsMustMatch": "Produkte müssen übereinstimmen",
-      "searchTags": "Tags suchen",
-      "searchAssignedProducts": "Zugeordnete Produkte suchen",
       "productSetup": "Produkteinrichtung",
       "translationLanguage": "Übersetzungssprache",
       "defaultText": "Standardtext",
       "realExplanation": "Beschreibung (optional)",
-      "realExplanationHelp": "Sichtbar für Händler und Kunden bei der Auswahl dieser Veredelungsmethode."
+      "realExplanationHelp": "Sichtbar für Händler und Kunden bei der Auswahl dieser Veredelungsmethode.",
+      "searchProductsUsing": "Produkte mit diesem Verfahren durchsuchen"
     },
     "copy": {
       "duplicateNameError": "Geben Sie einen Verfahrensnamen mit höchstens 80 Zeichen ein.",
       "duplicateStorageError": "Ihr Browser konnte diese Kopie nicht speichern. Versuchen Sie es erneut.",
       "nameRequired": "Geben Sie einen Verfahrensnamen mit höchstens 80 Zeichen ein.",
       "priceRequired": "Geben Sie einen Preis von 0 bis 99.999,99 ein.",
-      "tagRequired": "Wählen Sie mindestens ein Produkt-Tag aus.",
       "duplicateWarning": "Ein Verfahren mit diesem Namen ist bereits vorhanden. Verwenden Sie einen anderen Namen, damit die Kundschaft die Verfahren unterscheiden kann.",
       "duplicateWarningShort": "Ein Verfahren mit diesem Namen ist bereits vorhanden. Verwenden Sie einen anderen Namen, wenn die Kundschaft die Verfahren unterscheiden muss.",
       "defaultsDescription": "Preisvorgaben werden übernommen, wenn Sie ein Verfahren zu einem Produkt hinzufügen. Preise vorhandener Produkte bleiben unverändert.",
@@ -155,59 +140,39 @@
       "setupLimitReached": "Limit von {{formattedCount}} Verfahren erreicht. Löschen Sie ein Verfahren, bevor Sie ein weiteres erstellen.",
       "needsSetupCount_one": "{{formattedCount}} Produkt muss noch eingerichtet werden",
       "needsSetupCount_other": "{{formattedCount}} Produkte müssen noch eingerichtet werden",
-      "assignmentChanges": "Änderungen an Zuordnungen: {{added}} hinzugefügt, {{removed}} entfernt.",
-      "matchingProducts_one": "{{formattedCount}} Produkt passt derzeit.",
-      "matchingProducts_other": "{{formattedCount}} Produkte passen derzeit.",
       "productPageRange": "{{first}}–{{last}} von {{formattedCount}}",
       "unsavedChanges": "Nicht gespeicherte Änderungen am Verfahren",
       "removeOneHeading": "{{methodName}} löschen?",
       "removeManyHeading_one": "{{formattedCount}} ausgewähltes Verfahren löschen?",
       "removeManyHeading_other": "{{formattedCount}} ausgewählte Verfahren löschen?",
-      "noProductAssignmentsRemoved": "Es werden keine Produktzuordnungen entfernt.",
-      "removeOneAvailability_one": "Die Verfügbarkeit für die Bibliothek wird für {{formattedCount}} Produkt entfernt.",
-      "removeOneAvailability_other": "Die Verfügbarkeit für die Bibliothek wird für {{formattedCount}} Produkte entfernt.",
-      "removeManyAvailability_one": "Die Verfügbarkeit dieser Verfahren für die Bibliothek wird für {{formattedCount}} Produkt entfernt.",
-      "removeManyAvailability_other": "Die Verfügbarkeit dieser Verfahren für die Bibliothek wird für {{formattedCount}} Produkte entfernt.",
       "setupFixedPrice": "Legen Sie für alle ausgewählten Produkte denselben Preis für jede Position und Größe fest.",
       "setupProductPrice": "Legen Sie die Preise für jedes Produkt nach Position und Veredelungsgröße fest.",
-      "tagMatchSummary": "Tagregel „{{match}}“ für: {{tags}}. Künftige Tag-Änderungen können die passenden Produkte ändern.",
       "translationFallback": "Lassen Sie eine Übersetzung leer, um den Standardtext zu verwenden.",
       "currencyReview": "Der gespeicherte Preis ist {{amount}}, aber der Shop verwendet jetzt {{currency}}. Prüfen Sie den Preis und speichern Sie ihn in der aktuellen Währung.",
       "realDefaultsDescription": "Geänderte Standardpreise aktualisieren geerbte Produktentwürfe. Produktspezifische Preise bleiben erhalten; veröffentlichen Sie jedes Produkt separat.",
       "realFixedPriceDescription": "Verwenden Sie einen geerbten Standardpreis für Produktpositionen und Größen.",
-      "realLeaveSavedData": "Veröffentlichte Produkte und Bestellungen bleiben unverändert. Konfigurierte Entwürfe behalten die Methode und erfordern vor der Veröffentlichung eine Bestätigung zum Beibehalten oder Entfernen."
+      "realLeaveSavedData": "Veröffentlichte Produkte und Bestellungen bleiben unverändert. Konfigurierte Entwürfe behalten die Methode und erfordern vor der Veröffentlichung eine Bestätigung zum Beibehalten oder Entfernen.",
+      "availableOnAllProducts": "Für alle Produkte verfügbar. Fügen Sie das Verfahren in der Einrichtung des jeweiligen Produkts zu Veredelungspositionen hinzu.",
+      "removeOneFromAllProducts": "Dieses Verfahren ist dann für kein Produkt mehr verfügbar.",
+      "removeManyFromAllProducts": "Diese Verfahren sind dann für kein Produkt mehr verfügbar."
     },
     "pricing": {
       "fixed": "Festpreis",
       "productSpecific": "Produktspezifische Preise",
       "perPlacement": "Produktspezifische Preise werden für jedes Produkt einzeln verwaltet."
     },
-    "assignment": {
-      "manual": "Produkte auswählen",
-      "manualHelp": "Machen Sie dieses Verfahren für die ausgewählten Produkteinrichtungen verfügbar.",
-      "tags": "Nach Tags zuordnen",
-      "tagsHelp": "Bieten Sie dieses Verfahren in passenden Produkteinrichtungen an. Vorhandene Produktkopien bleiben unverändert.",
-      "selectProducts": "Produkte auswählen",
-      "selectCollections": "Aus Kollektionen auswählen",
-      "chooseTags": "Tags auswählen",
-      "anyTag": "Mindestens ein ausgewählter Tag",
-      "allTags": "Alle ausgewählten Tags"
-    },
     "filter": {
-      "filterAssigned": "Zugeordnete Produkte filtern",
       "allProducts": "Alle Produkte",
       "needsSetup": "Einrichtung erforderlich",
       "configured": "Eingerichtet",
       "noProductMatch": "Keine Produkte entsprechen dieser Suche oder diesem Einrichtungsfilter.",
-      "clearProductFilters": "Produktfilter löschen"
+      "clearProductFilters": "Produktfilter löschen",
+      "filterProducts": "Produkte filtern"
     },
     "empty": {
-      "noTags": "Keine Tags gefunden.",
-      "noProductsForTags": "Keine Produkte entsprechen diesen Tags.",
-      "chooseTags": "Wählen Sie Tags aus, um passende Produkte zu finden.",
-      "selectProducts": "Wählen Sie die Produkte aus, für die dieses Verfahren verfügbar sein soll.",
       "noProducts": "Keine Produkte entsprechen dieser Suche oder diesem Einrichtungsfilter.",
-      "loadFailure": "Verfahren konnten nicht geladen werden."
+      "loadFailure": "Verfahren konnten nicht geladen werden.",
+      "notUsed": "Noch kein Produkt verwendet dieses Verfahren."
     },
     "readiness": {
       "configureLocations": "Positionen einrichten",
@@ -218,9 +183,7 @@
     "duplicate": {
       "title": "Verfahren duplizieren",
       "submit": "Duplizieren",
-      "name": "Verfahrensname",
-      "copyTagRule": "Tag-Regel kopieren",
-      "copySelectedProducts": "Ausgewählte Produkte kopieren"
+      "name": "Verfahrensname"
     }
   },
   "summary": {
@@ -232,77 +195,18 @@
     "free": "Kostenlos",
     "perPlacementPerGarment": "pro Veredelungsposition und Artikel",
     "availableTo": "Verfügbar für",
-    "manualAssignment": "manuell ausgewählte Produkte",
-    "noTagsSelected": "keine ausgewählten Tags",
-    "matchingTags_one": "· Tagregel: „{{match}}“ ({{formattedCount}} ausgewählter Tag)",
-    "matchingTags_other": "· Tagregel: „{{match}}“ ({{formattedCount}} ausgewählte Tags)",
-    "configured": "{{formattedCount}} eingerichtet",
     "needsSetup_one": "{{formattedCount}} Produkt muss noch eingerichtet werden",
     "needsSetup_other": "{{formattedCount}} Produkte müssen noch eingerichtet werden",
     "reviewProducts": "Produkte mit erforderlicher Einrichtung prüfen",
-    "viewAssignedProducts": "Zugeordnete Produkte ansehen",
-    "reviewTagRules": "Tag-Regeln prüfen",
-    "assignProducts": "Produkte zuordnen",
-    "products_one": "{{formattedCount}} Produkt",
-    "products_other": "{{formattedCount}} Produkte"
+    "allProducts": "Alle Produkte",
+    "viewProductsUsing": "Produkte mit diesem Verfahren ansehen",
+    "productsUsing_one": "Von {{formattedCount}} Produkt verwendet",
+    "productsUsing_other": "Von {{formattedCount}} Produkten verwendet"
   },
   "picker": {
-    "backToFilters": "Zurück zu den Filtern",
     "backToMethods": "Zurück zu den Verfahren",
-    "collection": "Kollektion",
-    "collections": "Kollektionen",
-    "tags": "Tags",
-    "clear": "Löschen",
-    "searchCollections": "Kollektionen suchen",
-    "searchTags": "Tags suchen",
-    "noCollections": "Keine Kollektionen gefunden.",
-    "noTags": "Keine Tags gefunden.",
-    "select": "Auswählen",
-    "addProducts": "Produkte hinzufügen",
-    "editCollectionFilter": "Kollektionfilter bearbeiten",
-    "editTagFilter": "Tag-Filter bearbeiten",
-    "collectionFilter": "Kollektion: {{collectionName}}",
-    "tagFilter": "Tag: {{tagName}}",
-    "clearSelection": "Auswahl aufheben",
-    "selectAllProducts": "Alle Produkte auf dieser Seite auswählen",
-    "showAllProducts": "Alle Produkte anzeigen",
-    "selected_one": "{{formattedCount}} ausgewählt",
-    "selected_other": "{{formattedCount}} ausgewählt",
     "previousProducts": "Vorherige Produktergebnisse",
-    "nextProducts": "Nächste Produktergebnisse",
-    "previousCollections": "Vorherige Kollektionsergebnisse",
-    "nextCollections": "Nächste Kollektionsergebnisse",
-    "collectionsDetail": "Fügt die aktuellen Produkte einmalig hinzu. Spätere Änderungen an der Kollektion aktualisieren dieses Verfahren nicht.",
-    "products": "Produkte",
-    "searchProducts": "Produkte suchen",
-    "addFilter": "Filter hinzufügen",
-    "showAllResults": "Alle Ergebnisse anzeigen",
-    "showSelected": "Ausgewählte anzeigen",
-    "selectedWithUnavailable_one": "{{formattedSelectedCount}} ausgewählt, darunter {{formattedUnavailableCount}} nicht verfügbares Produkt",
-    "selectedWithUnavailable_other": "{{formattedSelectedCount}} ausgewählt, darunter {{formattedUnavailableCount}} nicht verfügbare Produkte",
-    "pageRange": "{{first}}–{{last}} von {{formattedCount}}",
-    "noCollectionsWithProducts": "Keine Kollektionen mit Produkten gefunden.",
-    "collectionsSelectedAdding_one": "{{formattedCollectionCount}} Kollektion ausgewählt. Neue hinzuzufügende Produkte: {{formattedNewProductCount}}.",
-    "collectionsSelectedAdding_other": "{{formattedCollectionCount}} Kollektionen ausgewählt. Neue hinzuzufügende Produkte: {{formattedNewProductCount}}.",
-    "collectionsSelectedAllAlready_one": "{{formattedCollectionCount}} Kollektion ausgewählt. Alle Produkte sind bereits ausgewählt.",
-    "collectionsSelectedAllAlready_other": "{{formattedCollectionCount}} Kollektionen ausgewählt. Alle Produkte sind bereits ausgewählt.",
-    "empty": {
-      "noProductsAvailable": "Keine Produkte verfügbar",
-      "noSelectedProductsMatch": "Keine ausgewählten Produkte passen",
-      "noMatchingProducts": "Keine passenden Produkte",
-      "unavailableAssignments_one": "{{formattedCount}} ausgewähltes Produkt ist nicht mehr verfügbar.",
-      "unavailableAssignments_other": "{{formattedCount}} ausgewählte Produkte sind nicht mehr verfügbar.",
-      "catalogUnavailable": "Produkte konnten nicht geladen werden.",
-      "selectedSearchNoMatch": "Keine ausgewählten Produkte entsprechen dieser Suche.",
-      "tryDifferentSearch": "Versuchen Sie eine andere Suche oder einen anderen Filter."
-    },
-    "matchingProducts_one": "{{formattedCount}} Produkt gefunden",
-    "matchingProducts_other": "{{formattedCount}} Produkte gefunden",
-    "searchBy": {
-      "all": "Alle Felder",
-      "productTitle": "Produkttitel",
-      "productId": "Produkt-ID"
-    }
+    "nextProducts": "Nächste Produktergebnisse"
   },
   "library": {
     "removeHeading": "{{methodName}} entfernen?",
@@ -346,10 +250,5 @@
       "noMethodsDescription": "Fügen Sie die Leistungen hinzu, die Ihr Shop anbietet. Verwenden Sie sie wieder in der Produkteinrichtung."
     },
     "copyNote": "Änderungen gelten für neue Produkteinrichtungen. Vorhandene Einrichtungen behalten ihre jeweilige Kopie."
-  },
-  "methodDialog": {},
-  "methodIndex": {},
-  "methodProductPicker": {},
-  "methodSummary": {},
-  "methodWorkflowPreview": {}
+  }
 }

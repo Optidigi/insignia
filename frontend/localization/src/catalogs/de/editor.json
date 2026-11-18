@@ -533,8 +533,7 @@
     "editPrice": "Preis bearbeiten",
     "editPrices": "Preise bearbeiten",
     "perSize": "Pro Veredelungsgröße",
-    "addAMethodForThisProductOrCreateAReusableMethodInYourLibrary": "Fügen Sie ein Verfahren für dieses Produkt hinzu oder erstellen Sie ein wiederverwendbares Verfahren in Ihrer Bibliothek.",
-    "saveDraftAndOpenLibrary": "Entwurf speichern und Bibliothek öffnen",
+    "addAMethodForThisProductOrCreateAReusableMethodInYourLibrary": "Fügen Sie Ihrer Bibliothek ein Verfahren hinzu. Es ist dann für alle Produkte verfügbar.",
     "noMethodsMatchTheseFilters": "Keine Verfahren entsprechen diesen Filtern.",
     "showAllMethods": "Alle Verfahren anzeigen",
     "pricePerPlacementPerGarment": "Preis pro Veredelungsposition und Produkt",
@@ -554,7 +553,7 @@
     "nameDuplicate": "Ein Verfahren mit diesem Namen ist bereits verfügbar. Wählen Sie es aus der Liste aus.",
     "methodAddFailed": "Dieses Verfahren konnte nicht hinzugefügt werden. Versuchen Sie es erneut.",
     "methodsUnavailable": "Entfernen Sie nicht verfügbare Verfahren oder laden Sie die Bibliothek neu, bevor Sie fortfahren.",
-    "methodNameDetails": "Wird nur zu diesem Produkt hinzugefügt. Legen Sie anschließend die Preise pro Veredelungsposition fest.",
+    "methodNameDetails": "Wird Ihrer Verfahrensbibliothek hinzugefügt und ist für alle Produkte verfügbar. Legen Sie anschließend die Preise pro Veredelungsposition fest.",
     "forPlacement": "Für {{placementName}}",
     "thisPlacement": "diese Veredelungsposition",
     "enabledMethods_one": "{{formattedCount}} Verfahren aktiviert",
@@ -695,7 +694,6 @@
       "reviewCopiedSetup": "Einrichtung für {{productName}} prüfen"
     }
   },
-  "placementSetupCopyEntry": {},
   "placementSetupCopyReview": {
     "imageUnavailable": "Bild nicht verfügbar",
     "viewsToCopy": "Zu kopierende Ansichten",
@@ -1071,7 +1069,7 @@
     "realReviewCurrency": "Preise in Shopwährung prüfen",
     "realCalibrateImage": "Bild kalibrieren",
     "realDimensionsRequired": "Kalibrieren Sie dieses Bild, um die Produktionsmaße festzulegen. Messen Sie eine bekannte Breite am Kleidungsstück, zum Beispiel die Brustbreite.",
-    "realReviewMethods": "Prüfen Sie nicht zugewiesene oder gelöschte Methoden vor der Veröffentlichung.",
+    "realReviewMethods": "Prüfen Sie gelöschte Methoden vor der Veröffentlichung.",
     "realKeepMethod": "Methode behalten",
     "realRemoveMethod": "Methode entfernen",
     "realCapacityExceeded": "Diese Konfiguration überschreitet die unterstützten Grenzen: 16 Ansichten, 32 Veredelungspositionen, 32 Verfahren, 64 Veredelungsgrößen, 250 Varianten und 100 Bild- oder Ausrichtungsanpassungen pro Ansicht oder Veredelungsposition.",

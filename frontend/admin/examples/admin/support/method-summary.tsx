@@ -1,4 +1,4 @@
-/** A concise readback of the draft; setup is separate from publication. */
+/** A concise readback of the draft; setup is separate from publication. Every product can add any method. */
 
 import { useAdminLocale } from '../../../src/shared/admin-i18n.js';
 import type { MethodConfiguration } from './method-configuration.mts';
@@ -45,30 +45,14 @@ export default function MethodSummary({
         <s-stack gap="small">
           <s-text color="subdued">{t('methods:summary.availableTo')}</s-text>
           <s-paragraph>
-            <s-text type="strong">
-              {t('methods:summary.products', {
-                count,
-                formattedCount: new Intl.NumberFormat(formatLocale).format(count),
-              })}
-            </s-text>{' '}
-            {method.assignment === 'manual'
-              ? t('methods:summary.manualAssignment')
-              : method.tags.length
-                ? t('methods:summary.matchingTags', {
-                    count: method.tags.length,
-                    formattedCount: new Intl.NumberFormat(formatLocale).format(method.tags.length),
-                    match:
-                      method.tagMatch === 'all'
-                        ? t('methods:workflow.assignment.allTags')
-                        : t('methods:workflow.assignment.anyTag'),
-                  })
-                : t('methods:summary.noTagsSelected')}
+            <s-text type="strong">{t('methods:summary.allProducts')}</s-text>
           </s-paragraph>
           {count > 0 && (
             <s-stack direction="inline" gap="small" alignItems="center">
               <s-text color="subdued">
-                {t('methods:summary.configured', {
-                  formattedCount: new Intl.NumberFormat(formatLocale).format(count - needsSetup),
+                {t('methods:summary.productsUsing', {
+                  count,
+                  formattedCount: new Intl.NumberFormat(formatLocale).format(count),
                 })}
               </s-text>
               {needsSetup > 0 && (
@@ -81,23 +65,19 @@ export default function MethodSummary({
               )}
             </s-stack>
           )}
-          <div>
-            <s-link
-              href="#method-products"
-              onClick={(event) => {
-                event.preventDefault();
-                onReview(needsSetup > 0);
-              }}
-            >
-              {needsSetup
-                ? t('methods:summary.reviewProducts')
-                : count
-                  ? t('methods:summary.viewAssignedProducts')
-                  : method.assignment === 'tags'
-                    ? t('methods:summary.reviewTagRules')
-                    : t('methods:summary.assignProducts')}
-            </s-link>
-          </div>
+          {count > 0 && (
+            <div>
+              <s-link
+                href="#method-products"
+                onClick={(event) => {
+                  event.preventDefault();
+                  onReview(needsSetup > 0);
+                }}
+              >
+                {needsSetup ? t('methods:summary.reviewProducts') : t('methods:summary.viewProductsUsing')}
+              </s-link>
+            </div>
+          )}
         </s-stack>
       </s-stack>
     </aside>

@@ -1112,39 +1112,6 @@ export function createProductionAdminServices(
         grant(actor);
         return currency;
       },
-      productTags: async (actor, productIds) => {
-        await active(actor);
-        const online = grant(actor);
-        const scope = await core.tenants.getActiveAuthorizationScope({
-          shopId: actor.tenantShopId,
-          installationGeneration: actor.installationGeneration,
-        });
-        if (!scope) throw new Error('Method product-tag authority unavailable');
-        const reader = createCatalogReader(
-          createCatalogTransport({ shop: actor.shop, accessToken: online.accessToken, fetchImpl: fetch }),
-        );
-        const result: Record<string, string[]> = {};
-        for (let offset = 0; offset < productIds.length; offset += 250) {
-          const batch = productIds
-            .slice(offset, offset + 250)
-            .map((id) => (id.startsWith('gid://shopify/Product/') ? id : `gid://shopify/Product/${id}`));
-          const found = await reader.productTags(batch);
-          for (const [id, tags] of Object.entries(found)) result[id.replace('gid://shopify/Product/', '')] = tags;
-        }
-        await active(actor);
-        grant(actor);
-        const after = await core.tenants.getActiveAuthorizationScope({
-          shopId: actor.tenantShopId,
-          installationGeneration: actor.installationGeneration,
-        });
-        if (
-          !after ||
-          after.authorizationGeneration !== scope.authorizationGeneration ||
-          after.authorizationEpoch !== scope.authorizationEpoch
-        )
-          throw new Error('Method product-tag authority changed');
-        return result;
-      },
     }),
   };
 }

@@ -13,6 +13,7 @@ import {
   hostSave,
   imageUrl,
   methodId,
+  routeMethodLibrary,
   storedIntent,
   watchLeavePrompts,
 } from './support/selected-browser.mts';
@@ -483,7 +484,7 @@ test('a product method and a same-named library method appear once in Manage met
   assert.equal(await box.isChecked(), true);
 });
 
-test('Save draft and open library saves, then retires the dialog and save bar before navigating', {
+test("the editor's Add method creates one library method, priced on this product as an inherited binding", {
   timeout: 30000,
 }, async (t) => {
   const initial = structuredClone(draft);
@@ -496,26 +497,101 @@ test('Save draft and open library saves, then retires the dialog and save bar be
   selected.methodBindings = {};
   for (const view of selected.product.views) for (const placement of view.placements) placement.methodIds = [];
   const f = await fixture(t, { shopifyModal: true, initialDraft: MerchantDraftSchema.parse(initial) });
-  await f.page.route('**/api/admin/methods?view=catalog', (route) =>
-    route.fulfill({ json: { ...catalog, methods: [] } }),
-  );
+  const library = await routeMethodLibrary(f.page, []);
   await f.open();
-  const dialogs = await watchLeavePrompts(f.page);
-  await editName(f.page, 'Saved before the library');
-  await f.page.locator('[data-shopify-host-save-bar="product-draft-save-bar"]').waitFor();
   await f.page.getByRole('button', { name: 'Choose methods', exact: true }).click();
   const manager = f.page.locator('s-modal[data-method-dialog]').filter({ has: f.page.locator('.pm-manager') });
-  const managerId = await manager.getAttribute('id');
-  await manager.getByRole('button', { name: 'Save draft and open library', exact: true }).click();
-  await f.page.waitForURL((url) => url.pathname === '/admin/methods');
-  assert.equal(f.mutations.filter((entry) => entry.method === 'PUT').length, 1);
-  assert.equal(f.read().selectedSetup?.product.views[0]?.placements[0]?.name, 'Saved before the library');
-  assertRetiredBeforeNavigation(
-    await f.page.evaluate(() => window.previousPageSaveBarEvents),
-    'product-draft-save-bar',
-    managerId,
+  // A truly empty library keeps its empty state, and there is no detour to the library page.
+  await manager.getByText('Add a method to your library. It becomes available on every product.').waitFor();
+  assert.equal(await manager.getByRole('button', { name: 'Save draft and open library', exact: true }).count(), 0);
+  await manager.getByRole('button', { name: 'Add method', exact: true }).first().click();
+  const name = manager.getByRole('textbox', { name: 'Method name', exact: true });
+  await manager
+    .getByText('Added to your method library and available on every product. Set its placement prices next.')
+    .waitFor();
+  await name.fill('Flock');
+  await manager.getByRole('button', { name: 'Add method', exact: true }).first().click();
+  const prices = manager.locator('section[aria-label="Prices for Flock"]');
+  await prices.waitFor();
+  assert.equal(library.posts.length, 1);
+  const [post] = library.posts;
+  assert.ok(post?.key);
+  assert.equal(post.authority, authority);
+  assert.equal(post.currency, 'USD');
+  const created = required(library.methods()[0]).configuration;
+  assert.deepEqual(post.body, {
+    configuration: {
+      id: created.id,
+      name: 'Flock',
+      explanation: '',
+      pricing: 'product',
+      amount: '',
+      assignment: 'manual',
+      productIds: [],
+      tags: [],
+      tagMatch: 'any',
+    },
+  });
+  await prices.getByRole('textbox', { name: 'Price for Small', exact: true }).fill('4.00');
+  await manager.getByRole('button', { name: 'Done', exact: true }).click();
+  await manager.waitFor({ state: 'detached' });
+  assert.equal(f.mutations.length, 0, 'the product draft is saved separately');
+  const saved = f.page.waitForResponse((response) => response.request().method() === 'PUT');
+  await hostSave(f.page);
+  await saved;
+  const setup = required(f.read().selectedSetup);
+  assert.equal(setup.product.methods.find((method) => method.id === created.id)?.name, 'Flock');
+  const binding = required(setup.methodBindings[created.id]);
+  assert.equal(binding.catalogMethodId, created.id);
+  assert.equal(binding.review, null);
+  // Prices typed for the placement stay product-level edits.
+  assert.deepEqual(
+    Object.values(binding.prices).filter((price) => price.source === 'product'),
+    [{ source: 'product', value: '4.00' }],
   );
-  assert.deepEqual(dialogs, []);
+  // The library now offers it: a later catalogue read lists the new method.
+  await f.page.getByRole('button', { name: 'Manage methods', exact: true }).click();
+  await manager.getByRole('checkbox', { name: 'Flock', exact: true }).waitFor();
+  assert.equal(library.posts.length, 1);
+});
+
+test("a refused library create (full library, permission) keeps the editor and shows Add method's failure message", {
+  timeout: 30000,
+}, async (t) => {
+  const f = await fixture(t);
+  const answers = [
+    { status: 409, json: { kind: 'conflict', message: 'The library holds up to 100 methods.' } },
+    { status: 403, json: { error: 'Current tenant installation required' } },
+  ];
+  const keys: (string | undefined)[] = [];
+  await f.page.route('**/api/admin/methods', (route) => {
+    if (route.request().method() !== 'POST') return route.fallback();
+    keys.push(route.request().headers()['idempotency-key']);
+    return route.fulfill(required(answers.shift()));
+  });
+  await f.open();
+  await f.page.getByRole('button', { name: 'Manage methods', exact: true }).click();
+  const manager = f.page.locator('s-modal[data-method-dialog]').filter({ has: f.page.locator('.pm-manager') });
+  await manager.getByRole('button', { name: 'Add method', exact: true }).first().click();
+  await manager.getByRole('textbox', { name: 'Method name', exact: true }).fill('Flock');
+  const field = manager.locator('s-text-field[data-new-product-method]');
+  for (const attempt of [1, 2]) {
+    const answered = f.page.waitForResponse(
+      (response) => response.request().method() === 'POST' && response.url().endsWith('/api/admin/methods'),
+    );
+    await manager.getByRole('button', { name: 'Add method', exact: true }).first().click();
+    await answered;
+    await f.page.waitForFunction(
+      () =>
+        document.querySelector('s-text-field[data-new-product-method]')?.getAttribute('error') ===
+        'This method could not be added. Try again.',
+    );
+    assert.equal(keys.length, attempt);
+  }
+  assert.equal(keys[1], keys[0], 'a retry of the same name repeats the same command');
+  assert.equal(await field.count(), 1);
+  assert.equal(f.mutations.length, 0);
+  await f.page.locator('.placement-editor').waitFor({ state: 'visible' });
 });
 
 test('confirmed Leave page retires the dialog and save bar before navigating without saving', {
