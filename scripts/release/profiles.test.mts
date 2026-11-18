@@ -14,6 +14,8 @@ import a11yQuantityBinding from '../../deployment/m5-runtime/native-a11y-quantit
 };
 import allOrdersModules from '../../deployment/m5-runtime/native-allorders-module-baseline.json' with { type: 'json' };
 import allOrdersBinding from '../../deployment/m5-runtime/native-allorders-release-binding.json' with { type: 'json' };
+import batchModules from '../../deployment/m5-runtime/native-batch-module-baseline.json' with { type: 'json' };
+import batchBinding from '../../deployment/m5-runtime/native-batch-release-binding.json' with { type: 'json' };
 import behaviorModules from '../../deployment/m5-runtime/native-behavior-module-baseline.json' with { type: 'json' };
 import behaviorBinding from '../../deployment/m5-runtime/native-behavior-release-binding.json' with { type: 'json' };
 import buyerFixesModules from '../../deployment/m5-runtime/native-buyer-fixes-module-baseline.json' with {
@@ -446,6 +448,20 @@ test('functions renew candidate preserves identities and changes only theme and 
       };
       assert.deepEqual(unversioned(config), unversioned(oldConfig));
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
+  }
+});
+test('batch candidate changes only the theme module', () => {
+  assert.equal(batchModules.length, 14);
+  assert.equal(batchBinding.moduleHash, 'f019dff22a1bc0fa2e17e36f543730d7723b14673cf6aa933335cd28bfa408bd');
+  assert.equal(batchBinding.versionId, '1234668191745');
+  assert.deepEqual(new Set(batchBinding.versionIds), new Set([...namesBinding.versionIds, '1234668191745']));
+  const prior = new Map(namesModules.map((m) => [m.handle, m]));
+  assert.equal(prior.size, 14);
+  for (const module of batchModules) {
+    const old = required(prior.get(module.handle));
+    if (module.type === 'theme_app_extension')
+      assert.deepEqual({ ...module, config: undefined }, { ...old, config: undefined });
+    else assert.deepEqual(module, old);
   }
 });
 test('merchant-facing-names candidate changes only the theme module and the Function titles', () => {
