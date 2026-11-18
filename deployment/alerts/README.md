@@ -104,7 +104,8 @@ historical evidence enter the artifact. Retain the external CI manifest digest.
 Build `Dockerfile.heartbeat` with that new directory as its context. It uses the
 same Node base digest pinned in the build source as the web/worker images and copies only the
 operations package, preserving complete module paths. Reference the resulting
-immutable image digest in `compose.heartbeat.yaml`. The snapshot service executes
+image in the `heartbeat` and `snapshot` services of [the production stack](../production/compose.yaml)
+(local tag `insignia/heartbeat:<commit>`; `compose.heartbeat.yaml` is the retired pre-AC template). The snapshot service executes
 the packaged Node binary and collector path. No mutable checkout or host
 application-service dependency is required. Linux host networking reaches the
 configured existing worker loopback `/ready` probe; this is a worker/durable
@@ -199,18 +200,21 @@ custody and the actual independent destination before admission.
 
 **Owner-run backups (external marker).** When backups are run by the owner's own tooling instead
 of Insignia's backup store (owner decision 16 Nov 2026: one backup job for all apps, Insignia's data
-in `/srv/insignia`), configure the snapshot with
+in `/srv/data/saas/insignia` since deploy AC, 18 Nov 2026; `/srv/insignia` before), configure the snapshot with
 `"backupSource": {"kind": "external-marker", "markerFile": "/run/insignia/backup-marker/insignia-backup.json"}`
 and **omit** `backupStore`, `replicaRequired`, `replicaJournalDirectory` and `replicaRemoteIdentity`
 (mixing them is refused at startup); see
 [heartbeat-snapshot.external-marker.example.json](heartbeat-snapshot.external-marker.example.json).
-The owner's backup job, **only after a backup of `/srv/insignia` completed and was verified**,
+The owner's backup job, **only after a backup of `/srv/data/saas/insignia` completed and was verified**,
 atomically replaces the marker (write a temporary file in the same directory, then rename) with exactly:
 
 ```json
 {"version":1,"completedAt":1794850000000,"target":"owner-offsite"}
 ```
 
+On production the marker's host path is
+`/srv/data/saas/insignia/monitor/backup-marker/insignia-backup.json` (the snapshot service in
+[the production stack](../production/compose.yaml) mounts that directory read-only).
 `completedAt` is that backup's completion time in Unix milliseconds; `target` is a short label
 (1–64 of `A–Z a–z 0–9 . _ -`). The marker is a regular file (no symlink), owned by UID 1000,
 mode 0600, at most 512 bytes, in a directory mounted read-only into the snapshot container. A failed

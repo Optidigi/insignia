@@ -1,3 +1,6 @@
+# HISTORICAL since deploy AC (18 Nov 2026): production runs one Compose project `insignia` from
+# deployment/production/compose.yaml. This file describes the retired pre-AC layout; it is kept for
+# its render tests and as rollback evidence. Do not deploy it.
 # Separate signer (owner decision, 11 November 2026). Render after the canonical base and the
 # runtime overlay. Only this service holds the signing wrapping-key file and a database role that
 # can read private envelopes. It has no proxy network, no published port and no route; web reaches

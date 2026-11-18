@@ -6,6 +6,8 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { array, object } from './validation.mts';
 
+// Historical layout: these files describe the retired pre-AC split projects (kept as rollback evidence).
+// The live production shape is guarded by production-compose.test.mts against deployment/production/compose.yaml.
 test('owner overlay adds only fixed plan/journal mounts to the immutable ordinary command', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'signing-compose-'));
   try {

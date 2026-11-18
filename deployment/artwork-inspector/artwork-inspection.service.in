@@ -1,13 +1,17 @@
 [Unit]
+StartLimitIntervalSec=600
+StartLimitBurst=10
 Description=Insignia versioned artwork inspection
 
 [Service]
 Type=exec
-WorkingDirectory=%h/insignia-artwork-releases/@SOURCE_TREE@
+WorkingDirectory=/srv/data/saas/insignia/artwork-inspector/releases/@SOURCE_TREE@
 Environment=NODE_ENV=production
-EnvironmentFile=%h/.config/insignia/artwork-inspection.env
+EnvironmentFile=/srv/data/saas/insignia/artwork-inspector/inspection.env
 UnsetEnvironment=SHOPIFY_CLIENT_ID SHOPIFY_CLIENT_SECRET SHOPIFY_WEBHOOK_SECRET INSIGNIA_CREDENTIAL_KEY_BASE64 INSIGNIA_CREDENTIAL_KEY_ID INSIGNIA_CREDENTIAL_PREVIOUS_KEYS_JSON INSIGNIA_PARTNER_ACCESS_TOKEN INSIGNIA_M8_PURCHASE_ENABLED INSIGNIA_ARTWORK_HOST_RUNNER NODE_OPTIONS LD_PRELOAD LD_LIBRARY_PATH HTTP_PROXY HTTPS_PROXY ALL_PROXY
-ExecStart=%h/insignia-artwork-releases/@SOURCE_TREE@/bin/node %h/insignia-artwork-releases/@SOURCE_TREE@/start.mts --manifest-sha256 @MANIFEST_SHA256@
+# A crash can leave the readiness socket behind; the unit is not running here, so nothing else owns it.
+ExecStartPre=/bin/sh -c 'rm -f -- "$ARTWORK_WORKER_READY_SOCKET"'
+ExecStart=/srv/data/saas/insignia/artwork-inspector/releases/@SOURCE_TREE@/bin/node /srv/data/saas/insignia/artwork-inspector/releases/@SOURCE_TREE@/start.mts --manifest-sha256 @MANIFEST_SHA256@
 NoNewPrivileges=yes
 MemoryMax=512M
 MemorySwapMax=0
@@ -16,7 +20,8 @@ TasksMax=64
 KillMode=control-group
 # Existing bounded DB/storage cleanup must settle at stop.
 TimeoutStopSec=infinity
-Restart=no
+Restart=on-failure
+RestartSec=10
 
 [Install]
 WantedBy=default.target

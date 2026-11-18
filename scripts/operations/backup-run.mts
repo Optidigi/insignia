@@ -3,7 +3,6 @@ import { execFile, spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, readlinkSync, realpathSync } from 'node:fs';
 import { request as httpRequest } from 'node:http';
-import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
@@ -123,11 +122,13 @@ export function fingerprint(row: Record<string, unknown>): string {
     )
     .digest('hex');
 }
+// Production runs one project `insignia` since deploy AC; the earlier split projects were `insignia-*`.
+const PROJECT = /^insignia(?:-[a-z0-9-]+)?$/;
 export function configuration(value: unknown): Configuration {
   const raw = record(value);
   check(
     raw.format === 'insignia-backup-run-v1' &&
-      /^insignia-[a-z0-9-]+$/.test(text(raw.project)) &&
+      PROJECT.test(text(raw.project)) &&
       Number.isInteger(raw.windowSeconds) &&
       number(raw.windowSeconds) >= 60 &&
       number(raw.windowSeconds) <= 3600,
@@ -148,7 +149,7 @@ export function configuration(value: unknown): Configuration {
     if (item.project !== undefined) base.project = text(item.project);
     const project = base.project ?? text(raw.project);
     check(
-      /^insignia-[a-z0-9-]+$/.test(project) &&
+      PROJECT.test(project) &&
         ROLES.has(base.service) &&
         base.name.startsWith(`${project}-`) &&
         /^[a-f0-9]{64}$/.test(base.id) &&
@@ -317,6 +318,8 @@ export function verifyInspectorArtifact(release: string, expected: string): 'sta
 }
 export class InspectorService implements InspectorBoundary {
   static readonly UNIT = 'insignia-artwork-inspection.service';
+  /** Immutable inspector releases on the encrypted data volume (deploy AC); one directory per source tree. */
+  static readonly RELEASES = '/srv/data/saas/insignia/artwork-inspector/releases';
   static readonly PROPERTIES = [
     'Id',
     'LoadState',
@@ -414,7 +417,7 @@ export class InspectorService implements InspectorBoundary {
       release = text(props.WorkingDirectory);
     check(
       loaded &&
-        dirname(release) === join(homedir(), 'insignia-artwork-releases') &&
+        dirname(release) === InspectorService.RELEASES &&
         /^[a-f0-9]{40}$/.test(release.slice(release.lastIndexOf('/') + 1)),
       'immutable inspector command required',
     );

@@ -284,7 +284,8 @@ export async function readBackupState(directory: string, now = Date.now(), optio
 /**
  * Owner-run backups (decision D5): the owner's own backup job, not Insignia's backup store, proves
  * freshness by atomically replacing one private marker after a verified successful backup of
- * /srv/insignia. Exactly {version:1, completedAt:<Unix ms>, target:<short opaque label>}. Missing,
+ * /srv/data/saas/insignia (the encrypted data volume). Exactly
+ * {version:1, completedAt:<Unix ms>, target:<short opaque label>}. Missing,
  * malformed or future markers throw, so the snapshot reports unknown and never fabricates freshness;
  * age against backupMaxAgeSeconds is judged by the heartbeat producer.
  */

@@ -41,8 +41,8 @@ if (mode === 'digest') {
   const row: DockerRow = {
     Id: 'a'.repeat(64),
     Image: `sha256:${'b'.repeat(64)}`,
-    Name: '/insignia-production-web',
-    Config: { Labels: { 'com.docker.compose.project': 'insignia-production', 'com.docker.compose.service': 'web' } },
+    Name: '/insignia-web',
+    Config: { Labels: { 'com.docker.compose.project': 'insignia', 'com.docker.compose.service': 'web' } },
     HostConfig: {},
     Mounts: [],
     RestartCount: 0,
@@ -81,7 +81,7 @@ if (mode === 'digest') {
   };
   const config = {
     format: 'insignia-backup-run-v1',
-    project: 'insignia-production',
+    project: 'insignia',
     windowSeconds: 300,
     runtimeDirectory: runtime,
     containers: [

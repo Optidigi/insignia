@@ -10,6 +10,8 @@ import { collectWorkerInventory } from '../../scripts/runtime/worker-inventory.m
 import { qualifyWorkerCandidate } from '../worker/worker-guards.mts';
 import { object, required } from './validation.mts';
 
+// Historical layout: these files describe the retired pre-AC split projects (kept as rollback evidence).
+// The live production shape is guarded by production-compose.test.mts against deployment/production/compose.yaml.
 // Required CI control: invokes the real renderer, never starts a service or contacts production.
 test('ordinary runtime overlays preserve canonical web boundaries and restrict worker outbound topology', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'insignia-web-compose-'));

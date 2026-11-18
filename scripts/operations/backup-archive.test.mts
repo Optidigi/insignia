@@ -61,12 +61,12 @@ test('archive preflight rejects links, nonfiles, duplicates and traversal before
 test('recorded Docker fingerprints preserve Python sorted ASCII JSON bytes including Unicode secrets', () => {
   const row = {
     Id: 'a'.repeat(64),
-    Name: '/insignia-production-web',
+    Name: '/insignia-web',
     Image: `sha256:${'b'.repeat(64)}`,
     Config: { Labels: { z: '✓', Z: 'Upper', a: 'lower' }, Env: ['SYNTHETIC=€\x7f'] },
     HostConfig: {},
     Mounts: [],
   };
   assert.equal(canonicalJSON({ '2': 'two', '10': 'ten' }), '{"10":"ten","2":"two"}');
-  assert.equal(fingerprint(row), 'cab22e18f0719738c5571a745872e77fed9634b46393ed4d47ffbd1e09e784c6');
+  assert.equal(fingerprint(row), '005a409342f707f707d320cf2fe02ce7c291421a2357efcab795afb4a66c7a68');
 });
