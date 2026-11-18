@@ -1,0 +1,41 @@
+# Weekly dependency update PRs. Minor and patch updates arrive as one grouped PR per
+# ecosystem; major updates stay separate so their breaking changes are reviewed alone.
+# A cooldown keeps freshly published releases out until they have been public for a week.
+version: 2
+updates:
+  # pnpm workspace: root package.json and pnpm-lock.yaml cover apps/*, packages/* and frontend/*.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    cooldown:
+      default-days: 7
+    groups:
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+
+  # Cargo workspace at the root: crates/cart-authorization and the Function crates
+  # (crates/cart-transform, crates/cart-validation) built into extensions/*.
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 2
+    cooldown:
+      default-days: 7
+    groups:
+      cargo-minor-and-patch:
+        update-types: [minor, patch]
+
+  # Workflow actions are pinned by commit SHA; Dependabot updates the SHA and its version comment.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 2
+    cooldown:
+      default-days: 7
+    groups:
+      actions-minor-and-patch:
+        update-types: [minor, patch]
