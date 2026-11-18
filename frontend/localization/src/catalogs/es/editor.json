@@ -1188,7 +1188,7 @@
     "checkAppearanceOnView": "Comprueba {{appearanceName}} en {{viewName}}.",
     "selectedImage": "Seleccionada",
     "realPublicationPending": "La publicación sigue en curso. Continúa la solicitud original para comprobar su estado.",
-    "realPublicationProgress": "Publicando. Puede tardar hasta un minuto; esta página se actualizará cuando termine.",
+    "realPublicationProgress": "Publicando. Puede tardar uno o dos minutos; esta página se actualizará cuando termine.",
     "realPublicationNotice": "La publicación actualiza tu tienda Shopify después de la validación y activación.",
     "realPublish": "Publicar",
     "realPublishQuestion": "¿Publicar esta configuración? Cuando esté activa, los clientes podrán personalizar este producto en tu tienda. Los cambios posteriores permanecerán en un borrador hasta que los publiques.",

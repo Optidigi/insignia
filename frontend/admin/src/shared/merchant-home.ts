@@ -77,7 +77,7 @@ export interface HomeActivityDay {
   productsOrdered: number;
 }
 
-/** Complete non-test, non-cancelled order facts for the last 30 store-calendar days including today. */
+/** Complete non-cancelled order facts, test orders included, for the last 30 store-calendar days including today. */
 export type HomeStatistics =
   | {
       state: 'ready';
@@ -85,7 +85,6 @@ export type HomeStatistics =
       customizedOrders: number;
       customizedItems: bigint;
       productsOrdered: number;
-      excludesTestOrders?: true;
       series?: HomeActivityDay[];
       previousPeriod?: {
         customizedOrders: number;
@@ -102,7 +101,8 @@ export interface HomeGuidance {
   initiallyExpanded?: boolean;
   /** Steps shown as done: merchant acknowledgements plus `observedSteps`. */
   completedSteps?: HomeGuidanceStepId[];
-  /** Steps done because the store says so (published product, connected theme); the merchant cannot untick them. */
+  /** Steps done because the store says so (published product, connected theme, a recorded order); the merchant
+   * cannot untick them. */
   observedSteps?: HomeGuidanceStepId[];
 }
 

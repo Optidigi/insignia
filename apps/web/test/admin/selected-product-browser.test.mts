@@ -134,10 +134,22 @@ test('delayed saves fence keyboard, programmatic native/header actions and input
   assert.equal(await f.page.getByRole('textbox', { name: /^Placement name/ }).inputValue(), 'Frozen save name');
 });
 
-test('a pending publication remains visibly pending and reuses its original publication identity', {
-  timeout: 30000,
+test('a publication still in progress is continued automatically, then offers Retry with its original identity', {
+  timeout: 240000,
 }, async (t) => {
   const f = await fixture(t, { publicationPending: true });
+  // The fake clock moves only between requests, so no request deadline elapses while one is answered.
+  let inFlight = 0;
+  const api = (request: import('playwright').Request) => new URL(request.url()).pathname.startsWith('/api/');
+  f.page.on('request', (request) => {
+    if (api(request)) inFlight++;
+  });
+  const settled = (request: import('playwright').Request) => {
+    if (api(request)) inFlight--;
+  };
+  f.page.on('requestfinished', settled);
+  f.page.on('requestfailed', settled);
+  await f.page.clock.install();
   await f.open();
   await f.page
     .locator('s-button[slot="primary-action"]')
@@ -145,10 +157,29 @@ test('a pending publication remains visibly pending and reuses its original publ
     .evaluate((button: HTMLElementTagNameMap['s-button']) => button.click());
   const modal = f.page.locator('s-modal').filter({ hasText: 'Publish setup' });
   await modal.getByRole('button', { name: 'Publish', exact: true }).click();
-  await f.page
-    .getByText('Publication is still processing. Continue the original request to check its status.', { exact: true })
-    .waitFor();
-  assert.equal(await f.page.getByText('Published', { exact: true }).count(), 0);
+  const progress = modal.getByText('Publishing. This can take a minute or two; this page updates when it finishes.', {
+    exact: true,
+  });
+  const pending = f.page.getByText(
+    'Publication is still processing. Continue the original request to check its status.',
+    { exact: true },
+  );
+  await progress.waitFor();
+  const publishes = () => f.mutations.filter((entry) => entry.key?.endsWith(':publish'));
+  // The server answers "accepted, still in progress" every time: the editor re-sends it every 5 s, showing
+  // progress rather than a failure, until its five-minute bound.
+  for (let step = 0; step < 2000 && (await pending.count()) === 0; step++) {
+    if (publishes().length === 3) {
+      assert.equal(await progress.count(), 1, 'auto-continuing shows progress');
+      assert.equal(await f.page.getByRole('button', { name: 'Retry', exact: true }).count(), 0);
+      assert.equal(await f.page.getByText(/could not be confirmed/).count(), 0);
+    }
+    if (inFlight === 0) await f.page.clock.fastForward(5_000);
+    await f.page.waitForTimeout(25);
+  }
+  await pending.waitFor();
+  const continued = publishes().length;
+  assert.ok(continued > 10 && continued <= 62, `re-sent at the bounded cadence (${continued} sends)`);
   await modal.getByRole('button', { name: 'Cancel', exact: true }).click();
   await modal.waitFor({ state: 'hidden' });
   const retryAcknowledged = f.page.waitForResponse(
@@ -170,14 +201,67 @@ test('a pending publication remains visibly pending and reuses its original publ
     1,
     'Publication continuation must not issue another save',
   );
-  const publishes = f.mutations.filter((entry) => entry.key?.endsWith(':publish'));
-  assert.equal(publishes.length, 2);
-  assert.equal(publishes[1]?.key, publishes[0]?.key);
-  assert.equal(publishes[1]?.body, publishes[0]?.body);
+  const sent = publishes();
+  assert.ok(sent.length > continued);
+  for (const entry of sent) {
+    assert.equal(entry.key, sent[0]?.key);
+    assert.equal(entry.body, sent[0]?.body);
+  }
   assert.notEqual(
-    publishes[1]?.key,
+    sent[0]?.key,
     'm5pub_cfg-selected-111_2_1',
     'Continuation uses the HTTP intent identity, not a different server publication key',
+  );
+});
+
+test('an accepted publication left in progress continues automatically until Published, without Retry', {
+  timeout: 30000,
+}, async (t) => {
+  const f = await fixture(t, { publicationPending: true });
+  let sends = 0;
+  await f.page.route('**/api/admin/products/111/config', async (route) => {
+    const request = route.request();
+    if (request.method() === 'POST' && JSON.parse(request.postData() ?? '{}').action === 'publish') {
+      sends++;
+      // The server stopped making progress twice (#468 analysis, 18 Nov 2026); the third send finishes it.
+      if (sends === 3) {
+        await route.fallback();
+        return;
+      }
+    }
+    if (sends >= 3 && request.method() === 'GET') {
+      const view = f.view();
+      const config = required(view.config);
+      config.publication = {
+        ...config.publication,
+        state: 'ACTIVE',
+        activeRevisionId: 'revision-selected-111',
+      };
+      config.publishedSetup = MerchantDraftSchema.parse(config.draft).selectedSetup ?? null;
+      return route.fulfill({ json: view });
+    }
+    return route.fallback();
+  });
+  await f.open();
+  await f.page
+    .locator('s-button[slot="primary-action"]')
+    .filter({ hasText: /^Publish$/ })
+    .evaluate((button: HTMLElementTagNameMap['s-button']) => button.click());
+  const modal = f.page.locator('s-modal').filter({ hasText: 'Publish setup' });
+  await modal.getByRole('button', { name: 'Publish', exact: true }).click();
+  await f.page.getByText('Published', { exact: true }).first().waitFor({ timeout: 20000 });
+  await modal.waitFor({ state: 'hidden' });
+  assert.equal(sends, 3);
+  assert.equal(await f.page.getByRole('button', { name: 'Retry', exact: true }).count(), 0);
+  assert.equal(await f.page.getByText(/could not be confirmed/).count(), 0);
+  assert.equal(
+    await f.page.evaluate(() =>
+      sessionStorage.getItem(
+        'insignia:selected-product-write:v1:selected-browser.myshopify.com:gid://shopify/Product/111',
+      ),
+    ),
+    null,
+    'the publish custody settled',
   );
 });
 

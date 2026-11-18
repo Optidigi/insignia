@@ -90,7 +90,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('whole-dataset purchase list q
     expect((await repo.list(scope, { artwork: 'needed' })).length).toBe(4);
     const days = await repo.statistics(scope, 'Europe/Amsterdam', new Date('2026-11-05T12:00:00Z'));
     expect(days.reduce((sum, day) => sum + BigInt(day.orders), 0n)).toBe(4n);
-    expect(days.every((day) => day.items === '0' && day.unknown_test === '0')).toBe(true);
+    expect(days.every((day) => day.items === '0')).toBe(true);
     const original = inputs[0];
     if (!original) throw new Error('Expected first retained order');
     await repo.reconcile({
@@ -104,5 +104,14 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('whole-dataset purchase list q
     });
     const afterCancellation = await repo.statistics(scope, 'Europe/Amsterdam', new Date('2026-11-05T12:00:00Z'));
     expect(afterCancellation.reduce((sum, day) => sum + BigInt(day.orders), 0n)).toBe(3n);
+    // Owner decision, 18 November 2026: test orders count on Home; cancelled orders still do not.
+    const test = inputs[1];
+    if (!test) throw new Error('Expected second retained order');
+    await repo.reconcile({
+      ...test,
+      order: { ...test.order, orderId: 'gid://shopify/Order/880005', orderName: '#1005', test: true },
+    });
+    const withTest = await repo.statistics(scope, 'Europe/Amsterdam', new Date('2026-11-05T12:00:00Z'));
+    expect(withTest.reduce((sum, day) => sum + BigInt(day.orders), 0n)).toBe(4n);
   });
 });

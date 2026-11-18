@@ -284,33 +284,33 @@ test('storefront setup links the optional customization block to its Shopify app
   assert.equal(href.searchParams.get('target'), 'mainSection');
 });
 
-test('Home order tiles say that test and cancelled orders are not counted, in every bundled language', {
+test('Home order tiles say that test orders count and cancelled orders do not, in every bundled language', {
   timeout: 60000,
 }, async (t) => {
   const expected: Record<string, [string, string]> = {
     en: [
-      'Orders containing at least one Insignia design. Test and cancelled orders are not counted.',
-      'Total quantity of customized items ordered. Test and cancelled orders are not counted.',
+      'Orders containing at least one Insignia design. Test orders are counted; cancelled orders are not.',
+      'Total quantity of customized items ordered. Test orders are counted; cancelled orders are not.',
     ],
     nl: [
-      'Bestellingen met ten minste één Insignia-ontwerp. Testbestellingen en geannuleerde bestellingen worden niet meegeteld.',
-      'Totaal aantal bestelde artikelen met personalisatie. Testbestellingen en geannuleerde bestellingen worden niet meegeteld.',
+      'Bestellingen met ten minste één Insignia-ontwerp. Testbestellingen tellen mee; geannuleerde bestellingen niet.',
+      'Totaal aantal bestelde artikelen met personalisatie. Testbestellingen tellen mee; geannuleerde bestellingen niet.',
     ],
     de: [
-      'Bestellungen mit mindestens einer Insignia-Gestaltung. Testbestellungen und stornierte Bestellungen werden nicht mitgezählt.',
-      'Gesamtzahl der bestellten Artikel mit Produktanpassungen. Testbestellungen und stornierte Bestellungen werden nicht mitgezählt.',
+      'Bestellungen mit mindestens einer Insignia-Gestaltung. Testbestellungen werden mitgezählt, stornierte Bestellungen nicht.',
+      'Gesamtzahl der bestellten Artikel mit Produktanpassungen. Testbestellungen werden mitgezählt, stornierte Bestellungen nicht.',
     ],
     fr: [
-      'Commandes contenant au moins une personnalisation Insignia. Les commandes de test et les commandes annulées ne sont pas comptabilisées.',
-      'Quantité totale d’articles personnalisés commandés. Les commandes de test et les commandes annulées ne sont pas comptabilisées.',
+      'Commandes contenant au moins une personnalisation Insignia. Les commandes de test sont comptabilisées, les commandes annulées ne le sont pas.',
+      'Quantité totale d’articles personnalisés commandés. Les commandes de test sont comptabilisées, les commandes annulées ne le sont pas.',
     ],
     es: [
-      'Pedidos que contienen al menos una personalización de Insignia. Los pedidos de prueba y los cancelados no se cuentan.',
-      'Cantidad total de artículos personalizados pedidos. Los pedidos de prueba y los cancelados no se cuentan.',
+      'Pedidos que contienen al menos una personalización de Insignia. Los pedidos de prueba se cuentan; los cancelados, no.',
+      'Cantidad total de artículos personalizados pedidos. Los pedidos de prueba se cuentan; los cancelados, no.',
     ],
     it: [
-      'Ordini che contengono almeno una personalizzazione Insignia. Gli ordini di prova e quelli annullati non vengono conteggiati.',
-      'Quantità totale di articoli personalizzati ordinati. Gli ordini di prova e quelli annullati non vengono conteggiati.',
+      'Ordini che contengono almeno una personalizzazione Insignia. Gli ordini di prova vengono conteggiati, quelli annullati no.',
+      'Quantità totale di articoli personalizzati ordinati. Gli ordini di prova vengono conteggiati, quelli annullati no.',
     ],
   };
   for (const [locale, definitions] of Object.entries(expected)) {
@@ -325,6 +325,22 @@ test('Home order tiles say that test and cancelled orders are not counted, in ev
     assert.deepEqual(shown.slice(0, 2), definitions, locale);
     await page.close();
   }
+});
+
+test('a recorded order, even a test order, ticks the test step; without one it stays a manual step', {
+  timeout: 30000,
+}, async (t) => {
+  const page = await openMerchantPage(t, '/admin/home', { embed: 'active', product: 'published', orders: 'test-only' });
+  await page.getByRole('heading', { name: 'Setup guide complete' }).waitFor();
+  await page.getByText('3 of 3 complete', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Show getting started guide' }).click();
+  const test = stepCheckbox(page, 'Complete: customer test (detected from your store)');
+  assert.equal(await test.isChecked(), true);
+  assert.equal(await test.isDisabled(), true, 'an observed order is not a manual acknowledgement');
+
+  const none = await openMerchantPage(t, '/admin/home', { embed: 'active', product: 'published', orders: 'none' });
+  await none.getByText('2 of 3 complete', { exact: true }).waitFor();
+  assert.equal(await stepCheckbox(none, 'Mark customer test as complete').isChecked(), false);
 });
 
 test('a published product beyond the first catalog page still ticks the product step', {

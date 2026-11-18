@@ -57,8 +57,14 @@ const resendSchema = z.object({
   minimumValidityMs: z.number(),
 });
 const publishSchema = z.discriminatedUnion('kind', [acceptedSchema, resendSchema]);
-// Each resend waits for a new session token; the server makes progress with every one.
+// Each resend waits for a new session token; the server makes progress with every one. Counted per
+// run of consecutive `resend` answers: an `accepted` answer in between shows the request is advancing.
 const maxResends = 3;
+/** A publish the server accepted but left in progress (it stopped making progress or waits for
+ * Shopify) advances only when the same request is sent again; nothing advances it in the background.
+ * The editor re-sends it at this cadence, within this overall bound, before offering Retry. */
+export const PUBLICATION_CONTINUE_INTERVAL_MS = 5_000;
+export const PUBLICATION_CONTINUE_LIMIT_MS = 5 * 60_000;
 
 /** Local custody contains only the exact unresolved write intent, never an authoritative product draft. */
 export class SelectedProductReviewChanged extends Error {
@@ -66,6 +72,14 @@ export class SelectedProductReviewChanged extends Error {
   constructor(view: ConfigView) {
     super('Inherited defaults changed. Review the saved draft before publishing.');
     this.view = view;
+  }
+}
+
+/** The server still carries the publication, but this editor stopped continuing it (#468 resends, or the
+ * auto-continue bound). Custody stays; Retry continues the original request. */
+export class SelectedProductPublicationInProgress extends Error {
+  constructor() {
+    super('Publication is still in progress');
   }
 }
 
@@ -84,6 +98,7 @@ export function createSelectedProductClient(input: {
   now?: () => number;
   newKey?: () => string;
   onDenied?: () => void;
+  wait?: (ms: number) => Promise<void>;
 }) {
   const number = /^gid:\/\/shopify\/Product\/([1-9][0-9]*)$/.exec(input.productId)?.[1];
   if (!number) throw new Error('Invalid product identity');
@@ -92,6 +107,7 @@ export function createSelectedProductClient(input: {
     input.request ??
     ((path, init, resendValidityMs) => authenticatedJson(path, init, false, resendValidityMs));
   const now = input.now ?? Date.now;
+  const wait = input.wait ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
   let current: ConfigView | null = null;
   let scope: { shop: string; authority: string } | null = null;
   let busy = false;
@@ -323,40 +339,71 @@ export function createSelectedProductClient(input: {
         },
         resendValidityMs,
       );
-    let accepted = publishSchema.parse(await send());
     // #468: the staff session ended between publication steps. Re-send the same request (same key and
     // bytes) as soon as a new session token is available; the server resumes from its persisted step.
-    for (let resent = 0; accepted.kind === 'resend'; resent++) {
+    const sendUntilAccepted = async () => {
+      let accepted = publishSchema.parse(await send());
+      for (let resent = 0; accepted.kind === 'resend'; resent++) {
+        if (accepted.revisionId && accepted.revisionId !== value.acceptedRevisionId) {
+          value = { ...value, acceptedRevisionId: accepted.revisionId };
+          store(value);
+        }
+        if (resent === maxResends)
+          // The server stopped it and is not running it: keep custody and offer Retry at once.
+          throw new SelectedProductPublicationInProgress();
+        accepted = publishSchema.parse(await send(accepted.minimumValidityMs));
+      }
       if (accepted.revisionId && accepted.revisionId !== value.acceptedRevisionId) {
         value = { ...value, acceptedRevisionId: accepted.revisionId };
         store(value);
       }
-      if (resent === maxResends)
-        // The server stopped it and is not running it: keep custody and offer Retry at once.
-        throw new Error('Publication is still in progress');
-      accepted = publishSchema.parse(await send(accepted.minimumValidityMs));
+    };
+    await sendUntilAccepted();
+    const deadline = now() + PUBLICATION_CONTINUE_LIMIT_MS;
+    let view = await refresh();
+    // An accepted request the server left in progress continues only when it is sent again: re-send it
+    // while the server still shows this exact request in progress, reading first so a publication that
+    // settled meanwhile is never sent again. Past the bound, custody stays and Retry is offered.
+    while (!settlePublication(view, value) && continuesOwnPublication(view, value)) {
+      if (now() + PUBLICATION_CONTINUE_INTERVAL_MS > deadline) throw new SelectedProductPublicationInProgress();
+      await wait(PUBLICATION_CONTINUE_INTERVAL_MS);
+      assertCurrent();
+      view = await refresh();
+      if (settlePublication(view, value) || !continuesOwnPublication(view, value)) break;
+      await sendUntilAccepted();
+      view = await refresh();
     }
-    if (accepted.revisionId) {
-      value = { ...value, acceptedRevisionId: accepted.revisionId };
-      store(value);
-    }
-    const view = await refresh();
-    settlePublication(view, value);
     return view;
   }
+  /** The config and request this custody identifies (#436): the accepted revision of its configuration,
+   * generation and saved draft. */
+  function ownsPublication(view: ConfigView, value: z.infer<typeof custodySchema>) {
+    const config = view.config;
+    return (
+      value.stage === 'publish' &&
+      !!config?.publication.revisionId &&
+      config.configId === value.configId &&
+      config.installationGeneration === value.installationGeneration &&
+      config.publication.sourceDraftVersion === value.draftVersion &&
+      (!value.acceptedRevisionId || config.publication.revisionId === value.acceptedRevisionId)
+    );
+  }
+  /** This editor's own accepted request is still in progress on the server. #466: an abandonment is
+   * restored by the server alone; re-sending its key cannot advance it. */
+  function continuesOwnPublication(view: ConfigView, value: z.infer<typeof custodySchema>) {
+    const state = view.config?.publication.state;
+    return (
+      !!value.acceptedRevisionId &&
+      ownsPublication(view, value) &&
+      !!state &&
+      isMerchantPublicationContinuing(state) &&
+      state !== 'ABANDONMENT_RESTORING'
+    );
+  }
   function settlePublication(view: ConfigView, value = pending()) {
-    const config = view.config,
-      publication = config?.publication;
-    if (
-      value?.stage !== 'publish' ||
-      !config ||
-      !publication?.revisionId ||
-      config.configId !== value.configId ||
-      config.installationGeneration !== value.installationGeneration ||
-      publication.sourceDraftVersion !== value.draftVersion ||
-      (value.acceptedRevisionId && publication.revisionId !== value.acceptedRevisionId)
-    )
-      return false;
+    const config = view.config;
+    if (!value || !config || !ownsPublication(view, value)) return false;
+    const publication = config.publication;
     // The original request's idempotency key, or the revision it was accepted with, identifies this
     // exact operation even when its response was lost (#436). The server's stored setup is then
     // authoritative, so it need not match the locally journaled bytes.

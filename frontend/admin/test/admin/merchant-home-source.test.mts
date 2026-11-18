@@ -98,7 +98,41 @@ test('Home uses exact whole-store aggregates and cannot present unavailable evid
   assert.equal(homeStatisticsFromAggregate({ ...value, series: [{ ...value.series[0], orders: '9007199254740993' }] }), undefined);
 });
 
-test('getting-started steps are observed from the published product and a fully connected theme only', async () => {
+test('Home counts test orders and leaves out cancelled orders (owner, 18 November 2026)', async () => {
+  const { homeStatisticsFromResponse } = await import('../../src/shared/merchant-home-source.ts');
+  const { createRichPurchasePreviewFixtures } = await import('../../examples/admin/support/purchase-preview-fixtures.mts');
+  const { PurchaseListViewSchema } = await import('../../src/shared/purchase-presentation.ts');
+  const list = PurchaseListViewSchema.parse(createRichPurchasePreviewFixtures()['/api/purchases/v1']);
+  const now = Date.parse('2026-11-18T12:00:00Z');
+  const order = list.items[0];
+  if (!order) throw new Error('Expected a fixture order');
+  const at = (index: number, change: Partial<typeof order>) => ({
+    ...order,
+    purchaseId: `10000000-0000-4000-8000-00000000090${index}`,
+    orderCreatedAt: '2026-11-17T12:00:00Z',
+    cancelledAt: null,
+    ...change,
+  });
+  const result = homeStatisticsFromResponse(
+    {
+      ...list,
+      timeZone: 'UTC',
+      nextCursor: null,
+      items: [
+        at(1, { isTest: false }),
+        at(2, { isTest: true }),
+        at(3, { isTest: null }),
+        at(4, { cancelledAt: '2026-11-17T13:00:00Z' }),
+      ],
+    },
+    now,
+  );
+  assert.equal(result?.state, 'ready');
+  if (result?.state !== 'ready') throw new Error('Expected complete statistics');
+  assert.equal(result.customizedOrders, 3, 'live, test and unknown-flag orders count; the cancelled one does not');
+});
+
+test('getting-started steps are observed from the published product, a fully connected theme and a recorded order', async () => {
   const { homeGuidanceWithObservedSteps, homeObservedGuidanceSteps } = await import(
     '../../src/shared/merchant-home-source.ts'
   );
@@ -106,6 +140,9 @@ test('getting-started steps are observed from the published product and a fully 
   assert.deepEqual(homeObservedGuidanceSteps('active', false), ['storefront']);
   assert.deepEqual(homeObservedGuidanceSteps('available', true), ['product']);
   assert.deepEqual(homeObservedGuidanceSteps('unknown', false), []);
+  // Owner decision, 18 November 2026: a recorded order (test orders included) proves the customization test.
+  assert.deepEqual(homeObservedGuidanceSteps('active', true, true), ['product', 'storefront', 'test']);
+  assert.deepEqual(homeObservedGuidanceSteps('unknown', false, true), ['test']);
   assert.deepEqual(homeGuidanceWithObservedSteps({ dismissed: false, completedSteps: ['test'] }, ['product']), {
     dismissed: false,
     completedSteps: ['product', 'test'],

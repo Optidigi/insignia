@@ -110,14 +110,14 @@ for (let iteration = 1; iteration <= iterations; iteration++) {
       const f = await fixture(t, { publicationPending: true });
       await f.open();
       const modal = await openPublication(f.page);
+      const accepted = f.page.waitForResponse(
+        (response) =>
+          response.request().method() === 'POST' &&
+          (response.request().postData() ?? '').includes('"action":"publish"'),
+      );
       await modal.getByRole('button', { name: 'Publish', exact: true }).click();
-      await f.page
-        .getByText('Publication is still processing. Continue the original request to check its status.', {
-          exact: true,
-        })
-        .waitFor();
-      await modal.getByRole('button', { name: 'Cancel', exact: true }).click();
-      await modal.waitFor({ state: 'hidden' });
+      // Accepted but still in progress: the editor waits before continuing it, and reads first.
+      await accepted;
       await f.page.route('**/api/admin/products/111/config', (route) => {
         if (route.request().method() !== 'GET') return route.fallback();
         const view = f.view();
@@ -133,12 +133,13 @@ for (let iteration = 1; iteration <= iterations; iteration++) {
         config.publishedSetup = MerchantDraftSchema.parse(config.draft).selectedSetup ?? null;
         return route.fulfill({ json: view });
       });
-      await f.page.evaluate(() => window.dispatchEvent(new Event('focus')));
       await f.page.waitForFunction(
         () =>
           !sessionStorage.getItem(
             'insignia:selected-product-write:v1:selected-browser.myshopify.com:gid://shopify/Product/111',
           ),
+        undefined,
+        { timeout: 10000 },
       );
       await f.page.getByText('Published', { exact: true }).first().waitFor();
       assert.equal(f.mutations.length, 2, 'Readback alone settles the one original save and publication');
@@ -174,12 +175,21 @@ for (let iteration = 1; iteration <= iterations; iteration++) {
       await waiting;
       try {
         const modal = await openPublication(f.page);
+        const accepted = f.page.waitForResponse(
+          (response) =>
+            response.request().method() === 'POST' &&
+            (response.request().postData() ?? '').includes('"action":"publish"'),
+        );
         await modal.getByRole('button', { name: 'Publish', exact: true }).click();
-        await f.page
-          .getByText('Publication is still processing. Continue the original request to check its status.', {
-            exact: true,
-          })
-          .waitFor();
+        await accepted;
+        await f.page.waitForFunction(
+          () =>
+            JSON.parse(
+              sessionStorage.getItem(
+                'insignia:selected-product-write:v1:selected-browser.myshopify.com:gid://shopify/Product/111',
+              ) ?? 'null',
+            )?.acceptedRevisionId === 'revision-selected-111',
+        );
         const intent = await storedIntent(f.page);
         assert.ok(intent);
         required(release)();

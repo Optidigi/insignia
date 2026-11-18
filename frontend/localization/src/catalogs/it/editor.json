@@ -1093,7 +1093,7 @@
     "sameImageForGroupCount_other": "Stessa immagine per {{formattedCount}} gruppi",
     "checkAppearanceOnView": "Controlla {{appearanceName}} nella vista {{viewName}}.",
     "realPublicationPending": "La pubblicazione è ancora in corso. Continua la richiesta originale per verificarne lo stato.",
-    "realPublicationProgress": "Pubblicazione in corso. Può richiedere fino a un minuto; questa pagina si aggiornerà al termine.",
+    "realPublicationProgress": "Pubblicazione in corso. Può richiedere uno o due minuti; questa pagina si aggiornerà al termine.",
     "realPublicationNotice": "La pubblicazione aggiorna il negozio Shopify dopo la convalida e l’attivazione.",
     "realPublish": "Pubblica",
     "realPublishQuestion": "Pubblicare questa configurazione? Una volta online, i clienti potranno personalizzare questo prodotto nel tuo negozio. Le modifiche successive resteranno in bozza fino alla pubblicazione.",

@@ -1309,6 +1309,7 @@ export interface AdminMessageTable {
   'exports:artworkArchiveDownload.checkBeforeProduction': object;
   'exports:artworkArchiveDownload.close': object;
   'exports:artworkArchiveDownload.downloadArtwork': object;
+  'exports:artworkArchiveDownload.downloaded': object;
   'exports:artworkArchiveDownload.includesCurrentOriginalFilesSharedFilesAreIncludedOnce': object;
   'exports:artworkArchiveDownload.nextPlacements': object;
   'exports:artworkArchiveDownload.preparingArtworkArchive': object;

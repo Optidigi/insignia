@@ -1093,3 +1093,75 @@ test('orders table queries every matching record for artwork triage and opens th
   assert.equal(await page.getByRole('link', { name: '#1003', exact: true }).count(), 0);
   assert.equal(requests.at(-1)?.has('artwork'), false);
 });
+
+test('Download ZIP closes the artwork dialog and confirms the download; a failure keeps it open', {
+  timeout: 20000,
+}, async (t) => {
+  const { page, base } = await fixture(t);
+  const asset = '0829a06c-e8c5-40aa-9167-4fb47e443231';
+  const expiresAt = new Date(Date.now() + 7 * 86400000).toISOString();
+  const original = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>');
+  const ready = view('READY');
+  const current: PurchaseView = {
+    ...ready,
+    artworkVersion: 1,
+    groups: ready.groups.map((g) => ({
+      ...g,
+      placements: g.placements.map((p) => ({ ...p, currentAssetId: asset, currentExpiresAt: expiresAt })),
+    })),
+  };
+  let unavailable = false;
+  await page.addInitScript(() => {
+    const toasts: string[] = [];
+    Object.assign(window, { toasts });
+    Object.assign(window.shopify, { toast: { show: (message: string) => toasts.push(message) } });
+  });
+  await page.route(`**/api/purchases/v1/${id}`, (r) =>
+    unavailable ? r.fulfill({ status: 503, json: { error: 'Unavailable' } }) : r.fulfill({ json: current }),
+  );
+  await page.route(`**/api/purchases/v1/${id}/artwork/${asset}/download?metadata=1`, (r) =>
+    r.fulfill({
+      json: {
+        url: 'https://private.example/original.svg',
+        expiresAt: new Date(Date.now() + 60000).toISOString(),
+        sha256: createHash('sha256').update(original).digest('hex'),
+        byteLength: original.byteLength,
+        contentType: 'image/svg+xml',
+      },
+    }),
+  );
+  await page.route('https://private.example/original.svg', (r) =>
+    r.fulfill({ body: original, contentType: 'image/svg+xml', headers: { 'Access-Control-Allow-Origin': '*' } }),
+  );
+  await page.goto(`${base}/admin/orders/${id}`);
+  const dialog = page.locator('s-modal[heading="Download artwork"]');
+  // Shopify renders page actions outside the iframe; open the declared dialog as its host would.
+  const open = () =>
+    page
+      .locator('s-button[slot="secondary-actions"]')
+      .filter({ hasText: 'Download artwork' })
+      .evaluate((button: HTMLElementTagNameMap['s-button']) => {
+        const target = document.getElementById(button.commandFor);
+        if (target?.localName !== 's-modal') throw new Error('Download artwork dialog target is missing');
+        (target as HTMLElementTagNameMap['s-modal']).showOverlay();
+      });
+  await open();
+  const zip = dialog.getByRole('button', { name: 'Download ZIP', exact: true });
+  await zip.waitFor();
+  const downloaded = page.waitForEvent('download');
+  await zip.click();
+  assert.match((await downloaded).suggestedFilename(), /artwork-v1-.*\.zip$/);
+  await page.waitForFunction(() => (window as unknown as { toasts: string[] }).toasts.length > 0);
+  assert.deepEqual(await page.evaluate(() => (window as unknown as { toasts: string[] }).toasts), [
+    'Artwork downloaded',
+  ]);
+  await zip.waitFor({ state: 'hidden' });
+
+  // A failed download keeps its dialog open with the existing error and no confirmation.
+  await open();
+  await zip.waitFor();
+  unavailable = true;
+  await zip.click();
+  await dialog.getByRole('button', { name: 'Try again', exact: true }).waitFor();
+  assert.equal(await page.evaluate(() => (window as unknown as { toasts: string[] }).toasts.length), 1);
+});

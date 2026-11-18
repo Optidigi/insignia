@@ -5,7 +5,7 @@ import type { Page } from 'playwright';
 import { required } from './support/fixtures.mts';
 import { fixture, storedIntent } from './support/selected-browser.mts';
 
-const progress = 'Publishing. This can take up to a minute; this page updates when it finishes.';
+const progress = 'Publishing. This can take a minute or two; this page updates when it finishes.';
 
 /**
  * #436: the publish request gets no answer (client deadline or lost response) while the server

@@ -1338,6 +1338,7 @@ export const adminParameterContracts = {
   'exports:artworkArchiveDownload.checkBeforeProduction': {},
   'exports:artworkArchiveDownload.close': {},
   'exports:artworkArchiveDownload.downloadArtwork': {},
+  'exports:artworkArchiveDownload.downloaded': {},
   'exports:artworkArchiveDownload.includesCurrentOriginalFilesSharedFilesAreIncludedOnce': {},
   'exports:artworkArchiveDownload.nextPlacements': {},
   'exports:artworkArchiveDownload.preparingArtworkArchive': {},
