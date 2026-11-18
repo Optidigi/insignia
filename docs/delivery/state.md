@@ -232,9 +232,11 @@ The signing wrapping key lives only in `runtime/signer-secrets/signing-wrap-keys
 
 **Customer artwork email** runs in development mode since 11 Nov `23:45:02Z`: recipient fixed to `admin@optidigi.nl`, no backfill (the two earlier PENDING notices stay untouched). Customer mode for real buyers stays disabled.
 
-**Custody locators** on prod (for an authorized operator; not fresh-clone prerequisites or execution authority), under `/home/serveradmin/.local/share/insignia/`:
-- `recovery-release-20261110/`: deploy receipts `afc3c1da-signer-1` (signer only), `9b5dbdee-deploy-1` (current release), `c78a8179-deploy-1`, `bf512171-deploy-1`, `fb436e16-deploy-1`, `origin-lock-20261111-1`, `cart-line-v3-final-42943190043-1`, Phase A `cart-line-v3-42932707400-1` and `functions-renew-final-42893217931-1`.
-- `legacy-generic-removal-20261111/`: final dump, compose file, env and crontab of the removed `insignia.optidigi.nl` stack (0600).
+**Custody locators** on prod (for an authorized operator; not fresh-clone prerequisites or execution authority):
+- Stack `/srv/saas/infra/stacks/insignia/`: `compose.yaml`, `.env` and `secrets/` (0600), `publication-hold.sh`.
+- Data on the encrypted volume `/srv/data/saas/insignia/`: `postgres/`, `runtime-state/`, `monitor/`, `artwork-inspector/` (current `96726b31` and rollback `5662e423` packages, `inspection.env`), `releases/` (deploy records `names-deploy-AB` (current release), `reinstall-deploy-W` (rollback release), `canonical-deploy-AC` (layout migration, with its staging), `archive-20261116-dev-data` (encrypted dev/test data from the cutover), `legacy-generic-removal-20261111` (final dump, compose file, env and crontab of the removed `insignia.optidigi.nl` stack)).
+- Operator tooling outside the stack: `~/.local/share/insignia/relay` (Cloudflare alert relay) and `~/.local/share/insignia/site` (insigniacustomizer.com), `~/.config/insignia/cloudflare-admin.token` and `selected-ui-checkpoint-recipient.pem` (checkpoint encryption public key). Next deploy folders start from `deploy-template-canonical` on the dev host.
+- Cleanup after deploy AC (18 Nov `01:1xZ`): removed the old `runtime/` (split-project JSON, inline secrets, signer copies, `.pre-*` copies), old `monitor/`, all earlier deploy folders and dated work folders under `~/.local/share/insignia`, `~/insignia-artwork-releases`, all `~/insignia-*` run folders (incl. an October dev `database.dump`), the duplicated files in `~/.config/insignia/` and `production/`, the empty `/srv/insignia` mountpoint and the temporary `/etc` copies. Root disk 85% → 68%. The legacy stacks and the root backup script were not touched.
 - The host has no mutable checkout; services use immutable images and packages.
 
 ### Known behaviour, limits and open follow-ups
