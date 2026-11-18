@@ -15,7 +15,10 @@ export async function handleGuestArtworkSession(
     const services = await dependencies.services();
     if (!services?.issueGuest) return adminJson(503, { error: 'Artwork session unavailable' });
     const result = await services.issueGuest(request);
-    return result ? adminJson(200, result) : adminJson(401, { error: 'Artwork session denied' });
+    // Explicit pick: the issuer may also return the derived server-side scope, which never reaches the browser.
+    return result
+      ? adminJson(200, { token: result.token, expiresAt: result.expiresAt })
+      : adminJson(401, { error: 'Artwork session denied' });
   } catch (error) {
     recordBuyerUnexpected(dependencies.recordBuyerFailure, 'artwork-session', error);
     return adminJson(503, { error: 'Artwork session unavailable' });
