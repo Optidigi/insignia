@@ -1,12 +1,15 @@
-import { render } from 'preact';
 import type { BuyerConfig } from './buyer';
 import { adoptTabSession, readBuyerSession, sharedBuyerStorage } from './buyer-session';
 import type { mountLiveDesigner } from './designer/controller';
 
 type LiveDesigner = Awaited<ReturnType<typeof mountLiveDesigner>>;
 
-import { createDesignerModal } from './designer/modal';
+import type { createDesignerModal } from './designer/modal';
 import { connectThemeIntegration, styleThemeTrigger } from './theme-integration';
+
+// The modal brings Preact, localization and theme preference; product pages load it
+// only on idle preparation, trigger intent or click, never with this entry.
+const loadDesignerModal = () => import('./designer/modal');
 
 /** Ordinary product presentation is prepared on idle/intent; cart custody remains click-only. */
 export class InsigniaBuyer extends HTMLElement {
@@ -18,7 +21,10 @@ export class InsigniaBuyer extends HTMLElement {
   private cancelOpening?: () => void;
   private stopBusy?: () => void;
   private readonly triggerClick = () => void this.mount();
-  private readonly triggerIntent = () => this.prewarm(true);
+  private readonly triggerIntent = () => {
+    void loadDesignerModal().catch(() => {});
+    this.prewarm(true);
+  };
   private cancelIdle?: () => void;
   private preparation?: {
     context: string;
@@ -209,13 +215,14 @@ export class InsigniaBuyer extends HTMLElement {
       onClose: () => {
         this.querySelector<HTMLButtonElement>('button[slot="trigger"]')?.focus();
       },
-      onError: () => {
-        const notice = this.root.querySelector('[role=alert]') ?? document.createElement('p');
-        notice.setAttribute('role', 'alert');
-        notice.textContent = 'Customization unavailable';
-        this.root.append(notice);
-      },
+      onError: () => this.unavailableNotice(),
     });
+  }
+  private unavailableNotice() {
+    const notice = this.root.querySelector('[role=alert]') ?? document.createElement('p');
+    notice.setAttribute('role', 'alert');
+    notice.textContent = 'Customization unavailable';
+    this.root.append(notice);
   }
   /** The trigger's busy state while the Designer opens. */
   private busy() {
@@ -321,9 +328,23 @@ export class InsigniaBuyer extends HTMLElement {
     }
     this.mounting = true;
     const stopBusy = this.busy();
+    let modal: Awaited<ReturnType<typeof loadDesignerModal>>;
+    try {
+      modal = await loadDesignerModal();
+    } catch {
+      stopBusy();
+      if (generation !== this.generation) return;
+      this.mounting = false;
+      this.unavailableNotice();
+      return;
+    }
+    if (generation !== this.generation) {
+      stopBusy();
+      return;
+    }
     const opening = new AbortController();
     opening.signal.addEventListener('abort', () => prepared?.controller.abort(), { once: true });
-    const pending = createDesignerModal({
+    const pending = modal.createDesignerModal({
       locale: this.getAttribute('language') || document.documentElement.lang,
       onRetry: () => {
         opening.abort();
@@ -430,7 +451,7 @@ export class InsigniaBuyer extends HTMLElement {
     trigger?.removeEventListener('focus', this.triggerIntent);
     this.liveFrame?.destroy();
     this.liveFrame = undefined;
-    render(null, this.root);
+    this.root.replaceChildren();
   }
 }
 if (!customElements.get('insignia-buyer')) customElements.define('insignia-buyer', InsigniaBuyer);
