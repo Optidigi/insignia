@@ -17,11 +17,11 @@
   },
   "dependencies": {
     "@insignia/application": "workspace:*",
-    "@shopify/shopify-api": "15.0.0"
+    "@shopify/shopify-api": "15.1.1"
   },
   "devDependencies": {
     "@types/node": "24.10.0",
     "typescript": "5.9.3",
-    "vitest": "5.0.2"
+    "vitest": "5.1.0"
   }
 }
