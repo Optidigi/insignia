@@ -76,3 +76,22 @@ test('a new library method needs no product selection and is available on every 
   assert.deepEqual(f.records()[0]?.configuration.productIds, []);
   assert.equal(f.records()[0]?.configuration.assignment, 'manual');
 });
+
+test('saving a new library method moves the URL to its own route, and a reload opens it', {
+  timeout: 30000,
+}, async (t) => {
+  const f = await methodsFixture(t, { empty: true });
+  await f.open('/admin/methods/new');
+  await f.page.getByRole('textbox', { name: /^Method name/ }).fill('Embroidery');
+  await f.page.getByRole('textbox', { name: 'Price per location per item', exact: true }).fill('4');
+  assert.equal((await saveMethod(f.page)).status(), 201);
+  const id = f.records()[0]?.configuration.id;
+  assert.ok(id);
+  await f.page.waitForFunction((path) => location.pathname === path, `/admin/methods/${id}`);
+  assert.equal(new URL(f.page.url()).search, '?locale=en', 'the query (locale) is kept');
+  await f.page.reload();
+  await f.page.locator('.method-workflow').waitFor({ state: 'visible' });
+  await f.page.waitForFunction(() => document.documentElement.dataset.adminReady === 'true');
+  assert.equal(await f.page.getByRole('textbox', { name: /^Method name/ }).inputValue(), 'Embroidery');
+  assert.equal(new URL(f.page.url()).pathname, `/admin/methods/${id}`);
+});

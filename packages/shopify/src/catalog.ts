@@ -6,10 +6,7 @@ import {
 } from './admin-deadline.js';
 /** Bounded, read-only Admin catalog projection. The caller supplies a verified online grant. */
 export interface CatalogTransport {
-  read<T>(
-    operation: 'list' | 'detail' | 'currency' | 'tags' | 'availability',
-    variables: Record<string, unknown>,
-  ): Promise<T>;
+  read<T>(operation: 'list' | 'detail' | 'currency' | 'availability', variables: Record<string, unknown>): Promise<T>;
 }
 
 export type CatalogImage = { url: string; alt: string | null; id?: string; width?: number; height?: number };
@@ -86,7 +83,6 @@ const detailQuery = `query M5001Product($id: ID!, $after: String) { product(id: 
   variants(first: 100, after: $after) { nodes { id title selectedOptions { name value optionValue { swatch { color } } } image { id url altText width height } } pageInfo { hasNextPage endCursor } }
 } }`;
 const currencyQuery = 'query M5001ShopCurrency { shop { currencyCode } }';
-const tagsQuery = 'query InsigniaMethodProductTags($ids: [ID!]!) { nodes(ids: $ids) { ... on Product { id tags } } }';
 const productGid = /^gid:\/\/shopify\/Product\/[1-9][0-9]*$/;
 const variantGid = /^gid:\/\/shopify\/ProductVariant\/[1-9][0-9]*$/;
 
@@ -295,35 +291,6 @@ export function createCatalogReader(transport: CatalogTransport) {
         variantIds: product.variants.nodes.map((variant) => variant.id),
       };
     },
-    async productTags(productIds: readonly string[]): Promise<Record<string, string[]>> {
-      if (
-        productIds.length > 250 ||
-        new Set(productIds).size !== productIds.length ||
-        productIds.some((id) => !productGid.test(id))
-      )
-        throw new Error('Invalid product-tag batch');
-      if (!productIds.length) return {};
-      const response = await transport.read<{ nodes: ({ id: string; tags: string[] } | null)[] }>('tags', {
-        ids: [...productIds],
-      });
-      if (!Array.isArray(response?.nodes) || response.nodes.length !== productIds.length)
-        throw new Error('Incomplete product-tag batch');
-      const tags: Record<string, string[]> = {};
-      for (const product of response.nodes) {
-        if (
-          !product ||
-          !productIds.includes(product.id) ||
-          Object.hasOwn(tags, product.id) ||
-          !Array.isArray(product.tags) ||
-          product.tags.length > 250 ||
-          product.tags.some((tag) => typeof tag !== 'string' || !tag || tag.length > 255) ||
-          new Set(product.tags).size !== product.tags.length
-        )
-          throw new Error('Invalid product-tag identity or shape');
-        tags[product.id] = [...product.tags];
-      }
-      return tags;
-    },
     async shopCurrency(): Promise<string> {
       const response = await transport.read<{ shop: { currencyCode: string } }>('currency', {});
       if (!/^[A-Z]{3}$/.test(response?.shop?.currencyCode ?? '')) throw new Error('Invalid shop currency');
@@ -412,7 +379,7 @@ export function createCatalogTransport(input: {
     throw new Error('Invalid catalog transport scope');
   return {
     async read<T>(
-      operation: 'list' | 'detail' | 'currency' | 'tags' | 'availability',
+      operation: 'list' | 'detail' | 'currency' | 'availability',
       variables: Record<string, unknown>,
     ): Promise<T> {
       const query =
@@ -422,9 +389,7 @@ export function createCatalogTransport(input: {
             ? listQuery
             : operation === 'detail'
               ? detailQuery
-              : operation === 'tags'
-                ? tagsQuery
-                : currencyQuery;
+              : currencyQuery;
       let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
       return withAdminDeadline(
         async (signal) => {

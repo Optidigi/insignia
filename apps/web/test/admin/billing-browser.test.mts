@@ -30,7 +30,7 @@ test('merchant billing separates development terms and trial, links Shopify mana
     pendingChange: false,
     newActionsAllowed: true,
     standardPrice: { amount: '49.99', currency: 'USD', intervalDays: 30 },
-    recurringPrice: { amount: '0.00', currency: 'USD' },
+    recurringPrice: { amount: '0.0', currency: 'USD' }, // Shopify's development terms value
     developmentTerms: true,
     managementUrl: 'https://admin.shopify.com/store/example/charges/insignia-1/pricing_plans',
   };

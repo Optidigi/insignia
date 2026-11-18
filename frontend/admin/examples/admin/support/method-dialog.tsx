@@ -8,7 +8,6 @@ export default function MethodDialog({
   actions,
   onClose,
   onBack,
-  suspended = false,
   cancelLabel,
   padding = 'base',
   size = 'small-100',
@@ -18,7 +17,6 @@ export default function MethodDialog({
   actions: ComponentChildren;
   onClose(): void;
   onBack?: () => void;
-  suspended?: boolean;
   cancelLabel?: string;
   padding?: 'base' | 'none';
   size?: HTMLElementTagNameMap['s-modal']['size'];
@@ -28,15 +26,11 @@ export default function MethodDialog({
   if (!id.current) id.current = `insignia-method-dialog-${crypto.randomUUID()}`;
   const modal = useRef<HTMLElementTagNameMap['s-modal']>(null);
   const active = useRef(true);
-  const suspendedRef = useRef(suspended);
-  suspendedRef.current = suspended;
-  const hideStartedSuspended = useRef(false);
   const opening = useRef(false);
-  const shown = useRef(false);
   const dismissalRequested = useRef(false);
   const closed = useRef(false);
   function closeOnce() {
-    if (!active.current || closed.current || suspendedRef.current) return;
+    if (!active.current || closed.current) return;
     closed.current = true;
     onClose();
   }
@@ -47,16 +41,8 @@ export default function MethodDialog({
   }
   const previousFocus = useRef(document.activeElement);
   useLayoutEffect(() => {
-    const element = modal.current;
-    element?.toggleAttribute('inert', suspended);
-    if (suspended) {
-      if (!opening.current && shown.current) {
-        hideStartedSuspended.current = true;
-        element?.hideOverlay();
-      }
-    } else if (dismissalRequested.current && !opening.current) closeOnce();
-    else if (!hideStartedSuspended.current) show();
-  }, [suspended]);
+    show();
+  }, []);
   useLayoutEffect(() => {
     const element = modal.current;
     return () => {
@@ -84,15 +70,11 @@ export default function MethodDialog({
       heading={heading}
       size={size}
       padding={padding}
-      aria-hidden={suspended ? 'true' : undefined}
       onShow={() => {
-        shown.current = true;
         opening.current = false;
       }}
       onHide={() => {
-        if (!active.current) return;
-        if (!hideStartedSuspended.current) hideStartedSuspended.current = suspendedRef.current;
-        if (!hideStartedSuspended.current) dismissalRequested.current = true;
+        if (active.current) dismissalRequested.current = true;
       }}
       onAfterShow={() => {
         opening.current = false;
@@ -103,24 +85,11 @@ export default function MethodDialog({
           closeOnce();
           return;
         }
-        if (suspendedRef.current) {
-          hideStartedSuspended.current = true;
-          modal.current?.hideOverlay();
-          return;
-        }
-        if (!suspendedRef.current && matchMedia('(min-width: 768px) and (pointer: fine)').matches)
+        if (matchMedia('(min-width: 768px) and (pointer: fine)').matches)
           modal.current?.querySelector<HTMLElement>('input[type=search],s-search-field,s-text-field')?.focus();
       }}
       onAfterHide={() => {
-        shown.current = false;
-        const hiddenWhileSuspended = hideStartedSuspended.current;
-        hideStartedSuspended.current = false;
-        if (!active.current) return;
-        if (hiddenWhileSuspended) {
-          if (!suspendedRef.current) show();
-          return;
-        }
-        if (!suspendedRef.current && !opening.current) closeOnce();
+        if (active.current && !opening.current) closeOnce();
       }}
     >
       {children}
