@@ -946,10 +946,12 @@ export function createPurchaseRepository(db: Kysely<Database>) {
           (p) => p.placementId === input.placementId,
         );
         if (!placement) fail('EXPIRED');
+        // The ATTACH insert extends this asset's retention (migration 72): take the update lock now, so two
+        // attachments of one asset queue instead of deadlocking on a shared lock.
         const asset = (
           await sql<{
             expires_at: Date;
-          }>`SELECT expires_at FROM artwork_assets WHERE asset_id=${input.assetId}::uuid AND shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND owner_hash=${input.ownerHash} AND owner_kind='merchant' AND state='USABLE' AND expires_at>clock_timestamp() FOR SHARE`.execute(
+          }>`SELECT expires_at FROM artwork_assets WHERE asset_id=${input.assetId}::uuid AND shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND owner_hash=${input.ownerHash} AND owner_kind='merchant' AND state='USABLE' AND expires_at>clock_timestamp() FOR NO KEY UPDATE`.execute(
             tx,
           )
         ).rows[0];

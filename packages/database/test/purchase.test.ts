@@ -1485,6 +1485,161 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable reconciled purchases'
       ),
     ).rejects.toThrow(/at most 7 days/);
   });
+  it('attaches one artwork to two orders concurrently without a deadlock', async () => {
+    const { input, fixture, now } = await bound(),
+      repo = createPurchaseRepository(db),
+      scope = { shopId: fixture.shopId, installationGeneration: '1', kind: 'merchant' as const };
+    const p = requirePurchase(await repo.reconcile(input));
+    const shared = await asset(fixture.shopId, 'merchant', now);
+    // Another attachment of the same artwork: it has read the asset and is about to extend it.
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL }),
+      other = await pool.connect();
+    try {
+      await other.query('BEGIN');
+      await other.query('SELECT 1 FROM artwork_assets WHERE asset_id=$1 FOR SHARE', [shared]);
+      const attach = repo.appendArtwork(scope, {
+        purchaseId: p.purchaseId,
+        expectedVersion: 0,
+        groupIndex: 0,
+        placementId: 'front',
+        assetId: shared,
+        ownerHash: 'b'.repeat(64),
+      });
+      const settled = attach.then(
+        () => 'committed',
+        (error: unknown) => String((error as { code?: string }).code ?? error),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      // A shared read before the extension would make these two wait on each other (40P01).
+      await other.query('UPDATE artwork_assets SET updated_at=clock_timestamp() WHERE asset_id=$1', [shared]);
+      await other.query('COMMIT');
+      expect(await settled).toBe('committed');
+    } finally {
+      await other.query('ROLLBACK').catch(() => undefined);
+      other.release();
+      await pool.end();
+    }
+  });
+  it('an order recorded after the 7-day deadline but within 72 hours of acceptance keeps its artwork', async () => {
+    const { input, fixture, now } = await bound(),
+      repo = createPurchaseRepository(db),
+      pool = new Pool({ connectionString: process.env.DATABASE_URL }),
+      store = createArtworkRepository(pool);
+    try {
+      // Uploaded and collected 6.5 days ago; accepted now, so its 7-day deadline is 12 hours away.
+      const collected = new Date(+now - 6.5 * 86400000),
+        art = await asset(fixture.shopId, 'guest', collected);
+      referencing(input, art);
+      const request = (input.bindings[0]!.designPayload as { request: unknown }).request;
+      await sql`INSERT INTO purchase_offer_payloads VALUES(${fixture.shopId},1,${fixture.quote.quoteId}::uuid,${collected},${new Date(+collected + 7 * 86400000)},${JSON.stringify(request)}::jsonb,NULL)`.execute(
+        db,
+      );
+      const offer = (
+        await sql<{
+          expires_at: Date;
+          asset_until: Date;
+        }>`SELECT o.expires_at,a.expires_at AS asset_until FROM purchase_offer_payloads o,artwork_assets a WHERE o.quote_id=${fixture.quote.quoteId}::uuid AND a.asset_id=${art}::uuid`.execute(
+          db,
+        )
+      ).rows[0]!;
+      expect(+offer.expires_at).toBeGreaterThan(+now + 71 * 3600000);
+      expect(+offer.expires_at).toBeLessThanOrEqual(Date.now() + 72 * 3600000);
+      expect(offer.asset_until).toEqual(offer.expires_at);
+      // Never recorded: the inspector deletes it once the grace ends, not before.
+      expect(await store.markDeleting(art, new Date(+now + 86400000))).toBeNull();
+      // orders/create processed a day later, past the original 7-day deadline.
+      const binding = input.bindings[0]!;
+      binding.payloadCollectedAt = collected.toISOString();
+      binding.payloadExpiresAt = offer.expires_at.toISOString();
+      (binding.designPayload as { collectedAt: string }).collectedAt = collected.toISOString();
+      input.order.observedAt = new Date(+now + 86400000).toISOString();
+      const p = requirePurchase(await repo.reconcile(input));
+      expect(p.bindings[0]?.designPayload).not.toBeNull();
+      const { payload, assets } = await retention(p.purchaseId, [art]);
+      expect(payload.expires_at).toEqual(payload.deadline);
+      expect(assets[art]?.expires_at).toEqual(assets[art]?.deadline);
+      expect(await store.markDeleting(art, new Date(+now + 30 * 86400000))).toBeNull();
+    } finally {
+      await pool.end();
+    }
+  });
+  it('an accepted quote never ordered loses its artwork when the 72-hour grace ends', async () => {
+    const fixture = await purchaseFixture(db),
+      now = new Date(),
+      pool = new Pool({ connectionString: process.env.DATABASE_URL }),
+      store = createArtworkRepository(pool);
+    try {
+      const collected = new Date(+now - 6.5 * 86400000),
+        art = await asset(fixture.shopId, 'guest', collected),
+        fresh = await asset(fixture.shopId, 'guest', now);
+      const request = {
+        groups: [art, fresh].map((revisionId) => ({
+          group: { design: { placements: [{ artwork: { kind: 'revision', revisionId } }] } },
+        })),
+      };
+      await sql`INSERT INTO purchase_offer_payloads VALUES(${fixture.shopId},1,${fixture.quote.quoteId}::uuid,${collected},${new Date(+collected + 7 * 86400000)},${JSON.stringify(request)}::jsonb,NULL)`.execute(
+        db,
+      );
+      const until = (
+        await sql<{
+          asset_id: string;
+          expires_at: Date;
+        }>`SELECT asset_id::text,expires_at FROM artwork_assets WHERE asset_id IN (${art}::uuid,${fresh}::uuid)`.execute(
+          db,
+        )
+      ).rows;
+      const graceEnd = until.find((r) => r.asset_id === art)!.expires_at;
+      expect(+graceEnd).toBeLessThanOrEqual(Date.now() + 72 * 3600000);
+      expect(+graceEnd).toBeGreaterThan(+now + 71 * 3600000);
+      // An upload already kept past the grace is not changed.
+      expect(+until.find((r) => r.asset_id === fresh)!.expires_at).toBe(+now + 7 * 86400000);
+      expect(await store.markDeleting(art, new Date(+graceEnd - 1000))).toBeNull();
+      expect((await store.markDeleting(art, new Date(+graceEnd + 1000)))?.assetId).toBe(art);
+    } finally {
+      await pool.end();
+    }
+  });
+  it('runtime roles cannot move a deadline or call the retention functions', async () => {
+    const { input, fixture, now } = await bound(),
+      repo = createPurchaseRepository(db);
+    const used = await asset(fixture.shopId, 'guest', now);
+    referencing(input, used);
+    const p = requirePurchase(await repo.reconcile(input));
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL }),
+      client = await pool.connect(),
+      role = `retention_probe_${randomUUID().replaceAll('-', '').slice(0, 12)}`;
+    const refused = async (statement: string, pattern: RegExp) => {
+      await client.query('SAVEPOINT probe');
+      await expect(client.query(statement)).rejects.toThrow(pattern);
+      await client.query('ROLLBACK TO SAVEPOINT probe');
+    };
+    try {
+      // Created, granted and dropped inside one rolled-back transaction.
+      await client.query('BEGIN');
+      await client.query(`CREATE ROLE ${role} NOLOGIN`);
+      await client.query(
+        `GRANT USAGE ON SCHEMA public TO ${role}; GRANT SELECT,UPDATE ON artwork_assets,purchase_design_payloads,purchase_artwork_events,purchase_offer_payloads TO ${role}`,
+      );
+      await client.query(`SET LOCAL ROLE ${role}`);
+      await refused(
+        `UPDATE artwork_assets SET expires_at=expires_at+interval '1 day' WHERE asset_id='${used}'`,
+        /retention deadline are immutable/,
+      );
+      await refused(
+        `UPDATE purchase_design_payloads SET expires_at=expires_at+interval '1 day' WHERE purchase_id='${p.purchaseId}'`,
+        /erasure tombstone/,
+      );
+      await refused(`SELECT public.retain_purchased_detail('${p.purchaseId}')`, /permission denied/);
+      await refused(
+        `SELECT public.retain_accepted_offer('${fixture.shopId}',1,'${fixture.quote.quoteId}',clock_timestamp())`,
+        /permission denied/,
+      );
+    } finally {
+      await client.query('ROLLBACK');
+      client.release();
+      await pool.end();
+    }
+  });
   it('a month-end deadline still erases in any session time zone', async () => {
     const fixture = await purchaseFixture(db),
       purchaseId = randomUUID();

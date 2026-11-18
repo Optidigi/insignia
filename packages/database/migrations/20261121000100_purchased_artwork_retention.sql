@@ -147,8 +147,53 @@ REVOKE ALL ON FUNCTION public.retain_purchased_attachment() FROM PUBLIC;
 CREATE TRIGGER retain_purchased_attachment BEFORE INSERT ON public.purchase_artwork_events FOR EACH ROW
  WHEN (NEW.kind='ATTACH') EXECUTE FUNCTION public.retain_purchased_attachment();
 
--- Backfill: orders already recorded whose design is still live. That set is bounded by the old 7-day
--- deadlines; each purchase is processed once and a re-run changes nothing.
+-- Grace for accepted offers: an order can reach us after its offer's 7-day deadline (an orders/create
+-- retried, or found later by reconciliation), and was then recorded without its design while the
+-- inspector deleted its artwork. Accepting a quote keeps the accepted offer and the artwork it
+-- references until 72 hours after acceptance when that is later (a configurable budget, §10.4), never
+-- past six months. An order recorded in that window extends as above; otherwise the grace ends and
+-- normal cleanup deletes both.
+CREATE FUNCTION public.retain_accepted_offer(p_shop text,p_generation bigint,p_quote uuid,p_accepted timestamptz) RETURNS integer
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+DECLARE at_time timestamptz:=clock_timestamp(); grace timestamptz:=p_accepted+interval '72 hours'; offer jsonb; changed integer:=0; n integer;
+BEGIN
+ IF grace IS NULL OR grace<=at_time THEN RETURN 0; END IF;
+ UPDATE public.purchase_offer_payloads SET expires_at=least(grace,public.purchased_retention_deadline(collected_at))
+  WHERE shop_id=p_shop AND installation_generation=p_generation AND quote_id=p_quote AND erased_at IS NULL
+   AND expires_at>at_time AND expires_at<least(grace,public.purchased_retention_deadline(collected_at));
+ GET DIAGNOSTICS n=ROW_COUNT; changed:=changed+n;
+ SELECT p.payload INTO offer FROM public.purchase_offer_payloads p
+  WHERE p.shop_id=p_shop AND p.installation_generation=p_generation AND p.quote_id=p_quote AND p.erased_at IS NULL AND p.expires_at>at_time;
+ IF offer IS NULL THEN RETURN changed; END IF;
+ UPDATE public.artwork_assets a SET expires_at=least(grace,public.purchased_retention_deadline(a.collected_at)),updated_at=at_time
+  WHERE a.shop_id=p_shop AND a.state='USABLE' AND a.expires_at>at_time
+   AND a.expires_at<least(grace,public.purchased_retention_deadline(a.collected_at))
+   AND a.asset_id IN (SELECT r.asset_id FROM public.customer_privacy_payload_assets(offer) r);
+ GET DIAGNOSTICS n=ROW_COUNT; changed:=changed+n;
+ RETURN changed;
+END $$;
+REVOKE ALL ON FUNCTION public.retain_accepted_offer(text,bigint,uuid,timestamptz) FROM PUBLIC;
+-- The offer is stored when its quote is accepted (buyer linkQuote), so its insert time is the acceptance.
+CREATE FUNCTION public.retain_accepted_offer_trigger() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+BEGIN
+ PERFORM public.retain_accepted_offer(NEW.shop_id,NEW.installation_generation,NEW.quote_id,clock_timestamp());
+ RETURN NULL;
+END $$;
+REVOKE ALL ON FUNCTION public.retain_accepted_offer_trigger() FROM PUBLIC;
+CREATE TRIGGER retain_accepted_offer AFTER INSERT ON public.purchase_offer_payloads FOR EACH ROW
+ WHEN (NEW.payload IS NOT NULL) EXECUTE FUNCTION public.retain_accepted_offer_trigger();
+
+-- Backfill: live accepted offers get their grace from acceptance; then orders already recorded whose
+-- design is still live are extended. Both sets are bounded by the old 7-day deadlines; a re-run
+-- changes nothing.
+DO $$ DECLARE item record; BEGIN
+ FOR item IN SELECT p.shop_id,p.installation_generation,p.quote_id,q.accepted_at FROM public.purchase_offer_payloads p
+  JOIN public.accepted_quotes q USING(shop_id,installation_generation,quote_id)
+  WHERE p.erased_at IS NULL AND p.expires_at>clock_timestamp() ORDER BY p.quote_id LOOP
+  PERFORM public.retain_accepted_offer(item.shop_id,item.installation_generation,item.quote_id,item.accepted_at);
+ END LOOP;
+END $$;
 DO $$ DECLARE item record; BEGIN
  FOR item IN SELECT DISTINCT purchase_id FROM public.purchase_design_payloads WHERE erased_at IS NULL AND expires_at>clock_timestamp() ORDER BY purchase_id LOOP
   PERFORM public.retain_purchased_detail(item.purchase_id);
@@ -163,6 +208,9 @@ DO $$ BEGIN
   RAISE EXCEPTION 'purchased artwork retention is in use; down migration refused' USING ERRCODE='check_violation';
  END IF;
 END $$;
+DROP TRIGGER retain_accepted_offer ON public.purchase_offer_payloads;
+DROP FUNCTION public.retain_accepted_offer_trigger();
+DROP FUNCTION public.retain_accepted_offer(text,bigint,uuid,timestamptz);
 DROP TRIGGER retain_purchased_attachment ON public.purchase_artwork_events;
 DROP TRIGGER retain_purchased_design ON public.purchase_design_payloads;
 DROP FUNCTION public.retain_purchased_attachment(),public.retain_purchased_design();
