@@ -168,9 +168,7 @@
         "title": "Connecter votre thème",
         "description": "Ajoutez à votre thème le bouton de personnalisation et la vérification du panier.",
         "action": "Ouvrir la configuration du thème",
-        "button-disabled": "Activez le bouton de personnalisation dans votre thème.",
-        "cart-review-disabled": "Activez la vérification du panier dans votre thème.",
-        "both-disabled": "Activez dans votre thème le bouton de personnalisation et la vérification du panier.",
+        "disabled": "Activez dans votre thème le bouton de personnalisation et la vérification du panier.",
         "check": "Vérifiez la configuration de la boutique en ligne dans votre thème."
       },
       "test": {

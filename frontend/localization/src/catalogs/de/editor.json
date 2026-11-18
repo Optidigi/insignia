@@ -1034,6 +1034,8 @@
       "viewBody_other": "{{viewName}} und die zugehörigen {{formattedCount}} Veredelungspositionen aus diesem Entwurf entfernen? Produktbilder und vorhandene Bestellungen bleiben erhalten."
     },
     "chooseImageForView": "Bild für {{viewName}} auswählen",
+    "chooseImageForViewAppearance": "Bild für {{viewName}} für {{appearanceName}} auswählen",
+    "imageNotAssigned": "Das Bild wurde {{appearanceName}} nicht zugewiesen. Warten Sie, bis das Speichern oder Veröffentlichen abgeschlossen ist, und versuchen Sie es dann erneut.",
     "viewNameFallback": "Ansicht",
     "changeViewImage": "Ansichtsbild ändern",
     "addViews": "Ansichten hinzufügen",

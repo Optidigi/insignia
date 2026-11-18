@@ -132,23 +132,14 @@ export function homeSetupFromTheme(input: ThemeSetupStatus, hasPublishedProduct:
           ],
         }
       : undefined;
-  const knownMissing =
-    [input.button, input.cart].every((value) => value === 'active' || value === 'available') &&
-    (input.button === 'available' || input.cart === 'available');
-  const reason = !knownMissing
-    ? 'check'
-    : input.button === 'active'
-      ? 'cart-review-disabled'
-      : input.cart === 'active'
-        ? 'button-disabled'
-        : 'both-disabled';
+  const knownMissing = input === 'available';
   return {
     initiallyCollapsed: false,
     tasks: [
       {
         id: 'storefront',
         kind: 'storefront',
-        reason,
+        reason: knownMissing ? 'disabled' : 'check',
         state: knownMissing ? 'pending' : 'unknown',
         action: { href: '/admin/settings/storefront' },
       },

@@ -112,7 +112,7 @@ export type HomeGuidanceStepId = (typeof homeGuidanceStepIds)[number];
 export interface HomeSetupTask {
   id: string;
   kind: 'storefront' | 'test';
-  reason?: 'button-disabled' | 'cart-review-disabled' | 'both-disabled' | 'check';
+  reason?: 'disabled' | 'check';
   state: 'complete' | 'acknowledged' | 'pending' | 'unknown';
   action?: Pick<HomeLink, 'href'>;
 }

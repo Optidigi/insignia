@@ -167,9 +167,7 @@
         "title": "Connect your theme",
         "description": "Add the customization button and cart review to your theme.",
         "action": "Open theme setup",
-        "button-disabled": "Enable the customization button in your theme.",
-        "cart-review-disabled": "Enable cart review in your theme.",
-        "both-disabled": "Enable the customization button and cart review in your theme.",
+        "disabled": "Enable the customization button and cart review in your theme.",
         "check": "Check the storefront setup in your theme."
       },
       "test": {

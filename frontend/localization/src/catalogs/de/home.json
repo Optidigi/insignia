@@ -167,9 +167,7 @@
         "title": "Theme verbinden",
         "description": "Fügen Sie Ihrem Theme die Schaltfläche zur Produktanpassung und die Warenkorbprüfung hinzu.",
         "action": "Theme-Einrichtung öffnen",
-        "button-disabled": "Aktivieren Sie die Schaltfläche zur Produktanpassung in Ihrem Theme.",
-        "cart-review-disabled": "Aktivieren Sie die Warenkorbprüfung in Ihrem Theme.",
-        "both-disabled": "Aktivieren Sie die Schaltfläche zur Produktanpassung und die Warenkorbprüfung in Ihrem Theme.",
+        "disabled": "Aktivieren Sie die Schaltfläche zur Produktanpassung und die Warenkorbprüfung in Ihrem Theme.",
         "check": "Prüfen Sie die Einrichtung des Onlineshops in Ihrem Theme."
       },
       "test": {

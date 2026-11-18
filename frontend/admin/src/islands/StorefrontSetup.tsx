@@ -3,13 +3,7 @@ import AdminDisclosure from '../components/AdminDisclosure';
 import StorefrontProductTest from '../components/StorefrontProductTest';
 import { useAdminLocale, withAdminLocale } from '../shared/admin-i18n.js';
 import { useAdminPageReady } from '../shared/admin-page-ready';
-import {
-  storefrontLinks,
-  type ThemeSetupStatus,
-  type ThemeTaskStatus,
-  themeSetupStatus,
-  unknownThemeSetup,
-} from '../shared/storefront-setup';
+import { storefrontLinks, type ThemeSetupStatus, themeSetupStatus } from '../shared/storefront-setup';
 import '../styles/storefront-setup.css';
 
 type Phase = 'loading' | 'ready' | 'unsupported' | 'failed';
@@ -20,7 +14,7 @@ function StorefrontSetup() {
   const { t: translateUi } = useAdminLocale();
   const [links, setLinks] = useState<Links>(null);
   const [phase, setPhase] = useState<Phase>('loading');
-  const [status, setStatus] = useState<ThemeSetupStatus>(unknownThemeSetup);
+  const [status, setStatus] = useState<ThemeSetupStatus>('unknown');
   const [retrying, setRetrying] = useState(false);
   const themeRegion = useRef<HTMLElement>(null);
   const retry = useRef<() => void>(() => {});
@@ -48,7 +42,7 @@ function StorefrontSetup() {
       if (inFlight) return;
       inFlight = true;
       setPhase('loading');
-      setStatus(unknownThemeSetup());
+      setStatus('unknown');
       try {
         const value = await Promise.race([
           extensions.call(bridge?.app),
@@ -107,9 +101,9 @@ function StorefrontSetup() {
     setRetrying(false);
   }, [phase, retrying]);
 
-  // Only the Add/Enable links lead to a theme edit that Shopify keeps unsaved until the merchant saves it.
-  const themeSaveNeeded = phase === 'ready' && Object.values(status).includes('available');
-  const unknown = phase === 'unsupported' || (phase === 'ready' && Object.values(status).includes('unknown'));
+  // Only the Enable link leads to a theme edit that Shopify keeps unsaved until the merchant saves it.
+  const themeSaveNeeded = phase === 'ready' && status === 'available';
+  const unknown = phase === 'unsupported' || (phase === 'ready' && status === 'unknown');
   return (
     <s-page inlineSize="small" heading={translateUi('settings:storefrontSetup.storefrontSetup')}>
       <s-link slot="breadcrumb-actions" href="/admin/settings">
@@ -162,9 +156,7 @@ function StorefrontSetup() {
                 </s-paragraph>
               )}
               <div aria-busy={phase === 'loading'}>
-                <ThemeTask kind="button" status={status.button} links={links} phase={phase} />
-                <s-divider />
-                <ThemeTask kind="cart" status={status.cart} links={links} phase={phase} />
+                <ThemeTask status={status} links={links} phase={phase} />
               </div>
               <AdminDisclosure label={translateUi('settings:storefrontSetup.otherThemesAndCompatibility')}>
                 <s-unordered-list>
@@ -208,73 +200,42 @@ function StorefrontSetup() {
   );
 }
 
-function ThemeTask({
-  kind,
-  status,
-  links,
-  phase,
-}: {
-  kind: 'button' | 'cart';
-  status: ThemeTaskStatus;
-  links: Links;
-  phase: Phase;
-}) {
+function ThemeTask({ status, links, phase }: { status: ThemeSetupStatus; links: Links; phase: Phase }) {
   const { t: translateUi } = useAdminLocale();
   const checking = phase === 'loading';
-  const button = kind === 'button';
   const active = !checking && status === 'active';
   const available = !checking && status === 'available';
-  const title = button ? translateUi('settings:themeTask.buttonTitle') : translateUi('settings:themeTask.cartTitle');
   const label = checking
     ? translateUi('settings:themeTask.checking')
     : active
-      ? button
-        ? translateUi('settings:themeTask.added')
-        : translateUi('settings:themeTask.enabled')
+      ? translateUi('settings:themeTask.enabled')
       : available
-        ? button
-          ? translateUi('settings:themeTask.notAdded')
-          : translateUi('settings:themeTask.notEnabled')
+        ? translateUi('settings:themeTask.notEnabled')
         : status === 'unavailable'
           ? translateUi('settings:themeTask.unavailable')
           : phase === 'failed'
             ? translateUi('settings:themeTask.couldNotCheck')
             : translateUi('settings:themeTask.notVerified');
   const action = available
-    ? button
-      ? translateUi('settings:themeTask.addToTheme')
-      : translateUi('settings:themeTask.enableInShopify')
+    ? translateUi('settings:themeTask.enableInShopify')
     : active
       ? translateUi('settings:themeTask.editInShopify')
       : translateUi('settings:themeTask.openThemeEditor');
-  const href = links
-    ? available
-      ? button
-        ? links.button
-        : links.cart
-      : button
-        ? links.editor
-        : links.cartEditor
-    : undefined;
+  const href = links ? (available ? links.activate : links.embeds) : undefined;
   return (
-    <div class="storefront-setup__task" data-theme-task={kind}>
+    <div class="storefront-setup__task" data-theme-task="storefront">
       <div class="storefront-setup__task-copy">
         <div class="storefront-setup__task-heading">
-          <s-heading>{title}</s-heading>
+          <s-heading>{translateUi('settings:themeTask.title')}</s-heading>
           <s-badge tone={active ? 'success' : 'neutral'}>{label}</s-badge>
         </div>
+        <s-paragraph>{translateUi('settings:themeTask.description')}</s-paragraph>
         <s-paragraph>
           {active
-            ? button
-              ? translateUi('settings:themeTask.buttonActive')
-              : translateUi('settings:themeTask.cartActive')
+            ? translateUi('settings:themeTask.active')
             : available
-              ? button
-                ? translateUi('settings:themeTask.buttonAvailable')
-                : translateUi('settings:themeTask.cartAvailable')
-              : button
-                ? translateUi('settings:themeTask.buttonUnknown')
-                : translateUi('settings:themeTask.cartUnknown')}
+              ? translateUi('settings:themeTask.available')
+              : translateUi('settings:themeTask.unknown')}
         </s-paragraph>
       </div>
       <div class="storefront-setup__task-action">
@@ -282,10 +243,7 @@ function ThemeTask({
           <s-button
             href={href}
             target="_top"
-            accessibilityLabel={translateUi(
-              button ? 'settings:themeTask.buttonAccessible' : 'settings:themeTask.cartAccessible',
-              { action },
-            )}
+            accessibilityLabel={translateUi('settings:themeTask.accessible', { action })}
           >
             {action}
           </s-button>

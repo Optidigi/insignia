@@ -450,12 +450,17 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     dispatchPhotoPicker({ type: 'context-invalidated', productId, viewId, targetRevision });
     if (staleSessionId) dispatchPhotoPicker({ type: 'closed', sessionId: staleSessionId });
   }
+  /** Product edits are refused while read-only or while a save or publication is in flight. */
+  function editsRefused() {
+    return !!adapter.readOnly || writeBusyRef.current || adapter.pending();
+  }
+  /** Returns false when the change was refused or changed nothing. */
   function setProduct(
     change: PlacementProduct | ((current: PlacementProduct) => PlacementProduct),
     origin: 'editor' | 'photo-picker' = 'editor',
   ): boolean {
     const current = currentProduct.current;
-    if (adapter.readOnly || writeBusyRef.current || adapter.pending()) return false;
+    if (editsRefused()) return false;
     let next = pruneVariantPhotoAssignments(typeof change === 'function' ? change(current) : change);
     next = adapter.productChanging?.(current,next) ?? next;
     const nextBindings = adapter.getBindings?.() ?? currentBindings.current;
@@ -840,7 +845,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     if (!source) return;
     claimedPhotoSubmissions.current.add(sessionKey);
     const assignedKey = confirmation.groupKeys[0] ?? null;
-    setProduct(
+    const applied = setProduct(
       (current) =>
         setVariantPhotoImage(
           { ...current, images: pickerImages },
@@ -850,6 +855,13 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
         ),
       'photo-picker',
     );
+    // An unchanged product (the colour already uses this image) still counts as assigned; a refused edit does not,
+    // so the picker stays on this colour with its selection and the merchant can retry.
+    if (!applied && editsRefused()) {
+      claimedPhotoSubmissions.current.delete(sessionKey);
+      dispatchPhotoPicker({ type: 'assignment-refused', sessionId, pickerRevision });
+      return;
+    }
     setActivePhotoGroup(assignedKey);
     exitSizePreview();
     cancelDrawingTask();
@@ -4466,9 +4478,14 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
         <Dialog
           heading={
             variantImageTargets
-              ? translateUi('editor:placementWorkflowPreview.chooseImageForView', {
-                  viewName: view?.name || translateUi('editor:placementWorkflowPreview.viewNameFallback'),
-                })
+              ? photoTargetGroups.length === 1
+                ? translateUi('editor:placementWorkflowPreview.chooseImageForViewAppearance', {
+                    viewName: view?.name || translateUi('editor:placementWorkflowPreview.viewNameFallback'),
+                    appearanceName: photoTargetGroups[0]?.label ?? '',
+                  })
+                : translateUi('editor:placementWorkflowPreview.chooseImageForView', {
+                    viewName: view?.name || translateUi('editor:placementWorkflowPreview.viewNameFallback'),
+                  })
               : replacingImage
                 ? translateUi('editor:placementWorkflowPreview.changeViewImage')
                 : translateUi('editor:placementWorkflowPreview.addViews')
@@ -4536,6 +4553,15 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
           <div class={pickerImages.length ? 'placement-image-dialog' : ''}>
             {variantImageTargets && (
               <div class="variant-image-target-summary" data-photo-target tabIndex={-1}>
+              {photoPicker.assignmentRefused && (
+                <s-banner tone="warning">
+                  {translateUi('editor:placementWorkflowPreview.imageNotAssigned', {
+                    appearanceName: new Intl.ListFormat(formatLocale, { style: 'long', type: 'conjunction' }).format(
+                      photoTargetGroups.map((group) => group.label),
+                    ),
+                  })}
+                </s-banner>
+              )}
                 {variantImageTargets.length <= 3 ? (
                   <s-paragraph>
                     {translateUi(

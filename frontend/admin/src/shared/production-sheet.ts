@@ -5,6 +5,11 @@ const english = createAdminTranslator('en');
 
 export type ExportMessage = Extract<AdminMessage, { key: `exports:${string}` }>;
 
+/** Display-only: configured physical sizes read as whole millimetres; stored and print geometry keep full precision. */
+export function formatProductionMillimetres(value: number, locale: string): string {
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value);
+}
+
 export type ProductionSheetErrorCode =
   | 'orderDetailsUnverified'
   | 'designDetailsExpired'

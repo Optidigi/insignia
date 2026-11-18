@@ -311,6 +311,8 @@
       "viewBody_other": "{{viewName}} en de {{formattedCount}} bijbehorende decoratieplekken uit dit concept verwijderen? Productafbeeldingen en bestaande bestellingen blijven behouden."
     },
     "chooseImageForView": "Afbeelding van aanzicht {{viewName}} kiezen",
+    "chooseImageForViewAppearance": "Afbeelding van aanzicht {{viewName}} voor {{appearanceName}} kiezen",
+    "imageNotAssigned": "De afbeelding is niet toegewezen aan {{appearanceName}}. Wacht tot het opslaan of publiceren klaar is en probeer het opnieuw.",
     "viewNameFallback": "aanzicht",
     "changeViewImage": "Afbeelding van aanzicht wijzigen",
     "addViews": "Aanzichten toevoegen",

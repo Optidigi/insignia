@@ -29,27 +29,29 @@ test('published configuration does not masquerade as an unpublished product draf
   );
 });
 
-test('theme guidance only asks to add the missing feature and never treats unknown as absent', async () => {
+test('theme guidance asks to enable the one storefront embed and never treats unknown as absent', async () => {
   const { homeSetupFromTheme } = await import('../../src/shared/merchant-home-source.ts');
-  assert.deepEqual(homeSetupFromTheme({ button: 'active', cart: 'available' }, true)?.tasks[0], {
+  assert.deepEqual(homeSetupFromTheme('available', true)?.tasks[0], {
     id: 'storefront',
     kind: 'storefront',
-    reason: 'cart-review-disabled',
+    reason: 'disabled',
     state: 'pending',
     action: { href: '/admin/settings/storefront' },
   });
-  assert.deepEqual(homeSetupFromTheme({ button: 'unknown', cart: 'active' }, false)?.tasks[0], {
-    id: 'storefront',
-    kind: 'storefront',
-    reason: 'check',
-    state: 'unknown',
-    action: { href: '/admin/settings/storefront' },
-  });
+  for (const status of ['unknown', 'unavailable'] as const)
+    assert.deepEqual(homeSetupFromTheme(status, false)?.tasks[0], {
+      id: 'storefront',
+      kind: 'storefront',
+      reason: 'check',
+      state: 'unknown',
+      action: { href: '/admin/settings/storefront' },
+    });
   assert.equal(
-    homeSetupFromTheme({ button: 'active', cart: 'active' }, true)?.tasks[0]?.kind,
+    homeSetupFromTheme('active', true)?.tasks[0]?.kind,
     'test',
     'product preview is an invitation, never an automatically confirmed test',
   );
+  assert.equal(homeSetupFromTheme('active', false), undefined);
 });
 
 test('retention loss stays recent history and never becomes an invented merchant task', async () => {
@@ -100,11 +102,10 @@ test('getting-started steps are observed from the published product and a fully 
   const { homeGuidanceWithObservedSteps, homeObservedGuidanceSteps } = await import(
     '../../src/shared/merchant-home-source.ts'
   );
-  const connected = { button: 'active', cart: 'active' } as const;
-  assert.deepEqual(homeObservedGuidanceSteps(connected, true), ['product', 'storefront']);
-  assert.deepEqual(homeObservedGuidanceSteps(connected, false), ['storefront']);
-  assert.deepEqual(homeObservedGuidanceSteps({ button: 'active', cart: 'available' }, true), ['product']);
-  assert.deepEqual(homeObservedGuidanceSteps({ button: 'unknown', cart: 'unknown' }, false), []);
+  assert.deepEqual(homeObservedGuidanceSteps('active', true), ['product', 'storefront']);
+  assert.deepEqual(homeObservedGuidanceSteps('active', false), ['storefront']);
+  assert.deepEqual(homeObservedGuidanceSteps('available', true), ['product']);
+  assert.deepEqual(homeObservedGuidanceSteps('unknown', false), []);
   assert.deepEqual(homeGuidanceWithObservedSteps({ dismissed: false, completedSteps: ['test'] }, ['product']), {
     dismissed: false,
     completedSteps: ['product', 'test'],

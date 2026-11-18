@@ -24,6 +24,7 @@ import {
   initialProductsState,
   type ProductPage,
   productsReducer,
+  productVariantCount,
 } from './products-overview-state';
 
 type ConfigurationState = 'not_configured' | 'draft' | 'published' | 'unavailable';
@@ -433,6 +434,7 @@ function ProductsOverview() {
             <ResourceTableBody>
               {visible.map((product) => {
                 const id = productNumber(product.id);
+                const variantCount = productVariantCount(product);
                 if (!id) return null;
                 return (
                   <ResourceTableRow
@@ -521,8 +523,8 @@ function ProductsOverview() {
                     </ResourceTableCell>
                     <ResourceTableCell format="numeric">
                       <s-number>
-                        {product.variantsTruncated ? '>' : ''}
-                        {numberFormat.format(product.variants.length)}
+                        {numberFormat.format(variantCount.count)}
+                        {variantCount.atLeast ? '+' : ''}
                       </s-number>
                     </ResourceTableCell>
                   </ResourceTableRow>

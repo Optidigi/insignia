@@ -18,6 +18,8 @@ export interface CatalogProduct {
     locations: string[] | null;
   };
   variantsTruncated?: boolean;
+  /** Shopify's whole-product variant total; `variants` holds only a bounded first slice in list reads. */
+  variantsCount?: { count: number; precision: 'EXACT' | 'AT_LEAST' };
   images?: { id: string; url: string; width: number; height: number; alt: string }[];
   imagesTruncated?: boolean;
   options?: { id: string; name: string; values: string[] }[];

@@ -176,12 +176,8 @@ function setupTask(
   };
 }
 
-function storefrontSetup(
-  buttonState: HomeSetupTask['state'],
-  cartState: HomeSetupTask['state'],
-  testState: HomeSetupTask['state'],
-): HomeSetup | undefined {
-  const themeComplete = buttonState === 'complete' && cartState === 'complete';
+function storefrontSetup(themeState: HomeSetupTask['state'], testState: HomeSetupTask['state']): HomeSetup | undefined {
+  const themeComplete = themeState === 'complete';
   if (themeComplete && testState === 'acknowledged') return undefined;
 
   if (themeComplete) {
@@ -194,33 +190,19 @@ function storefrontSetup(
     };
   }
 
-  const pendingButton = buttonState === 'pending';
-  const pendingCart = cartState === 'pending';
-  const hasKnownTask = pendingButton || pendingCart;
-  const reason =
-    !hasKnownTask || buttonState === 'unknown' || cartState === 'unknown'
-      ? 'check'
-      : pendingButton && pendingCart
-        ? 'both-disabled'
-        : pendingButton
-          ? 'button-disabled'
-          : 'cart-review-disabled';
+  const pending = themeState === 'pending';
   return {
     tasks: [
-      setupTask('storefront-setup', 'storefront', hasKnownTask ? 'pending' : 'unknown', {
-        reason,
+      setupTask('storefront-setup', 'storefront', pending ? 'pending' : 'unknown', {
+        reason: pending ? 'disabled' : 'check',
         actionHref: storefrontSetupHref,
       }),
     ],
   };
 }
 
-function setupDetails(
-  buttonState: HomeSetupTask['state'],
-  cartState: HomeSetupTask['state'],
-  testState: HomeSetupTask['state'],
-): { setup?: HomeSetup } {
-  const setup = storefrontSetup(buttonState, cartState, testState);
+function setupDetails(themeState: HomeSetupTask['state'], testState: HomeSetupTask['state']): { setup?: HomeSetup } {
+  const setup = storefrontSetup(themeState, testState);
   return setup ? { setup } : {};
 }
 
@@ -288,7 +270,7 @@ function makeHome(id: HomeExampleId): MerchantHomeModel {
           hasMore: true,
           tasksTotal: 1,
         },
-        setupDetails('pending', 'pending', 'pending'),
+        setupDetails('pending', 'pending'),
       );
     case 'older-artwork-work':
       return readyHome(productPanel([tee()]), {
@@ -333,19 +315,15 @@ function makeHome(id: HomeExampleId): MerchantHomeModel {
         orderPanel(),
       );
     case 'first-use':
-      return readyHome(
-        productPanel([], { catalog: 'unconfigured' }),
-        orderPanel(),
-        setupDetails('pending', 'pending', 'pending'),
-      );
+      return readyHome(productPanel([], { catalog: 'unconfigured' }), orderPanel(), setupDetails('pending', 'pending'));
     case 'draft':
-      return readyHome(productPanel([tee()]), orderPanel(), setupDetails('pending', 'pending', 'pending'));
+      return readyHome(productPanel([tee()]), orderPanel(), setupDetails('pending', 'pending'));
     case 'published-setup-pending':
-      return readyHome(productPanel(), orderPanel(), setupDetails('pending', 'pending', 'pending'));
+      return readyHome(productPanel(), orderPanel(), setupDetails('pending', 'pending'));
     case 'test-invitation':
-      return readyHome(productPanel(), orderPanel(), setupDetails('complete', 'complete', 'pending'));
+      return readyHome(productPanel(), orderPanel(), setupDetails('complete', 'pending'));
     case 'quiet-no-orders':
-      return readyHome(productPanel(), orderPanel(), setupDetails('complete', 'complete', 'acknowledged'));
+      return readyHome(productPanel(), orderPanel(), setupDetails('complete', 'acknowledged'));
     case 'operating-default-guide':
     case 'orders-row-hover':
     case 'orders-last-row-hover':
@@ -359,7 +337,7 @@ function makeHome(id: HomeExampleId): MerchantHomeModel {
           orderExamples.readyPoloEight(),
           orderExamples.readyTee(),
         ]),
-        setupDetails('complete', 'complete', 'acknowledged'),
+        setupDetails('complete', 'acknowledged'),
       );
     case 'merchant-task':
       return readyHome(
@@ -368,25 +346,25 @@ function makeHome(id: HomeExampleId): MerchantHomeModel {
           [orderExamples.readyPoloSix(), orderExamples.readyMixed()],
           [task(1046, 'Superfunny hoodie', 'replacement-artwork-review')],
         ),
-        setupDetails('complete', 'complete', 'acknowledged'),
+        setupDetails('complete', 'acknowledged'),
       );
     case 'awaiting-customer':
       return readyHome(
         productPanel([tee()]),
         orderPanel([orderExamples.waitingHoodie(), orderExamples.waitingMultiSizeHoodie()]),
-        setupDetails('complete', 'complete', 'acknowledged'),
+        setupDetails('complete', 'acknowledged'),
       );
     case 'expired-historic':
       return readyHome(
         productPanel([tee()]),
         orderPanel([order(1047, 'Superfunny polo', '2025-03-14T12:00:00Z', 'expired', 8)]),
-        setupDetails('complete', 'complete', 'acknowledged'),
+        setupDetails('complete', 'acknowledged'),
       );
     case 'mixed-setup-orders':
       return readyHome(
         productPanel([hoodie()]),
         orderPanel([orderExamples.readyMixed(), orderExamples.readyPoloSix()]),
-        setupDetails('pending', 'pending', 'pending'),
+        setupDetails('pending', 'pending'),
       );
     case 'busy-bounded':
       return readyHome(
@@ -405,24 +383,20 @@ function makeHome(id: HomeExampleId): MerchantHomeModel {
             task(1047, 'Superfunny polo', 'artwork-confirmation'),
           ],
         ),
-        setupDetails('complete', 'complete', 'acknowledged'),
+        setupDetails('complete', 'acknowledged'),
       );
     case 'restricted':
-      return readyHome(productPanel([tee()]), { state: 'restricted' }, setupDetails('pending', 'pending', 'pending'));
+      return readyHome(productPanel([tee()]), { state: 'restricted' }, setupDetails('pending', 'pending'));
     case 'partialfail-products':
       return readyHome(
         { state: 'failed' },
         orderPanel([orderExamples.readyPoloSix(), orderExamples.readyMixed()]),
-        setupDetails('complete', 'complete', 'acknowledged'),
+        setupDetails('complete', 'acknowledged'),
       );
     case 'partialfail-orders':
-      return readyHome(productPanel([tee()]), { state: 'failed' }, setupDetails('pending', 'pending', 'pending'));
+      return readyHome(productPanel([tee()]), { state: 'failed' }, setupDetails('pending', 'pending'));
     case 'retry-fail-then-recovery':
-      return readyHome(
-        productPanel([tee()]),
-        { state: 'failed' },
-        setupDetails('complete', 'complete', 'acknowledged'),
-      );
+      return readyHome(productPanel([tee()]), { state: 'failed' }, setupDetails('complete', 'acknowledged'));
     case 'loading-all':
       return { state: 'loading' };
     case 'independent-loading':
@@ -440,7 +414,7 @@ function makeHome(id: HomeExampleId): MerchantHomeModel {
       return readyHome(
         productPanel([product('tee', { published: true })]),
         orderPanel(),
-        setupDetails('unknown', 'unknown', 'pending'),
+        setupDetails('unknown', 'pending'),
       );
     case 'long-content': {
       const longTitle =
@@ -451,7 +425,7 @@ function makeHome(id: HomeExampleId): MerchantHomeModel {
           [order(1048, longTitle, '2026-10-20T15:42:00Z', 'artwork-ready', 1)],
           [task(1049, longTitle, 'replacement-artwork-review')],
         ),
-        setupDetails('pending', 'pending', 'pending'),
+        setupDetails('pending', 'pending'),
       );
     }
     default:

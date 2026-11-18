@@ -168,9 +168,7 @@
         "title": "Collega il tema",
         "description": "Aggiungi al tema il pulsante di personalizzazione e il riepilogo nel carrello.",
         "action": "Apri la configurazione del tema",
-        "button-disabled": "Attiva il pulsante di personalizzazione nel tema.",
-        "cart-review-disabled": "Attiva il riepilogo nel carrello nel tema.",
-        "both-disabled": "Attiva il pulsante di personalizzazione e il riepilogo nel carrello nel tema.",
+        "disabled": "Attiva il pulsante di personalizzazione e il riepilogo nel carrello nel tema.",
         "check": "Controlla la configurazione del negozio online nel tema."
       },
       "test": {

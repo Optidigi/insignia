@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { initialOrdersState, ordersReducer } from '../../src/islands/orders-overview-state.ts';
-import { initialProductsState, productsReducer } from '../../src/islands/products-overview-state.ts';
+import {
+  initialProductsState,
+  productsReducer,
+  productVariantCount,
+} from '../../src/islands/products-overview-state.ts';
 
 test('Products search and paging clear page selection and ignore an old result', () => {
   const initial = {
@@ -81,4 +85,25 @@ test('Orders changing server query clears rows while preserving the mounted filt
   assert.equal(changed.read.phase, 'loading');
   const failed = ordersReducer(changed, { type: 'read-failed', request: 1, denied: false });
   assert.equal(failed.read.hasLoaded, true, 'query failure keeps the recovery controls mounted');
+});
+
+test('Products show the Shopify variant count instead of the bounded variant vector length', () => {
+  const variants = Array.from({ length: 8 }, (_, index) => ({
+    id: `gid://shopify/ProductVariant/${index + 1}`,
+    title: `V${index + 1}`,
+    imageUrl: null,
+    selectedOptions: [],
+  }));
+  const base = { id: 'gid://shopify/Product/1', title: 'Tee', status: 'ACTIVE', imageUrl: null, variants };
+  assert.deepEqual(
+    productVariantCount({ ...base, variantsTruncated: true, variantsCount: { count: 42, precision: 'EXACT' } }),
+    { count: 42, atLeast: false },
+  );
+  assert.deepEqual(
+    productVariantCount({ ...base, variantsTruncated: true, variantsCount: { count: 2048, precision: 'AT_LEAST' } }),
+    { count: 2048, atLeast: true },
+  );
+  // Without Shopify's count a truncated vector only proves more than the variants that were read.
+  assert.deepEqual(productVariantCount({ ...base, variantsTruncated: true }), { count: 9, atLeast: true });
+  assert.deepEqual(productVariantCount({ ...base, variants: variants.slice(0, 3) }), { count: 3, atLeast: false });
 });

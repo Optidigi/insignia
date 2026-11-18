@@ -25,6 +25,8 @@ export type CatalogProduct = {
     image: CatalogImage | null;
   }[];
   variantsTruncated: boolean;
+  /** Shopify's whole-product variant count (list reads only); AT_LEAST means the count is a lower bound. */
+  variantsCount?: { count: number; precision: 'EXACT' | 'AT_LEAST' };
   tags?: string[];
   collections?: { id: string; title: string }[];
   collectionsTruncated?: boolean;
@@ -58,6 +60,7 @@ type RawProduct = {
     }[];
     pageInfo: { hasNextPage: boolean; endCursor?: string | null };
   };
+  variantsCount?: { count: number; precision: string } | null;
 };
 
 // Product.tags and Product.collections are declared by the pinned Admin 2026-07 schema.
@@ -68,7 +71,9 @@ const listMetadata =
   'media(first: 8) { nodes { __typename ... on MediaImage { id image { id url altText width height } } } pageInfo { hasNextPage } } collections(first: 20) { nodes { id title } pageInfo { hasNextPage } }';
 const detailMetadata =
   'media(first: 100) { nodes { __typename ... on MediaImage { id image { id url altText width height } } } pageInfo { hasNextPage } } collections(first: 100) { nodes { id title } pageInfo { hasNextPage } }';
-const listFields = `${productFields} ${listMetadata}
+// Product.variantsCount (Count { count precision }) is declared by the pinned Admin 2026-07 schema; it reports the
+// whole-product total so the list can show it while still fetching only the first eight variants.
+const listFields = `${productFields} ${listMetadata} variantsCount { count precision }
   variants(first: 8) { nodes { id title selectedOptions { name value optionValue { swatch { color } } } image { id url altText width height } } pageInfo { hasNextPage } }`;
 const listQuery = `query M5001Products($first: Int!, $after: String, $search: String) {
   products(first: $first, after: $after, query: $search, sortKey: TITLE) {
@@ -156,6 +161,14 @@ function project(value: RawProduct, maxVariants = 8): CatalogProduct {
       ))
   )
     throw new Error('Invalid catalog option axes');
+  const variantsCount = value.variantsCount ?? undefined;
+  if (
+    variantsCount !== undefined &&
+    (!Number.isSafeInteger(variantsCount.count) ||
+      variantsCount.count < value.variants.nodes.length ||
+      (variantsCount.precision !== 'EXACT' && variantsCount.precision !== 'AT_LEAST'))
+  )
+    throw new Error('Invalid catalog variant count');
   const images: { revisionId: string; image: CatalogImage }[] = [];
   if (value.media !== undefined) {
     if (
@@ -211,6 +224,14 @@ function project(value: RawProduct, maxVariants = 8): CatalogProduct {
       };
     }),
     variantsTruncated: value.variants.pageInfo.hasNextPage,
+    ...(variantsCount === undefined
+      ? {}
+      : {
+          variantsCount: {
+            count: variantsCount.count,
+            precision: variantsCount.precision as 'EXACT' | 'AT_LEAST',
+          },
+        }),
     ...(value.options === undefined
       ? {}
       : {

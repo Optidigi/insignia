@@ -94,6 +94,7 @@ function project(value: ShopifyCatalogProduct): CatalogProduct {
       selectedOptions: item.selectedOptions,
     })),
     variantsTruncated: value.variantsTruncated,
+    ...(value.variantsCount === undefined ? {} : { variantsCount: value.variantsCount }),
     ...(images.length || value.images !== undefined ? { images } : {}),
     ...(value.imagesTruncated === undefined ? {} : { imagesTruncated: value.imagesTruncated }),
     ...(value.options === undefined ? {} : { options: value.options }),
