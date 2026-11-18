@@ -60,6 +60,8 @@ import merchantBatchModules from '../../deployment/m5-runtime/native-merchant-ba
 import merchantBatchBinding from '../../deployment/m5-runtime/native-merchant-batch-release-binding.json' with {
   type: 'json',
 };
+import namesModules from '../../deployment/m5-runtime/native-names-module-baseline.json' with { type: 'json' };
+import namesBinding from '../../deployment/m5-runtime/native-names-release-binding.json' with { type: 'json' };
 import parityModules from '../../deployment/m5-runtime/native-parity-module-baseline.json' with { type: 'json' };
 import parityCandidate from '../../deployment/m5-runtime/native-parity-release-binding.json' with { type: 'json' };
 import performanceModules from '../../deployment/m5-runtime/native-performance-module-baseline.json' with {
@@ -190,6 +192,17 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  // Same Function wasm, queries, targets, non-theme modules, blocks, snippets and locales as reinstall; theme assets change and both
+  // Function modules carry merchant-facing title/description (PR 566).
+  'native-names-b8616d2a': {
+    versionId: namesBinding.versionId,
+    versionTag: namesBinding.versionTag,
+    versionIds: namesBinding.versionIds,
+    moduleHash: namesBinding.moduleHash,
+    modules: namesModules,
+    grants: [...grants, 'read_orders', 'read_all_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   // Same Functions, non-theme modules, blocks and snippets as cartfix; theme assets change (PR 553).
   'native-reinstall-eb2ce476': {
     versionId: reinstallBinding.versionId,
