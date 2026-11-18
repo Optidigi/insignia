@@ -1,3 +1,6 @@
+# HISTORICAL since deploy AC (18 Nov 2026): production runs one Compose project `insignia` from
+# deployment/production/compose.yaml. This file describes the retired pre-AC layout; it is kept for
+# its render tests and as rollback evidence. Do not deploy it.
 # Overlay only the separate worker project after its base and runtime overlays.
 # Read-only metadata socket; no collector management credentials or append custody.
 services:

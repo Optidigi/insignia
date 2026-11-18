@@ -25,6 +25,7 @@ import {
   fingerprint,
   type InspectorBoundary,
   type InspectorRow,
+  InspectorService,
   verifyInspectorArtifact,
 } from './backup-run.mts';
 
@@ -40,7 +41,7 @@ function cleanEnvironment() {
 function directory() {
   return mkdtempSync('/dev/shm/insignia-exclusion-');
 }
-function row(service = 'web', project = 'insignia-production', id = 'a'.repeat(64)): DockerRow {
+function row(service = 'web', project = 'insignia', id = 'a'.repeat(64)): DockerRow {
   return {
     Id: id,
     Image: `sha256:${'b'.repeat(64)}`,
@@ -66,7 +67,7 @@ function item(source: DockerRow, service = 'web', project?: string): Container {
 function config(runtime: string, containers: Container[]): Configuration {
   return {
     format: 'insignia-backup-run-v1',
-    project: 'insignia-production',
+    project: 'insignia',
     containers,
     runtimeDirectory: runtime,
     windowSeconds: 300,
@@ -230,7 +231,7 @@ test('identity drift has no stop; failed work resumes only originally running wr
     runtime = directory();
   try {
     const web = row(),
-      worker = row('worker', 'insignia-production', 'c'.repeat(64));
+      worker = row('worker', 'insignia', 'c'.repeat(64));
     worker.State = { Status: 'exited' };
     const rows = new Map([
         ['web', web],
@@ -404,6 +405,15 @@ test('inspector command selects exactly one manifest-bound current or retained b
       rmSync(root, { recursive: true, force: true });
     }
   }
+});
+
+test('the drain gate accepts only releases under the packaged unit template root', () => {
+  const template = readFileSync(
+    new URL('../../deployment/artwork-inspector/artwork-inspection.service.in', import.meta.url),
+    'utf8',
+  );
+  assert.ok(template.includes(`\nWorkingDirectory=${InspectorService.RELEASES}/@SOURCE_TREE@\n`));
+  assert.ok(template.includes(`\nExecStart=${InspectorService.RELEASES}/@SOURCE_TREE@/bin/node `));
 });
 
 test('alternate libpq authority rejects before any Docker read or effect', async () => {

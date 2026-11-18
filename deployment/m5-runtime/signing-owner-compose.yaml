@@ -1,6 +1,8 @@
-# Explicit owner action allocation only; add after the ordinary canonical overlays.
-# Plan contains nonsecret exact target/validity metadata. Existing wrapping-key
-# custody remains in runtime.env. No command, NODE_* override or code mount.
+# Explicit owner action allocation only; add after the production stack:
+#   docker compose --project-directory /srv/saas/infra/stacks/insignia \
+#     -f /srv/saas/infra/stacks/insignia/compose.yaml -f signing-owner-compose.yaml up -d --no-deps web
+# Plan contains nonsecret exact target/validity metadata. The wrapping key stays with
+# the signer only. No command, NODE_* override or code mount.
 # Retire this overlay after independently verified provisioning: ordinary web
 # deployment must omit both mounts below. Preserve the host plan/journal as dated
 # evidence; never rewrite its release binding or repeat a consumed allocation.

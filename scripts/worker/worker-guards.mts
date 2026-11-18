@@ -67,6 +67,8 @@ function matchesDatabaseUrl(value: string, endpoint: Record<string, unknown>) {
   );
 }
 
+// Qualifies the retired separate worker project (`insignia-uninstall-m5-024`, before deploy AC, 18 Nov 2026);
+// production now runs the worker in project `insignia` from deployment/production/compose.yaml.
 // Pure qualification of privately gathered observations. No network/DB/provider/write operation.
 // Expected Compose is the independently reviewed fully rendered JSON, not an editable template.
 export function qualifyWorkerCandidate({

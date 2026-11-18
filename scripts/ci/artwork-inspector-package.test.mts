@@ -46,12 +46,20 @@ test('digest-bound inspector package relocates and verifies without starting ins
     assert.equal(jsonRecord(result.stdout).inspectionStarted, false);
     const service = await readFile(join(relocated, 'artwork-inspection.service'), 'utf8');
     assert.ok(service.includes(`--manifest-sha256 ${receipt.manifestSha256}`));
-    assert.ok(service.includes(`%h/insignia-artwork-releases/${identity.sourceTree}/bin/node`));
-    assert.ok(service.includes('EnvironmentFile=%h/.config/insignia/artwork-inspection.env'));
+    // Releases and private startup configuration live on the encrypted data volume (deploy AC).
+    const releases = '/srv/data/saas/insignia/artwork-inspector/releases';
+    assert.ok(service.includes(`WorkingDirectory=${releases}/${identity.sourceTree}\n`));
+    assert.ok(service.includes(`ExecStart=${releases}/${identity.sourceTree}/bin/node `));
+    assert.ok(service.includes('EnvironmentFile=/srv/data/saas/insignia/artwork-inspector/inspection.env'));
+    assert.ok(!service.includes('%h'));
     assert.ok(service.includes('NoNewPrivileges=yes'));
     assert.ok(service.includes('MemoryMax=512M'));
     assert.ok(service.includes('KillMode=control-group'));
-    assert.ok(service.includes('Restart=no'));
+    assert.ok(service.includes('TimeoutStopSec=infinity'));
+    // 16 Nov host edits: bounded restart after a crash, after removing only its own stale readiness socket.
+    assert.ok(service.includes('\nRestart=on-failure\nRestartSec=10\n'));
+    assert.ok(service.includes('StartLimitIntervalSec=600\nStartLimitBurst=10\n'));
+    assert.ok(service.includes(`ExecStartPre=/bin/sh -c 'rm -f -- "$ARTWORK_WORKER_READY_SOCKET"'\n`));
     assert.ok(!service.includes('docker.sock') && !service.includes('insignia-m8-runtime-20261013'));
     await writeFile(join(relocated, 'artwork-inspection.service'), `${service}\nEnvironment=UNREVIEWED_CONFIG=1\n`);
     assert.notEqual(verify().status, 0, 'rendered service must match the digest-bound template');

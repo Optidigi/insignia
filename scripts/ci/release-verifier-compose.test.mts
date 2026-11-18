@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { jsonRecord, object } from './validation.mts';
 
+// Historical template (pre deploy AC); the live verifier service is in deployment/production/compose.yaml.
 const dockerAvailable = spawnSync('docker', ['compose', 'version'], { stdio: 'ignore' }).status === 0;
 test('independent verifier Compose exposes only a private metadata socket and keeps identity/credentials outside web authority', {
   skip: !dockerAvailable && 'Docker Compose is supplied by runtime CI',

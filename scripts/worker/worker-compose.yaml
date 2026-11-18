@@ -1,3 +1,6 @@
+# HISTORICAL since deploy AC (18 Nov 2026): production runs one Compose project `insignia` from
+# deployment/production/compose.yaml. This file describes the retired pre-AC layout; it is kept for
+# its render tests and as rollback evidence. Do not deploy it.
 # Separate project; existing web/database/legacy Compose sources remain untouched.
 name: insignia-uninstall-m5-024
 services:

@@ -6,6 +6,8 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { object } from './validation.mts';
 
+// Historical layout: these files describe the retired pre-AC split projects (kept as rollback evidence).
+// The live production shape is guarded by production-compose.test.mts against deployment/production/compose.yaml.
 // Renders the real overlays; never starts a service or contacts production.
 test('signer overlay: only the signer holds the wrapping key; web reaches it only through a read-only socket directory', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'insignia-signer-compose-'));

@@ -29,6 +29,7 @@ on:
       - 'deployment/artwork-inspector/**'
       - 'deployment/release-verifier/**'
       - 'deployment/m5-019r/**'
+      - 'deployment/production/**'
       - 'scripts/privacy/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
@@ -234,7 +235,7 @@ jobs:
         run: node --test scripts/runtime/image-identity.test.mts
       - name: Ordinary canonical web and worker Compose rendering controls
         if: steps.changes.outputs.route == 'full'
-        run: node --test scripts/runtime/web-compose.test.mts scripts/runtime/signing-owner-compose.test.mts scripts/runtime/signer-compose.test.mts
+        run: node --test scripts/runtime/production-compose.test.mts scripts/runtime/web-compose.test.mts scripts/runtime/signing-owner-compose.test.mts scripts/runtime/signer-compose.test.mts
       - name: Preserve image qualification receipts and raw logs
         if: ${{ always() && steps.changes.outputs.route == 'full' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

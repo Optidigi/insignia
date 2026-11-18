@@ -1,11 +1,11 @@
 {
   "format": "insignia-backup-run-v1",
-  "project": "insignia-production",
+  "project": "insignia",
   "containers": [
     {
-      "project": "insignia-production",
+      "project": "insignia",
       "service": "web",
-      "name": "insignia-production-web-1",
+      "name": "insignia-web",
       "id": "REPLACE_WITH_EXACT_64_HEX_CONTAINER_ID",
       "imageId": "sha256:REPLACE_WITH_EXACT_64_HEX_IMAGE_ID",
       "configSha256": "REPLACE_WITH_REVIEWED_FINGERPRINT",
@@ -15,9 +15,9 @@
   "hostInspector": {
     "unit": "insignia-artwork-inspection.service",
     "configSha256": "REPLACE_WITH_INDEPENDENTLY_FROZEN_INSPECTOR_IDENTITY",
-    "startupFile": "/home/serveradmin/.config/insignia/artwork-inspection.env",
-    "storageFile": "REPLACE_WITH_ACTUAL_OWNED_INSPECTOR_STORAGE_PROFILE",
-    "readinessSocket": "REPLACE_WITH_ACTUAL_OWNED_READINESS_DIRECTORY/ready.sock"
+    "startupFile": "/srv/data/saas/insignia/artwork-inspector/inspection.env",
+    "storageFile": "/srv/saas/infra/stacks/insignia/secrets/r2-inspector.json",
+    "readinessSocket": "/srv/data/saas/insignia/runtime-state/artwork-readiness/ready.sock"
   },
   "runtimeDirectory": "/run/insignia-backup",
   "receiptDirectory": "/var/lib/insignia-backup-runs",
