@@ -34,6 +34,16 @@ export function purchasedVariantLabel(
 /** Verified original metadata is owned by the same server wire contract. */
 export { PurchaseOriginalDownloadSchema } from '@insignia/contracts';
 
+const DAY_MS = 86_400_000;
+/**
+ * Spec §10.4 warns merchants 30 and 7 days before an order's artwork is deleted: a warning from 30 days,
+ * urgent from 7. Nothing once it is gone; the caller shows that state instead.
+ */
+export function artworkDeletionWarning(expiresAt: string, now: number): 'warning' | 'critical' | null {
+  const left = Date.parse(expiresAt) - now;
+  if (!(left > 0) || left > 30 * DAY_MS) return null;
+  return left <= 7 * DAY_MS ? 'critical' : 'warning';
+}
 /**
  * An order-related time in the shop's time zone, labelled with that zone (e.g. "16 Nov 2026, 16:46 EST").
  * Without a known shop zone it falls back to UTC, labelled by `utcLabel`. The Orders list and the order

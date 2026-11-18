@@ -198,10 +198,11 @@ export function createCustomerArtworkRepository(db: Kysely<Database>) {
           )
         )
           unavailable();
+        // The ATTACH insert extends this asset's retention: lock it for that update up front (no deadlock).
         const asset = (
           await sql<{
             expires_at: Date;
-          }>`SELECT expires_at FROM artwork_assets WHERE asset_id=${input.assetId}::uuid AND shop_id=${row.shop_id} AND installation_generation=${row.installation_generation}::bigint AND owner_kind='guest' AND owner_hash=${hash} AND state='USABLE' AND expires_at>clock_timestamp() FOR SHARE`.execute(
+          }>`SELECT expires_at FROM artwork_assets WHERE asset_id=${input.assetId}::uuid AND shop_id=${row.shop_id} AND installation_generation=${row.installation_generation}::bigint AND owner_kind='guest' AND owner_hash=${hash} AND state='USABLE' AND expires_at>clock_timestamp() FOR NO KEY UPDATE`.execute(
             tx,
           )
         ).rows[0];

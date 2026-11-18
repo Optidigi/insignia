@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { sql } from 'kysely';
+import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { createArtworkRepository } from '../src/repositories/artwork.js';
 import { createCustomerPrivacyRepository } from '../src/repositories/customer-privacy.js';
 import { createPurchaseRepository } from '../src/repositories/purchase.js';
 import { createShopifyWebhookRepository } from '../src/repositories/shopify-webhooks.js';
@@ -264,6 +266,87 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('body-bound customer privacy p
     await expect(
       sql`UPDATE artwork_assets SET state='QUEUED' WHERE asset_id=${primary}::uuid`.execute(db),
     ).rejects.toMatchObject({ code: '23514' });
+  });
+  it('customer redaction deletes a recorded order’s six-month artwork and design at once', async () => {
+    const f = await purchaseFixture(db),
+      purchaseId = await order(f, '303'),
+      assetId = randomUUID();
+    await sql`INSERT INTO artwork_assets(asset_id,shop_id,installation_generation,owner_hash,owner_kind,declared_mime,declared_bytes,state,quarantine_key,original_key,preview_key,collected_at,upload_until,expires_at,manifest) VALUES(${assetId}::uuid,${f.shopId},1,${'a'.repeat(64)},'guest','image/png',10,'USABLE',${`${assetId}/q`},${`${assetId}/o`},${`${assetId}/p`},statement_timestamp(),statement_timestamp()+interval '5 minutes',statement_timestamp()+interval '7 days','{}'::jsonb)`.execute(
+      db,
+    );
+    await bind(f, purchaseId, assetId);
+    const deadline = async () =>
+      (
+        await sql<{
+          state: string;
+          expires_at: Date;
+        }>`SELECT state,expires_at FROM artwork_assets WHERE asset_id=${assetId}::uuid`.execute(db)
+      ).rows[0]!;
+    const kept = await deadline();
+    expect(+kept.expires_at).toBeGreaterThan(Date.now() + 150 * 86400000);
+    await createCustomerPrivacyRepository(db).processInbox(await receive(f.shopifyShopId, ['303'], 'redact'));
+    expect(await deadline()).toEqual({ state: 'DELETING', expires_at: kept.expires_at });
+    expect(
+      (
+        await sql<{
+          payload: unknown;
+        }>`SELECT payload FROM purchase_design_payloads WHERE purchase_id=${purchaseId}::uuid`.execute(db)
+      ).rows[0]?.payload,
+    ).toBeNull();
+    // The inspector deletes the objects now, not at the extended deadline.
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    try {
+      expect((await createArtworkRepository(pool).markDeleting(assetId, new Date()))?.assetId).toBe(assetId);
+    } finally {
+      await pool.end();
+    }
+  });
+  it('shop redaction deletes a recorded order’s six-month artwork and design at once', async () => {
+    const f = await purchaseFixture(db),
+      purchaseId = await order(f, '404'),
+      assetId = randomUUID();
+    await sql`INSERT INTO artwork_assets(asset_id,shop_id,installation_generation,owner_hash,owner_kind,declared_mime,declared_bytes,state,quarantine_key,original_key,preview_key,collected_at,upload_until,expires_at,manifest) VALUES(${assetId}::uuid,${f.shopId},1,${'a'.repeat(64)},'guest','image/png',10,'USABLE',${`${assetId}/q`},${`${assetId}/o`},${`${assetId}/p`},statement_timestamp(),statement_timestamp()+interval '5 minutes',statement_timestamp()+interval '7 days','{}'::jsonb)`.execute(
+      db,
+    );
+    await bind(f, purchaseId, assetId);
+    const kept = (
+      await sql<{ expires_at: Date }>`SELECT expires_at FROM artwork_assets WHERE asset_id=${assetId}::uuid`.execute(db)
+    ).rows[0]!;
+    expect(+kept.expires_at).toBeGreaterThan(Date.now() + 150 * 86400000);
+    await sql`UPDATE shops SET shop_domain=shop_id||'.myshopify.com' WHERE shop_id=${f.shopId}`.execute(db);
+    await sql`UPDATE installation_generations SET deactivated_at=clock_timestamp() WHERE shop_id=${f.shopId}`.execute(
+      db,
+    );
+    const repo = createCustomerPrivacyRepository(db);
+    expect(
+      await repo.processInbox(
+        await receive(
+          f.shopifyShopId,
+          [],
+          'redact',
+          'shop/redact',
+          `{"shop_id":${f.shopifyShopId},"shop_domain":"${f.shopId}.myshopify.com"}`,
+        ),
+      ),
+    ).toMatchObject({ kind: 'SHOP_ERASURE_STAGED', shopId: f.shopId });
+    await createPurchaseRepository(db).cleanupDue(1000);
+    expect(
+      (
+        await sql<{
+          payload: unknown;
+        }>`SELECT payload FROM purchase_design_payloads WHERE purchase_id=${purchaseId}::uuid`.execute(db)
+      ).rows[0]?.payload,
+    ).toBeNull();
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    try {
+      expect((await createArtworkRepository(pool).markDeleting(assetId, new Date()))?.assetId).toBe(assetId);
+    } finally {
+      await pool.end();
+    }
+    expect(
+      (await sql<{ state: string }>`SELECT state FROM artwork_assets WHERE asset_id=${assetId}::uuid`.execute(db))
+        .rows[0]?.state,
+    ).toBe('DELETING');
   });
   it('order fences survive a request before discovery and prevent late payload or merchant attachment reingestion', async () => {
     const f = await purchaseFixture(db),
