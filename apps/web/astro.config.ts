@@ -10,8 +10,17 @@ import { defineConfig } from 'astro/config';
 const nodeAdapter = node({ mode: 'middleware' });
 const serverEntrypoint = fileURLToPath(new URL('./src/server/entry.ts', import.meta.url));
 
+// Public hosts the web app is served on behind Traefik. Since Astro 7.4 the Node adapter trusts the Host and
+// X-Forwarded-* headers only for these; any other request gets `http://localhost:<port>` as its URL, which fails
+// every admin mutation's same-origin check (`mutationOrigin`). Keep in sync with APP_URL of each deployment.
+export const allowedDomains = [
+  { hostname: 'app.insigniacustomizer.com', protocol: 'https' },
+  { hostname: 'insignia-app.optidigi.nl', protocol: 'https' },
+];
+
 export default defineConfig({
   output: 'server',
+  security: { allowedDomains },
   publicDir: '../../frontend/admin/public',
   adapter: {
     ...nodeAdapter,
