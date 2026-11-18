@@ -40,9 +40,14 @@ function MerchantHomeContainer() {
   const [orders, setOrders] = useState<HomeOrdersPanel>({ state: 'loading' });
   const [theme, setTheme] = useState<ThemeSetupStatus>('unknown');
   const [published, setPublished] = useState(false);
-  // Both are derived from the same two observations, never stored separately.
+  // Both are derived from the store's observations, never stored separately. Any order in the store-wide
+  // recent-orders read (test orders included) proves a customization was tested.
   const setup = homeSetupFromTheme(theme, published);
-  const observedSteps = homeObservedGuidanceSteps(theme, published);
+  const observedSteps = homeObservedGuidanceSteps(
+    theme,
+    published,
+    orders.state === 'ready' && orders.items.length > 0,
+  );
   const [restrictedPlan, setRestrictedPlan] = useState(false);
   const [sessionLost, setSessionLost] = useState(false);
   const [statistics, setStatistics] = useState<HomeStatistics | undefined>({ state: 'loading' });

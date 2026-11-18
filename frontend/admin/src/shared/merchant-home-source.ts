@@ -152,13 +152,15 @@ export function homeHasPublishedProductFromSetupStatus(input: unknown): boolean 
   return z.strictObject({ hasPublishedProduct: z.boolean() }).parse(input).hasPublishedProduct;
 }
 
-/** Getting-started steps the store itself proves done; an unknown observation never counts. */
+/** Getting-started steps the store itself proves done; an unknown observation never counts. The test step is
+ * done once the store has recorded a customized order, test orders included (owner, 18 November 2026). */
 export function homeObservedGuidanceSteps(
   theme: ThemeSetupStatus,
   hasPublishedProduct: boolean,
+  hasRecordedOrder = false,
 ): HomeGuidanceStepId[] {
   return homeGuidanceStepIds.filter((step) =>
-    step === 'product' ? hasPublishedProduct : step === 'storefront' && themeConnected(theme),
+    step === 'product' ? hasPublishedProduct : step === 'storefront' ? themeConnected(theme) : hasRecordedOrder,
   );
 }
 
@@ -187,9 +189,8 @@ export function homeStatisticsFromResponse(input: unknown, now = Date.now()): Ho
   const inPeriod = page.items.filter(
     (order) => Date.parse(order.orderCreatedAt) >= start && Date.parse(order.orderCreatedAt) <= now,
   );
-  // An unknown test flag must not silently count as a live order or a verified zero.
-  if (inPeriod.some((order) => order.isTest === null)) return undefined;
-  const orders = inPeriod.filter((order) => order.isTest === false && order.cancelledAt === null);
+  // Owner decision, 18 November 2026: test orders count; cancelled orders do not.
+  const orders = inPeriod.filter((order) => order.cancelledAt === null);
   let items: bigint;
   try {
     items = orders.reduce((total, order) => total + exactItemCount(order.lines), 0n);
@@ -213,7 +214,7 @@ export function homeStatisticsFromResponse(input: unknown, now = Date.now()): Ho
   const previousRecords = page.items.filter(
     (order) => Date.parse(order.orderCreatedAt) >= previousStart && Date.parse(order.orderCreatedAt) < start,
   );
-  const previousOrders = previousRecords.filter((order) => order.isTest === false && order.cancelledAt === null);
+  const previousOrders = previousRecords.filter((order) => order.cancelledAt === null);
   let previousItems: bigint;
   let previousCountsAreExact = true;
   try {
@@ -222,21 +223,19 @@ export function homeStatisticsFromResponse(input: unknown, now = Date.now()): Ho
     previousItems = -1n;
     previousCountsAreExact = false;
   }
-  const previousPeriod =
-    previousRecords.some((order) => order.isTest === null) || !previousCountsAreExact
-      ? undefined
-      : {
-          customizedOrders: previousOrders.length,
-          customizedItems: previousItems,
-          series: dailySeries(previousDay, previousOrders),
-        };
+  const previousPeriod = !previousCountsAreExact
+    ? undefined
+    : {
+        customizedOrders: previousOrders.length,
+        customizedItems: previousItems,
+        series: dailySeries(previousDay, previousOrders),
+      };
   return {
     state: 'ready',
     periodDays: 30,
     customizedOrders: orders.length,
     customizedItems: items,
     productsOrdered: new Set(orders.flatMap((order) => order.lines.map((line) => line.productId))).size,
-    excludesTestOrders: true,
     series,
     ...(previousPeriod ? { previousPeriod } : {}),
   };
@@ -261,6 +260,6 @@ export function homeStatisticsFromAggregate(input: unknown): HomeStatistics | un
       const series = days.map((date, index) => ({ date, customizedOrders: count(source[index]?.orders ?? '0'), customizedItems: BigInt(source[index]?.items ?? '0'), productsOrdered: new Set(source[index]?.productIds ?? []).size }));
       return { customizedOrders: count(series.reduce((sum, row) => sum + BigInt(row.customizedOrders), 0n).toString()), customizedItems: series.reduce((sum, row) => sum + row.customizedItems, 0n), productsOrdered: new Set(source.flatMap((row) => row?.productIds ?? [])).size, series };
     };
-    return { state: 'ready', periodDays: 30, excludesTestOrders: true, ...period(first), previousPeriod: period(previousFirst) };
+    return { state: 'ready', periodDays: 30, ...period(first), previousPeriod: period(previousFirst) };
   } catch { return undefined; }
 }

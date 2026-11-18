@@ -96,9 +96,9 @@
     },
     "metrics": {
       "customizedOrders": "Ordini con personalizzazioni",
-      "customizedOrdersDefinition": "Ordini che contengono almeno una personalizzazione Insignia. Gli ordini di prova e quelli annullati non vengono conteggiati.",
+      "customizedOrdersDefinition": "Ordini che contengono almeno una personalizzazione Insignia. Gli ordini di prova vengono conteggiati, quelli annullati no.",
       "customizedItems": "Articoli personalizzati ordinati",
-      "customizedItemsDefinition": "Quantità totale di articoli personalizzati ordinati. Gli ordini di prova e quelli annullati non vengono conteggiati."
+      "customizedItemsDefinition": "Quantità totale di articoli personalizzati ordinati. Gli ordini di prova vengono conteggiati, quelli annullati no."
     },
     "orders": "Visualizza gli ordini",
     "unavailable": "Le statistiche non sono disponibili al momento.",

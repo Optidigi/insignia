@@ -95,9 +95,9 @@
     },
     "metrics": {
       "customizedOrders": "Bestellingen met personalisaties",
-      "customizedOrdersDefinition": "Bestellingen met ten minste één Insignia-ontwerp. Testbestellingen en geannuleerde bestellingen worden niet meegeteld.",
+      "customizedOrdersDefinition": "Bestellingen met ten minste één Insignia-ontwerp. Testbestellingen tellen mee; geannuleerde bestellingen niet.",
       "customizedItems": "Bestelde artikelen met personalisatie",
-      "customizedItemsDefinition": "Totaal aantal bestelde artikelen met personalisatie. Testbestellingen en geannuleerde bestellingen worden niet meegeteld."
+      "customizedItemsDefinition": "Totaal aantal bestelde artikelen met personalisatie. Testbestellingen tellen mee; geannuleerde bestellingen niet."
     },
     "orders": "Bestellingen bekijken",
     "unavailable": "Statistieken zijn nu niet beschikbaar.",

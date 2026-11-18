@@ -53,21 +53,20 @@ export function createPurchaseListRepository(db: Kysely<Database>) {
         orders: string;
         items: string;
         product_ids: string[];
-        unknown_test: string;
       }>`
         WITH relevant AS (
-          SELECT o.purchase_id,o.is_test,(o.order_created_at AT TIME ZONE ${timeZone})::date AS day,
+          SELECT o.purchase_id,(o.order_created_at AT TIME ZONE ${timeZone})::date AS day,
             (SELECT x.cancelled_at FROM purchase_observations x WHERE x.purchase_id=o.purchase_id ORDER BY x.source_updated_at DESC,x.observed_at DESC,x.observation_id DESC LIMIT 1) AS cancelled_at
           FROM purchase_orders o WHERE o.shop_id=${shopId} AND o.order_created_at<=${observedAt}
             AND o.order_created_at >= (((CAST(${observedAt} AS timestamptz) AT TIME ZONE ${timeZone})::date - 59)::timestamp AT TIME ZONE ${timeZone})
         ), counts AS (
-          SELECT r.day,count(*) FILTER(WHERE r.is_test=false AND r.cancelled_at IS NULL)::text AS orders,
-            COALESCE(sum((SELECT COALESCE(sum(l.quantity),0) FROM purchase_lines l WHERE l.purchase_id=r.purchase_id)) FILTER(WHERE r.is_test=false AND r.cancelled_at IS NULL),0)::text AS items,
-            count(*) FILTER(WHERE r.is_test IS NULL)::text AS unknown_test
+          -- Owner decision, 18 November 2026: test orders count; cancelled orders do not.
+          SELECT r.day,count(*) FILTER(WHERE r.cancelled_at IS NULL)::text AS orders,
+            COALESCE(sum((SELECT COALESCE(sum(l.quantity),0) FROM purchase_lines l WHERE l.purchase_id=r.purchase_id)) FILTER(WHERE r.cancelled_at IS NULL),0)::text AS items
           FROM relevant r GROUP BY r.day
         ), products AS (
-          SELECT r.day,array_agg(DISTINCT l.product_id ORDER BY l.product_id) AS product_ids FROM relevant r JOIN purchase_lines l ON l.purchase_id=r.purchase_id WHERE r.is_test=false AND r.cancelled_at IS NULL GROUP BY r.day
-        ) SELECT c.day::text,c.orders,c.items,c.unknown_test,COALESCE(p.product_ids,ARRAY[]::text[]) AS product_ids FROM counts c LEFT JOIN products p USING(day) ORDER BY c.day`.execute(
+          SELECT r.day,array_agg(DISTINCT l.product_id ORDER BY l.product_id) AS product_ids FROM relevant r JOIN purchase_lines l ON l.purchase_id=r.purchase_id WHERE r.cancelled_at IS NULL GROUP BY r.day
+        ) SELECT c.day::text,c.orders,c.items,COALESCE(p.product_ids,ARRAY[]::text[]) AS product_ids FROM counts c LEFT JOIN products p USING(day) ORDER BY c.day`.execute(
         db,
       );
       return result.rows;

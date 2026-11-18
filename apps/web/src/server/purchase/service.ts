@@ -302,7 +302,8 @@ export function createPurchaseServices(input: {
         timeZone,
         periodDays: 30,
         observedAt: observedAt.toISOString(),
-        available: rows.every((row) => row.unknown_test === '0'),
+        // Test orders count (owner, 18 November 2026), so an order's unknown test flag no longer withholds the totals.
+        available: true,
         series: rows.map((row) => ({
           day: row.day,
           orders: row.orders,

@@ -488,7 +488,6 @@ export function homeExample(id: string): MerchantHomeModel {
                 model.orders.state === 'ready' && (model.orders.items.length === 0 || id === 'expired-historic')
                   ? 0
                   : 7,
-              excludesTestOrders: true,
               previousPeriod: {
                 customizedOrders:
                   model.orders.state === 'ready' && (model.orders.items.length === 0 || id === 'expired-historic')
