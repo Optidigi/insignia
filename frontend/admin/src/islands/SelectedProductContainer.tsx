@@ -483,11 +483,12 @@ function SelectedProductContainer({ productId }: { productId: string }) {
             const version = requestVersion.current;
             const shopCurrency = currency.current;
             if (shopCurrency !== 'USD' && shopCurrency !== 'EUR') throw new Error('Shop currency unavailable');
+            // The library limit, a conflict or a permission answer shows the dialog's "could not be added" message;
+            // it does not close the product editor.
             const created = await createLibraryMethod({
               ...input,
               authority: methodAuthority.current,
               currency: shopCurrency,
-              request: authorizedRequest,
             });
             if (version !== requestVersion.current) throw new Error('Product context changed');
             records.current = [

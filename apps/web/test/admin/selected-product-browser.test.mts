@@ -555,6 +555,45 @@ test("the editor's Add method creates one library method, priced on this product
   assert.equal(library.posts.length, 1);
 });
 
+test("a refused library create (full library, permission) keeps the editor and shows Add method's failure message", {
+  timeout: 30000,
+}, async (t) => {
+  const f = await fixture(t);
+  const answers = [
+    { status: 409, json: { kind: 'conflict', message: 'The library holds up to 100 methods.' } },
+    { status: 403, json: { error: 'Current tenant installation required' } },
+  ];
+  const keys: (string | undefined)[] = [];
+  await f.page.route('**/api/admin/methods', (route) => {
+    if (route.request().method() !== 'POST') return route.fallback();
+    keys.push(route.request().headers()['idempotency-key']);
+    return route.fulfill(required(answers.shift()));
+  });
+  await f.open();
+  await f.page.getByRole('button', { name: 'Manage methods', exact: true }).click();
+  const manager = f.page.locator('s-modal[data-method-dialog]').filter({ has: f.page.locator('.pm-manager') });
+  await manager.getByRole('button', { name: 'Add method', exact: true }).first().click();
+  await manager.getByRole('textbox', { name: 'Method name', exact: true }).fill('Flock');
+  const field = manager.locator('s-text-field[data-new-product-method]');
+  for (const attempt of [1, 2]) {
+    const answered = f.page.waitForResponse(
+      (response) => response.request().method() === 'POST' && response.url().endsWith('/api/admin/methods'),
+    );
+    await manager.getByRole('button', { name: 'Add method', exact: true }).first().click();
+    await answered;
+    await f.page.waitForFunction(
+      () =>
+        document.querySelector('s-text-field[data-new-product-method]')?.getAttribute('error') ===
+        'This method could not be added. Try again.',
+    );
+    assert.equal(keys.length, attempt);
+  }
+  assert.equal(keys[1], keys[0], 'a retry of the same name repeats the same command');
+  assert.equal(await field.count(), 1);
+  assert.equal(f.mutations.length, 0);
+  await f.page.locator('.placement-editor').waitFor({ state: 'visible' });
+});
+
 test('confirmed Leave page retires the dialog and save bar before navigating without saving', {
   timeout: 30000,
 }, async (t) => {
