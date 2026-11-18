@@ -1093,7 +1093,7 @@
     "imageForGroupList_many": "{{groupNames}} · {{formattedVariantCount}} variantes",
     "sameImageForGroupCount_many": "Même image pour {{formattedCount}} groupes",
     "realPublicationPending": "La publication est toujours en cours. Reprenez la demande initiale pour vérifier son état.",
-    "realPublicationProgress": "Publication en cours. Cela peut prendre jusqu’à une minute ; cette page se met à jour une fois la publication terminée.",
+    "realPublicationProgress": "Publication en cours. Cela peut prendre une à deux minutes ; cette page se met à jour une fois la publication terminée.",
     "realPublicationNotice": "La publication met à jour votre boutique Shopify après validation et activation.",
     "realPublish": "Publier",
     "realPublishQuestion": "Publier cette configuration ? Une fois en ligne, les clients pourront personnaliser ce produit dans votre boutique. Les modifications suivantes resteront dans un brouillon jusqu’à leur publication.",

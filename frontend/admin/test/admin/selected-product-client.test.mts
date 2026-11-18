@@ -884,3 +884,87 @@ test('#468: a publish that keeps answering resend offers Retry at once, not a fo
   const stored = JSON.parse(f.storage.getItem(`insignia:selected-product-write:v1:${preferences.shop}:${product.id}`)!);
   assert.equal(stored.acceptedRevisionId, 'new-revision', 'its operation identity is kept for settlement');
 });
+
+/** An accepted publish the server left in progress (it stopped advancing or waits for Shopify) is
+ * advanced only by sending the same request again. The `progressAfter`th send settles it;
+ * `settleByWait` settles it on the server during that wait, without another send. */
+function inProgressPublication(progressAfter: number, settleByWait = Number.POSITIVE_INFINITY) {
+  const f = fixture();
+  let clock = 1_000_000,
+    saved = false,
+    accepted = false,
+    active = false;
+  const sent: { key: string | null; body: string }[] = [];
+  const waits: number[] = [];
+  const client = createSelectedProductClient({
+    productId: product.id,
+    storage: f.storage,
+    newKey: () => key,
+    now: () => clock,
+    wait: async (ms) => {
+      waits.push(ms);
+      clock += ms;
+      if (waits.length >= settleByWait) active = true;
+    },
+    request: async (path, init) => {
+      if (path.endsWith('preferences')) return preferences;
+      if (init?.method === 'PUT') {
+        saved = true;
+        return { kind: 'saved', draftVersion: '2' };
+      }
+      if (init) {
+        sent.push({ key: new Headers(init.headers).get('Idempotency-Key'), body: String(init.body) });
+        accepted = true;
+        if (sent.length >= progressAfter) active = true;
+        return { kind: 'accepted', state: active ? 'ACTIVE' : 'REMOTE_PENDING', revisionId: 'new-revision' };
+      }
+      const value = configView(saved ? '2' : '1', active ? 'ACTIVE' : 'DRAFT');
+      if (accepted)
+        Object.assign(value.config.publication, {
+          state: active ? 'ACTIVE' : 'REMOTE_PENDING',
+          revisionId: 'new-revision',
+          activeRevisionId: active ? 'new-revision' : null,
+          sourceDraftVersion: '2',
+          requestKey: `${key}:publish`,
+        });
+      return value;
+    },
+  });
+  return { client, sent, waits };
+}
+
+test('an accepted publish left in progress is re-sent automatically until it is published', async () => {
+  const f = inProgressPublication(3);
+  await f.client.load();
+  const view = await f.client.publish(setup);
+  assert.equal(view.config?.publication.state, 'ACTIVE');
+  assert.equal(f.client.hasPending(), false, 'settled without a manual Retry');
+  assert.equal(f.sent.length, 3);
+  assert.ok(
+    f.sent.every((entry) => entry.key === `${key}:publish` && entry.body === f.sent[0]?.body),
+    'the same request',
+  );
+  assert.deepEqual(f.waits, [5000, 5000], 'at the bounded cadence');
+});
+
+test('a publication that settles while the editor waits is not sent again', async () => {
+  const f = inProgressPublication(Number.POSITIVE_INFINITY, 2);
+  await f.client.load();
+  const view = await f.client.publish(setup);
+  assert.equal(view.config?.publication.state, 'ACTIVE');
+  assert.equal(f.client.hasPending(), false);
+  assert.equal(f.sent.length, 2, 'the read after the second wait settles it');
+});
+
+test('an accepted publish still in progress after the overall bound keeps custody and offers Retry', async () => {
+  const f = inProgressPublication(Number.POSITIVE_INFINITY);
+  await f.client.load();
+  await assert.rejects(f.client.publish(setup), /still in progress/);
+  assert.equal(f.client.hasPendingPublication(), true, 'Retry continues the original request');
+  assert.equal(
+    f.waits.reduce((sum, ms) => sum + ms, 0),
+    5 * 60_000,
+    'about five minutes',
+  );
+  assert.equal(f.sent.length, 61);
+});

@@ -1057,7 +1057,7 @@
     },
     "checkAppearanceOnView": "Check {{appearanceName}} on {{viewName}}.",
     "realPublicationPending": "Publication is still processing. Continue the original request to check its status.",
-    "realPublicationProgress": "Publishing. This can take up to a minute; this page updates when it finishes.",
+    "realPublicationProgress": "Publishing. This can take a minute or two; this page updates when it finishes.",
     "realPublicationNotice": "Publishing updates your Shopify store after validation and activation complete.",
     "realPublish": "Publish",
     "realPublishQuestion": "Publish this setup? Shoppers will be able to customize this product on your store once it is live. Later edits stay in a draft until published.",

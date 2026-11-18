@@ -1057,7 +1057,7 @@
     },
     "checkAppearanceOnView": "Prüfen Sie {{appearanceName}} in der Ansicht {{viewName}}.",
     "realPublicationPending": "Die Veröffentlichung wird noch verarbeitet. Setzen Sie die ursprüngliche Anfrage fort, um den Status zu prüfen.",
-    "realPublicationProgress": "Wird veröffentlicht. Das kann bis zu einer Minute dauern; diese Seite wird aktualisiert, sobald es abgeschlossen ist.",
+    "realPublicationProgress": "Wird veröffentlicht. Das kann ein bis zwei Minuten dauern; diese Seite wird aktualisiert, sobald es abgeschlossen ist.",
     "realPublicationNotice": "Nach Prüfung und Aktivierung aktualisiert die Veröffentlichung Ihren Shopify-Shop.",
     "realPublish": "Veröffentlichen",
     "realPublishQuestion": "Diese Einrichtung veröffentlichen? Sobald sie live ist, kann die Kundschaft dieses Produkt in Ihrem Shop anpassen. Spätere Änderungen bleiben bis zur Veröffentlichung im Entwurf.",

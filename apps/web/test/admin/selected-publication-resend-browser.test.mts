@@ -3,7 +3,7 @@ import { type TestContext, test } from 'node:test';
 import { PUBLICATION_RESEND_VALIDITY_MS, PUBLICATION_STEP_MARGIN_MS } from '../../src/server/merchant-config.ts';
 import { fixture, storedIntent } from './support/selected-browser.mts';
 
-const progress = 'Publishing. This can take up to a minute; this page updates when it finishes.';
+const progress = 'Publishing. This can take a minute or two; this page updates when it finishes.';
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const tokenExpiry = (authorization: string | undefined) => {
   const payload = authorization?.split('.')[1];

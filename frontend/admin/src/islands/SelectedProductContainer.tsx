@@ -21,7 +21,12 @@ import {
 import { launchCustomerPreview } from '../../examples/admin/support/placement-customer-preview.mts';
 import type { PlacementPublicationIssue } from './selected-product-publication';
 import { PlacementEditor, type ProductEditorAdapter, type ProductPublicationResult } from './SelectedProductEditor';
-import { createSelectedProductClient, SelectedProductPublicationBlocked, SelectedProductReviewChanged } from './selected-product-client';
+import {
+  createSelectedProductClient,
+  SelectedProductPublicationBlocked,
+  SelectedProductPublicationInProgress,
+  SelectedProductReviewChanged,
+} from './selected-product-client';
 import { selectedProductFromConfig, UnsupportedHistoricalPricingError } from './selected-product-view';
 import { LegacyVariantPhotoError } from './legacy-variant-photos';
 import {
@@ -568,6 +573,15 @@ function SelectedProductContainer({ productId }: { productId: string }) {
                 const product = await observe(error.view);
                 setRemote('conflict');
                 return { status: 'changed', product };
+              }
+              if (
+                client.current === owned &&
+                owned.hasPendingPublication() &&
+                error instanceof SelectedProductPublicationInProgress
+              ) {
+                // The server answered and still carries it; the editor stopped continuing it: offer Retry.
+                setRemote('pending');
+                return { status: 'pending' };
               }
               if (client.current === owned && owned.hasPendingPublication() && isUnansweredRequest(error)) {
                 // No answer arrived (deadline or lost response): the request may still be publishing.

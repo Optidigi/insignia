@@ -392,7 +392,7 @@ test('the publish confirmation action stays disabled while its publication is in
   );
   assert.equal(await action.evaluate((button) => button.hasAttribute('disabled')), true, 'in flight');
   answer?.();
-  await f.page.getByText('Publishing. This can take up to a minute', { exact: false }).first().waitFor();
+  await f.page.getByText('Publishing. This can take a minute or two', { exact: false }).first().waitFor();
   assert.equal(await action.evaluate((button) => button.hasAttribute('disabled')), true, 'pending');
   assert.equal(await action.evaluate((button) => button.hasAttribute('loading')), true, 'pending');
 });
