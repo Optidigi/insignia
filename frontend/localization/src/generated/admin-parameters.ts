@@ -1566,6 +1566,7 @@ export const adminParameterContracts = {
   'home:loading.products': {},
   'home:loading.productSetup': {},
   'home:notice.planRestriction.action': {},
+  'home:notice.planRestriction.choosePlan': {},
   'home:notice.planRestriction.description': {},
   'home:notice.planRestriction.heading': {},
   'home:orders.customizedProduct': {},

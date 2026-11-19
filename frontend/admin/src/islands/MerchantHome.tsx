@@ -855,7 +855,14 @@ export default function MerchantHome({
           <s-banner heading={t('home:notice.planRestriction.heading')} tone="warning">
             <s-stack gap="base">
               <s-paragraph>{t('home:notice.planRestriction.description')}</s-paragraph>
-              <s-link href="/admin/settings/billing">{t('home:notice.planRestriction.action')}</s-link>
+              <s-stack direction="inline" gap="base" alignItems="center">
+                {model.notice.planSelectionUrl && (
+                  <s-button variant="primary" href={model.notice.planSelectionUrl} target="_top">
+                    {t('home:notice.planRestriction.choosePlan')}
+                  </s-button>
+                )}
+                <s-link href="/admin/settings/billing">{t('home:notice.planRestriction.action')}</s-link>
+              </s-stack>
             </s-stack>
           </s-banner>
         )}

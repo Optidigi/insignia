@@ -180,6 +180,7 @@
   },
   "notice": {
     "planRestriction": {
+      "choosePlan": "Scegli un piano",
       "heading": "Controlla il tuo piano",
       "description": "Controlla la fatturazione prima di iniziare a configurare un nuovo prodotto.",
       "action": "Visualizza la fatturazione"

@@ -49,6 +49,7 @@ function MerchantHomeContainer() {
     orders.state === 'ready' && orders.items.length > 0,
   );
   const [restrictedPlan, setRestrictedPlan] = useState(false);
+  const [planSelectionUrl, setPlanSelectionUrl] = useState<string | null>(null);
   const [sessionLost, setSessionLost] = useState(false);
   const [statistics, setStatistics] = useState<HomeStatistics | undefined>({ state: 'loading' });
   const [guidance, dispatchGuidance] = useReducer(homeGuidanceReducer, undefined, initialHomeGuidanceState);
@@ -189,6 +190,9 @@ function MerchantHomeContainer() {
         // Managed pricing: a store definitively without a plan goes to Shopify's plan selection once per
         // session. The plan banner stays as the fallback if the navigation is blocked or the merchant returns.
         const planSelection = planSelectionTarget(value);
+        // Where the browser denies storage (third-party cookies blocked) the automatic prompt cannot be
+        // limited to once per session, so the banner offers plan selection directly instead.
+        setPlanSelectionUrl(planSelection);
         if (planSelection && claimPlanSelectionPrompt(() => window.sessionStorage)) window.open(planSelection, '_top');
       } catch {
         /* A failed observation never implies an inactive plan. Billing owns recovery. */
@@ -283,7 +287,14 @@ function MerchantHomeContainer() {
           ...(setup
             ? { setup: { ...setup, initiallyCollapsed: orders.state === 'ready' && orders.items.length > 0 } }
             : {}),
-          ...(restrictedPlan ? { notice: { kind: 'plan-restriction' as const } } : {}),
+          ...(restrictedPlan
+            ? {
+                notice: {
+                  kind: 'plan-restriction' as const,
+                  ...(planSelectionUrl ? { planSelectionUrl } : {}),
+                },
+              }
+            : {}),
         };
   async function createProduct() {
     const intents = (
