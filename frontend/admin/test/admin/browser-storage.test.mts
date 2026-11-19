@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import { localStore, memoryStorage, sessionStore } from '../../src/shared/browser-storage.ts';
 
 // Chrome denies Web Storage to a cross-site iframe when third-party cookies are blocked (incognito default):
 // the property getter itself throws. Shopify App Store requirement 1.1.1 needs the admin to keep working.
@@ -15,9 +16,8 @@ function denyingWindow() {
   return target;
 }
 
-test('blocked Web Storage falls back to one in-memory store per kind for the page', async () => {
+test('blocked Web Storage falls back to one in-memory store per kind for the page', () => {
   (globalThis as { window?: unknown }).window = denyingWindow();
-  const { sessionStore, localStore } = await import(`../../src/shared/browser-storage.ts?blocked`);
   const session = sessionStore();
   session.setItem('journal', 'pending');
   assert.equal(sessionStore().getItem('journal'), 'pending');
@@ -28,11 +28,9 @@ test('blocked Web Storage falls back to one in-memory store per kind for the pag
   assert.equal(session.length, 0);
 });
 
-test('available Web Storage is used directly and the probe leaves nothing behind', async () => {
-  const { memoryStorage } = await import(`../../src/shared/browser-storage.ts?memory`);
+test('available Web Storage is used directly and the probe leaves nothing behind', () => {
   const real = memoryStorage();
   (globalThis as { window?: unknown }).window = { sessionStorage: real, localStorage: memoryStorage() };
-  const { sessionStore } = await import(`../../src/shared/browser-storage.ts?available`);
   assert.equal(sessionStore(), real);
   assert.equal(real.length, 0);
 });
