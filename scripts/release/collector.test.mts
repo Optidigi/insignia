@@ -352,3 +352,23 @@ test('v2 retains stale observation/future module fences and rechecks expiry afte
     }
   }
 });
+
+test('a reviewed optional grant left from an earlier version is accepted; an unreviewed extra grant stops', async () => {
+  for (const [extra, expected] of [
+    ['read_all_orders', 'TRUSTED_RELEASE_COLLECT_APPEND_ACK'],
+    ['write_orders', 'TRUSTED_RELEASE_COLLECT_STOPPED'],
+  ] as const) {
+    const f = await fixture();
+    try {
+      const original = f.ports.readInstallation;
+      f.ports.readInstallation = async (token: string) => {
+        const value = object(await original(token));
+        return { ...value, grants: [...array(value.grants), extra] };
+      };
+      assert.equal((await collectFreshTrustedRelease(f.config, f.ports)).classification, expected, extra);
+      assert.equal(f.appends, expected === 'TRUSTED_RELEASE_COLLECT_APPEND_ACK' ? 1 : 0);
+    } finally {
+      await f.close();
+    }
+  }
+});
