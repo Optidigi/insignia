@@ -8,12 +8,7 @@
       "topic": "refunds/create",
       "api_version": "2026-07",
       "uri": "https://app.insigniacustomizer.com/api/webhooks/shopify",
-      "include_fields": [
-        "id",
-        "admin_graphql_api_id",
-        "order_id",
-        "created_at"
-      ]
+      "include_fields": ["id", "admin_graphql_api_id", "order_id", "created_at"]
     },
     "target": "",
     "specification": {
@@ -36,10 +31,7 @@
       "topic": "app/uninstalled",
       "api_version": "2026-07",
       "uri": "https://app.insigniacustomizer.com/api/webhooks/shopify",
-      "include_fields": [
-        "id",
-        "myshopify_domain"
-      ]
+      "include_fields": ["id", "myshopify_domain"]
     },
     "target": "",
     "specification": {
@@ -62,11 +54,7 @@
       "topic": "orders/updated",
       "api_version": "2026-07",
       "uri": "https://app.insigniacustomizer.com/api/webhooks/shopify",
-      "include_fields": [
-        "id",
-        "admin_graphql_api_id",
-        "updated_at"
-      ]
+      "include_fields": ["id", "admin_graphql_api_id", "updated_at"]
     },
     "target": "",
     "specification": {
@@ -87,9 +75,7 @@
     "type": "app_access",
     "config": {
       "scopes": "read_markets,read_orders,read_publications,write_app_proxy,write_cart_transforms,write_products,write_validations",
-      "optional_scopes": [
-        "read_product_listings"
-      ],
+      "optional_scopes": ["read_product_listings"],
       "redirect_url_allowlist": [],
       "use_legacy_install_flow": false
     },
@@ -177,11 +163,7 @@
       "topic": "orders/paid",
       "api_version": "2026-07",
       "uri": "https://app.insigniacustomizer.com/api/webhooks/shopify",
-      "include_fields": [
-        "id",
-        "admin_graphql_api_id",
-        "updated_at"
-      ]
+      "include_fields": ["id", "admin_graphql_api_id", "updated_at"]
     },
     "target": "",
     "specification": {
@@ -204,11 +186,7 @@
       "topic": "orders/create",
       "api_version": "2026-07",
       "uri": "https://app.insigniacustomizer.com/api/webhooks/shopify",
-      "include_fields": [
-        "id",
-        "admin_graphql_api_id",
-        "updated_at"
-      ]
+      "include_fields": ["id", "admin_graphql_api_id", "updated_at"]
     },
     "target": "",
     "specification": {
@@ -361,13 +339,9 @@
         }
       ],
       "module_metadata": {
-        "standard_modules": [
-          "shopify_function_v2"
-        ],
+        "standard_modules": ["shopify_function_v2"],
         "sdks": [],
-        "processed_by": [
-          "walrus#0.23.3"
-        ],
+        "processed_by": ["walrus#0.23.3"],
         "languages": [],
         "module_wasm_size_bytes": 183604,
         "module_compiled_size_bytes": 513416
@@ -407,13 +381,9 @@
         }
       ],
       "module_metadata": {
-        "standard_modules": [
-          "shopify_function_v2"
-        ],
+        "standard_modules": ["shopify_function_v2"],
         "sdks": [],
-        "processed_by": [
-          "walrus#0.23.3"
-        ],
+        "processed_by": ["walrus#0.23.3"],
         "languages": [],
         "module_wasm_size_bytes": 181608,
         "module_compiled_size_bytes": 499784
