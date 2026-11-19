@@ -166,7 +166,7 @@ test('production compose keeps the live identities, custody paths and service bo
     assert.deepEqual(Object.keys(object(web.networks)).sort(), ['private', 'proxy']);
     const labels = object(web.labels);
     assert.equal(labels['traefik.enable'], 'true');
-    assert.equal(labels['traefik.http.routers.insignia-canonical-m5-019r.rule'], 'Host(`app.insigniacustomizer.com`)');
+    assert.equal(labels['traefik.http.routers.insignia-web.rule'], 'Host(`app.insigniacustomizer.com`)');
     assert.equal(
       labels['traefik.http.routers.insignia-uninstall-private.rule'],
       'Host(`app.insigniacustomizer.com`) && PathPrefix(`/api/webhooks/uninstall/`)',
@@ -182,7 +182,7 @@ test('production compose keeps the live identities, custody paths and service bo
     const routers = Object.keys(labels)
       .map((key) => /^traefik\.http\.routers\.([^.]+)\.rule$/.exec(key)?.[1])
       .filter((name): name is string => name !== undefined);
-    assert.deepEqual(routers.sort(), ['insignia-canonical-m5-019r', 'insignia-uninstall-private']);
+    assert.deepEqual(routers.sort(), ['insignia-uninstall-private', 'insignia-web']);
     for (const router of routers)
       assert.equal(labels[`traefik.http.routers.${router}.middlewares`], 'insignia-cloudflare-origin', router);
     assert.ok(!JSON.stringify(labels).includes('optidigi'));

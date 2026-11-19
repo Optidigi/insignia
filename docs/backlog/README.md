@@ -34,3 +34,25 @@ Added 18 Nov 2026. Found by the agent during the review-readiness walkthroughs (
 - The measure tool only appears when the placement uses "Shared image".
 - A product shows "Not offered" until at least one method has a price, without saying why.
 - The `chooseMethods` URL parameter is left over after #592 removed method assignment; remove it and its handling.
+
+## Server refactor input (Insignia)
+
+Added 19 Nov 2026. The owner plans a server-wide refactor of app and database naming after the App Store review. Insignia's
+leftovers to fold into it (each needs a restart, so they were not done during review):
+
+- **Old database alias `insignia-rewrite-m5-019-database`.** Pinned in `deployment/release-verifier/artifact.mts` (startup
+  file host), `scripts/release/collector-native.mts`, their tests (`scripts/ci/release-verifier-artifact.test.mts`,
+  `scripts/release/owner-boundaries.test.mts`, `scripts/runtime/production-compose.test.mts`) and the verifier README; the
+  live `secrets/verifier-startup.json` uses it. Change: code and tests to the new host name, new verifier image, startup file,
+  then remove the alias from `deployment/production/compose.yaml`. Removing an alias recreates the database container
+  (about one minute offline with its clients). The owner's `/srv/ops/infra/scripts/backup-server.sh` lists the alias only
+  in its Insignia skip rule.
+- **Database and role name `insignia_rewrite`** (`POSTGRES_DB`/`POSTGRES_USER`, every connection string, the verifier and
+  collector pins). Renaming needs an outage and every URL changed; do it only as part of the refactor.
+- **Fixed address `10.0.7.250`**: the host artwork inspector (`/srv/data/saas/insignia/artwork-inspector/inspection.env`)
+  reaches the database by IP; keep a fixed address or give the inspector another route.
+- **Names to choose with the refactor's convention:** Compose project and containers `insignia-*`, networks
+  `insignia_private`/`insignia_*-egress`, stack `/srv/saas/infra/stacks/insignia`, data `/srv/data/saas/insignia` (LUKS
+  mount, crypttab and fstab: root), bucket `insignia-production`, and the planned staging stack (working name
+  `insignia-staging`). The repository folder `deployment/m5-runtime` and the retained `deployment/m5-019*` records are
+  historical names only.
