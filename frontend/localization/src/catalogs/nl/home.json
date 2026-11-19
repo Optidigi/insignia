@@ -179,6 +179,7 @@
   },
   "notice": {
     "planRestriction": {
+      "choosePlan": "Kies een abonnement",
       "heading": "Controleer je abonnement",
       "description": "Bekijk je facturering voordat je een nieuw product instelt.",
       "action": "Facturering bekijken"

@@ -7,6 +7,7 @@ import { useAdminPageReady } from '../shared/admin-page-ready.js';
 import { authenticatedJson, isShopifyBusy } from '../shared/admin-request.js';
 import { createMethodCatalogTransport, methodConfigurationForPicker } from './method-catalog-transport';
 import SelectedMethods from './SelectedMethods';
+import { sessionStore } from '../shared/browser-storage';
 
 const productSchema = z.object({
   id: z.string().regex(/^gid:\/\/shopify\/Product\/[1-9][0-9]*$/),
@@ -66,7 +67,7 @@ function MethodsContainer() {
         shop: catalog.shop,
         authority: catalog.authority,
         currency: catalog.currency,
-        storage: sessionStorage,
+        storage: sessionStore(),
       });
       if (catalog.canEdit) await transport.resume();
       // A dispatched write keeps its journal/receipt custody. Route retirement cancels only reads.
@@ -79,7 +80,7 @@ function MethodsContainer() {
         shop: catalog.shop,
         authority: catalog.authority,
         currency: catalog.currency,
-        storage: sessionStorage,
+        storage: sessionStore(),
       });
       if (catalog.methods.some((method) => method.configuration.pricing === 'fixed' && method.currency === undefined))
         throw new Error('Saved Method price currency unavailable');

@@ -179,6 +179,7 @@
   },
   "notice": {
     "planRestriction": {
+      "choosePlan": "Tarif auswählen",
       "heading": "Tarif prüfen",
       "description": "Prüfen Sie die Abrechnung, bevor Sie eine neue Produkteinrichtung starten.",
       "action": "Abrechnung ansehen"

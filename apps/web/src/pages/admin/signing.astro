@@ -17,7 +17,9 @@ const csp =
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 Astro.response.headers.set('Content-Security-Policy', csp);
 Astro.response.headers.set('Referrer-Policy', 'no-referrer');
-if (!available || !apiKey || !/^[A-Za-z0-9_-]{1,128}$/.test(apiKey)) return Astro.rewrite('/admin/unavailable');
+// Operator-only page: where this deployment has no signing owner it does not exist for merchants or reviewers.
+if (!available) return new Response(null, { status: 404, headers: { 'Cache-Control': 'private, no-store' } });
+if (!apiKey || !/^[A-Za-z0-9_-]{1,128}$/.test(apiKey)) return Astro.rewrite('/admin/unavailable');
 ---
 <AdminLayout title="Signing setup" apiKey={apiKey}>
 <SigningOperator client:polaris />

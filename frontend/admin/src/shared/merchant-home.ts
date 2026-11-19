@@ -126,6 +126,8 @@ export interface HomeSetup {
 
 export interface HomeNotice {
   kind: 'plan-restriction';
+  /** Shopify managed-pricing plan selection, when the store definitively has no plan. */
+  planSelectionUrl?: string;
 }
 
 export type MerchantHomeModel =

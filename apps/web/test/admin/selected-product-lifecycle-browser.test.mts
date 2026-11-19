@@ -280,7 +280,9 @@ test('unknown save results retain immutable custody across malformed success and
   );
 });
 
-test('session storage denial fails closed before selected authoring dispatch', { timeout: 20000 }, async (t) => {
+// App Store requirement 1.1.1: Chrome denies Web Storage to the embedded admin when third-party cookies are
+// blocked. The editor then keeps its write custody in page memory instead of refusing to load.
+test('session storage denial still opens selected authoring with page-only custody', { timeout: 20000 }, async (t) => {
   const f = await fixture(t);
   await f.page.addInitScript(() =>
     Object.defineProperty(window, 'sessionStorage', {
@@ -290,9 +292,8 @@ test('session storage denial fails closed before selected authoring dispatch', {
     }),
   );
   await f.page.goto(`${f.base}/admin/products/111/config?locale=en`);
-  await f.page.locator('s-page[heading="Product could not be loaded"]').waitFor({ state: 'attached' });
-  await f.page.getByText('Try reloading the page.', { exact: true }).waitFor();
-  assert.equal(await f.page.locator('.placement-editor').count(), 0);
+  await f.page.locator('.placement-editor').first().waitFor();
+  assert.equal(await f.page.locator('s-page[heading="Product could not be loaded"]').count(), 0);
   assert.equal(f.mutations.length, 0);
 });
 

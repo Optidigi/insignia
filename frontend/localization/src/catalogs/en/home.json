@@ -179,6 +179,7 @@
   },
   "notice": {
     "planRestriction": {
+      "choosePlan": "Choose a plan",
       "heading": "Review your plan",
       "description": "Review billing before starting a new product setup.",
       "action": "View billing"

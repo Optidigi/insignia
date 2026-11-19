@@ -180,6 +180,7 @@
   },
   "notice": {
     "planRestriction": {
+      "choosePlan": "Choisir un forfait",
       "heading": "Vérifiez votre forfait",
       "description": "Vérifiez la facturation avant de commencer la configuration d’un nouveau produit.",
       "action": "Afficher la facturation"

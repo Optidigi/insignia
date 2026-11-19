@@ -1530,6 +1530,7 @@ export interface AdminMessageTable {
   'home:loading.products': object;
   'home:loading.productSetup': object;
   'home:notice.planRestriction.action': object;
+  'home:notice.planRestriction.choosePlan': object;
   'home:notice.planRestriction.description': object;
   'home:notice.planRestriction.heading': object;
   'home:orders.customizedProduct': object;

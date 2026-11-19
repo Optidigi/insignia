@@ -180,6 +180,7 @@
   },
   "notice": {
     "planRestriction": {
+      "choosePlan": "Elegir un plan",
       "heading": "Revisa tu plan",
       "description": "Revisa la facturación antes de empezar a configurar otro producto.",
       "action": "Ver facturación"
