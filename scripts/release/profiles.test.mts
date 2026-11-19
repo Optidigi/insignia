@@ -100,6 +100,8 @@ import reviewCartBinding from '../../deployment/m5-runtime/native-review-cart-re
 };
 import reviewNavModules from '../../deployment/m5-runtime/native-review-nav-module-baseline.json' with { type: 'json' };
 import reviewNavBinding from '../../deployment/m5-runtime/native-review-nav-release-binding.json' with { type: 'json' };
+import scope60Modules from '../../deployment/m5-runtime/native-scope60-module-baseline.json' with { type: 'json' };
+import scope60Binding from '../../deployment/m5-runtime/native-scope60-release-binding.json' with { type: 'json' };
 import scopesModules from '../../deployment/m5-runtime/native-scopes-module-baseline.json' with { type: 'json' };
 import scopesBinding from '../../deployment/m5-runtime/native-scopes-release-binding.json' with { type: 'json' };
 import selectedOnlyModules from '../../deployment/m5-runtime/native-selected-fixed-module-baseline.json' with {
@@ -456,6 +458,13 @@ test('functions renew candidate preserves identities and changes only theme and 
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
   }
 });
+test('scope60 candidate is module-identical to the no-all-orders release', () => {
+  assert.equal(scope60Binding.moduleHash, noAllOrdersBinding.moduleHash);
+  assert.equal(scope60Binding.versionId, '1257303638017');
+  assert.deepEqual(new Set(scope60Binding.versionIds), new Set([...noAllOrdersBinding.versionIds, '1257303638017']));
+  assert.deepEqual(scope60Modules, noAllOrdersModules);
+});
+
 test('no-all-orders release changes only the required scopes', () => {
   assert.equal(noAllOrdersModules.length, 14);
   assert.equal(noAllOrdersBinding.moduleHash, 'bc9f901c8317219b603b11655fafdcfe63f9c7d698de2d8245b240519cb5199e');

@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { resolveRuntimeReleaseProfile } from '../../src/runtime-release-profile.js';
 
 describe('closed server release targets', () => {
+  it('binds the CLI-created scope release with uploaded theme files to the unchanged Function source', () => {
+    const profile = resolveRuntimeReleaseProfile('native-scope60-9b677033');
+    expect(profile.activeVersionRef).toBe('1257303638017');
+    expect(profile.functionsSourceCommit).toBe('aa3b6166eb2b4679f27e1b7f128d914137ba8412');
+    expect(Object.isFrozen(profile)).toBe(true);
+  });
   it('binds the scope-only release without read_all_orders to the unchanged Function source', () => {
     const profile = resolveRuntimeReleaseProfile('native-noallorders-fc8f9e08');
     expect(profile.activeVersionRef).toBe('1248762724353');
