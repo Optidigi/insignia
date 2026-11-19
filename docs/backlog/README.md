@@ -23,3 +23,14 @@ sits on main goes into the next production deploy without review.
 **Open Dependabot PRs on 18 Nov (left open; no dependency changes until the app is approved):**
 #578 actions/download-artifact 8, #579 actions/checkout 7 (CI fails), #580 actions/setup-node 7, #581 cargo minor/patch group,
 #582 base64 0.23, #583 npm minor/patch group of 19 (CI fails), #584 preact 11 (CI fails), #585 i18next 27.
+
+## Admin rough edges from the fresh-store walkthroughs
+
+Added 18 Nov 2026. Found by the agent during the review-readiness walkthroughs (`insignia-review-20261118-1522`,
+`insignia-final-20261118-1840`); none blocks review. Owner review before any is picked up.
+
+- Archived Shopify products still show as "Published" in the Insignia product list.
+- Two products with the same title look identical in the product picker (no handle, image or status to tell them apart).
+- The measure tool only appears when the placement uses "Shared image".
+- A product shows "Not offered" until at least one method has a price, without saying why.
+- The `chooseMethods` URL parameter is left over after #592 removed method assignment; remove it and its handling.
