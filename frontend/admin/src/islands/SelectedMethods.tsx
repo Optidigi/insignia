@@ -31,6 +31,7 @@ import AdminSaveBar from '../components/AdminSaveBar.tsx';
 import { DecimalField } from '../components/DecimalField.tsx';
 import { useAdminLocale } from '../shared/admin-i18n.js';
 import { isShopifyBusy } from '../shared/admin-request.ts';
+import { withEmbeddedContext } from '../shared/embedded-context.ts';
 import { leavePage } from '../shared/leave-page.ts';
 
 const indexPath = '/admin/methods';
@@ -157,7 +158,7 @@ export default function SelectedMethods({
     setTranslationLocale('');
     if (push) {
       historyPosition.current++;
-      history.pushState({ methodPosition: historyPosition.current }, '', path);
+      history.pushState({ methodPosition: historyPosition.current }, '', withEmbeddedContext(path, location.href));
     }
     const id = path.startsWith(`${indexPath}/`) ? path.slice(indexPath.length + 1) : '';
     const nextEditor =
@@ -208,7 +209,9 @@ export default function SelectedMethods({
     history.replaceState(
       { methodPosition: 0 },
       '',
-      missing || location.pathname === '/admin/settings/methods' ? indexPath : location.href,
+      missing || location.pathname === '/admin/settings/methods'
+        ? withEmbeddedContext(indexPath, location.href)
+        : location.href,
     );
     const beforeUnload = (event: BeforeUnloadEvent) => {
       if (dirtyRef.current) event.preventDefault();
@@ -475,15 +478,15 @@ export default function SelectedMethods({
           </s-link>
         ) : (
           methods.length > 0 && (
-              <s-button
-                slot="primary-action"
-                variant="primary"
-                disabled={readOnly || pending || methods.length >= methodPreviewLimit}
-                onClick={() => navigate(`${indexPath}/new`)}
-              >
-                {t('methods:workflow.actions.create')}
-              </s-button>
-            )
+            <s-button
+              slot="primary-action"
+              variant="primary"
+              disabled={readOnly || pending || methods.length >= methodPreviewLimit}
+              onClick={() => navigate(`${indexPath}/new`)}
+            >
+              {t('methods:workflow.actions.create')}
+            </s-button>
+          )
         )}
         {editor && current && (
           <s-button
