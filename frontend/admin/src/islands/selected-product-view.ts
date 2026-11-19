@@ -106,9 +106,11 @@ function projectConfig(view: ConfigView): PlacementProduct {
     const actual = variantPhotos(catalog).variantPhotos;
     const groupingOptionIds =
       saved.variantPhotos?.groupingOptionIds.filter((id) => actual?.options.some((option) => option.id === id)) ?? [];
+    const remapped =
+      actual && saved.variantPhotos ? renamedValueAssignments(saved.variantPhotos, actual.variants) : [];
     const retained =
       actual && saved.variantPhotos
-        ? saved.variantPhotos.assignments.filter(
+        ? remapped.filter(
             (assignment) =>
               variantPhotoSetupSchema.safeParse({ ...actual, groupingOptionIds, assignments: [assignment] }).success,
           )
@@ -261,6 +263,52 @@ function projectConfig(view: ConfigView): PlacementProduct {
       ? { variantPhotos: legacyVariantPhotos({ geometry, catalog, views, images }) }
       : variantPhotos(catalog)),
   });
+}
+
+type SavedVariantPhotos = NonNullable<PlacementProduct['variantPhotos']>;
+
+/**
+ * Shopify keeps variant IDs when a merchant renames an option value (Zwart → Black), but the saved
+ * assignment keys carry the old value text (#573). Re-key each assignment through its saved variants:
+ * when all of them still exist and now share one current value per keyed option, the photo follows the
+ * rename (and a swap of two names). Anything ambiguous keeps the old key and is dropped as before.
+ */
+function renamedValueAssignments(
+  saved: SavedVariantPhotos,
+  currentVariants: readonly { id: string; optionValues: Record<string, string> }[],
+): SavedVariantPhotos['assignments'] {
+  const current = new Map(currentVariants.map((variant) => [variant.id, variant.optionValues]));
+  const next = saved.assignments.map((assignment) => {
+    let key: [string, string][];
+    try {
+      key = JSON.parse(assignment.groupKey) as [string, string][];
+    } catch {
+      return assignment;
+    }
+    if (!Array.isArray(key) || !key.length) return assignment;
+    const members = saved.variants.filter((variant) =>
+      key.every(([optionId, valueId]) => variant.optionValues[optionId] === valueId),
+    );
+    if (!members.length) return assignment;
+    const keys = new Set<string>();
+    for (const member of members) {
+      const values = current.get(member.id);
+      if (!values || key.some(([optionId]) => !values[optionId])) return assignment;
+      keys.add(JSON.stringify(key.map(([optionId]) => [optionId, values[optionId]])));
+    }
+    return keys.size === 1 ? { ...assignment, groupKey: [...keys][0]! } : assignment;
+  });
+  // Two old groups collapsing onto one current value cannot both keep their photo; keep neither rename.
+  const seen = new Map<string, number>();
+  for (const assignment of next) {
+    const slot = JSON.stringify([assignment.groupKey, assignment.viewId]);
+    seen.set(slot, (seen.get(slot) ?? 0) + 1);
+  }
+  return next.map((assignment, index) =>
+    (seen.get(JSON.stringify([assignment.groupKey, assignment.viewId])) ?? 0) > 1
+      ? saved.assignments[index]!
+      : assignment,
+  );
 }
 
 function variantPhotos(catalog: ConfigView['product']) {
