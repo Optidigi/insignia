@@ -9,11 +9,12 @@ import { createSelectedProductCopyPorts } from './selected-product-copy.ts';
 import { selectedProductFromConfig } from './selected-product-view.ts';
 import '../../examples/admin/support/placement-setup-copy-dialog.css';
 import '../../examples/admin/support/placement-setup-copy-review.css';
+import { sessionStore } from '../shared/browser-storage';
 
 const productId = (value: unknown): value is string => typeof value === 'string' && /^gid:\/\/shopify\/Product\/[1-9][0-9]*$/.test(value);
 /** Real host bridge for the selected Products actions. Demo bridges are installed only by their own host. */
 export function installSelectedProductActions(): () => void {
-  const storage = window.sessionStorage;
+  const storage = sessionStore();
   const mount = document.createElement('div');
   mount.dataset.selectedProductActions = 'true';
   document.body.append(mount);

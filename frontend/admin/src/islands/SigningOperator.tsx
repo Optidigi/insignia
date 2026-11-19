@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { useAdminPageReady } from '../shared/admin-page-ready';
 import { authenticatedJson } from '../shared/admin-request';
 import { createSigningOperator } from './signing-operator';
+import { localStore } from '../shared/browser-storage';
 
 export default function SigningOperator() {
   const [, render] = useState(0);
@@ -12,8 +13,8 @@ export default function SigningOperator() {
     operator.current = createSigningOperator(
       authenticatedJson,
       {
-        getItem: (key) => localStorage.getItem(key),
-        setItem: (key, value) => localStorage.setItem(key, value),
+        getItem: (key) => localStore().getItem(key),
+        setItem: (key, value) => localStore().setItem(key, value),
       },
       () => {
         if (mounted.current) render((n) => n + 1);

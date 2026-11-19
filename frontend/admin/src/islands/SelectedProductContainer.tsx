@@ -46,6 +46,7 @@ import {
   isMerchantPublicationSettledFailure,
   publicationNotice,
 } from './publication-state';
+import { sessionStore } from '../shared/browser-storage';
 
 /** `rejected`: the server refused the write and nothing is pending, so the merchant fixes the edit and saves anew. */
 type Remote = 'idle' | 'pending' | 'failed' | 'conflict' | { kind: 'rejected'; rejection: ConfigRejection };
@@ -100,7 +101,7 @@ function SelectedProductContainer({ productId }: { productId: string }) {
     try {
       return typeof window === 'undefined'
         ? null
-        : createSelectedProductCopyPorts({ storage: sessionStorage, request: authorizedRequest });
+        : createSelectedProductCopyPorts({ storage: sessionStore(), request: authorizedRequest });
     } catch {
       return null;
     }
@@ -265,7 +266,7 @@ function SelectedProductContainer({ productId }: { productId: string }) {
       const observed: { current: ReturnType<typeof MerchantPreferencesViewSchema.parse> | null } = { current: null };
       const ownedClient = createSelectedProductClient({
         productId,
-        storage: sessionStorage,
+        storage: sessionStore(),
         onDenied: () => {
           if (version === requestVersion.current) denied();
         },
