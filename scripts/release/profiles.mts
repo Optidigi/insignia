@@ -96,6 +96,8 @@ import reviewCartCandidate from '../../deployment/m5-runtime/native-review-cart-
 };
 import reviewNavModules from '../../deployment/m5-runtime/native-review-nav-module-baseline.json' with { type: 'json' };
 import reviewNavBinding from '../../deployment/m5-runtime/native-review-nav-release-binding.json' with { type: 'json' };
+import scope60Modules from '../../deployment/m5-runtime/native-scope60-module-baseline.json' with { type: 'json' };
+import scope60Binding from '../../deployment/m5-runtime/native-scope60-release-binding.json' with { type: 'json' };
 import scopesModules from '../../deployment/m5-runtime/native-scopes-module-baseline.json' with { type: 'json' };
 import scopesBinding from '../../deployment/m5-runtime/native-scopes-release-binding.json' with { type: 'json' };
 import selectedOnlyModules from '../../deployment/m5-runtime/native-selected-fixed-module-baseline.json' with {
@@ -200,6 +202,16 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  // Same 14 modules as noallorders, created by CLI so the theme files are uploaded (the Dashboard version lacked them).
+  'native-scope60-9b677033': {
+    versionId: scope60Binding.versionId,
+    versionTag: scope60Binding.versionTag,
+    versionIds: scope60Binding.versionIds,
+    moduleHash: scope60Binding.moduleHash,
+    modules: scope60Modules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   // Same theme, Functions and every non-access module as batch; read_all_orders leaves the required scopes (App Store 3.2.1).
   'native-noallorders-fc8f9e08': {
     versionId: noAllOrdersBinding.versionId,
