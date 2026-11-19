@@ -313,3 +313,71 @@ test('a published geometry that references the featured identity still resolves 
     'the identity the saved geometry uses is kept, so a save still recognises its prior image',
   );
 });
+
+// #573: Shopify keeps variant IDs when a colour value is renamed; the photo must follow the variant.
+function renamedView(values: string[], variants: { id: string; colour: string }[]): ConfigView {
+  const current = view();
+  current.product.options = [{ id: 'colour', name: 'Colour', values }];
+  current.product.variants = variants.map((variant) => ({
+    id: variant.id,
+    title: variant.colour,
+    imageUrl: null,
+    selectedOptions: [{ name: 'Colour', value: variant.colour }],
+  }));
+  return current;
+}
+
+test('renaming a colour value in Shopify keeps its photo assignment and needs no review', () => {
+  const product = selectedProductFromConfig(
+    renamedView(
+      ['Navy', 'Red'],
+      [
+        { id: 'gid://shopify/ProductVariant/1', colour: 'Navy' },
+        { id: 'gid://shopify/ProductVariant/2', colour: 'Red' },
+      ],
+    ),
+  );
+  assert.deepEqual(product.variantPhotos?.assignments, [
+    { groupKey: '[["colour","Navy"]]', viewId: 'front', imageId: 'image_1' },
+    { groupKey: '[["colour","Red"]]', viewId: 'front', imageId: 'image_1' },
+  ]);
+  assert.equal(product.views[0]?.needsAlignmentReview, undefined);
+});
+
+test('swapping two colour names moves each photo with its variant', () => {
+  const twoImages = structuredClone(saved);
+  twoImages.variantPhotos!.assignments = [
+    { groupKey: '[["colour","Blue"]]', viewId: 'front', imageId: 'image_blue' },
+    { groupKey: '[["colour","Red"]]', viewId: 'front', imageId: 'image_red' },
+  ];
+  twoImages.images = [
+    image,
+    { ...image, id: 'image_blue', url: 'https://cdn.shopify.com/blue.jpg' },
+    { ...image, id: 'image_red', url: 'https://cdn.shopify.com/red.jpg' },
+  ];
+  const current = renamedView(
+    ['Red', 'Blue'],
+    [
+      { id: 'gid://shopify/ProductVariant/1', colour: 'Red' },
+      { id: 'gid://shopify/ProductVariant/2', colour: 'Blue' },
+    ],
+  );
+  current.config.draft = MerchantDraftSchema.parse({
+    ...current.config.draft,
+    selectedSetup: { version: 'selected-product-setup-v1', product: twoImages, methodBindings: {} },
+  });
+  const product = selectedProductFromConfig(current);
+  const byKey = Object.fromEntries((product.variantPhotos?.assignments ?? []).map((a) => [a.groupKey, a.imageId]));
+  assert.deepEqual(byKey, { '[["colour","Red"]]': 'image_blue', '[["colour","Blue"]]': 'image_red' });
+  assert.equal(product.views[0]?.needsAlignmentReview, undefined);
+});
+
+test('a colour whose variants were deleted still loses its photo and asks for review', () => {
+  const product = selectedProductFromConfig(
+    renamedView(['Navy'], [{ id: 'gid://shopify/ProductVariant/1', colour: 'Navy' }]),
+  );
+  assert.deepEqual(product.variantPhotos?.assignments, [
+    { groupKey: '[["colour","Navy"]]', viewId: 'front', imageId: 'image_1' },
+  ]);
+  assert.equal(product.views[0]?.needsAlignmentReview, true);
+});
