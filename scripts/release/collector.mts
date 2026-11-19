@@ -118,11 +118,12 @@ function installation(value: unknown, expected: CollectorBinding, profile: Profi
   assert.equal(value.appClientId, APP);
   array(value.grants);
   // Every required grant, nothing beyond the reviewed set; an optional grant may be absent
-  // (a store installed after it became optional never granted it).
+  // (a store installed after it became optional never granted it) or present beyond the profile
+  // (Shopify keeps read_all_orders on stores that granted it before a version stopped requiring it).
   const granted = new Set(value.grants);
   assert.equal(granted.size, value.grants.length);
   for (const grant of GRANTS) assert.ok(granted.has(grant) || OPTIONAL_GRANTS.includes(grant));
-  for (const grant of granted) assert.ok(GRANTS.includes(text(grant)));
+  for (const grant of granted) assert.ok(GRANTS.includes(text(grant)) || OPTIONAL_GRANTS.includes(text(grant)));
 }
 function managementOpening(value: unknown, profile: Profile): asserts value is ManagementOpening {
   const VERSION_IDS = profile.versionIds;
