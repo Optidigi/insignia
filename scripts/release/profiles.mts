@@ -9,6 +9,8 @@ import a11yQuantityBinding from '../../deployment/m5-runtime/native-a11y-quantit
 };
 import allOrdersModules from '../../deployment/m5-runtime/native-allorders-module-baseline.json' with { type: 'json' };
 import allOrdersBinding from '../../deployment/m5-runtime/native-allorders-release-binding.json' with { type: 'json' };
+import noAllOrdersModules from '../../deployment/m5-runtime/native-noallorders-module-baseline.json' with { type: 'json' };
+import noAllOrdersBinding from '../../deployment/m5-runtime/native-noallorders-release-binding.json' with { type: 'json' };
 import batchModules from '../../deployment/m5-runtime/native-batch-module-baseline.json' with { type: 'json' };
 import batchBinding from '../../deployment/m5-runtime/native-batch-release-binding.json' with { type: 'json' };
 import behaviorModules from '../../deployment/m5-runtime/native-behavior-module-baseline.json' with { type: 'json' };
@@ -194,6 +196,16 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  // Same theme, Functions and every non-access module as batch; read_all_orders leaves the required scopes (App Store 3.2.1).
+  'native-noallorders-fc8f9e08': {
+    versionId: noAllOrdersBinding.versionId,
+    versionTag: noAllOrdersBinding.versionTag,
+    versionIds: noAllOrdersBinding.versionIds,
+    moduleHash: noAllOrdersBinding.moduleHash,
+    modules: noAllOrdersModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   // Same Functions (incl. merchant-facing titles), non-theme modules, blocks, snippets and locales as names; theme assets change (PR 574).
   'native-batch-9b677033': {
     versionId: batchBinding.versionId,
