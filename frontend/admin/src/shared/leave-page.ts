@@ -1,3 +1,5 @@
+import { withEmbeddedContext } from './embedded-context.ts';
+
 type Bridge = { saveBar?: { hide(id: string): Promise<unknown> } };
 
 /**
@@ -25,5 +27,5 @@ export async function leavePage({
     // An unavailable host save bar cannot ask to stay either.
   }
   disarm();
-  location.assign(href);
+  location.assign(withEmbeddedContext(href, location.href));
 }

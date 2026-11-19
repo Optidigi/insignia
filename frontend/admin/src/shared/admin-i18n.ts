@@ -10,6 +10,7 @@ import { parseLanguagePreference, type SupportedLanguage } from '@insignia/ui-lo
 import { createPreactLocaleBindings } from '@insignia/ui-localization/preact';
 import { type ComponentType, h } from 'preact';
 import { useRef } from 'preact/hooks';
+import { withEmbeddedContext } from './embedded-context.ts';
 
 const controllerSlot: unique symbol = Symbol.for('insignia.admin.locale.controller.v1');
 const installedSlot: unique symbol = Symbol.for('insignia.admin.locale.installed.v1');
@@ -162,7 +163,7 @@ export function adminLocaleHref(href: string, document: Document, requestedLocal
     if (url.origin !== new URL(document.URL).origin || !url.pathname.startsWith('/admin/')) return href;
     if (!requestedLocale || requestedLocale === 'en') url.searchParams.delete('locale');
     else url.searchParams.set('locale', requestedLocale);
-    return `${url.pathname}${url.search}${url.hash}`;
+    return withEmbeddedContext(`${url.pathname}${url.search}${url.hash}`, document.URL);
   } catch {
     return href;
   }

@@ -1,6 +1,7 @@
 import { createElement } from 'preact';
 import { useEffect, useReducer, useRef, useState } from 'preact/hooks';
 import { useAdminLocale } from '../shared/admin-i18n.js';
+import { withEmbeddedContext } from '../shared/embedded-context.ts';
 import { initialLeaveGuardState, leaveGuardReducer } from '../shared/leave-guard-state.js';
 
 type Bridge = {
@@ -92,7 +93,7 @@ export default function AdminSaveBar({
         dispatch({ type: 'confirmed', request, allowed: true });
         pending.current = null;
         leaving.current = true;
-        if (destination) location.assign(destination);
+        if (destination) location.assign(withEmbeddedContext(destination, location.href));
       } else {
         await customElements.whenDefined('s-modal');
         if (!mounted.current || pending.current !== request) return;
@@ -195,7 +196,7 @@ export default function AdminSaveBar({
             modal.current?.hideOverlay();
             if (next) {
               leaving.current = true;
-              location.assign(next);
+              location.assign(withEmbeddedContext(next, location.href));
             }
           }}
         >
