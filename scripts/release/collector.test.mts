@@ -361,9 +361,9 @@ test('a reviewed optional grant left from an earlier version is accepted; an unr
     const f = await fixture();
     try {
       const original = f.ports.readInstallation;
-      f.ports.readInstallation = async (token: string) => {
-        const value = object(await original(token));
-        return { ...value, grants: [...array(value.grants), extra] };
+      f.ports.readInstallation = async () => {
+        const value = await original();
+        return { ...value, grants: [...value.grants, extra] };
       };
       assert.equal((await collectFreshTrustedRelease(f.config, f.ports)).classification, expected, extra);
       assert.equal(f.appends, expected === 'TRUSTED_RELEASE_COLLECT_APPEND_ACK' ? 1 : 0);
