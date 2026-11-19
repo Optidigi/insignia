@@ -362,8 +362,9 @@ test('swapping two colour names moves each photo with its variant', () => {
       { id: 'gid://shopify/ProductVariant/2', colour: 'Blue' },
     ],
   );
-  current.config.draft = MerchantDraftSchema.parse({
-    ...current.config.draft,
+  const config = current.config!;
+  config.draft = MerchantDraftSchema.parse({
+    ...(config.draft as object),
     selectedSetup: { version: 'selected-product-setup-v1', product: twoImages, methodBindings: {} },
   });
   const product = selectedProductFromConfig(current);
