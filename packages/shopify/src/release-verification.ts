@@ -20,6 +20,7 @@ export function parseReleaseVerificationRequest(
   expectedVersion: string = resolveRuntimeReleaseProfile().activeVersionRef,
 ): ReleaseVerificationRequest {
   const reviewedVersions: readonly string[] = [
+    'native-noallorders-fc8f9e08',
     'native-batch-9b677033',
     'native-names-b8616d2a',
     'native-reinstall-eb2ce476',

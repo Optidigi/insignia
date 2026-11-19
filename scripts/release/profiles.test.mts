@@ -68,6 +68,12 @@ import merchantBatchBinding from '../../deployment/m5-runtime/native-merchant-ba
 };
 import namesModules from '../../deployment/m5-runtime/native-names-module-baseline.json' with { type: 'json' };
 import namesBinding from '../../deployment/m5-runtime/native-names-release-binding.json' with { type: 'json' };
+import noAllOrdersModules from '../../deployment/m5-runtime/native-noallorders-module-baseline.json' with {
+  type: 'json',
+};
+import noAllOrdersBinding from '../../deployment/m5-runtime/native-noallorders-release-binding.json' with {
+  type: 'json',
+};
 import parityModules from '../../deployment/m5-runtime/native-parity-module-baseline.json' with { type: 'json' };
 import parityBinding from '../../deployment/m5-runtime/native-parity-release-binding.json' with { type: 'json' };
 import performanceModules from '../../deployment/m5-runtime/native-performance-module-baseline.json' with {
@@ -450,6 +456,24 @@ test('functions renew candidate preserves identities and changes only theme and 
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
   }
 });
+test('no-all-orders release changes only the required scopes', () => {
+  assert.equal(noAllOrdersModules.length, 14);
+  assert.equal(noAllOrdersBinding.moduleHash, 'bc9f901c8317219b603b11655fafdcfe63f9c7d698de2d8245b240519cb5199e');
+  assert.equal(noAllOrdersBinding.versionId, '1248762724353');
+  assert.deepEqual(new Set(noAllOrdersBinding.versionIds), new Set([...batchBinding.versionIds, '1248762724353']));
+  const prior = new Map(batchModules.map((m) => [m.handle, m]));
+  for (const module of noAllOrdersModules) {
+    const old = required(prior.get(module.handle));
+    if (module.type === 'app_access') {
+      assert.deepEqual(
+        { ...module, config: { ...module.config, scopes: undefined } },
+        { ...old, config: { ...old.config, scopes: undefined } },
+      );
+      assert.equal(old.config.scopes, `read_all_orders,${module.config.scopes}`);
+    } else assert.deepEqual(module, old);
+  }
+});
+
 test('batch candidate changes only the theme module', () => {
   assert.equal(batchModules.length, 14);
   assert.equal(batchBinding.moduleHash, 'f019dff22a1bc0fa2e17e36f543730d7723b14673cf6aa933335cd28bfa408bd');
