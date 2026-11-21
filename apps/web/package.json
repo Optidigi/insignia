@@ -28,7 +28,7 @@
     "aws4fetch": "1.0.20",
     "pg": "8.23.0",
     "pg-boss": "12.35.0",
-    "preact": "10.29.8",
+    "preact": "11.2.0",
     "@insignia/ui-localization": "workspace:*",
     "@insignia/ui-visualizer": "workspace:*"
   },

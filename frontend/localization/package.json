@@ -45,12 +45,12 @@
     "i18next": "26.7.1"
   },
   "peerDependencies": {
-    "preact": "10.29.8"
+    "preact": "11.2.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
     "@types/node": "24.10.0",
-    "preact": "10.29.8",
+    "preact": "11.2.0",
     "typescript": "5.9.3",
     "vitest": "5.0.2",
     "i18next-cli": "1.82.1"
