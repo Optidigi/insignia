@@ -21,14 +21,14 @@
     "@insignia/contracts": "workspace:*",
     "@insignia/domain": "workspace:*",
     "@insignia/visualizer": "workspace:*",
-    "kysely": "0.29.6",
-    "pg": "8.23.0"
+    "kysely": "0.29.8",
+    "pg": "8.23.1"
   },
   "devDependencies": {
     "@types/node": "24.10.0",
     "@types/pg": "8.23.1",
     "typescript": "5.9.3",
-    "vitest": "5.0.2",
+    "vitest": "5.1.0",
     "@insignia/shopify": "workspace:*"
   }
 }
