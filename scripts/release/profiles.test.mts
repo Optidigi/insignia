@@ -98,6 +98,12 @@ import reviewCartModules from '../../deployment/m5-runtime/native-review-cart-mo
 import reviewCartBinding from '../../deployment/m5-runtime/native-review-cart-release-binding.json' with {
   type: 'json',
 };
+import reviewMarketModules from '../../deployment/m5-runtime/native-review-market-module-baseline.json' with {
+  type: 'json',
+};
+import reviewMarketBinding from '../../deployment/m5-runtime/native-review-market-release-binding.json' with {
+  type: 'json',
+};
 import reviewNavModules from '../../deployment/m5-runtime/native-review-nav-module-baseline.json' with { type: 'json' };
 import reviewNavBinding from '../../deployment/m5-runtime/native-review-nav-release-binding.json' with { type: 'json' };
 import scope60Modules from '../../deployment/m5-runtime/native-scope60-module-baseline.json' with { type: 'json' };
@@ -458,6 +464,26 @@ test('functions renew candidate preserves identities and changes only theme and 
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
   }
 });
+test('review Market candidate changes only Shopify theme assets', () => {
+  assert.equal(reviewMarketBinding.versionId, '1263125463041');
+  assert.deepEqual(reviewMarketBinding.versionIds, [...scope60Binding.versionIds, '1263125463041']);
+  assert.equal(reviewMarketModules.length, 14);
+  const themeIndex = scope60Modules.findIndex((module) => module.type === 'theme_app_extension');
+  const previous = object(object(scope60Modules[themeIndex]?.config).theme_extension);
+  const current = object(object(reviewMarketModules[themeIndex]?.config).theme_extension);
+  const { assets: previousAssets, ...previousFiles } = object(previous.files);
+  const { assets: currentAssets, ...currentFiles } = object(current.files);
+  assert.notDeepEqual(previousAssets, currentAssets);
+  assert.deepEqual(previousFiles, currentFiles);
+  const normalize = (modules: typeof scope60Modules | typeof reviewMarketModules) =>
+    modules.map((module, index) => (index === themeIndex ? { ...module, config: null } : module));
+  assert.deepEqual(normalize(reviewMarketModules), normalize(scope60Modules));
+  assert.deepEqual(
+    { ...reviewMarketModules[themeIndex], config: null },
+    { ...scope60Modules[themeIndex], config: null },
+  );
+});
+
 test('scope60 candidate is module-identical to the no-all-orders release', () => {
   assert.equal(scope60Binding.moduleHash, noAllOrdersBinding.moduleHash);
   assert.equal(scope60Binding.versionId, '1257303638017');
