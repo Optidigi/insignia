@@ -98,6 +98,12 @@ import reviewCartModules from '../../deployment/m5-runtime/native-review-cart-mo
 import reviewCartBinding from '../../deployment/m5-runtime/native-review-cart-release-binding.json' with {
   type: 'json',
 };
+import networkAccessModules from '../../deployment/m5-runtime/native-network-access-module-baseline.json' with {
+  type: 'json',
+};
+import networkAccessBinding from '../../deployment/m5-runtime/native-network-access-release-binding.json' with {
+  type: 'json',
+};
 import reviewMarketModules from '../../deployment/m5-runtime/native-review-market-module-baseline.json' with {
   type: 'json',
 };
@@ -463,6 +469,20 @@ test('functions renew candidate preserves identities and changes only theme and 
       assert.deepEqual(unversioned(config), unversioned(oldConfig));
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
   }
+});
+test('network access candidate adds only the declared production R2 origin', () => {
+  assert.equal(networkAccessBinding.versionId, '1263405170689');
+  assert.deepEqual(networkAccessBinding.versionIds, [...reviewMarketBinding.versionIds, '1263405170689']);
+  assert.equal(networkAccessModules.length, 15);
+  assert.deepEqual(
+    networkAccessModules.filter((module) => module.handle !== 'network_access'),
+    reviewMarketModules,
+  );
+  const module = networkAccessModules.find((row) => row.handle === 'network_access');
+  assert.equal(module?.type, 'network_access');
+  assert.deepEqual(module?.config, {
+    network_access: { allowed_sources: ['https://97984dbfba2fd91f42a4c3fb90fcad09.eu.r2.cloudflarestorage.com'] },
+  });
 });
 test('review Market candidate changes only Shopify theme assets', () => {
   assert.equal(reviewMarketBinding.versionId, '1263125463041');
