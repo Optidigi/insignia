@@ -186,7 +186,10 @@ release records. The raw store identity was cleared and its keyed reinstall fing
 Protected counts for other installations stayed equal within the transaction. A schema-74
 post-erasure restore retained the proof key and did not restore the deleted records. Temporary
 pre-erasure backup was removed after verification. The automatic worker grant remains withheld
-and four other eligible installations remain outside the authorized test scope.
+and four historical rows remain outside the authorized test scope. The worker's SQL selection
+includes three first-generation recoveries from reinstalled review stores and one inactive
+installation with a staged receipt. Their presence in the SQL selection is not operator
+authorization. Do not enable the worker without reconciling those rows.
 Receipt folder on prod is `erasure-8c6e7555-preflight`.
 
 **Deploy AM** (23 Nov, web only): main `6967baed`, CI run `45236726941`. The database checkpoint restored to schema 72 in an isolated container. Web replaced at `18:32:46Z`; Compose delta `services.web.image`, exact digest verified and `/live` returned 200. Shopify Standard lists $49.99/30 days and $449.99/year. On rewrite-dev both $0 cadence changes were approved natively and returned to Insignia. The production Partner reader confirmed the same `insignia-standard` handle, non-metered entitlement and effective cadence in both directions. Merchant charge history proof and the reviewer purchase path are open.
@@ -210,6 +213,20 @@ Shopify's private testing instructions were saved and read back with the prepare
 details, expected total and both Standard billing periods. A fresh signed-out browser passed the
 storefront password page and opened the Designer with config HTTP 200. Shopify remains paused.
 Independent reviewer-admin access and shop erasure still need qualification.
+
+**Shopify Admin API allowlist:** Shopify's security settings showed enforcement disabled. Prod
+web, worker and verifier all egress through the same static IPv4 address. A dashboard test of
+that single address reported no recently blocked API requests. After account verification,
+enforcement saved as Enabled. A fresh signed-out storefront test for the published QA fixture
+returned config HTTP 200 and opened the Designer after enforcement. The merchant app detail
+showed Standard at $0/month on the development store, and Shopify's current billing total was $0.
+Both cadence changes have native no-charge evidence.
+
+**Storefront network declaration:** Shopify requires `network_access.allowed_sources` for public
+storefront apps from December 1, 2026. The live Designer loaded private preview assets from the
+exact configured production R2 origin. A local staging copy of the active app manifest declares
+that origin, preserves every other setting, and passed Shopify CLI validation. It awaits dev
+preview and a separately qualified app version release.
 
 **Deploy AL** (19 Nov, web only): main `e930b8be` — #606 the Methods page keeps `shop`/`host`/`embedded` when it updates its own URL (found in the cookie-blocked browser test after #604). Web replaced `19:03:55Z`; compose delta `services.web.image` only; readback clean; database baseline identical. Receipt folder `methods-deploy-AL` on both hosts.
 
