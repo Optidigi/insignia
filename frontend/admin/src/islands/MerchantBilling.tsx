@@ -60,7 +60,7 @@ function MerchantBilling() {
           ? translateUi('settings:merchantBilling.noActiveSubscription')
           : translateUi('settings:merchantBilling.notVerified');
   const recognized = view?.status === 'active' || view?.status === 'trial';
-  const showStandardPrice = recognized && view?.developmentTerms;
+  const standardPrice = recognized && view.developmentTerms ? view.standardPrice : null;
   const managementLabel =
     view?.status === 'inactive'
       ? translateUi('settings:merchantBilling.choosePlan')
@@ -125,7 +125,11 @@ function MerchantBilling() {
                   <span class="billing-amount">
                     {billingMoney(view.recurringPrice.amount, view.recurringPrice.currency, formatLocale)}
                   </span>
-                  <s-text color="subdued">{translateUi('settings:merchantBilling.per30Days')}</s-text>
+                  <s-text color="subdued">
+                    {view.recurringPrice.billingPeriod === 'ANNUAL'
+                      ? translateUi('settings:merchantBilling.perYear')
+                      : translateUi('settings:merchantBilling.per30Days')}
+                  </s-text>
                 </div>
               </div>
             ) : (
@@ -135,19 +139,19 @@ function MerchantBilling() {
                   : translateUi('settings:merchantBilling.priceUnverified')}
               </s-paragraph>
             )}
-            {(showStandardPrice || view.trialEndsAt || view.currentCycle || view.recurringDiscount) && (
+            {(standardPrice || view.trialEndsAt || view.currentCycle || view.recurringDiscount) && (
               <>
                 <s-divider />
                 <dl class="billing-facts">
-                  {showStandardPrice && (
+                  {standardPrice && (
                     <div>
                       <dt>
                         <s-text color="subdued">{translateUi('settings:merchantBilling.standardPlanPrice')}</s-text>
                       </dt>
                       <dd>
                         {translateUi('settings:merchantBilling.standardRate', {
-                          amount: billingMoney(view.standardPrice.amount, view.standardPrice.currency, formatLocale),
-                          count: view.standardPrice.intervalDays,
+                          amount: billingMoney(standardPrice.amount, standardPrice.currency, formatLocale),
+                          count: standardPrice.intervalDays,
                         })}
                       </dd>
                     </div>

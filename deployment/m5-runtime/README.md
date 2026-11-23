@@ -38,6 +38,14 @@ Rewrite-dev deploys and theme releases run autonomously under the standing 13 No
 4. Replace the verifier (re-pinning its code manifest), then web (`--no-deps`), then the worker, under the current profile. Leave the signer and inspector alone unless their code changed.
 5. Read back: no error-level lines, fresh web and quiesced worker reads of the same release record, expected ACL digests and unchanged protected facts.
 
+**Shopify plan changes.** Deploy a web image that recognizes the annual Standard contract before
+enabling the annual option on Shopify's existing Standard plan. The monthly and annual options
+share the `insignia-standard` handle and entitlement policy. On an authorized test store, verify
+that both switching directions return to Insignia with the correct effective Shopify cadence,
+price and access. Read the Shopify charge history for both changes. See the
+[resubmission checklist](../../docs/delivery/shopify-review-resubmission.md) for the review fixture and
+evidence. Shopify plan pricing is managed in the Partner Dashboard.
+
 **Migration 65: abandoned publication hold release (#466 part B).** Deployed 14 November 2026 (deploy D). The [design record](../../docs/architecture/design-466-abandoned-hold-release.md) holds the states and the fence.
 1. Apply `20261114000100_publication_abandonment.sql` through the schema owner (schema 64 to 65) before any image. It adds the progress phase `abandoned`, the activation kinds `ABANDON_CLAIMED`/`ABANDON_RESTORED`, their triggers, the owner-only append-only `m5_publication_abandonment_audit`, and `m5_operator_claim_abandoned_hold(...)` for part A's command (EXECUTE revoked from PUBLIC; granted only if the operator role already exists). It creates no role. Running images never produce the new states, so it can go first.
 2. Run [publication-operator-role.sql](../../scripts/database/publication-operator-role.sql) as the schema owner, after the migration. It is idempotent: it creates the `NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS` role `insignia_publication_operator` if absent, refuses if a runtime role holds it, and grants it EXECUTE on the operator function. Part A grants it to the command identity (below).

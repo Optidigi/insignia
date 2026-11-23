@@ -71,7 +71,7 @@ test('merchant sees authoritative trial and zero provider price separately from 
   assert.deepEqual(phases, ['current', 'current']);
   assert.equal(result.status, 'trial');
   assert.equal(result.trialEndsAt, '2026-10-31T08:54:46.000Z');
-  assert.deepEqual(result.recurringPrice, { amount: '0.00', currency: 'USD' });
+  assert.deepEqual(result.recurringPrice, { amount: '0.00', currency: 'USD', billingPeriod: 'EVERY_30_DAYS' });
   assert.deepEqual(result.standardPrice, { amount: '49.99', currency: 'USD', intervalDays: 30 });
   assert.equal(result.newActionsAllowed, true);
   assert.equal(result.managementUrl, 'https://admin.shopify.com/store/example/charges/insignia-1/pricing_plans');
@@ -95,12 +95,13 @@ test('lifecycle display follows current provider boundaries without resetting tr
     trialEndsAt: null,
     currentBillingCycle: { startTime: '2026-10-01T00:00:00.000Z', endTime: '2026-10-31T00:00:00.000Z' },
     cancelAtEndOfCycle: true,
-    pendingUpdate: { billingPeriod: 'ANNUAL', itemHandles: ['unrecognized'] },
+    pendingUpdate: { billingPeriod: 'ANNUAL', itemHandles: ['standard'] },
   });
   const result = await reader(paid)(actor);
   assert.equal(result.status, 'active');
   assert.equal(result.scheduledCancellation, true);
   assert.equal(result.pendingChange, true);
+  assert.equal(result.recurringPrice?.billingPeriod, 'EVERY_30_DAYS');
   assert.equal(result.newActionsAllowed, true);
   assert.deepEqual(result.currentCycle, paid.currentBillingCycle);
   for (const source of [
@@ -121,6 +122,15 @@ test('lifecycle display follows current provider boundaries without resetting tr
   assert.equal(inactive.status, 'inactive');
   assert.equal(inactive.newActionsAllowed, false);
 });
+test('annual development terms show the provider zero without a nominal plan price', async () => {
+  const result = await reader(snapshot({ billingPeriod: 'ANNUAL' }))(actor);
+  assert.equal(result.status, 'trial');
+  assert.equal(result.newActionsAllowed, true);
+  assert.equal(result.developmentTerms, true);
+  assert.deepEqual(result.recurringPrice, { amount: '0.00', currency: 'USD', billingPeriod: 'ANNUAL' });
+  assert.equal(result.standardPrice, null);
+});
+
 test('installation change during provider observation rejects the entire display', async () => {
   let calls = 0;
   await assert.rejects(
@@ -199,7 +209,7 @@ test('normal production composition exposes the billing reader when existing pro
   );
   assert.equal(typeof services.billing, 'function');
 });
-test('the actual provider decoder feeds the authenticated billing response without exposing its raw financial identifiers', async () => {
+test('the actual provider decoder feeds the authenticated annual billing response without exposing its raw financial identifiers', async () => {
   const { createActiveSubscriptionClient } = await import('@insignia/shopify');
   const { handleAdminRequest } = await import('../../src/server/admin/http.ts');
   let queries = 0;
@@ -215,15 +225,15 @@ test('the actual provider decoder feeds the authenticated billing response witho
             activeSubscription: {
               app: { id: 'gid://shopify/App/2' },
               shop: { id: actor.shopId },
-              billingPeriod: 'EVERY_30_DAYS',
+              billingPeriod: 'ANNUAL',
               cancelAtEndOfCycle: false,
-              trialEndsAt: '2026-10-31T08:54:46Z',
-              currentBillingCycle: null,
-              pendingUpdate: null,
+              trialEndsAt: null,
+              currentBillingCycle: { startTime: '2026-10-01T00:00:00Z', endTime: '2027-10-01T00:00:00Z' },
+              pendingUpdate: { billingPeriod: 'EVERY_30_DAYS', items: [{ handle: 'standard' }] },
               items: [
                 {
                   handle: 'standard',
-                  price: { __typename: 'FlatRatePrice', active: false, currency: 'USD', amount: '0.00' },
+                  price: { __typename: 'FlatRatePrice', active: true, currency: 'EUR', amount: '499.1234' },
                   discount: null,
                   usage: null,
                 },
@@ -262,10 +272,18 @@ test('the actual provider decoder feeds the authenticated billing response witho
   );
   assert.equal(response.status, 200);
   const value = await response.json();
-  assert.equal(value.status, 'trial');
-  assert.equal(value.trialEndsAt, '2026-10-31T08:54:46.000Z');
-  assert.deepEqual(value.recurringPrice, { amount: '0.00', currency: 'USD' });
+  assert.equal(value.status, 'active');
+  assert.equal(value.newActionsAllowed, true);
+  assert.equal(value.developmentTerms, false);
+  assert.equal(value.pendingChange, true);
+  assert.deepEqual(value.currentCycle, {
+    startTime: '2026-10-01T00:00:00.000Z',
+    endTime: '2027-10-01T00:00:00.000Z',
+  });
+  assert.deepEqual(value.recurringPrice, { amount: '499.1234', currency: 'EUR', billingPeriod: 'ANNUAL' });
+  assert.equal(value.standardPrice, null);
   assert.equal(queries, 1);
   assert.equal('items' in value, false);
   assert.equal('shopId' in value, false);
+  assert.equal(JSON.stringify(value).includes('"standard"'), false);
 });

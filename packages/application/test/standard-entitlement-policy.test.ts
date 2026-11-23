@@ -63,6 +63,33 @@ test('exact private Standard plan enables all released features without metered 
   });
 });
 
+test('annual Standard uses the same features during trial and the current cycle', () => {
+  const pendingUpdate: ProviderSubscriptionSnapshot['pendingUpdate'] = {
+    billingPeriod: 'EVERY_30_DAYS',
+    itemHandles: ['insignia-standard'],
+  };
+  for (const trial of [true, false]) {
+    const annual: ProviderSubscriptionSnapshot = {
+      ...source('insignia-standard', trial),
+      billingPeriod: 'ANNUAL',
+      currentBillingCycle: trial ? null : { startTime: '2026-10-01T00:00:00Z', endTime: '2027-10-01T00:00:00Z' },
+      pendingUpdate,
+    };
+    expect(projectEntitlement(annual, candidate, context)).toMatchObject({
+      recognizedPolicyId: 'lean-v1-standard-all-features',
+      trial,
+      features: ['m5.configure', 'm5.required', 'm5.logo-later', 'm5.production-options', 'm5.pricing'],
+      billableUsageAllowed: false,
+      qualifyingUsageDisposition: 'NOT_METERED',
+      pendingProviderUpdate: pendingUpdate,
+    });
+    expect(projectEntitlement({ ...annual, items: source('other-plan').items }, candidate, context).features).toEqual(
+      [],
+    );
+    expect(projectEntitlement(annual, candidate, { ...context, installationGeneration: '2' }).features).toEqual([]);
+  }
+});
+
 test('candidate recognizes the plan for any shop with its own bound read', () => {
   const otherShop = { ...identity, shopId: 'gid://shopify/Shop/999', tenantShopId: 'other-tenant' };
   expect(

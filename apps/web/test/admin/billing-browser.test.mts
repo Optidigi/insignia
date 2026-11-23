@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { browserFixture, routePolaris } from './support/selected-browser.mts';
 
-test('merchant billing separates development terms and trial, links Shopify management and recovers a failed observation', {
+test('merchant billing shows current monthly and annual terms, links Shopify management and recovers a failed observation', {
   timeout: 20000,
 }, async (t) => {
   const { source, server, browser } = await browserFixture(t);
@@ -30,7 +30,7 @@ test('merchant billing separates development terms and trial, links Shopify mana
     pendingChange: false,
     newActionsAllowed: true,
     standardPrice: { amount: '49.99', currency: 'USD', intervalDays: 30 },
-    recurringPrice: { amount: '0.0', currency: 'USD' }, // Shopify's development terms value
+    recurringPrice: { amount: '0.0', currency: 'USD', billingPeriod: 'EVERY_30_DAYS' }, // Shopify's development terms value
     developmentTerms: true,
     managementUrl: 'https://admin.shopify.com/store/example/charges/insignia-1/pricing_plans',
   };
@@ -77,6 +77,7 @@ test('merchant billing separates development terms and trial, links Shopify mana
     .locator('.billing-amount')
     .filter({ hasText: /^USD\s0\.00$/ })
     .waitFor();
+  await page.getByText('per 30 days', { exact: true }).waitFor();
   await page.getByText('Standard plan price', { exact: true }).waitFor();
   await page.getByText(/^USD\s49\.99 per 30 days$/).waitFor();
   await page.getByText('Trial active').waitFor();
@@ -94,8 +95,31 @@ test('merchant billing separates development terms and trial, links Shopify mana
   );
   await page.screenshot({ path: '/tmp/insignia-lean-local-billing-mobile.png', fullPage: true });
   await page.setViewportSize({ width: 1440, height: 900 });
-  view.status = 'inactive';
+  view.status = 'active';
   view.trialEndsAt = null;
+  view.currentCycle = { startTime: '2026-10-01T00:00:00Z', endTime: '2027-10-01T00:00:00Z' };
+  view.pendingChange = true;
+  view.standardPrice = null;
+  view.recurringPrice = { amount: '499.1234', currency: 'EUR', billingPeriod: 'ANNUAL' };
+  view.developmentTerms = false;
+  await page.reload();
+  await page.getByText('Subscription active', { exact: true }).waitFor();
+  await page.getByText(/^EUR\s499\.1234$/).waitFor();
+  await page.getByText('per year', { exact: true }).waitFor();
+  await page.getByText('Change pending', { exact: true }).waitFor();
+  assert.equal(await page.getByText('per 30 days', { exact: true }).count(), 0);
+
+  view.recurringPrice = { amount: '0.0', currency: 'USD', billingPeriod: 'ANNUAL' };
+  view.developmentTerms = true;
+  await page.reload();
+  await page.getByText('Development test terms', { exact: true }).waitFor();
+  await page.getByText(/^USD\s0\.00$/).waitFor();
+  await page.getByText('per year', { exact: true }).waitFor();
+  assert.equal(await page.getByText('Standard plan price', { exact: true }).count(), 0);
+
+  view.status = 'inactive';
+  view.currentCycle = null;
+  view.pendingChange = false;
   view.recurringPrice = null;
   view.developmentTerms = false;
   view.newActionsAllowed = false;
@@ -107,5 +131,5 @@ test('merchant billing separates development terms and trial, links Shopify mana
   const inactiveManagement = page.getByRole('link', { name: 'Choose a plan in Shopify', exact: true });
   assert.equal(await inactiveManagement.getAttribute('href'), view.managementUrl);
   assert.equal(await inactiveManagement.getAttribute('target'), '_top');
-  assert.equal(calls, 3);
+  assert.equal(calls, 5);
 });

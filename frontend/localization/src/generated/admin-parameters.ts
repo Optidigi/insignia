@@ -2137,6 +2137,7 @@ export const adminParameterContracts = {
   'settings:merchantBilling.ownerAccess': {},
   'settings:merchantBilling.per30Days': {},
   'settings:merchantBilling.percentageDiscount': { percentage: 'string' },
+  'settings:merchantBilling.perYear': {},
   'settings:merchantBilling.priceUnverified': {},
   'settings:merchantBilling.remainingCycles': { count: 'number' },
   'settings:merchantBilling.reopenAccess': {},

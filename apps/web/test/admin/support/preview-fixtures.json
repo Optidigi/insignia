@@ -28,7 +28,8 @@
     },
     "recurringPrice": {
       "amount": "0.00",
-      "currency": "USD"
+      "currency": "USD",
+      "billingPeriod": "EVERY_30_DAYS"
     },
     "developmentTerms": true,
     "managementUrl": null

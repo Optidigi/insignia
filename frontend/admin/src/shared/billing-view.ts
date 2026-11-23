@@ -7,8 +7,8 @@ export interface BillingView {
   scheduledCancellation: boolean;
   pendingChange: boolean;
   newActionsAllowed: boolean;
-  standardPrice: { amount: '49.99'; currency: 'USD'; intervalDays: 30 };
-  recurringPrice: { amount: string; currency: string } | null;
+  standardPrice: { amount: '49.99'; currency: 'USD'; intervalDays: 30 } | null;
+  recurringPrice: { amount: string; currency: string; billingPeriod: 'EVERY_30_DAYS' | 'ANNUAL' } | null;
   /** Provider discount metadata for a recognized recurring item; never a computed net price. */
   recurringDiscount?: {
     amount: string | null;
