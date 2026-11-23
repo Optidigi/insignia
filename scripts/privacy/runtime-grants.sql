@@ -10,6 +10,10 @@ DO $$ BEGIN
   THEN RAISE EXCEPTION 'privacy queue authority is excessive'; END IF;
  IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE oid='public.process_customer_privacy_inbox(uuid)'::regprocedure AND proowner=(SELECT oid FROM pg_roles WHERE rolname=current_user) AND prosecdef AND proconfig=ARRAY['search_path=pg_catalog'])
   THEN RAISE EXCEPTION 'privacy reviewed definer owner required'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_proc WHERE oid='public.finalize_pending_shop_privacy(integer)'::regprocedure AND proowner=(SELECT oid FROM pg_roles WHERE rolname=current_user) AND prosecdef AND proconfig=ARRAY['search_path=pg_catalog'])
+  OR has_function_privilege('insignia_queue_consume','public.finalize_shop_privacy_generation(text,bigint,integer)','EXECUTE')
+  OR has_table_privilege('insignia_queue_consume','public.shop_privacy_finalization','SELECT,INSERT,UPDATE,DELETE,TRUNCATE')
+  THEN RAISE EXCEPTION 'privacy finalization authority is excessive or unavailable'; END IF;
  IF has_table_privilege('insignia_queue_consume','public.customer_privacy_receipts','INSERT,UPDATE,DELETE,TRUNCATE')
   OR has_table_privilege('insignia_queue_consume','public.customer_order_erasure_fences','INSERT,UPDATE,DELETE,TRUNCATE')
   OR has_column_privilege('insignia_queue_consume','public.artwork_assets','original_key','SELECT')
@@ -18,4 +22,5 @@ END $$;
 GRANT USAGE ON SCHEMA public TO insignia_queue_consume;
 GRANT EXECUTE ON FUNCTION public.process_customer_privacy_inbox(uuid) TO insignia_queue_consume;
 GRANT EXECUTE ON FUNCTION public.blocked_shop_privacy_count(),public.cleanup_customer_privacy_inboxes(integer) TO insignia_queue_consume;
+GRANT EXECUTE ON FUNCTION public.finalize_pending_shop_privacy(integer) TO insignia_queue_consume;
 COMMIT;

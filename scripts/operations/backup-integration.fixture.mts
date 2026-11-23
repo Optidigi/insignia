@@ -1,6 +1,6 @@
 /** Typed subprocess fixture for actual isolated PostgreSQL boundaries. Never selects a database. */
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { Pool } from 'pg';
 import { array, check, record, text } from './backup-files.mts';
@@ -131,6 +131,23 @@ VALUES('33333333-3333-3333-3333-333333333333','heartbeat-artwork',encode(sha256(
       console.log(JSON.stringify({ empty, populated, review, restricted: review }));
     } else if (mode === 'expiry') {
       const replay = await operation('./backup-expiry.mts', 'replayExpiry');
+      const expiredInbox = randomUUID();
+      await client.query(
+        `INSERT INTO public.inbox_messages(id,source,external_delivery_id,payload,payload_sha256,received_at,state,retention_class,purge_after)
+         VALUES($1,'shopify','expiry-restore.myshopify.com:'||$2,'{"id":453}'::bytea,encode(sha256('{"id":453}'::bytea),'hex'),
+           clock_timestamp(),'pending','shopify-webhook',clock_timestamp()+interval '1 hour')`,
+        [expiredInbox, expiredInbox],
+      );
+      await client.query(
+        `INSERT INTO public.shopify_webhook_deliveries(inbox_id,shop_domain,delivery_id,topic,api_version,triggered_at)
+          VALUES($1,'expiry-restore.myshopify.com',$2,'orders/create','2026-07',clock_timestamp())`,
+        [expiredInbox, expiredInbox],
+      );
+      await client.query('UPDATE public.inbox_messages SET purge_after=clock_timestamp() WHERE id=$1', [expiredInbox]);
+      await client.query(
+        "INSERT INTO pgboss.job(name,id,data) VALUES('insignia.shopify-webhook.v1',$1,jsonb_build_object('inboxId',$1::uuid))",
+        [expiredInbox],
+      );
       const economics = async () =>
         text(
           (
@@ -154,6 +171,19 @@ VALUES('33333333-3333-3333-3333-333333333333','heartbeat-artwork',encode(sha256(
       );
       assert.equal(await economics(), before, 'historical purchase changed');
       assert.equal(JSON.stringify(await history()), dates, 'original dates changed');
+      assert.equal(
+        (await client.query('SELECT 1 FROM pgboss.job WHERE id=$1', [expiredInbox])).rowCount,
+        0,
+        'expired restore queue job survived',
+      );
+      assert.deepEqual(
+        (
+          await client.query('SELECT purpose,captured_fields FROM webhook_obligation_facts WHERE inbox_id=$1', [
+            expiredInbox,
+          ])
+        ).rows,
+        [{ purpose: 'UNQUALIFIED', captured_fields: { id: '453' } }],
+      );
       const rows = await client.query<{ n: unknown }>(
         `SELECT count(*) AS n FROM buyer_sessions b WHERE expires_at<=clock_timestamp() OR NOT EXISTS(SELECT 1 FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=b.shop_id AND s.current_generation=b.installation_generation AND i.deactivated_at IS NULL)`,
       );

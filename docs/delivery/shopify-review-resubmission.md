@@ -45,6 +45,6 @@ existing customized cart cannot bypass validation.
    Record the exact released versions and fixture used in delivery state. Use the Partner Dashboard
    to resubmit after the pause ends and the evidence is complete.
 
-Track the [shop erasure gap](state.md#deployed-identities) through production qualification. It affects
-public merchant data handling and remains open until genuine callback, durable data erasure and
-restore behavior are demonstrated.
+Shop erasure remains a release gate. The [retention decision](shopify-erasure-retention.md) defines
+what may remain. Qualify the genuine callback, database and object erasure, and isolated backup
+restore before recording completion.

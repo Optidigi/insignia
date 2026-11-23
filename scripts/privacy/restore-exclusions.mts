@@ -5,10 +5,20 @@ import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { Pool, PoolClient } from 'pg';
+import { clearRestoredWebhookJobs } from './restore-webhook-queue.mts';
 
 const FORMAT = 'insignia-privacy-erasure-exclusions-v2';
 const MAX_BYTES = 64 * 1024 * 1024;
 const keys = {
+  shopIdentities: ['shop_id', 'domain_digest', 'provider_digest'],
+  shopReplays: [
+    'inbox_id',
+    'delivery_digest',
+    'content_digest',
+    'forget_at',
+    'uninstall_domain_digest',
+    'uninstall_observed_at',
+  ],
   uninstallScopes: ['privacy_inbox_id', 'shop_id', 'generation_ceiling', 'observed_at', 'observation_kind'],
   uninstallRecoveries: [
     'privacy_inbox_id',
@@ -88,7 +98,14 @@ const tables = [
   'buyer_quote_ownership',
   'buyer_sessions',
   'shopify_webhook_deliveries',
+  'shopify_expired_transport',
   'webhook_obligation_facts',
+  'shop_privacy_finalization',
+  'shop_privacy_identity',
+  'shop_privacy_replays',
+  'shop_privacy_proof_key',
+  'shop_privacy_finalization_targets',
+  'shop_privacy_transport_scope',
 ];
 const functions = [
   'customer_privacy_payload_assets',
@@ -117,9 +134,30 @@ const functions = [
   'erase_purchase_labels_for_shop_privacy',
   'enforce_payload_collection_time',
   'guard_webhook_obligation_facts',
+  'finalize_shop_privacy_generation',
+  'shop_privacy_digest',
+  'shop_privacy_installation_token',
+  'shop_privacy_replay_digest',
+  'compact_erased_shopify_delivery',
+  'expire_shopify_webhook_routes',
+  'pending_shopify_webhook_obligations',
+  'finalize_pending_shop_privacy',
+  'shop_privacy_delete_scope',
+  'reject_quote_mutation',
+  'reject_revision_mutation',
+  'guard_uninstall_destination_delete',
 ];
 type ScalarKind = 'text' | 'nullableText' | 'integer';
 const scalarTypes = {
+  shopIdentities: { shop_id: 'text', domain_digest: 'text', provider_digest: 'nullableText' },
+  shopReplays: {
+    inbox_id: 'text',
+    delivery_digest: 'text',
+    content_digest: 'text',
+    forget_at: 'text',
+    uninstall_domain_digest: 'nullableText',
+    uninstall_observed_at: 'nullableText',
+  },
   uninstallScopes: {
     privacy_inbox_id: 'text',
     shop_id: 'text',
@@ -183,10 +221,12 @@ type ScalarValue<K> = K extends 'integer' ? number : K extends 'nullableText' ? 
 type Row<C extends keyof typeof scalarTypes> = {
   [F in keyof (typeof scalarTypes)[C]]: ScalarValue<(typeof scalarTypes)[C][F]>;
 };
-type OptionalCollection = 'uninstallScopes' | 'uninstallRecoveries';
+const optionalCollections = ['uninstallScopes', 'uninstallRecoveries', 'shopIdentities', 'shopReplays'] as const;
+type OptionalCollection = (typeof optionalCollections)[number];
 export type ExclusionData = Record<string, unknown> & {
   schemaIdentity: string;
   exportedAt: string;
+  proofKeyId?: string;
 } & { [C in Exclude<keyof typeof scalarTypes, OptionalCollection>]: Row<C>[] } & {
   [C in OptionalCollection]?: Row<C>[];
 };
@@ -205,7 +245,7 @@ function assertDataShape(data: Record<string, unknown>): asserts data is Exclusi
   if (typeof data.schemaIdentity !== 'string' || typeof data.exportedAt !== 'string') fail('source metadata');
   for (const [collection, schema] of Object.entries(scalarTypes)) {
     const values = data[collection];
-    if ((collection === 'uninstallScopes' || collection === 'uninstallRecoveries') && values === undefined) continue;
+    if ((optionalCollections as readonly string[]).includes(collection) && values === undefined) continue;
     if (!isArray(values)) fail('non-minimal record shape');
     for (const row of values) {
       if (!exactKeys(row, Object.keys(schema))) fail('non-minimal record shape');
@@ -301,7 +341,14 @@ async function schemaIdentity(client: PoolClient) {
       [tables],
     )
   ).rows;
-  return hash({ versions, columns, constraints, definitions, triggers });
+  const views = (
+    await client.query<{ relname: string; definition: string }>(
+      `SELECT c.relname,pg_get_viewdef(c.oid) AS definition FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+       WHERE n.nspname='public' AND c.relkind='v' AND c.relname=ANY($1::text[]) ORDER BY c.relname`,
+      [tables],
+    )
+  ).rows;
+  return hash({ versions, columns, constraints, definitions, triggers, views });
 }
 async function rows(client: PoolClient, query: string, parameters: unknown[] = []): Promise<unknown> {
   return (
@@ -310,6 +357,12 @@ async function rows(client: PoolClient, query: string, parameters: unknown[] = [
       parameters,
     )
   ).rows[0]?.rows;
+}
+async function proofKeyId(client: PoolClient) {
+  const result = await client.query<{ id: string }>(
+    "SELECT public.shop_privacy_digest(jsonb_build_array('restore-key-identity')) AS id",
+  );
+  return result.rows[0]?.id ?? fail('missing compact erasure proof key');
 }
 const receiptIds = 'SELECT inbox_id FROM public.customer_privacy_receipts';
 const emptyShopify =
@@ -344,6 +397,7 @@ export async function exportErasureExclusions(pool: Pick<Pool, 'connect'>) {
       fail('unresolved transport obligation requires separate restore qualification');
     const data: Record<string, unknown> = {
       schemaIdentity: await schemaIdentity(client),
+      proofKeyId: await proofKeyId(client),
       exportedAt: (await client.query<{ at: unknown }>('SELECT transaction_timestamp()::text AS at')).rows[0]?.at,
     };
     data.receipts = await rows(client, 'SELECT * FROM public.customer_privacy_receipts ORDER BY inbox_id');
@@ -355,13 +409,23 @@ export async function exportErasureExclusions(pool: Pick<Pool, 'connect'>) {
       client,
       `SELECT privacy_inbox_id,shop_id,installation_generation::text,uninstall_inbox_id,capability_digest,external_installation_id,decided_at FROM public.uninstall_privacy_recoveries ORDER BY privacy_inbox_id,shop_id,installation_generation`,
     );
+    data.shopIdentities = await rows(
+      client,
+      `SELECT p.* FROM public.shop_privacy_identity p JOIN public.shops s USING(shop_id)
+       WHERE s.shop_domain=s.shop_id||'.erased.invalid' ORDER BY p.shop_id`,
+    );
+    data.shopReplays = await rows(
+      client,
+      'SELECT * FROM public.shop_privacy_replays WHERE forget_at>transaction_timestamp() ORDER BY inbox_id',
+    );
     data.inboxes = await rows(
       client,
       `SELECT i.id,i.source,i.external_delivery_id,i.shop_id,i.installation_generation::text,i.payload,i.payload_sha256,i.received_at,i.collected_at,i.state,i.attempts,i.last_error_class,i.lease_owner,i.lease_until,i.retention_class,i.purge_after,i.erasure_state FROM public.inbox_messages i WHERE i.id IN (${emptyShopify}) ORDER BY i.id`,
     );
     data.links = await rows(
       client,
-      `SELECT * FROM public.customer_privacy_order_links WHERE inbox_id IN (${receiptIds}) ORDER BY inbox_id,order_id`,
+      `SELECT l.* FROM public.customer_privacy_order_links l JOIN public.customer_privacy_receipts r USING(inbox_id)
+        WHERE r.operation<>'SHOP_ERASURE_STAGED' ORDER BY l.inbox_id,l.order_id`,
     );
     data.shopFences = await rows(
       client,
@@ -371,7 +435,8 @@ export async function exportErasureExclusions(pool: Pick<Pool, 'connect'>) {
     // recovery. Its exact-generation shop fence rederives those targets on import.
     data.orderFences = await rows(
       client,
-      `SELECT * FROM public.customer_order_erasure_fences WHERE source_inbox_id IN (${receiptIds}) AND source_inbox_id NOT IN (SELECT inbox_id FROM public.customer_privacy_receipts WHERE operation='SHOP_ERASURE_BLOCKED') ORDER BY shop_id,order_id`,
+      `SELECT f.* FROM public.customer_order_erasure_fences f JOIN public.customer_privacy_receipts r ON r.inbox_id=f.source_inbox_id
+        WHERE r.operation='ERASURE_STAGED' ORDER BY f.shop_id,f.order_id`,
     );
     data.quoteFences = await rows(
       client,
@@ -414,8 +479,9 @@ function validate(envelope: unknown): asserts envelope is ExclusionEnvelope {
     !exactKeys(data, [
       'schemaIdentity',
       'exportedAt',
+      ...(data.proofKeyId === undefined ? [] : ['proofKeyId']),
       ...Object.keys(keys).filter(
-        (key) => !['uninstallRecoveries', 'uninstallScopes'].includes(key) || data[key] !== undefined,
+        (key) => !(optionalCollections as readonly string[]).includes(key) || data[key] !== undefined,
       ),
     ]) ||
     typeof data.schemaIdentity !== 'string' ||
@@ -452,10 +518,8 @@ function validate(envelope: unknown): asserts envelope is ExclusionEnvelope {
       (inbox.shop_id !== null && inbox.shop_id !== receipt.shop_id)
     )
       fail('not an actual erased inbox tombstone');
-    if (
-      new Set(data.links.filter((row) => row.inbox_id === receipt.inbox_id).map((row) => row.order_id)).size !==
-      (receipt.operation === 'SHOP_ERASURE_STAGED' ? receipt.matched_purchase_count : receipt.requested_order_count)
-    )
+    const orders = new Set(data.links.filter((row) => row.inbox_id === receipt.inbox_id).map((row) => row.order_id));
+    if (orders.size !== (receipt.operation === 'SHOP_ERASURE_STAGED' ? 0 : receipt.requested_order_count))
       fail('incomplete order exclusions');
   }
   for (const link of data.links) {
@@ -483,6 +547,51 @@ function validate(envelope: unknown): asserts envelope is ExclusionEnvelope {
       (inbox.shop_id !== null && !shops.has(inbox.shop_id))
     )
       fail('not an actual erased inbox tombstone');
+  }
+  const digest = /^[a-f0-9]{64}$/;
+  const compactIdentities = data.shopIdentities ?? [];
+  const compactReplays = data.shopReplays ?? [];
+  if (
+    (data.proofKeyId !== undefined && (typeof data.proofKeyId !== 'string' || !digest.test(data.proofKeyId))) ||
+    ((compactIdentities.length > 0 ||
+      compactReplays.length > 0 ||
+      data.generations.some((row) => row.external_installation_id?.startsWith('erased:'))) &&
+      data.proofKeyId === undefined)
+  )
+    fail('invalid compact proof key identity');
+  if (
+    new Set(compactIdentities.map((row) => row.shop_id)).size !== compactIdentities.length ||
+    new Set(compactReplays.map((row) => row.inbox_id)).size !== compactReplays.length ||
+    new Set(compactReplays.map((row) => row.delivery_digest)).size !== compactReplays.length
+  )
+    fail('duplicate compact erasure proof');
+  for (const proof of compactIdentities) {
+    const shop = shops.get(proof.shop_id);
+    if (
+      !shop ||
+      shop.shopify_shop_id !== null ||
+      !digest.test(proof.domain_digest) ||
+      (proof.provider_digest !== null && !digest.test(proof.provider_digest)) ||
+      !data.shopFences.some(
+        (fence) => fence.shop_id === shop.shop_id && fence.installation_generation === shop.current_generation,
+      )
+    )
+      fail('unbound compact tenant identity');
+  }
+  for (const proof of compactReplays) {
+    const inbox = data.inboxes.find((row) => row.id === proof.inbox_id);
+    if (
+      !inbox ||
+      inbox.external_delivery_id !== null ||
+      proof.forget_at !== inbox.purge_after ||
+      !digest.test(proof.delivery_digest) ||
+      !digest.test(proof.content_digest) ||
+      (proof.uninstall_domain_digest === null) !== (proof.uninstall_observed_at === null) ||
+      (proof.uninstall_domain_digest !== null &&
+        (!digest.test(proof.uninstall_domain_digest) ||
+          !Number.isFinite(Date.parse(proof.uninstall_observed_at ?? ''))))
+    )
+      fail('unbound compact delivery proof');
   }
   const scopes = data.uninstallScopes ?? [];
   if (new Set(scopes.map((scope) => scope.privacy_inbox_id)).size !== scopes.length) fail('duplicate privacy scope');
@@ -553,7 +662,10 @@ function validate(envelope: unknown): asserts envelope is ExclusionEnvelope {
           ))
       )
         fail('foreign erasure fence');
+  if (data.orderFences.some((fence) => receipts.get(fence.source_inbox_id)?.operation !== 'ERASURE_STAGED'))
+    fail('shop exclusion must use generation authority');
   for (const fence of data.shopFences) {
+    if (fence.installation_generation !== '1') fail('shop erasure successor authority unverified');
     const generation = data.generations.find(
       (g) => g.shop_id === fence.shop_id && g.generation === fence.installation_generation,
     );
@@ -606,6 +718,8 @@ export async function importErasureExclusions(pool: Pick<Pool, 'connect'>, envel
       fail('target is not offline');
 
     if ((await schemaIdentity(client)) !== data.schemaIdentity) fail('schema mismatch');
+    if (data.proofKeyId !== undefined && (await proofKeyId(client)) !== data.proofKeyId)
+      fail('compact erasure proof key drift');
     // Restoring an old backup cannot replay prior customer capabilities or email delivery intents.
     await client.query('DELETE FROM public.customer_artwork_notifications');
     await client.query('DELETE FROM public.customer_artwork_submissions');
@@ -621,14 +735,37 @@ export async function importErasureExclusions(pool: Pick<Pool, 'connect'>, envel
           [shop.shop_id],
         )
       ).rows[0];
-      if (!found || hash(found) !== hash(shop)) fail('missing tenant or shop/generation drift');
+      if (!found || found.current_generation !== shop.current_generation)
+        fail('missing tenant or shop/generation drift');
+      const compact = data.shopIdentities?.find((row) => row.shop_id === shop.shop_id);
+      if (compact) {
+        const match = await client.query(
+          `SELECT 1 FROM public.shops s WHERE s.shop_id=$1 AND
+           ((s.shop_domain=s.shop_id||'.erased.invalid' AND s.shopify_shop_id IS NULL AND EXISTS(
+              SELECT 1 FROM public.shop_privacy_identity p WHERE p.shop_id=s.shop_id
+                AND p.domain_digest=$2 AND p.provider_digest IS NOT DISTINCT FROM $3::text))
+            OR (public.shop_privacy_digest(jsonb_build_array('shop-domain',s.shop_domain))=$2
+              AND CASE WHEN s.shopify_shop_id IS NOT NULL
+                THEN public.shop_privacy_digest(jsonb_build_array('shop-provider',s.shopify_shop_id)) END
+                    IS NOT DISTINCT FROM $3::text))`,
+          [shop.shop_id, compact.domain_digest, compact.provider_digest],
+        );
+        if (!match.rowCount) fail('compact tenant identity drift');
+      } else if (found.shopify_shop_id !== shop.shopify_shop_id) fail('missing tenant or shop/generation drift');
+      const expected = data.generations.filter((row) => row.shop_id === shop.shop_id);
       const generations = await rows(
         client,
-        `SELECT shop_id,generation::text,authorization_generation::text,external_installation_id,deactivated_at FROM public.installation_generations WHERE shop_id=$1 ORDER BY generation`,
-        [shop.shop_id],
+        `SELECT i.shop_id,i.generation::text,i.authorization_generation::text,
+            CASE WHEN e.external_installation_id LIKE 'erased:%' AND i.external_installation_id NOT LIKE 'erased:%'
+              THEN public.shop_privacy_installation_token(i.shop_id,i.external_installation_id)
+              ELSE i.external_installation_id END AS external_installation_id,i.deactivated_at
+          FROM public.installation_generations i
+          LEFT JOIN jsonb_populate_recordset(NULL::public.installation_generations,$2::jsonb) e
+            ON e.shop_id=i.shop_id AND e.generation=i.generation
+          WHERE i.shop_id=$1 ORDER BY i.generation`,
+        [shop.shop_id, JSON.stringify(expected)],
       );
-      if (hash(generations) !== hash(data.generations.filter((row) => row.shop_id === shop.shop_id)))
-        fail('installation identity drift');
+      if (hash(generations) !== hash(expected)) fail('installation identity drift');
     }
     if (
       (
@@ -651,20 +788,29 @@ export async function importErasureExclusions(pool: Pick<Pool, 'connect'>, envel
       fail('target has exclusions absent from source copy');
     // A backup may already contain the original pending inbox. Its immutable
     // source identity/hash/deadline must match before copying the actual erased state.
+    const mutable = [
+      'external_delivery_id',
+      'payload',
+      'state',
+      'attempts',
+      'last_error_class',
+      'lease_owner',
+      'lease_until',
+      'erasure_state',
+      'next_attempt_at',
+    ];
     if (
       (
         await client.query(
-          `SELECT 1 FROM public.inbox_messages WHERE id IN (${emptyShopify}) AND NOT(id=ANY($1::uuid[])) LIMIT 1`,
-          [data.inboxes.map((r) => r.id)],
-        )
-      ).rowCount
-    )
-      fail('target has transport exclusions absent from source copy');
-    const mutable = ['payload', 'state', 'attempts', 'last_error_class', 'lease_owner', 'lease_until', 'erasure_state'];
-    if (
-      (
-        await client.query(
-          `SELECT 1 FROM public.inbox_messages actual JOIN jsonb_populate_recordset(NULL::public.inbox_messages,$1::jsonb) expected USING(id) WHERE (to_jsonb(actual)-$2::text[]) IS DISTINCT FROM (to_jsonb(expected)-$2::text[]) OR actual.attempts>expected.attempts LIMIT 1`,
+          `SELECT 1 FROM public.inbox_messages actual JOIN jsonb_populate_recordset(NULL::public.inbox_messages,$1::jsonb) expected USING(id) WHERE (to_jsonb(actual)-$2::text[]) IS DISTINCT FROM (to_jsonb(expected)-$2::text[])
+          OR (expected.external_delivery_id IS NOT NULL
+            AND actual.external_delivery_id IS DISTINCT FROM expected.external_delivery_id
+            AND NOT (actual.external_delivery_id IS NULL AND EXISTS (
+              SELECT 1 FROM public.shop_privacy_replays r WHERE r.inbox_id=actual.id
+                AND r.delivery_digest=public.shop_privacy_digest(jsonb_build_array('webhook-delivery',
+                  split_part(expected.external_delivery_id,':',1),
+                  substr(expected.external_delivery_id,strpos(expected.external_delivery_id,':')+1))))))
+          OR actual.attempts>expected.attempts LIMIT 1`,
           [JSON.stringify(data.inboxes), mutable],
         )
       ).rowCount
@@ -685,19 +831,98 @@ export async function importErasureExclusions(pool: Pick<Pool, 'connect'>, envel
     // INSERT trigger otherwise restamps the original collection time. PostgreSQL
     // rolls this DDL back on every failure; all CHECK/FK/other guards remain active.
     await client.query('ALTER TABLE public.inbox_messages DISABLE TRIGGER inbox_collection_guard');
-    await copyRows(client, 'inbox_messages', ['id'], data.inboxes);
+    await client.query(
+      `INSERT INTO public.inbox_messages
+       SELECT * FROM jsonb_populate_recordset(NULL::public.inbox_messages,$1::jsonb) ON CONFLICT(id) DO NOTHING`,
+      [JSON.stringify(data.inboxes)],
+    );
     await client.query('ALTER TABLE public.inbox_messages ENABLE TRIGGER inbox_collection_guard');
-    for (const [collection, table, primary] of copies.slice(1))
-      await copyRows(client, table, primary, data[collection] ?? []);
+    for (const [collection, table, primary] of copies.slice(1)) {
+      if (
+        collection === 'shopFences' &&
+        (
+          await client.query(
+            `SELECT 1 FROM unnest($1::text[]) AS shops(shop_id)
+             WHERE public.shop_privacy_has_open_data_request(shops.shop_id) LIMIT 1`,
+            [data.shopFences.map((fence) => fence.shop_id)],
+          )
+        ).rowCount
+      )
+        fail('customer data request must be resolved before shop erasure');
+      if (collection === 'uninstallRecoveries') {
+        // Compare/copy the decision in the target's representation. Live
+        // finalization will compact both provider ID copies together.
+        const recovered = await rows(
+          client,
+          `SELECT r.privacy_inbox_id,r.shop_id,r.installation_generation,r.uninstall_inbox_id,
+             r.capability_digest,i.external_installation_id,r.decided_at
+           FROM jsonb_populate_recordset(NULL::public.uninstall_privacy_recoveries,$1::jsonb) r
+           JOIN public.installation_generations i ON i.shop_id=r.shop_id AND i.generation=r.installation_generation`,
+          [JSON.stringify(data.uninstallRecoveries ?? [])],
+        );
+        await copyRows(client, table, primary, recovered);
+      } else await copyRows(client, table, primary, data[collection] ?? []);
+    }
+    await copyRows(
+      client,
+      'shop_privacy_replays',
+      ['inbox_id'],
+      await rows(
+        client,
+        `SELECT * FROM jsonb_populate_recordset(NULL::public.shop_privacy_replays,$1::jsonb)
+         WHERE forget_at>statement_timestamp() ORDER BY inbox_id`,
+        [JSON.stringify(data.shopReplays ?? [])],
+      ),
+    );
+    // A prior import can have erased additional old transport from the exact
+    // copied fences. Require the original source copy for every other tombstone.
+    if (
+      (
+        await client.query(
+          `SELECT 1 FROM public.inbox_messages i WHERE i.id IN (${emptyShopify}) AND NOT(i.id=ANY($1::uuid[]))
+             AND NOT EXISTS (SELECT 1 FROM public.shop_privacy_transport_scope t
+               JOIN public.shop_privacy_finalization f USING(shop_id,installation_generation)
+               WHERE t.inbox_id=i.id)
+             LIMIT 1`,
+          [data.inboxes.map((r) => r.id)],
+        )
+      ).rowCount
+    )
+      fail('target has transport exclusions absent from source copy');
     // Transport tombstones also cover erased order receipts without privacy receipts.
     await client.query(
       `UPDATE public.webhook_obligation_facts SET captured_fields='{}',facts_erased_at=coalesce(facts_erased_at,clock_timestamp()) WHERE inbox_id=ANY($1::uuid[])`,
       [data.inboxes.map((r) => r.id)],
     );
-    await client.query(
-      'UPDATE public.shopify_webhook_deliveries SET queue_cleanup_pending=true WHERE inbox_id=ANY($1::uuid[])',
-      [data.inboxes.map((r) => r.id)],
+    await clearRestoredWebhookJobs(
+      client,
+      data.inboxes.map((r) => r.id),
     );
+    const compactedInboxIds = data.inboxes.filter((row) => row.external_delivery_id === null).map((row) => row.id);
+    const conflictingRoute = await client.query(
+      `SELECT 1 FROM public.inbox_messages i LEFT JOIN public.shopify_webhook_deliveries d ON d.inbox_id=i.id
+       LEFT JOIN jsonb_populate_recordset(NULL::public.shop_privacy_replays,$2::jsonb) r ON r.inbox_id=i.id
+       WHERE i.id=ANY($1::uuid[]) AND (
+         (d.inbox_id IS NOT NULL AND i.external_delivery_id IS DISTINCT FROM d.shop_domain||':'||d.delivery_id)
+         OR (i.external_delivery_id IS NOT NULL AND r.inbox_id IS NULL AND i.purge_after>statement_timestamp())
+         OR (r.inbox_id IS NOT NULL AND i.external_delivery_id IS NOT NULL
+           AND r.delivery_digest<>public.shop_privacy_digest(jsonb_build_array('webhook-delivery',
+             split_part(i.external_delivery_id,':',1),substr(i.external_delivery_id,strpos(i.external_delivery_id,':')+1))))
+         OR (r.inbox_id IS NOT NULL AND d.inbox_id IS NOT NULL AND (
+           r.content_digest<>public.shop_privacy_replay_digest(d.topic,d.api_version,d.triggered_at,d.event_id,d.webhook_name,i.payload_sha256)
+           OR r.uninstall_domain_digest IS DISTINCT FROM CASE WHEN d.topic='app/uninstalled'
+             THEN public.shop_privacy_digest(jsonb_build_array('shop-domain',d.shop_domain)) END
+           OR r.uninstall_observed_at IS DISTINCT FROM CASE WHEN d.topic='app/uninstalled' THEN d.triggered_at END
+         ))) LIMIT 1`,
+      [compactedInboxIds, JSON.stringify(data.shopReplays ?? [])],
+    );
+    if (conflictingRoute.rowCount) fail('conflicting compact delivery routing');
+    await client.query('DELETE FROM public.shopify_webhook_deliveries WHERE inbox_id=ANY($1::uuid[])', [
+      compactedInboxIds,
+    ]);
+    await client.query('UPDATE public.inbox_messages SET external_delivery_id=NULL WHERE id=ANY($1::uuid[])', [
+      compactedInboxIds,
+    ]);
     // Only staged receipt authority or a separately copied exact-generation
     // recovery decision backs a fence. The original BLOCKED receipt stays blocked.
     for (const fence of data.shopFences) {
@@ -735,10 +960,6 @@ export async function importErasureExclusions(pool: Pick<Pool, 'connect'>, envel
         "UPDATE public.purchase_artwork_events SET asset_id=NULL,placement_id=NULL,group_index=NULL,erased_at=clock_timestamp() WHERE shop_id=$1 AND installation_generation=$2 AND kind='ATTACH' AND erased_at IS NULL",
         parameters,
       );
-      await client.query(
-        'DELETE FROM public.buyer_sessions WHERE shop_id=$1 AND installation_generation=$2',
-        parameters,
-      );
     }
     // Reapply against the restored old private payloads. Helpers preserve exact expiry/economics.
     const bound = (
@@ -769,12 +990,41 @@ export async function importErasureExclusions(pool: Pick<Pool, 'connect'>, envel
       `UPDATE public.purchase_artwork_events e SET asset_id=NULL,placement_id=NULL,group_index=NULL,erased_at=clock_timestamp() FROM public.purchase_orders p,public.customer_order_erasure_fences f WHERE e.purchase_id=p.purchase_id AND f.shop_id=p.shop_id AND f.order_id=p.order_id AND e.kind='ATTACH' AND e.erased_at IS NULL AND f.source_inbox_id=ANY($1::uuid[])`,
       [sourceIds],
     );
+    // Use the live finalizer for row deletion. The storage cleaners still own
+    // external side effects and unsettled custody keeps the restore in HOLD.
+    const finalization: Record<string, number> = {};
+    for (const fence of data.shopFences) {
+      const parameters = [fence.shop_id, fence.installation_generation];
+      let result: string;
+      do {
+        const queueCleanup = await client.query<{ id: string }>(
+          `SELECT i.id FROM public.shop_privacy_transport_scope t JOIN public.inbox_messages i ON i.id=t.inbox_id
+           JOIN public.shopify_webhook_deliveries d ON d.inbox_id=i.id
+           WHERE t.shop_id=$1 AND t.installation_generation=$2 AND i.erasure_state='erased' AND d.queue_cleanup_pending
+           ORDER BY i.id LIMIT 100`,
+          parameters,
+        );
+        await clearRestoredWebhookJobs(
+          client,
+          queueCleanup.rows.map((row) => row.id),
+        );
+        const step = await client.query<{ result: string }>(
+          'SELECT public.finalize_shop_privacy_generation($1,$2,100) AS result',
+          parameters,
+        );
+        result = step.rows[0]?.result ?? fail('missing finalization outcome');
+        if (result === 'dependency_pending' && queueCleanup.rows.length === 100) result = 'progress';
+      } while (result === 'progress');
+      if (result === 'no_authority') fail('unqualified shop finalization target');
+      finalization[result] = (finalization[result] ?? 0) + 1;
+    }
     await client.query('COMMIT');
     return {
       readiness: 'HOLD_STORAGE_AND_AUTHORITY_REQUALIFICATION',
       receipts: data.receipts.length,
       orders: data.orderFences.length,
       assets: data.assetFences.length,
+      finalization,
     };
   } catch (error) {
     await client.query('ROLLBACK');

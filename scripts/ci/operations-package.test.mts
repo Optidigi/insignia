@@ -16,6 +16,10 @@ async function fixture(parent: string) {
   await mkdir(join(worker, 'node_modules/@insignia/storage/dist'), { recursive: true });
   await writeFile(join(worker, 'package.json'), JSON.stringify({ name: '@insignia/worker', type: 'module' }));
   await writeFile(join(worker, 'dist/main.js'), 'export {};\n');
+  await writeFile(
+    join(worker, 'dist/queue-contract.js'),
+    "export const QUEUE_SCHEMA_VERSION=43, WEBHOOK_QUEUE='insignia.shopify-webhook.v1';\n",
+  );
   await writeFile(join(worker, 'node_modules/pg/package.json'), JSON.stringify({ name: 'pg', main: 'index.cjs' }));
   await writeFile(
     join(worker, 'node_modules/pg/index.cjs'),
@@ -248,6 +252,7 @@ test('operations package relocates with its complete module paths, executable No
       'scripts/operations/backup-run.mts',
       'scripts/operations/backup-replica.mts',
       'scripts/privacy/restore-exclusions.mts',
+      'scripts/privacy/restore-webhook-queue.mts',
       'packages/database/migrations/20261018000500_restore_validation_namespace.sql',
       'apps/worker/node_modules/pg/index.cjs',
     ]) {

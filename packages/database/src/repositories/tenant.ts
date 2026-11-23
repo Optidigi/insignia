@@ -56,8 +56,26 @@ async function managedInstallationState(executor: DatabaseExecutor, shopDomain: 
     ])
     .where('shops.shop_domain', '=', shopDomain)
     .executeTakeFirst();
-  return row
-    ? { ...mapShop(row), externalInstallationId: row.external_installation_id, active: row.deactivated_at === null }
+  if (row)
+    return {
+      ...mapShop(row),
+      externalInstallationId: row.external_installation_id,
+      active: row.deactivated_at === null,
+    };
+  const erased = (
+    await sql<{ shop_id: string; current_generation: string }>`
+      SELECT * FROM public.find_erased_shop(${shopDomain})
+    `.execute(executor)
+  ).rows[0];
+  return erased
+    ? {
+        shopId: erased.shop_id,
+        shopDomain,
+        shopifyShopId: null,
+        currentGeneration: erased.current_generation,
+        externalInstallationId: null,
+        active: false,
+      }
     : null;
 }
 
@@ -151,8 +169,17 @@ async function assertNoObservedUninstall(
       ELSE false END
     AND body ? 'myshopify_domain'
     AND (body->>'myshopify_domain' IS NULL OR body->>'myshopify_domain'=${input.shopDomain}))
-  ) AS removed`.execute(transaction);
+  ) OR public.has_compacted_shop_uninstall(${input.shopDomain},${input.observationStartedAt}) AS removed`.execute(
+    transaction,
+  );
   if (removed.rows[0]?.removed !== false) throw new ManagedInstallationError('state_changed');
+}
+
+async function rejectSeenInstallation(transaction: Transaction<Database>, shopId: string, installationId: string) {
+  const history = await sql<{ seen: boolean }>`
+    SELECT public.shop_installation_was_seen(${shopId},${installationId}) AS seen
+  `.execute(transaction);
+  if (history.rows[0]?.seen !== false) throw new ManagedInstallationError('state_changed');
 }
 
 /** Mutations require an enclosing transaction so installation and shop state commit together. */
@@ -194,7 +221,49 @@ export function createTenantRepository(executor: DatabaseExecutor) {
         throw new ManagedInstallationError('identity_mismatch');
       await assertNoObservedUninstall(transaction, input);
       if (rows.length === 0) {
+        const erased = await managedInstallationState(transaction, input.shopDomain);
+        if (erased) {
+          const expected = input.expected;
+          if (
+            !expected ||
+            expected.active ||
+            expected.externalInstallationId !== null ||
+            expected.shopId !== erased.shopId ||
+            expected.currentGeneration !== erased.currentGeneration ||
+            expected.shopDomain !== input.shopDomain
+          )
+            throw new ManagedInstallationError('state_changed');
+          const confirmation = input.confirmation;
+          if (
+            !confirmation ||
+            confirmation.shopDomain !== input.shopDomain ||
+            confirmation.shopifyShopId !== input.shopifyShopId ||
+            confirmation.externalInstallationId !== input.externalInstallationId
+          )
+            throw new ManagedInstallationError('confirmation_required');
+          const attached = await sql<{ attached: boolean }>`
+            SELECT public.reattach_erased_shop(${erased.shopId},${erased.currentGeneration}::bigint,
+              ${input.shopDomain},${input.shopifyShopId},${input.observationStartedAt}) AS attached
+          `.execute(transaction);
+          if (!attached.rows[0]?.attached) throw new ManagedInstallationError('state_changed');
+          await rejectSeenInstallation(transaction, erased.shopId, input.externalInstallationId);
+          await createTenantRepository(transaction).startInstallation(
+            transaction,
+            erased.shopId,
+            input.externalInstallationId,
+            input.observationStartedAt,
+          );
+          await assertNoObservedUninstall(transaction, input);
+          const state = await managedInstallationState(transaction, input.shopDomain);
+          if (!state?.active) throw new ManagedInstallationError('state_changed');
+          return { outcome: 'REINSTALLED', state };
+        }
         if (input.expected !== null) throw new ManagedInstallationError('state_changed');
+        const alias =
+          await sql`SELECT 1 FROM public.find_erased_shop(${input.shopDomain},${input.shopifyShopId})`.execute(
+            transaction,
+          );
+        if (alias.rows.length > 0) throw new ManagedInstallationError('identity_mismatch');
         await sql`SAVEPOINT managed_installation_create`.execute(transaction);
         try {
           await createTenantRepository(transaction).createShop(transaction, {
@@ -252,13 +321,7 @@ export function createTenantRepository(executor: DatabaseExecutor) {
         expected.active !== state.active
       )
         throw new ManagedInstallationError('state_changed');
-      const history = await transaction
-        .selectFrom('installation_generations')
-        .select('generation')
-        .where('shop_id', '=', state.shopId)
-        .where('external_installation_id', '=', input.externalInstallationId)
-        .executeTakeFirst();
-      if (history) throw new ManagedInstallationError('state_changed');
+      await rejectSeenInstallation(transaction, state.shopId, input.externalInstallationId);
       const confirmation = input.confirmation;
       if (
         !confirmation ||
@@ -431,10 +494,11 @@ export function createTenantRepository(executor: DatabaseExecutor) {
     ): Promise<string> {
       const shop = await transaction
         .selectFrom('shops')
-        .select('current_generation')
+        .select(['current_generation', 'shop_domain'])
         .where('shop_id', '=', shopId)
         .forUpdate()
         .executeTakeFirstOrThrow();
+      if (shop.shop_domain === `${shopId}.erased.invalid`) throw new ManagedInstallationError('state_changed');
       const generation = (BigInt(shop.current_generation) + 1n).toString();
       await transaction
         .updateTable('installation_generations')

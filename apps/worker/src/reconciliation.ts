@@ -72,6 +72,18 @@ export function createWorkerReconciliation(input: {
           errorClass: 'BUYER_PAYLOAD_CLEANUP_UNAVAILABLE',
           run: () => input.core.buyers?.cleanupDue(100),
         },
+        {
+          errorClass: 'SHOP_PRIVACY_FINALIZATION_UNAVAILABLE',
+          run: async () => {
+            const summary = await input.core.customerPrivacy.finalizePendingShops();
+            if (summary.failed) throw new Error('Shop privacy finalization failed');
+            if (summary.dependency_pending)
+              input.queue.observability.logger.error('queue_job_rejected', {
+                errorClass: 'SHOP_PRIVACY_DEPENDENCY_PENDING',
+                count: summary.dependency_pending,
+              });
+          },
+        },
         { errorClass: 'UNINSTALL_ENROLLMENT_UNAVAILABLE', run: () => input.lifecycle?.runOnce() },
         { errorClass: 'SIGNING_KEY_DESTRUCTION_UNAVAILABLE', run: destroyExpiredSigningKeys },
         // Bounded (2 restores, 20 s), so it cannot starve the recovery passes above.

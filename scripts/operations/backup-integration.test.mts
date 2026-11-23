@@ -103,6 +103,9 @@ test('real populated dump restores atomically with erasure/expiry replay, unchan
       });
     }
     const url = `postgresql://serveradmin@localhost/backup_source?host=${socket}`;
+    run([process.execPath, join(root, 'scripts/database/install-queue.mts')], {
+      env: { ...env, DATABASE_URL: url, INSIGNIA_QUEUE_OWNER_INSTALL: 'explicit-reviewed-owner-operation' },
+    });
     run(
       [
         join(root, 'packages/database/node_modules/.bin/vitest'),

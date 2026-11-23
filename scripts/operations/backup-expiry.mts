@@ -6,6 +6,7 @@ import { lstat, open } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import type { PoolClient } from 'pg';
+import { clearRestoredWebhookJobs } from '../privacy/restore-webhook-queue.mts';
 
 export async function replayExpiry(client: PoolClient) {
   await client.query('BEGIN');
@@ -39,6 +40,18 @@ export async function replayExpiry(client: PoolClient) {
       ).rows;
       for (const row of rows) await client.query('SELECT public.expire_shopify_webhook_bytes($1)', [row.id]);
       await client.query('SELECT public.expire_shopify_webhook_facts(100)');
+      const queueCleanup = await client.query<{ id: string }>(
+        `SELECT i.id FROM public.inbox_messages i JOIN public.shopify_webhook_deliveries d ON d.inbox_id=i.id
+         WHERE d.queue_cleanup_pending AND i.source='shopify' AND i.retention_class='shopify-webhook' AND i.erasure_state='erased'
+         ORDER BY i.id LIMIT 100`,
+      );
+      await clearRestoredWebhookJobs(
+        client,
+        queueCleanup.rows.map((row) => row.id),
+      );
+      const compacted = await client.query<{ count: number }>(
+        'SELECT public.expire_shopify_webhook_routes(100) AS count',
+      );
       const pending = (
         await client.query<{ count: string }>(`SELECT
         (SELECT count(*) FROM public.design_drafts WHERE expires_at<=clock_timestamp())+
@@ -51,7 +64,14 @@ export async function replayExpiry(client: PoolClient) {
         (SELECT count(*) FROM public.webhook_obligation_facts WHERE facts_erased_at IS NULL AND forget_after<=clock_timestamp()) AS count`)
       ).rows[0]?.count;
       assert(pending !== undefined && /^\d+$/.test(pending), 'Expiry count response missing');
-      if (Number(pending) === 0 && Number(cleaned.buyer) === 0 && Number(cleaned.purchase) === 0) break;
+      if (
+        Number(pending) === 0 &&
+        Number(cleaned.buyer) === 0 &&
+        Number(cleaned.purchase) === 0 &&
+        !queueCleanup.rows.length &&
+        compacted.rows[0]?.count === 0
+      )
+        break;
       if (page === 999) throw Error('Expiry replay budget exceeded');
     }
     await client.query(

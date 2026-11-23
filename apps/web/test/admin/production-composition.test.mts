@@ -299,6 +299,12 @@ for (const releaseMode of [
         await pool.query(`REVOKE INSERT,UPDATE,DELETE ON trusted_release_records FROM ${role}`);
         // Migration 58 grants the signing scope function to the deployed web role.
         await pool.query(`GRANT EXECUTE ON FUNCTION signing_key_scope(text, bigint, boolean) TO ${role}`);
+        // Match the reviewed lifecycle grants for the managed installation bootstrap.
+        await pool.query(`REVOKE ALL ON public.shop_privacy_proof_key,public.shop_privacy_replays,
+          public.shop_privacy_identity,public.shop_privacy_finalization FROM ${role}`);
+        await pool.query(`GRANT EXECUTE ON FUNCTION public.find_erased_shop(text,text),
+          public.has_compacted_shop_uninstall(text,timestamptz),public.shop_installation_was_seen(text,text),
+          public.reattach_erased_shop(text,bigint,text,text,timestamptz) TO ${role}`);
         runtimePool = new Pool({ connectionString: fixtureDatabase, options: `-c role=${role}` });
         observeTransactions(runtimePool);
         if (releaseMode.startsWith('demand-')) {

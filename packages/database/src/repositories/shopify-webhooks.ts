@@ -181,15 +181,26 @@ async function lockById(tx: Transaction<Database>, id: string): Promise<Locked |
   return { routing, inbox };
 }
 
-async function lockQueueById(tx: Transaction<Database>, id: string): Promise<WebhookQueueHandoffState | null> {
-  const inbox = await tx.selectFrom('inbox_messages').select('id').where('id', '=', id).forUpdate().executeTakeFirst();
+async function lockQueueById(
+  tx: Transaction<Database>,
+  id: string,
+): Promise<WebhookQueueHandoffState | 'expired' | null> {
+  const inbox = await tx
+    .selectFrom('inbox_messages')
+    .select(['source', 'retention_class', 'erasure_state'])
+    .where('id', '=', id)
+    .forUpdate()
+    .executeTakeFirst();
   if (!inbox) return null;
   const routing = await tx
     .selectFrom('shopify_webhook_deliveries')
     .select('queue_handoff_state')
     .where('inbox_id', '=', id)
     .executeTakeFirst();
-  return routing?.queue_handoff_state ?? null;
+  if (routing) return routing.queue_handoff_state;
+  if (inbox.source === 'shopify' && inbox.retention_class === 'shopify-webhook' && inbox.erasure_state === 'erased')
+    return 'expired';
+  return null;
 }
 
 async function payloadUsable(tx: Transaction<Database>, id: string): Promise<boolean> {
@@ -348,6 +359,7 @@ export function createShopifyWebhookRepository(database: Kysely<Database>) {
       return database.transaction().execute(async (tx) => {
         const state = await lockQueueById(tx, id);
         if (state === null) throw new Error('Shopify queue handoff identity is absent');
+        if (state === 'expired') return 'expired';
         if (!(await payloadUsable(tx, id))) {
           await tx
             .updateTable('shopify_webhook_deliveries')
@@ -570,6 +582,31 @@ export function createShopifyWebhookRepository(database: Kysely<Database>) {
       const id = randomUUID();
       const now = new Date();
       return database.transaction().execute(async (tx) => {
+        // Serialize delivery lookup with the finalizer's raw-to-digest move.
+        // Older schema rehearsals predate the compact replay table.
+        const { rows } = await sql<{ compactReplay: boolean }>`
+          SELECT pg_advisory_xact_lock(hashtextextended(
+            jsonb_build_array('shopify-delivery',${input.shopDomain}::text,${input.deliveryId}::text)::text,0)),
+            to_regclass('public.shop_privacy_replays') IS NOT NULL AS "compactReplay"
+        `.execute(tx);
+        if (rows[0]?.compactReplay) {
+          const replay = (
+            await sql<{ id: string; exact: boolean; shop_id: string | null; installation_generation: string | null }>`
+              SELECT * FROM public.lookup_shop_privacy_replay(
+                ${input.shopDomain},${input.deliveryId},${input.topic},${input.apiVersion},
+                ${input.triggeredAt},${input.eventId},${input.name},${hash})
+            `.execute(tx)
+          ).rows[0];
+          if (replay) {
+            if (!replay.exact) throw new ShopifyDeliveryConflictError();
+            return {
+              kind: 'processed',
+              id: replay.id,
+              shopId: replay.shop_id,
+              installationGeneration: replay.installation_generation,
+            };
+          }
+        }
         // The generic M3-001 key remains per generation. Shopify additionally
         // has a stable key that never changes when the inbox row is resolved.
         const inserted = await tx
@@ -637,7 +674,7 @@ export function createShopifyWebhookRepository(database: Kysely<Database>) {
         const locked = await lockById(tx, existing.inbox_id);
         if (!locked) throw new Error('Shopify delivery identity lost its inbox row');
         assertSame(locked, input, hash, body);
-        await bindUninstallAuthority(tx, locked.inbox.id, input);
+        if (locked.inbox.erasure_state !== 'erased') await bindUninstallAuthority(tx, locked.inbox.id, input);
         const resolved = await resolveLocked(tx, locked);
         if (input.topic === 'app/uninstalled' && input.uninstallCapabilityDigest === undefined)
           await snapshotGenericScope(tx, locked.inbox.id);
