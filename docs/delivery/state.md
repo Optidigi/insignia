@@ -174,6 +174,24 @@ Production on host alias `prod`, as of 23 November 2026 (deploy AN). One Compose
 
 **Deploy AN** (23 Nov): Shopify CLI activated `1263125463041` after Phase B installed the qualified web, worker and verifier images. Runtime run `45241023378` built tree `4735b14c…`, identical to main `fee9927c`. The encrypted checkpoint restored all 72 migrations. The sole Active version matches the merged 51-version binding. The EUR profile was rebound at `19:20:57Z`. Web and the quiesced worker-role read agreed on fresh scoped release record `8a8f4de9…` at `19:21:04Z`. The development storefront loaded the new theme URL, and all 15 CDN asset bytes match the qualified build. The old development product has no published configuration in the current database. A native customized cart and test checkout on a current fixture, signed-out reviewer access, and complete shop erasure remain open.
 
+**Native Shopify review checkout, 23 Nov:** Version `1263125463041` on rewrite-dev. The published
+QA product is `10645326954779`, variant `54801578623259`, revision
+`d33970d7-0d79-4267-89f2-b4988117f139`. Placement 1, Review QA Print, Standard. Designer Review, cart
+and checkout each showed two units at $15.00 ($10.00 product + $5.00 surcharge), or $30.00 before
+shipping. The cart used `_insignia_line_v3`. Test order #1011 (`DAZ15F0CZ`) paid $38.00 including
+$8.00 shipping, was recorded with one purchase binding, and showed complete artwork in Insignia.
+The current production rewrite-dev protected facts are 11 orders, 1 paid, 2 refunds, 1 binding and
+1 line. The cart was empty after checkout. In a browser-only Market-ID simulation, the live config
+route changed from 200 to 422 and the localized explanation appeared before artwork collection.
+A native country switch on an existing cart remains unverified. The previously published demo is
+historical. During setup, reloading after a draft conflict preserved the saved method and allowed
+publication.
+
+Shopify's private testing instructions were saved and read back with the prepared fixture, access
+details, expected total and both Standard billing periods. A fresh signed-out browser passed the
+storefront password page and opened the Designer with config HTTP 200. Shopify remains paused.
+Independent reviewer-admin access and shop erasure still need qualification.
+
 **Deploy AL** (19 Nov, web only): main `e930b8be` — #606 the Methods page keeps `shop`/`host`/`embedded` when it updates its own URL (found in the cookie-blocked browser test after #604). Web replaced `19:03:55Z`; compose delta `services.web.image` only; readback clean; database baseline identical. Receipt folder `methods-deploy-AL` on both hosts.
 
 **Deploy AK** (19 Nov, owner go "do B"; fixes deploy AJ): the Dev Dashboard version `1248762724353` carried the theme module config but its files were never uploaded: `insignia-storefront.js` answered 404 on Shopify's CDN, so from `15:09:30Z` no store showed Customise (found by the storefront browser test; admission had passed). The frozen stagings were lost in the 19 Nov host cleanup, so a staging was rebuilt: theme files from a build of main `9b677033` (all 24 byte-identical to the baseline; a build of current main differs), Function wasm built locally with Rust 1.98.1 (equal to the pins `5c8708b5…`/`6c362b36…`), queries equal to the pins, native manifests (uids) from the 9 Nov staging, app config generated from the `native-noallorders` baseline. Version `1257303638017` (`native-scope60-9b677033`) created once by CLI 4.9.4 (`app deploy --no-release --no-build`), read back inactive with all 14 modules deep-equal to `native-noallorders`. Binding #605 (`41194ad5`, also carrying #604: in-app navigation keeps `shop`/`host`/`embedded`). Phase B `18:13:38Z`, `app release` `18:13:48Z`, EUR rebound `18:14:06Z`, admission `7c35e9dc…` `18:14:37Z`; CDN serves the new version's storefront files (200). **Storefront outage `15:09:30–~18:14Z`** on all installed stores (dev stores and the reviewer's store only). Readback 7× image-ok, 0 error lines, other sites unchanged. New release rule: after every app release fetch the storefront script from the CDN (expect 200) before declaring it done. Browser tests after AK/AL with third-party cookies and storage blocked (logged-in Chromium): admin navigation, create method, edit/save/publish a product (per-colour photos), order detail; storefront Designer upload → quote → Add to cart → test-gateway order #1002 recorded paid with artwork; #573 colour rename (Ice→Glacier) keeps its photo and publishes; the publish auto-continuation (deploy AF) observed live. Receipt folder `scope-deploy-AK` on both hosts.
