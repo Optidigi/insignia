@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { ARTWORK_POLICY, receiveVerifiedShopifyWebhook } from '@insignia/application';
 import { sql } from 'kysely';
 import { Pool } from 'pg';
@@ -90,6 +91,56 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('shop privacy finalizer', () =
     expect(await finalize(f.shopId, 2)).toBe('no_authority');
   });
 
+  it('does not finalize a successor fence staged by schema 72', async () => {
+    const f = await fixture();
+    await f.deactivate();
+    await db.transaction().execute((tx) => f.tenant.startInstallation(tx, f.shopId, 'gid://shopify/AppInstallation/2'));
+    await insertConfig(f.shopId, 'successor');
+    await sql`UPDATE installation_generations SET deactivated_at=clock_timestamp()
+      WHERE shop_id=${f.shopId} AND generation=2`.execute(db);
+    const receipt = await createShopifyWebhookRepository(db).receive({
+      shopDomain: f.shopDomain,
+      topic: 'shop/redact',
+      apiVersion: '2026-07',
+      triggeredAt: new Date(),
+      deliveryId: randomUUID(),
+      eventId: null,
+      name: null,
+      rawBody: Buffer.from(JSON.stringify({ shop_id: f.shopifyShopId, shop_domain: f.shopDomain })),
+    });
+    const legacy = readFileSync(
+      new URL('../migrations/20261113000100_batched_buyer_session_erasure.sql', import.meta.url),
+      'utf8',
+    );
+    const stageDefinition = legacy.match(
+      /CREATE OR REPLACE FUNCTION public\.stage_shop_privacy_inbox[\s\S]*?END \$\$;/,
+    )?.[0];
+    if (!stageDefinition) throw new Error('Expected schema-72 shop erasure staging function');
+    // Isolate the legacy function body to this transaction. Rollback restores
+    // the migrated definition and also keeps this test's fixture out of other cases.
+    const rollback = new Error('rollback legacy erasure fixture');
+    await assertLegacyHold();
+    async function assertLegacyHold() {
+      await expect(
+        db.transaction().execute(async (tx) => {
+          await sql.raw(stageDefinition as string).execute(tx);
+          const { rows } = await sql<{ result: { kind: string } }>`
+          SELECT public.process_customer_privacy_inbox(${receipt.id}::uuid) AS result
+        `.execute(tx);
+          expect(rows[0]?.result.kind).toBe('SHOP_ERASURE_STAGED');
+          const { rows: proof } = await sql<{ result: string }>`
+          SELECT public.finalize_shop_privacy_generation(${f.shopId},2,20) AS result
+        `.execute(tx);
+          expect(proof[0]?.result).toBe('no_authority');
+          expect((await sql`SELECT config_id FROM product_configs WHERE shop_id=${f.shopId}`.execute(tx)).rows).toEqual(
+            [{ config_id: 'successor' }],
+          );
+          throw rollback;
+        }),
+      ).rejects.toBe(rollback);
+    }
+  });
+
   it('removes raw delivery routing once the queue is clean and acknowledges only exact retries', async () => {
     const f = await fixture();
     await f.deactivate();
@@ -122,6 +173,11 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('shop privacy finalizer', () =
     ).toEqual({ kind: 'processed', inboxId: receipt.id, queue: 'not_needed' });
     await expect(hooks.receive({ ...delivery, eventId: randomUUID() })).rejects.toThrow('conflicts');
     expect(
+      await hooks.withQueueHandoff(receipt.id, async () => {
+        throw new Error('A compacted receipt must not reach the queue');
+      }),
+    ).toBe('expired');
+    expect(
       (await sql`SELECT external_delivery_id FROM inbox_messages WHERE id=${receipt.id}::uuid`.execute(db)).rows,
     ).toEqual([{ external_delivery_id: null }]);
     expect(
@@ -133,6 +189,58 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('shop privacy finalizer', () =
     expect((await sql`SELECT 1 FROM shop_privacy_replays WHERE inbox_id=${receipt.id}::uuid`.execute(db)).rows).toEqual(
       [],
     );
+  });
+
+  it.each([
+    { phase: 'before finalization', alreadyDrained: false },
+    { phase: 'after finalization', alreadyDrained: true },
+  ])('expires generationless routing $phase while retaining its unresolved obligation', async ({ alreadyDrained }) => {
+    const f = await fixture();
+    await f.deactivate();
+    expect(await f.receive()).toMatchObject({ kind: 'SHOP_ERASURE_STAGED' });
+    if (alreadyDrained) expect(await drain(f.shopId)).toBe('drained');
+    const hooks = createShopifyWebhookRepository(db);
+    const receipt = await hooks.receive({
+      shopDomain: f.shopDomain,
+      topic: 'orders/create',
+      apiVersion: '2026-07',
+      triggeredAt: new Date(),
+      deliveryId: randomUUID(),
+      eventId: randomUUID(),
+      name: 'late-route',
+      rawBody: Buffer.from('{"id":247,"email":"not-retained@example.invalid"}'),
+    });
+    expect(receipt.installationGeneration).toBeNull();
+    if (!alreadyDrained) expect(await drain(f.shopId)).toBe('dependency_pending');
+    const routing = () => sql`SELECT 1 FROM shopify_webhook_deliveries WHERE inbox_id=${receipt.id}::uuid`.execute(db);
+    await sql`SELECT public.finalize_pending_shop_privacy(3)`.execute(db);
+    expect((await routing()).rows).toHaveLength(1);
+    await sql`UPDATE inbox_messages SET purge_after=clock_timestamp() WHERE id=${receipt.id}::uuid`.execute(db);
+    expect((await hooks.eraseExpiredPayloads(100)).blockedUnsupportedIds).toContain(receipt.id);
+    expect(await hooks.cleanupExpiredQueueJobs(100, async () => false)).not.toContain(receipt.id);
+    await sql`SELECT public.finalize_pending_shop_privacy(3)`.execute(db);
+    expect((await routing()).rows).toHaveLength(1);
+    expect(await hooks.cleanupExpiredQueueJobs(100, async () => true)).toContain(receipt.id);
+    await sql`SELECT public.finalize_pending_shop_privacy(3)`.execute(db);
+    expect((await routing()).rows).toHaveLength(0);
+    expect((await hooks.eraseExpiredPayloads(100)).blockedUnsupportedIds).toContain(receipt.id);
+    expect(
+      (
+        await sql`SELECT i.external_delivery_id,i.installation_generation,i.state,f.purpose,f.captured_fields
+       FROM inbox_messages i JOIN webhook_obligation_facts f ON f.inbox_id=i.id WHERE i.id=${receipt.id}::uuid`.execute(
+          db,
+        )
+      ).rows,
+    ).toEqual([
+      {
+        external_delivery_id: null,
+        installation_generation: null,
+        state: 'pending',
+        purpose: 'UNQUALIFIED',
+        captured_fields: { id: '247' },
+      },
+    ]);
+    expect(await finalize(f.shopId)).toBe(alreadyDrained ? 'drained' : 'dependency_pending');
   });
 
   it('drains already-expired transport when its exact generation has erasure authority', async () => {
@@ -314,14 +422,23 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('shop privacy finalizer', () =
         observationStartedAt: new Date(),
       }),
     );
-    expect(
-      await createPurchaseRepository(db).reconcile({
+    const { rows: dates } = await sql<{ before_first: Date; between: Date; after_reinstall: Date }>`
+      SELECT early.activated_at - interval '1 day' AS before_first,
+        early.deactivated_at + (later.activated_at - early.deactivated_at) / 2 AS between,
+        clock_timestamp() AS after_reinstall
+      FROM installation_generations early JOIN installation_generations later USING(shop_id)
+      WHERE early.shop_id=${f.shopId} AND early.generation=1 AND later.generation=2
+    `.execute(db);
+    const at = dates[0];
+    if (!at) throw new Error('Expected both installation windows');
+    const reconcile = (orderId: string, createdAt: string) =>
+      createPurchaseRepository(db).reconcile({
         order: {
           shopId: f.shopId,
           installationGeneration: '2',
-          orderId: 'gid://shopify/Order/101',
-          createdAt: orderCreated,
-          updatedAt: orderCreated,
+          orderId,
+          createdAt,
+          updatedAt: createdAt,
           observedAt: new Date().toISOString(),
           currency: 'USD',
           country: 'US',
@@ -341,8 +458,22 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('shop privacy finalizer', () =
         bindings: [],
         exception: 'AUTHORIZATION_INCOMPLETE',
         firstPaidAt: null,
-      }),
-    ).toEqual({ kind: 'not_customized' });
+      });
+    for (const [id, createdAt] of [
+      ['101', orderCreated],
+      ['102', at.before_first.toISOString()],
+      ['103', at.between.toISOString()],
+    ] as const) {
+      expect(await reconcile(`gid://shopify/Order/${id}`, createdAt)).toEqual({ kind: 'not_customized' });
+    }
+    await reconcile('gid://shopify/Order/104', at.after_reinstall.toISOString());
+    expect(
+      (
+        await sql`SELECT order_id,installation_generation::text FROM purchase_orders WHERE shop_id=${f.shopId}`.execute(
+          db,
+        )
+      ).rows,
+    ).toEqual([{ order_id: 'gid://shopify/Order/104', installation_generation: '2' }]);
   });
 
   it('erases retired usage records linked to retail orders under the exact shop fence', async () => {

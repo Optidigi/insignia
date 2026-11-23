@@ -58,18 +58,24 @@ provider name and ID. The historical installation ID is replaced by a keyed
 digest. A confirmed reinstall can recover the tenant and advance the counter.
 A previously seen installation ID is rejected. A signed shop-redact body
 identifies the shop only. A new unqualified request after reinstall stays on
-hold, even if the successor has since deactivated. Existing exact recovery
-decisions remain valid. Shared generationless rows, unresolved routing or
+hold, even if the successor has since deactivated. Existing exact recovery decisions for the first installation remain valid.
+Historical successor fences stay on hold because a previously staged callback
+cannot prove its generation. Shared generationless rows, unresolved routing or
 customer obligations, and unsettled storage keep the deletion open.
 
-The seven-day window bounds transport replay and backup recovery. Retiring the
-long-lived keyed tenant and installation fence, and the minimal provenance
-rows that back it, still needs an owner decision about how to prevent older
-installations from reacquiring authority after retirement. Pending customer
-requests or independently staged customer fences also need disposition where
-their installation scope cannot be proved. Successor erasure needs
-independently qualified evidence that binds the privacy request to that exact
-installation.
+The seven-day window bounds transport replay and backup recovery. Insignia keeps
+the keyed tenant and installation fingerprints and minimal deletion proof after
+that window while they are needed to verify reinstalls and reject old
+installation IDs. Treat the fingerprints as restricted pseudonymous data. Use
+them only for those checks and remove them once a replacement can reject stale
+events without the retained fingerprints. The raw shop and installation
+identifiers are erased.
+
+Pending customer requests or independently staged customer fences need
+disposition where their installation scope cannot be proved. Successor erasure
+needs independently qualified evidence that binds the privacy request to that
+exact installation. Shopify does not explicitly approve fingerprint retention
+in its public erasure guidance.
 
 The draft migration generates the digest key inside the schema-owner boundary.
 Rehearse a same-schema encrypted backup and isolated restore with that key

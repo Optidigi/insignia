@@ -183,6 +183,14 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
         staged.shopId,
         stagedTransport.id,
       ]);
+      await source.query(
+        `INSERT INTO pgboss.job(name,id,data) SELECT 'insignia.shopify-webhook.v1',id,jsonb_build_object('inboxId',id)
+         FROM unnest($1::uuid[]) ids(id)`,
+        [[erasedInbox.id, stagedTransport.id]],
+      );
+      await source.query("INSERT INTO pgboss.job(name,id,data) VALUES('insignia.token-refresh.v1',$1,'{}')", [
+        erasedInbox.id,
+      ]);
       const backup = join(temporary, 'before-erasure.dump');
       execFileSync(join(tools, 'pg_dump'), ['--format=custom', '--file', backup, '--dbname', address], {
         env: process.env,
@@ -234,7 +242,10 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
       }
       await source.query('SELECT public.cleanup_customer_privacy_inboxes(100)');
       await createCustomerPrivacyRepository(db).processInbox(erasedInbox.id);
-      await erasedHooks.cleanupExpiredQueueJobs(100, async () => true);
+      await erasedHooks.cleanupExpiredQueueJobs(100, async (id) => {
+        await source.query("DELETE FROM pgboss.job WHERE name='insignia.shopify-webhook.v1' AND id=$1", [id]);
+        return true;
+      });
       let drained: string;
       do {
         drained = (
@@ -358,8 +369,54 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
         created_at: blockedReceipt.staged_at,
       });
       await expect(importErasureExclusions(target, reseal(promoted))).rejects.toThrow('foreign erasure fence');
+      const legacySuccessor = structuredClone(exclusions);
+      legacySuccessor.data.shopFences.push({
+        ...required(legacySuccessor.data.shopFences[0]),
+        installation_generation: '2',
+      });
+      await expect(importErasureExclusions(target, reseal(legacySuccessor))).rejects.toThrow(
+        'shop erasure successor authority unverified',
+      );
+      expect(
+        (await target.query('SELECT 1 FROM customer_privacy_receipts WHERE shop_id=$1', [f.shopId])).rowCount,
+      ).toBe(0);
+      await target.query("UPDATE pgboss.job SET data='{}' WHERE name='insignia.shopify-webhook.v1' AND id=$1", [
+        erasedInbox.id,
+      ]);
+      await expect(importErasureExclusions(target, exclusions)).rejects.toThrow(
+        'Conflicting restored webhook job identity',
+      );
+      expect(
+        (await target.query('SELECT erasure_state FROM inbox_messages WHERE id=$1', [erasedInbox.id])).rows,
+      ).toEqual([{ erasure_state: 'retained' }]);
+      await target.query(
+        "UPDATE pgboss.job SET data=jsonb_build_object('inboxId',id) WHERE name='insignia.shopify-webhook.v1' AND id=$1",
+        [erasedInbox.id],
+      );
       const result = await importErasureExclusions(target, exclusions);
       expect(result.finalization.drained).toBe(1);
+      expect(
+        (
+          await target.query('SELECT 1 FROM shopify_webhook_deliveries WHERE inbox_id=ANY($1::uuid[])', [
+            [erasedInbox.id, stagedTransport.id],
+          ])
+        ).rowCount,
+      ).toBe(0);
+      expect(
+        (
+          await target.query(
+            "SELECT 1 FROM pgboss.job WHERE name='insignia.shopify-webhook.v1' AND id=ANY($1::uuid[])",
+            [[erasedInbox.id, stagedTransport.id]],
+          )
+        ).rowCount,
+      ).toBe(0);
+      expect(
+        (
+          await target.query("SELECT 1 FROM pgboss.job WHERE name='insignia.token-refresh.v1' AND id=$1", [
+            erasedInbox.id,
+          ])
+        ).rowCount,
+      ).toBe(1);
       const restoredDb = createDatabase(new Pool({ connectionString: targetAddress.href }));
       try {
         const hooks = createShopifyWebhookRepository(restoredDb);
@@ -558,7 +615,7 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
       const schema = join(temporary, 'schema.dump');
       execFileSync(
         join(tools, 'pg_dump'),
-        ['--schema-only', '--format=custom', '--file', schema, '--dbname', address],
+        ['--schema-only', '--exclude-schema=pgboss', '--format=custom', '--file', schema, '--dbname', address],
         { stdio: 'pipe' },
       );
       await admin.query('CREATE DATABASE ' + sourceName);

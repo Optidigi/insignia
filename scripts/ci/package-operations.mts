@@ -34,6 +34,7 @@ const runtimeFiles = [
   'scripts/operations/backup-replica.mts',
   'scripts/operations/backup-expiry.mts',
   'scripts/privacy/restore-exclusions.mts',
+  'scripts/privacy/restore-webhook-queue.mts',
   'packages/database/migrations/20261018000500_restore_validation_namespace.sql',
 ];
 

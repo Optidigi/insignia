@@ -523,8 +523,12 @@ export function createPurchaseRepository(db: Kysely<Database>) {
           input.bindings[0]?.quote.installationGeneration ??
           origin ??
           order.installationGeneration;
+        // Falling back to the active installation would reimport pre-install or
+        // between-install orders after their former shop data was erased.
+        const originUnverified = !previous && input.bindings.length === 0 && !origin;
         const erasedGeneration = await sql`SELECT 1 FROM public.shop_privacy_fences
-          WHERE shop_id=${order.shopId} AND installation_generation IN (${purchaseGeneration}::bigint,${origin ?? null}::bigint)
+          WHERE shop_id=${order.shopId} AND
+            (${originUnverified} OR installation_generation IN (${purchaseGeneration}::bigint,${origin ?? null}::bigint))
           LIMIT 1`.execute(tx);
         if (erasedGeneration.rows.length) {
           await completeDelivery();

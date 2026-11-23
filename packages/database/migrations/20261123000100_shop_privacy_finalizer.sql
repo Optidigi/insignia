@@ -87,10 +87,7 @@ BEGIN
  IF NOT EXISTS(SELECT 1 FROM public.inbox_messages e WHERE e.id=p_privacy
      AND e.collected_at>=installed.activated_at)
  THEN RAISE EXCEPTION 'privacy receipt predates installation'; END IF;
- IF destination.installation_generation>1 AND NOT EXISTS (
-   SELECT 1 FROM public.uninstall_privacy_recoveries r
-    WHERE r.privacy_inbox_id=p_privacy AND r.shop_id=destination.shop_id
-      AND r.installation_generation=destination.installation_generation)
+ IF destination.installation_generation>1
  THEN RAISE EXCEPTION 'generationless request cannot qualify a successor installation'; END IF;
  -- The late-authority decision says inactive NOW; it never asserts that the
  -- generation was already inactive at the original receipt collection time.
@@ -148,7 +145,10 @@ CREATE VIEW public.shop_privacy_finalization_targets AS
  JOIN public.customer_privacy_receipts r ON r.inbox_id=f.source_inbox_id AND r.shop_id=f.shop_id
  JOIN public.inbox_messages e ON e.id=r.inbox_id AND e.payload_sha256=r.raw_body_sha256
  LEFT JOIN public.uninstall_privacy_scopes s ON s.privacy_inbox_id=r.inbox_id AND s.shop_id=r.shop_id
- WHERE i.deactivated_at IS NOT NULL AND e.source='shopify' AND e.retention_class='shopify-webhook'
+ -- Legacy automatic recovery cannot independently bind a generationless
+ -- callback to a successor. No successor qualifies until a new authority
+ -- path can prove its exact scope.
+ WHERE f.installation_generation=1 AND i.deactivated_at IS NOT NULL AND e.source='shopify' AND e.retention_class='shopify-webhook'
    AND e.erasure_state='erased' AND e.payload=''::bytea AND e.state='processed'
    AND r.operation IN ('SHOP_ERASURE_STAGED','SHOP_ERASURE_BLOCKED')
    AND ((r.operation='SHOP_ERASURE_STAGED' AND i.deactivated_at<=e.collected_at
@@ -424,6 +424,93 @@ CREATE TABLE public.shop_privacy_identity (
 );
 REVOKE ALL ON public.shop_privacy_identity FROM PUBLIC;
 
+-- This is diagnostic routing evidence only. Keep fixed topic vocabulary and a
+-- keyed shop correlation for unresolved receipts; no generation or authority
+-- is inferred from these headers or written back to the inbox.
+CREATE TABLE public.shopify_expired_transport (
+ inbox_id uuid PRIMARY KEY REFERENCES public.inbox_messages(id),
+ topic text NOT NULL CHECK(topic IN ('app/uninstalled','customers/data_request','customers/redact',
+   'shop/redact','orders/create','orders/paid','orders/updated','unsupported')),
+ domain_digest text CHECK(domain_digest ~ '^[0-9a-f]{64}$')
+);
+CREATE INDEX shopify_expired_transport_domain ON public.shopify_expired_transport(domain_digest)
+ WHERE domain_digest IS NOT NULL;
+REVOKE ALL ON public.shopify_expired_transport FROM PUBLIC;
+
+CREATE FUNCTION public.expire_shopify_webhook_routes(p_limit integer) RETURNS integer
+LANGUAGE plpgsql SET search_path=pg_catalog AS $$
+DECLARE receipt record; route public.shopify_webhook_deliveries%ROWTYPE; affected integer:=0;
+BEGIN
+ IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 THEN
+   RAISE EXCEPTION 'invalid expired webhook routing budget' USING ERRCODE='check_violation';
+ END IF;
+ FOR receipt IN
+   SELECT i.id,i.state FROM public.inbox_messages i
+   JOIN public.shopify_webhook_deliveries d ON d.inbox_id=i.id
+   WHERE i.source='shopify' AND i.retention_class='shopify-webhook' AND i.installation_generation IS NULL
+     AND i.erasure_state='erased' AND i.payload=''::bytea AND NOT d.queue_cleanup_pending
+     AND isfinite(i.purge_after) AND i.purge_after<=clock_timestamp()
+     AND (i.state='processed' OR EXISTS(SELECT 1 FROM public.webhook_obligation_facts w WHERE w.inbox_id=i.id))
+     AND EXISTS(SELECT 1 FROM public.shops s JOIN public.shop_privacy_fences f USING(shop_id)
+       LEFT JOIN public.shop_privacy_identity p USING(shop_id)
+       WHERE s.shop_id=i.shop_id OR s.shop_domain=d.shop_domain
+         OR p.domain_digest=public.shop_privacy_digest(jsonb_build_array('shop-domain',d.shop_domain)))
+   ORDER BY i.purge_after,i.id LIMIT p_limit FOR UPDATE OF i SKIP LOCKED
+ LOOP
+   SELECT * INTO route FROM public.shopify_webhook_deliveries WHERE inbox_id=receipt.id AND NOT queue_cleanup_pending;
+   IF NOT FOUND OR NOT pg_try_advisory_xact_lock(
+     hashtextextended(jsonb_build_array('shopify-delivery',route.shop_domain,route.delivery_id)::text,0))
+   THEN CONTINUE; END IF;
+   INSERT INTO public.shopify_expired_transport(inbox_id,topic,domain_digest)
+   VALUES(receipt.id,CASE WHEN route.topic IN ('app/uninstalled','customers/data_request','customers/redact',
+     'shop/redact','orders/create','orders/paid','orders/updated') THEN route.topic ELSE 'unsupported' END,
+     CASE WHEN receipt.state<>'processed' THEN public.shop_privacy_digest(jsonb_build_array('shop-domain',route.shop_domain)) END);
+   DELETE FROM public.shopify_webhook_deliveries WHERE inbox_id=receipt.id;
+   UPDATE public.inbox_messages SET external_delivery_id=NULL WHERE id=receipt.id;
+   affected:=affected+1;
+ END LOOP;
+ RETURN affected;
+END $$;
+REVOKE ALL ON FUNCTION public.expire_shopify_webhook_routes(integer) FROM PUBLIC;
+
+CREATE OR REPLACE FUNCTION public.pending_shopify_webhook_obligations(maximum_rows integer)
+RETURNS TABLE(id uuid, state text, topic text, category_count bigint, unresolved_count bigint)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $$
+BEGIN
+  IF maximum_rows IS NULL OR maximum_rows<1 OR maximum_rows>100 THEN RAISE EXCEPTION 'invalid obligation limit'; END IF;
+  RETURN QUERY WITH classified AS (
+    SELECT inbox.id,inbox.state::text AS receipt_state,delivery.topic::text AS receipt_topic,
+      facts.fulfill_by,
+      CASE WHEN delivery.topic='app/uninstalled' THEN 'uninstall'
+        WHEN delivery.topic IN ('customers/data_request','customers/redact','shop/redact') THEN 'privacy'
+        WHEN delivery.topic IS NULL THEN 'unknown' ELSE 'unsupported' END AS category
+    FROM public.webhook_obligation_facts facts
+    JOIN public.inbox_messages inbox ON inbox.id=facts.inbox_id
+    LEFT JOIN public.shopify_webhook_deliveries raw_delivery ON raw_delivery.inbox_id=inbox.id
+    LEFT JOIN public.shopify_expired_transport expired ON expired.inbox_id=inbox.id
+    CROSS JOIN LATERAL (SELECT coalesce(raw_delivery.topic,expired.topic) AS topic) delivery
+    WHERE delivery.topic IS NULL
+      OR delivery.topic IN ('app/uninstalled','customers/data_request','customers/redact','shop/redact')
+      OR NOT (inbox.state='processed' OR EXISTS (
+        SELECT 1 FROM public.purchase_orders purchase
+        WHERE purchase.shop_id=inbox.shop_id
+          AND purchase.installation_generation=inbox.installation_generation
+          AND purchase.order_id='gid://shopify/Order/'||(facts.captured_fields->>'id')
+          AND (delivery.topic='orders/create'
+            OR (delivery.topic='orders/paid' AND EXISTS (SELECT 1 FROM public.purchase_paid_facts paid
+              WHERE paid.purchase_id=purchase.purchase_id))
+            OR (delivery.topic='orders/updated' AND EXISTS (SELECT 1 FROM public.purchase_observations observation
+              WHERE observation.purchase_id=purchase.purchase_id AND observation.observed_at>=inbox.received_at)))))
+  ), ranked AS (
+    SELECT classified.*,
+      count(*) OVER (PARTITION BY category) AS total,
+      count(*) FILTER (WHERE receipt_state<>'processed') OVER (PARTITION BY category) AS unresolved,
+      row_number() OVER (PARTITION BY category ORDER BY fulfill_by,classified.id) AS position
+    FROM classified
+  ) SELECT ranked.id,receipt_state,receipt_topic,total,unresolved FROM ranked
+    WHERE position<=maximum_rows ORDER BY category,fulfill_by,ranked.id;
+END $$;
+
 CREATE FUNCTION public.shop_privacy_installation_token(p_shop text,p_external text) RETURNS text
 LANGUAGE sql STABLE STRICT SET search_path=pg_catalog AS $$
  SELECT 'erased:' || public.shop_privacy_digest(jsonb_build_array('shop-installation',p_shop,p_external))
@@ -664,6 +751,16 @@ BEGIN
    WHERE e.installation_generation IS NULL AND (e.shop_id=p_shop OR d.shop_domain=s.shop_domain)
      AND (exact_current OR e.collected_at<=f.created_at))
  THEN RETURN 'dependency_pending'; END IF;
+ -- Expired routes retain only the correlation needed to keep unresolved work visible.
+ IF EXISTS(SELECT 1 FROM public.shopify_expired_transport r
+   JOIN public.inbox_messages e ON e.id=r.inbox_id
+   JOIN public.shops s ON s.shop_id=p_shop
+   JOIN public.shop_privacy_fences f ON f.shop_id=p_shop AND f.installation_generation=p_generation
+   LEFT JOIN public.shop_privacy_identity p ON p.shop_id=s.shop_id
+   WHERE e.state<>'processed' AND (e.shop_id=p_shop OR r.domain_digest=coalesce(
+     p.domain_digest,public.shop_privacy_digest(jsonb_build_array('shop-domain',s.shop_domain))))
+     AND (exact_current OR e.collected_at<=f.created_at))
+ THEN RETURN 'dependency_pending'; END IF;
 
  -- A customer request/export or an order fence without an installation owner
  -- cannot be assigned by its shop ID after a reinstall. Keep the erasure open.
@@ -714,6 +811,7 @@ BEGIN
    ORDER BY forget_at,inbox_id LIMIT 100 FOR UPDATE SKIP LOCKED
  )
  DELETE FROM public.shop_privacy_replays r USING expired WHERE r.inbox_id=expired.inbox_id;
+ PERFORM public.expire_shopify_webhook_routes(100);
  FOR target IN
    SELECT t.shop_id,t.installation_generation FROM public.shop_privacy_finalization_targets t
    LEFT JOIN public.shop_privacy_finalization f USING(shop_id,installation_generation)
@@ -737,7 +835,8 @@ REVOKE ALL ON FUNCTION public.finalize_pending_shop_privacy(integer) FROM PUBLIC
 
 -- migrate:down
 DO $$ BEGIN
- IF EXISTS(SELECT 1 FROM public.shop_privacy_finalization) OR EXISTS(SELECT 1 FROM public.shop_privacy_replays) THEN
+ IF EXISTS(SELECT 1 FROM public.shop_privacy_finalization) OR EXISTS(SELECT 1 FROM public.shop_privacy_replays)
+   OR EXISTS(SELECT 1 FROM public.shopify_expired_transport) THEN
    RAISE EXCEPTION 'shop privacy finalization has started';
  END IF;
 END $$;
@@ -747,6 +846,43 @@ DROP FUNCTION public.reattach_erased_shop(text,bigint,text,text,timestamptz);
 DROP FUNCTION public.find_erased_shop(text,text);
 DROP FUNCTION public.shop_installation_was_seen(text,text);
 DROP FUNCTION public.shop_privacy_installation_token(text,text);
+CREATE OR REPLACE FUNCTION public.pending_shopify_webhook_obligations(maximum_rows integer)
+RETURNS TABLE(id uuid, state text, topic text, category_count bigint, unresolved_count bigint)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $$
+BEGIN
+  IF maximum_rows IS NULL OR maximum_rows<1 OR maximum_rows>100 THEN RAISE EXCEPTION 'invalid obligation limit'; END IF;
+  RETURN QUERY WITH classified AS (
+    SELECT inbox.id,inbox.state::text AS receipt_state,delivery.topic::text AS receipt_topic,
+      facts.fulfill_by,
+      CASE WHEN delivery.topic='app/uninstalled' THEN 'uninstall'
+        WHEN delivery.topic IN ('customers/data_request','customers/redact','shop/redact') THEN 'privacy'
+        WHEN delivery.topic IS NULL THEN 'unknown' ELSE 'unsupported' END AS category
+    FROM public.webhook_obligation_facts facts
+    JOIN public.inbox_messages inbox ON inbox.id=facts.inbox_id
+    LEFT JOIN public.shopify_webhook_deliveries delivery ON delivery.inbox_id=inbox.id
+    WHERE delivery.topic IS NULL
+      OR delivery.topic IN ('app/uninstalled','customers/data_request','customers/redact','shop/redact')
+      OR NOT (inbox.state='processed' OR EXISTS (
+        SELECT 1 FROM public.purchase_orders purchase
+        WHERE purchase.shop_id=inbox.shop_id
+          AND purchase.installation_generation=inbox.installation_generation
+          AND purchase.order_id='gid://shopify/Order/'||(facts.captured_fields->>'id')
+          AND (delivery.topic='orders/create'
+            OR (delivery.topic='orders/paid' AND EXISTS (SELECT 1 FROM public.purchase_paid_facts paid
+              WHERE paid.purchase_id=purchase.purchase_id))
+            OR (delivery.topic='orders/updated' AND EXISTS (SELECT 1 FROM public.purchase_observations observation
+              WHERE observation.purchase_id=purchase.purchase_id AND observation.observed_at>=inbox.received_at)))))
+  ), ranked AS (
+    SELECT classified.*,
+      count(*) OVER (PARTITION BY category) AS total,
+      count(*) FILTER (WHERE receipt_state<>'processed') OVER (PARTITION BY category) AS unresolved,
+      row_number() OVER (PARTITION BY category ORDER BY fulfill_by,classified.id) AS position
+    FROM classified
+  ) SELECT ranked.id,receipt_state,receipt_topic,total,unresolved FROM ranked
+    WHERE position<=maximum_rows ORDER BY category,fulfill_by,ranked.id;
+END $$;
+DROP FUNCTION public.expire_shopify_webhook_routes(integer);
+DROP TABLE public.shopify_expired_transport;
 DROP TABLE public.shop_privacy_identity;
 DROP FUNCTION public.compact_erased_shopify_delivery(uuid);
 DROP FUNCTION public.has_compacted_shop_uninstall(text,timestamptz);

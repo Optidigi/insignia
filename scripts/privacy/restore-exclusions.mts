@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { Pool, PoolClient } from 'pg';
+import { clearRestoredWebhookJobs } from './restore-webhook-queue.mts';
 
 const FORMAT = 'insignia-privacy-erasure-exclusions-v2';
 const MAX_BYTES = 64 * 1024 * 1024;
@@ -97,6 +98,7 @@ const tables = [
   'buyer_quote_ownership',
   'buyer_sessions',
   'shopify_webhook_deliveries',
+  'shopify_expired_transport',
   'webhook_obligation_facts',
   'shop_privacy_finalization',
   'shop_privacy_identity',
@@ -137,6 +139,8 @@ const functions = [
   'shop_privacy_installation_token',
   'shop_privacy_replay_digest',
   'compact_erased_shopify_delivery',
+  'expire_shopify_webhook_routes',
+  'pending_shopify_webhook_obligations',
   'finalize_pending_shop_privacy',
   'shop_privacy_delete_scope',
   'reject_quote_mutation',
@@ -661,6 +665,7 @@ function validate(envelope: unknown): asserts envelope is ExclusionEnvelope {
   if (data.orderFences.some((fence) => receipts.get(fence.source_inbox_id)?.operation !== 'ERASURE_STAGED'))
     fail('shop exclusion must use generation authority');
   for (const fence of data.shopFences) {
+    if (fence.installation_generation !== '1') fail('shop erasure successor authority unverified');
     const generation = data.generations.find(
       (g) => g.shop_id === fence.shop_id && g.generation === fence.installation_generation,
     );
@@ -851,7 +856,12 @@ export async function importErasureExclusions(pool: Pick<Pool, 'connect'>, envel
       client,
       'shop_privacy_replays',
       ['inbox_id'],
-      (data.shopReplays ?? []).filter((row) => Date.parse(row.forget_at) > Date.now()),
+      await rows(
+        client,
+        `SELECT * FROM jsonb_populate_recordset(NULL::public.shop_privacy_replays,$1::jsonb)
+         WHERE forget_at>statement_timestamp() ORDER BY inbox_id`,
+        [JSON.stringify(data.shopReplays ?? [])],
+      ),
     );
     // A prior import can have erased additional old transport from the exact
     // copied fences. Require the original source copy for every other tombstone.
@@ -873,11 +883,35 @@ export async function importErasureExclusions(pool: Pick<Pool, 'connect'>, envel
       `UPDATE public.webhook_obligation_facts SET captured_fields='{}',facts_erased_at=coalesce(facts_erased_at,clock_timestamp()) WHERE inbox_id=ANY($1::uuid[])`,
       [data.inboxes.map((r) => r.id)],
     );
-    await client.query(
-      `UPDATE public.shopify_webhook_deliveries SET queue_cleanup_pending=(to_regnamespace('pgboss') IS NOT NULL)
-       WHERE inbox_id=ANY($1::uuid[])`,
-      [data.inboxes.map((r) => r.id)],
+    await clearRestoredWebhookJobs(
+      client,
+      data.inboxes.map((r) => r.id),
     );
+    const compactedInboxIds = data.inboxes.filter((row) => row.external_delivery_id === null).map((row) => row.id);
+    const conflictingRoute = await client.query(
+      `SELECT 1 FROM public.inbox_messages i LEFT JOIN public.shopify_webhook_deliveries d ON d.inbox_id=i.id
+       LEFT JOIN jsonb_populate_recordset(NULL::public.shop_privacy_replays,$2::jsonb) r ON r.inbox_id=i.id
+       WHERE i.id=ANY($1::uuid[]) AND (
+         (d.inbox_id IS NOT NULL AND i.external_delivery_id IS DISTINCT FROM d.shop_domain||':'||d.delivery_id)
+         OR (i.external_delivery_id IS NOT NULL AND r.inbox_id IS NULL AND i.purge_after>statement_timestamp())
+         OR (r.inbox_id IS NOT NULL AND i.external_delivery_id IS NOT NULL
+           AND r.delivery_digest<>public.shop_privacy_digest(jsonb_build_array('webhook-delivery',
+             split_part(i.external_delivery_id,':',1),substr(i.external_delivery_id,strpos(i.external_delivery_id,':')+1))))
+         OR (r.inbox_id IS NOT NULL AND d.inbox_id IS NOT NULL AND (
+           r.content_digest<>public.shop_privacy_replay_digest(d.topic,d.api_version,d.triggered_at,d.event_id,d.webhook_name,i.payload_sha256)
+           OR r.uninstall_domain_digest IS DISTINCT FROM CASE WHEN d.topic='app/uninstalled'
+             THEN public.shop_privacy_digest(jsonb_build_array('shop-domain',d.shop_domain)) END
+           OR r.uninstall_observed_at IS DISTINCT FROM CASE WHEN d.topic='app/uninstalled' THEN d.triggered_at END
+         ))) LIMIT 1`,
+      [compactedInboxIds, JSON.stringify(data.shopReplays ?? [])],
+    );
+    if (conflictingRoute.rowCount) fail('conflicting compact delivery routing');
+    await client.query('DELETE FROM public.shopify_webhook_deliveries WHERE inbox_id=ANY($1::uuid[])', [
+      compactedInboxIds,
+    ]);
+    await client.query('UPDATE public.inbox_messages SET external_delivery_id=NULL WHERE id=ANY($1::uuid[])', [
+      compactedInboxIds,
+    ]);
     // Only staged receipt authority or a separately copied exact-generation
     // recovery decision backs a fence. The original BLOCKED receipt stays blocked.
     for (const fence of data.shopFences) {
@@ -949,13 +983,26 @@ export async function importErasureExclusions(pool: Pick<Pool, 'connect'>, envel
     // external side effects and unsettled custody keeps the restore in HOLD.
     const finalization: Record<string, number> = {};
     for (const fence of data.shopFences) {
+      const parameters = [fence.shop_id, fence.installation_generation];
       let result: string;
       do {
+        const queueCleanup = await client.query<{ id: string }>(
+          `SELECT i.id FROM public.shop_privacy_transport_scope t JOIN public.inbox_messages i ON i.id=t.inbox_id
+           JOIN public.shopify_webhook_deliveries d ON d.inbox_id=i.id
+           WHERE t.shop_id=$1 AND t.installation_generation=$2 AND i.erasure_state='erased' AND d.queue_cleanup_pending
+           ORDER BY i.id LIMIT 100`,
+          parameters,
+        );
+        await clearRestoredWebhookJobs(
+          client,
+          queueCleanup.rows.map((row) => row.id),
+        );
         const step = await client.query<{ result: string }>(
           'SELECT public.finalize_shop_privacy_generation($1,$2,100) AS result',
-          [fence.shop_id, fence.installation_generation],
+          parameters,
         );
         result = step.rows[0]?.result ?? fail('missing finalization outcome');
+        if (result === 'dependency_pending' && queueCleanup.rows.length === 100) result = 'progress';
       } while (result === 'progress');
       if (result === 'no_authority') fail('unqualified shop finalization target');
       finalization[result] = (finalization[result] ?? 0) + 1;

@@ -181,15 +181,26 @@ async function lockById(tx: Transaction<Database>, id: string): Promise<Locked |
   return { routing, inbox };
 }
 
-async function lockQueueById(tx: Transaction<Database>, id: string): Promise<WebhookQueueHandoffState | null> {
-  const inbox = await tx.selectFrom('inbox_messages').select('id').where('id', '=', id).forUpdate().executeTakeFirst();
+async function lockQueueById(
+  tx: Transaction<Database>,
+  id: string,
+): Promise<WebhookQueueHandoffState | 'expired' | null> {
+  const inbox = await tx
+    .selectFrom('inbox_messages')
+    .select(['source', 'retention_class', 'erasure_state'])
+    .where('id', '=', id)
+    .forUpdate()
+    .executeTakeFirst();
   if (!inbox) return null;
   const routing = await tx
     .selectFrom('shopify_webhook_deliveries')
     .select('queue_handoff_state')
     .where('inbox_id', '=', id)
     .executeTakeFirst();
-  return routing?.queue_handoff_state ?? null;
+  if (routing) return routing.queue_handoff_state;
+  if (inbox.source === 'shopify' && inbox.retention_class === 'shopify-webhook' && inbox.erasure_state === 'erased')
+    return 'expired';
+  return null;
 }
 
 async function payloadUsable(tx: Transaction<Database>, id: string): Promise<boolean> {
@@ -348,6 +359,7 @@ export function createShopifyWebhookRepository(database: Kysely<Database>) {
       return database.transaction().execute(async (tx) => {
         const state = await lockQueueById(tx, id);
         if (state === null) throw new Error('Shopify queue handoff identity is absent');
+        if (state === 'expired') return 'expired';
         if (!(await payloadUsable(tx, id))) {
           await tx
             .updateTable('shopify_webhook_deliveries')
