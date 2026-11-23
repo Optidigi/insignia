@@ -91,6 +91,49 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('shop privacy finalizer', () =
     expect(await finalize(f.shopId, 2)).toBe('no_authority');
   });
 
+  async function receiveDataRequest(f: Awaited<ReturnType<typeof fixture>>) {
+    return createShopifyWebhookRepository(db).receive({
+      shopDomain: f.shopDomain,
+      topic: 'customers/data_request',
+      apiVersion: '2026-07',
+      triggeredAt: new Date(),
+      deliveryId: randomUUID(),
+      eventId: null,
+      name: null,
+      rawBody: Buffer.from(
+        `{"shop_id":${f.shopifyShopId},"customer":{"id":1},"data_request":{"id":42},"orders_requested":[]}`,
+      ),
+    });
+  }
+
+  it('holds shop staging while a customer data request awaits processing', async () => {
+    const f = await fixture();
+    await receiveDataRequest(f);
+    await f.deactivate();
+    expect(await f.receive()).toMatchObject({ kind: 'SHOP_ERASURE_BLOCKED' });
+    expect(await finalize(f.shopId)).toBe('no_authority');
+  });
+
+  it('preserves a customer data request and shop records after the shop fence is staged', async () => {
+    const f = await fixture();
+    await insertConfig(f.shopId, 'retained');
+    await f.deactivate();
+    expect(await f.receive()).toMatchObject({ kind: 'SHOP_ERASURE_STAGED' });
+    const inbox = await receiveDataRequest(f);
+    const body = await sql`SELECT state, payload FROM inbox_messages WHERE id=${inbox.id}::uuid`.execute(db);
+    expect(await drain(f.shopId)).toBe('dependency_pending');
+    expect((await sql`SELECT state, payload FROM inbox_messages WHERE id=${inbox.id}::uuid`.execute(db)).rows).toEqual(
+      body.rows,
+    );
+    expect(await configs(f.shopId)).toEqual([{ config_id: 'retained' }]);
+
+    expect(await createCustomerPrivacyRepository(db).processInbox(inbox.id)).toMatchObject({
+      kind: 'DATA_REQUEST_PENDING_EXPORT',
+    });
+    expect(await drain(f.shopId)).toBe('dependency_pending');
+    expect(await configs(f.shopId)).toEqual([{ config_id: 'retained' }]);
+  });
+
   it('does not finalize a successor fence staged by schema 72', async () => {
     const f = await fixture();
     await f.deactivate();

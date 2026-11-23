@@ -838,6 +838,17 @@ export async function importErasureExclusions(pool: Pick<Pool, 'connect'>, envel
     );
     await client.query('ALTER TABLE public.inbox_messages ENABLE TRIGGER inbox_collection_guard');
     for (const [collection, table, primary] of copies.slice(1)) {
+      if (
+        collection === 'shopFences' &&
+        (
+          await client.query(
+            `SELECT 1 FROM unnest($1::text[]) AS shops(shop_id)
+             WHERE public.shop_privacy_has_open_data_request(shops.shop_id) LIMIT 1`,
+            [data.shopFences.map((fence) => fence.shop_id)],
+          )
+        ).rowCount
+      )
+        fail('customer data request must be resolved before shop erasure');
       if (collection === 'uninstallRecoveries') {
         // Compare/copy the decision in the target's representation. Live
         // finalization will compact both provider ID copies together.

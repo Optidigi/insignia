@@ -71,7 +71,9 @@ them only for those checks and remove them once a replacement can reject stale
 events without the retained fingerprints. The raw shop and installation
 identifiers are erased.
 
-Pending customer requests or independently staged customer fences need
+Pending Shopify customer data deliveries and staged exports hold shop erasure
+before deletion. The restore procedure checks the same condition before
+importing shop fences. Independently staged customer fences also need
 disposition where their installation scope cannot be proved. Successor erasure
 needs independently qualified evidence that binds the privacy request to that
 exact installation. Shopify does not explicitly approve fingerprint retention

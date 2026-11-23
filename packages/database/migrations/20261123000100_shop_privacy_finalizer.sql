@@ -42,6 +42,7 @@ BEGIN
  -- seen while active is a permanent operator hold, never a later automatic grant.
  operation:=CASE WHEN installed.generation=1 AND installed.activated_at<=receipt.collected_at
   AND installed.deactivated_at<=receipt.collected_at
+  AND NOT public.shop_privacy_has_open_data_request(target.shop_id)
   THEN 'SHOP_ERASURE_STAGED' ELSE 'SHOP_ERASURE_BLOCKED' END;
  SELECT count(*) INTO matched FROM public.purchase_orders WHERE shop_id=target.shop_id AND installation_generation<=target.current_generation;
  INSERT INTO public.customer_privacy_receipts(inbox_id,shop_id,raw_body_sha256,operation,request_id,requested_order_count,matched_purchase_count)
@@ -89,6 +90,9 @@ BEGIN
  THEN RAISE EXCEPTION 'privacy receipt predates installation'; END IF;
  IF destination.installation_generation>1
  THEN RAISE EXCEPTION 'generationless request cannot qualify a successor installation'; END IF;
+ IF public.shop_privacy_has_open_data_request(destination.shop_id) THEN
+   RAISE EXCEPTION 'customer data request must be resolved before shop erasure';
+ END IF;
  -- The late-authority decision says inactive NOW; it never asserts that the
  -- generation was already inactive at the original receipt collection time.
  INSERT INTO public.uninstall_privacy_recoveries(privacy_inbox_id,shop_id,installation_generation,uninstall_inbox_id,capability_digest,external_installation_id)
@@ -117,7 +121,7 @@ BEGIN
   JOIN public.uninstall_delivery_authority a USING(capability_digest)
   JOIN public.installation_generations i ON i.shop_id=d.shop_id AND i.generation=d.installation_generation
   JOIN public.inbox_messages e ON e.id=r.inbox_id
-  WHERE e.collected_at>=i.activated_at AND d.installation_generation=1 AND r.operation IN ('SHOP_ERASURE_BLOCKED','SHOP_ERASURE_STAGED') AND d.state IN ('dispatched','registered','retired')
+  WHERE e.collected_at>=i.activated_at AND d.installation_generation=1 AND NOT public.shop_privacy_has_open_data_request(d.shop_id) AND r.operation IN ('SHOP_ERASURE_BLOCKED','SHOP_ERASURE_STAGED') AND d.state IN ('dispatched','registered','retired')
    AND i.deactivated_at IS NOT NULL AND i.external_installation_id=d.external_installation_id
    AND (NOT EXISTS(SELECT 1 FROM public.uninstall_privacy_scopes scope WHERE scope.privacy_inbox_id=r.inbox_id) OR d.installation_generation<=(SELECT scope.generation_ceiling FROM public.uninstall_privacy_scopes scope WHERE scope.privacy_inbox_id=r.inbox_id))
    AND NOT EXISTS(SELECT 1 FROM public.uninstall_privacy_recoveries done WHERE done.privacy_inbox_id=r.inbox_id AND done.shop_id=d.shop_id AND done.installation_generation=d.installation_generation)
@@ -551,6 +555,24 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.reattach_erased_shop(text,bigint,text,text,timestamptz) FROM PUBLIC;
 
+-- Keep both pending Shopify deliveries and staged merchant exports. Routing
+-- can conservatively block erasure but cannot establish permission to erase.
+CREATE FUNCTION public.shop_privacy_has_open_data_request(p_shop text) RETURNS boolean
+LANGUAGE sql STABLE SET search_path=pg_catalog AS $$
+ SELECT EXISTS (SELECT 1 FROM public.customer_privacy_receipts r
+               WHERE r.shop_id=p_shop AND r.operation='DATA_REQUEST_PENDING_EXPORT')
+ OR EXISTS (SELECT 1 FROM public.shopify_webhook_deliveries d
+             JOIN public.inbox_messages e ON e.id=d.inbox_id JOIN public.shops s ON s.shop_id=p_shop
+             WHERE d.topic='customers/data_request' AND e.state<>'processed'
+               AND (e.shop_id=s.shop_id OR d.shop_domain=s.shop_domain))
+ OR EXISTS (SELECT 1 FROM public.shopify_expired_transport r
+             JOIN public.inbox_messages e ON e.id=r.inbox_id JOIN public.shops s ON s.shop_id=p_shop
+             LEFT JOIN public.shop_privacy_identity p ON p.shop_id=s.shop_id
+             WHERE e.state<>'processed' AND (e.shop_id=s.shop_id OR r.domain_digest=coalesce(
+               p.domain_digest,public.shop_privacy_digest(jsonb_build_array('shop-domain',s.shop_domain)))))
+$$;
+REVOKE ALL ON FUNCTION public.shop_privacy_has_open_data_request(text) FROM PUBLIC;
+
 CREATE FUNCTION public.finalize_shop_privacy_generation(p_shop text,p_generation bigint,p_limit integer) RETURNS text
 -- Legacy publication and signing triggers resolve relations in public.
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public,pg_temp
@@ -581,6 +603,7 @@ BEGIN
  PERFORM set_config('insignia.shop_privacy_current',CASE WHEN exact_current THEN 'yes' ELSE 'no' END,true);
  INSERT INTO public.shop_privacy_finalization VALUES(p_shop,p_generation,at_time,NULL)
  ON CONFLICT (shop_id,installation_generation) DO UPDATE SET attempted_at=EXCLUDED.attempted_at;
+ IF public.shop_privacy_has_open_data_request(p_shop) THEN RETURN 'dependency_pending'; END IF;
 
  -- Migration 71 handles future deactivations. Scrub legacy envelopes before
  -- any FK, storage or accounting dependency can defer completion.
@@ -598,6 +621,8 @@ BEGIN
  WITH batch AS (
    SELECT e.id FROM public.shop_privacy_transport_scope t JOIN public.inbox_messages e ON e.id=t.inbox_id
    WHERE t.shop_id=p_shop AND t.installation_generation=p_generation
+     AND NOT EXISTS(SELECT 1 FROM public.shopify_webhook_deliveries d
+                    WHERE d.inbox_id=e.id AND d.topic='customers/data_request')
      AND (e.erasure_state<>'erased' OR e.payload<>''::bytea OR e.state<>'processed'
        OR EXISTS(SELECT 1 FROM public.webhook_obligation_facts w
                    WHERE w.inbox_id=e.id AND w.facts_erased_at IS NULL))
@@ -882,6 +907,7 @@ BEGIN
     WHERE position<=maximum_rows ORDER BY category,fulfill_by,ranked.id;
 END $$;
 DROP FUNCTION public.expire_shopify_webhook_routes(integer);
+DROP FUNCTION public.shop_privacy_has_open_data_request(text);
 DROP TABLE public.shopify_expired_transport;
 DROP TABLE public.shop_privacy_identity;
 DROP FUNCTION public.compact_erased_shopify_delivery(uuid);
