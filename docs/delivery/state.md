@@ -238,8 +238,13 @@ storefront apps from December 1, 2026. The live Designer loaded private preview 
 exact configured production R2 origin. A local staging copy of the active app manifest declares
 that origin, preserves every other setting, and passed Shopify CLI validation. The authorized
 disposable `insignia-network-qa` dev store was created with the Network access testing preview.
-Shopify CLI started the preview with existing app URLs. Storefront verification and a separately
-qualified app version release are still pending.
+Shopify CLI started the preview with existing app URLs. In the disposable store, the Designer
+uploaded a synthetic PNG to the declared R2 origin with HTTP 200 and decoded its private preview.
+The same-origin proxy returned 202 for upload completion and 200 for preview. No undeclared-source
+warning appeared in the captured diagnostics. The dev preview was cleaned from that store.
+CLI created inactive version `1263405170689` (`native-network-access-f57facc8`). Readback shows 52
+versions and a single new network access module. All other modules and extension artifacts match
+the active release. Checkout quotes are held pending qualification and Phase B activation.
 
 **Deploy AL** (19 Nov, web only): main `e930b8be` — #606 the Methods page keeps `shop`/`host`/`embedded` when it updates its own URL (found in the cookie-blocked browser test after #604). Web replaced `19:03:55Z`; compose delta `services.web.image` only; readback clean; database baseline identical. Receipt folder `methods-deploy-AL` on both hosts.
 

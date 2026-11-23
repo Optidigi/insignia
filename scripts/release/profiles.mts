@@ -64,6 +64,12 @@ import merchantBatchBinding from '../../deployment/m5-runtime/native-merchant-ba
 };
 import namesModules from '../../deployment/m5-runtime/native-names-module-baseline.json' with { type: 'json' };
 import namesBinding from '../../deployment/m5-runtime/native-names-release-binding.json' with { type: 'json' };
+import networkAccessModules from '../../deployment/m5-runtime/native-network-access-module-baseline.json' with {
+  type: 'json',
+};
+import networkAccessBinding from '../../deployment/m5-runtime/native-network-access-release-binding.json' with {
+  type: 'json',
+};
 import noAllOrdersModules from '../../deployment/m5-runtime/native-noallorders-module-baseline.json' with {
   type: 'json',
 };
@@ -208,6 +214,15 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  'native-network-access-f57facc8': {
+    versionId: networkAccessBinding.versionId,
+    versionTag: networkAccessBinding.versionTag,
+    versionIds: networkAccessBinding.versionIds,
+    moduleHash: networkAccessBinding.moduleHash,
+    modules: networkAccessModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   'native-review-market-6967baed': {
     versionId: reviewMarketBinding.versionId,
     versionTag: reviewMarketBinding.versionTag,
