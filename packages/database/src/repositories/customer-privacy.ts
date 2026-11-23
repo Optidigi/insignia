@@ -25,6 +25,12 @@ export type PrivacyOrderLink = { orderId: string; purchaseId: string | null };
 export function createCustomerPrivacyRepository(db: Kysely<Database>) {
   return {
     async finalizePendingShops() {
+      // The queue role's EXECUTE grant is the rollout switch for automatic erasure.
+      const permission = await sql<{ enabled: boolean }>`
+        SELECT has_function_privilege('public.finalize_pending_shop_privacy(integer)', 'EXECUTE') AS enabled
+      `.execute(db);
+      if (!permission.rows[0]) throw new Error('Could not verify shop privacy finalization permission');
+      if (!permission.rows[0].enabled) return {};
       const result = await sql<{
         summary: Partial<
           Record<'progress' | 'drained' | 'storage_pending' | 'dependency_pending' | 'busy' | 'failed', number>

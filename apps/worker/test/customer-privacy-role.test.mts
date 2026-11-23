@@ -52,6 +52,9 @@ test('actual restricted LOGIN can stage only a retained body-bound erasure throu
     ).rows[0];
     assert.deepEqual(identity, { current_user: login, session_user: login, rolsuper: false, rolbypassrls: false });
     await assert.rejects(worker.query('SELECT process_customer_privacy_inbox($1)', [receipt.id]), /permission denied/);
+    const restrictedCore = createDurableCore(worker);
+    await assert.rejects(worker.query('SELECT finalize_pending_shop_privacy(1)'), /permission denied/);
+    assert.deepEqual(await restrictedCore.customerPrivacy.finalizePendingShops(), {});
     await owner.query(grant);
     assert.deepEqual((await worker.query('SELECT finalize_pending_shop_privacy(1) AS value')).rows[0].value, {});
     const result = (await worker.query('SELECT process_customer_privacy_inbox($1) AS value', [receipt.id])).rows[0]

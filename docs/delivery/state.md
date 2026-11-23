@@ -189,7 +189,9 @@ pre-erasure backup was removed after verification. The automatic worker grant re
 and four historical rows remain outside the authorized test scope. The worker's SQL selection
 includes three first-generation recoveries from reinstalled review stores and one inactive
 installation with a staged receipt. Their presence in the SQL selection is not operator
-authorization. Do not enable the worker without reconciling those rows.
+authorization. Do not enable the worker without reconciling those rows. An isolated production
+restore confirmed that the automatic worker would remove five release records and three credential
+rows before reporting all four still pending. Production was read only during this rehearsal.
 Receipt folder on prod is `erasure-8c6e7555-preflight`.
 
 **Deploy AM** (23 Nov, web only): main `6967baed`, CI run `45236726941`. The database checkpoint restored to schema 72 in an isolated container. Web replaced at `18:32:46Z`; Compose delta `services.web.image`, exact digest verified and `/live` returned 200. Shopify Standard lists $49.99/30 days and $449.99/year. On rewrite-dev both $0 cadence changes were approved natively and returned to Insignia. The production Partner reader confirmed the same `insignia-standard` handle, non-metered entitlement and effective cadence in both directions. Merchant charge history proof and the reviewer purchase path are open.
