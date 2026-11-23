@@ -32,6 +32,7 @@ export function resolveNativePurchaseQualification(input: {
   const profile = resolveRuntimeReleaseProfile(input.releaseProfile);
   if (
     ![
+      'native-review-market-6967baed',
       'native-scope60-9b677033',
       'native-noallorders-fc8f9e08',
       'native-batch-9b677033',
