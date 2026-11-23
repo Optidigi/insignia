@@ -13,8 +13,10 @@ import {
   readExclusions,
   writeExclusions,
 } from '../../../scripts/privacy/restore-exclusions.mts';
+import { createDatabase } from '../src/client/database.js';
 import { createCustomerPrivacyRepository } from '../src/repositories/customer-privacy.js';
 import { createShopifyWebhookRepository } from '../src/repositories/shopify-webhooks.js';
+import { createTenantRepository } from '../src/repositories/tenant.js';
 import { openTestDatabase } from './support/postgres.js';
 import { purchaseFixture } from './support/purchase-fixture.js';
 
@@ -69,6 +71,7 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
     const existing = await assetOffer(f),
       later = await assetOffer(late),
       purchaseId = randomUUID(),
+      stagedPurchaseId = randomUUID(),
       blockedAsset = await assetOffer(blocked),
       stagedAsset = await assetOffer(staged);
     await source.query(
@@ -78,6 +81,10 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
     await source.query(
       "INSERT INTO purchase_orders(purchase_id,shop_id,installation_generation,order_id,order_created_at,currency,original_total_minor) VALUES($1,$2,1,'gid://shopify/Order/101',clock_timestamp(),'USD',2001)",
       [purchaseId, f.shopId],
+    );
+    await source.query(
+      "INSERT INTO purchase_orders(purchase_id,shop_id,installation_generation,order_id,order_created_at,currency,original_total_minor) VALUES($1,$2,1,'gid://shopify/Order/303',clock_timestamp(),'USD',2001)",
+      [stagedPurchaseId, staged.shopId],
     );
     await source.query('INSERT INTO purchase_bindings VALUES($1,1,$2,$3,$4,$5)', [
       f.shopId,
@@ -105,6 +112,32 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
         ],
       );
     }
+    const erasedShop = randomUUID();
+    const erasedDomain = `${erasedShop}.myshopify.com`;
+    const erasedProvider = BigInt('0x' + erasedShop.replaceAll('-', '').slice(0, 14)).toString();
+    await db.transaction().execute((tx) =>
+      createTenantRepository(db).createShop(tx, {
+        shopId: erasedShop,
+        shopDomain: erasedDomain,
+        shopifyShopId: erasedProvider,
+        externalInstallationId: 'gid://shopify/AppInstallation/1234567890',
+      }),
+    );
+    await source.query('UPDATE installation_generations SET deactivated_at=clock_timestamp() WHERE shop_id=$1', [
+      erasedShop,
+    ]);
+    const erasedDelivery = {
+      shopDomain: erasedDomain,
+      topic: 'shop/redact',
+      apiVersion: '2026-07',
+      triggeredAt: new Date(),
+      deliveryId: randomUUID(),
+      eventId: randomUUID(),
+      name: null,
+      rawBody: Buffer.from(JSON.stringify({ shop_id: erasedProvider, shop_domain: erasedDomain })),
+    };
+    const erasedHooks = createShopifyWebhookRepository(db);
+    const erasedInbox = await erasedHooks.receive(erasedDelivery);
     const economics = async (pool: Pool) =>
       (
         await pool.query(
@@ -136,6 +169,20 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
       // Only independently settled economic transport is eligible for early
       // privacy cleanup. Pending notifications keep their reconciliation job.
       await source.query("UPDATE inbox_messages SET state='processed' WHERE id=$1", [orderReceipt.id]);
+      const stagedTransport = await createShopifyWebhookRepository(db).receive({
+        shopDomain: 'synthetic-routing.myshopify.com',
+        topic: 'orders/create',
+        apiVersion: '2026-07',
+        deliveryId: randomUUID(),
+        triggeredAt: new Date(),
+        eventId: null,
+        name: null,
+        rawBody: Buffer.from('{"id":303,"email":"shop-private@example.invalid"}'),
+      });
+      await source.query('UPDATE inbox_messages SET shop_id=$1,installation_generation=1 WHERE id=$2', [
+        staged.shopId,
+        stagedTransport.id,
+      ]);
       const backup = join(temporary, 'before-erasure.dump');
       execFileSync(join(tools, 'pg_dump'), ['--format=custom', '--file', backup, '--dbname', address], {
         env: process.env,
@@ -186,17 +233,33 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
         await createCustomerPrivacyRepository(db).processInbox(receipt.id);
       }
       await source.query('SELECT public.cleanup_customer_privacy_inboxes(100)');
+      await createCustomerPrivacyRepository(db).processInbox(erasedInbox.id);
+      await erasedHooks.cleanupExpiredQueueJobs(100, async () => true);
+      let drained: string;
+      do {
+        drained = (
+          await source.query('SELECT public.finalize_shop_privacy_generation($1,1,100) AS result', [erasedShop])
+        ).rows[0].result;
+      } while (drained === 'progress');
+      expect(drained).toBe('drained');
       const exclusions = await exportErasureExclusions(source);
+      expect(exclusions.data.shopReplays?.some((row) => row.inbox_id === erasedInbox.id)).toBe(true);
+      expect(JSON.stringify(exclusions)).not.toContain(erasedDomain);
+      expect(JSON.stringify(exclusions)).not.toContain(erasedProvider);
+      expect(JSON.stringify(exclusions)).not.toContain(erasedDelivery.deliveryId);
+      expect(JSON.stringify(exclusions)).not.toContain('gid://shopify/AppInstallation/1234567890');
       expect(exclusions.data.receipts.map((r: { operation: string }) => r.operation).sort()).toEqual([
         'DATA_REQUEST_PENDING_EXPORT',
         'ERASURE_STAGED',
         'ERASURE_STAGED',
         'SHOP_ERASURE_BLOCKED',
         'SHOP_ERASURE_STAGED',
+        'SHOP_ERASURE_STAGED',
       ]);
       expect(exclusions.data.inboxes.some((r: { id: string }) => r.id === orderReceipt.id)).toBe(true);
       expect(JSON.stringify(exclusions)).not.toContain('pending-private@example.invalid');
       expect(JSON.stringify(exclusions)).not.toContain('do-not-export@example.invalid');
+      expect(JSON.stringify(exclusions)).not.toContain('gid://shopify/Order/303');
       expect(JSON.stringify(exclusions)).not.toContain(existing.assetId + '/o');
       const exclusionPath = join(temporary, 'exclusions.json');
       await writeExclusions(exclusionPath, exclusions);
@@ -243,6 +306,11 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
       const invalidSchema = structuredClone(exclusions);
       invalidSchema.data.schemaIdentity = '0'.repeat(64);
       await expect(importErasureExclusions(target, reseal(invalidSchema))).rejects.toThrow('schema mismatch');
+      const wrongKey = structuredClone(exclusions);
+      wrongKey.data.proofKeyId = 'b'.repeat(64);
+      await expect(importErasureExclusions(target, reseal(wrongKey))).rejects.toThrow(
+        'compact erasure proof key drift',
+      );
       const missing = JSON.parse(JSON.stringify(exclusions).replaceAll(f.shopId, randomUUID()));
       await expect(importErasureExclusions(target, reseal(missing))).rejects.toThrow('missing tenant');
       const drift = structuredClone(exclusions);
@@ -291,6 +359,30 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
       });
       await expect(importErasureExclusions(target, reseal(promoted))).rejects.toThrow('foreign erasure fence');
       const result = await importErasureExclusions(target, exclusions);
+      expect(result.finalization.drained).toBe(1);
+      const restoredDb = createDatabase(new Pool({ connectionString: targetAddress.href }));
+      try {
+        const hooks = createShopifyWebhookRepository(restoredDb);
+        expect(await hooks.receive(erasedDelivery)).toMatchObject({ kind: 'processed', id: erasedInbox.id });
+        await expect(hooks.receive({ ...erasedDelivery, eventId: randomUUID() })).rejects.toThrow('conflicts');
+        expect(await createTenantRepository(restoredDb).getManagedInstallationState(erasedDomain)).toMatchObject({
+          shopId: erasedShop,
+          active: false,
+          externalInstallationId: null,
+        });
+      } finally {
+        await restoredDb.destroy();
+      }
+      expect(
+        (await target.query('SELECT 1 FROM purchase_orders WHERE purchase_id=$1', [stagedPurchaseId])).rowCount,
+      ).toBe(0);
+      expect(
+        (
+          await target.query('SELECT octet_length(payload) AS bytes FROM inbox_messages WHERE id=$1', [
+            stagedTransport.id,
+          ])
+        ).rows[0].bytes,
+      ).toBe(0);
       expect((await target.query('SELECT name FROM method_catalog WHERE shop_id=$1', [staged.shopId])).rows).toEqual(
         [],
       );
@@ -348,9 +440,9 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
         (await target.query('SELECT state FROM artwork_assets WHERE asset_id=$1', [stagedAsset.assetId])).rows[0].state,
       ).toBe('DELETING');
       expect(
-        (await target.query('SELECT payload FROM purchase_offer_payloads WHERE quote_id=$1', [staged.quote.quoteId]))
-          .rows[0].payload,
-      ).toBeNull();
+        (await target.query('SELECT 1 FROM purchase_offer_payloads WHERE quote_id=$1', [staged.quote.quoteId]))
+          .rowCount,
+      ).toBe(0);
       expect(
         (await target.query('SELECT 1 FROM design_drafts WHERE design_id=$1', [stagedAsset.draftId])).rowCount,
       ).toBe(0);
@@ -475,6 +567,9 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
         stdio: 'pipe',
       });
       source = new Pool({ connectionString: sourceUrl.href });
+      await source.query('INSERT INTO shop_privacy_proof_key VALUES(true,$1)', [
+        (await admin.query('SELECT secret FROM shop_privacy_proof_key')).rows[0].secret,
+      ]);
       await source.query(
         'INSERT INTO schema_migrations(version) SELECT version FROM jsonb_to_recordset($1::jsonb) AS rows(version text)',
         [JSON.stringify((await admin.query('SELECT version FROM schema_migrations')).rows)],
@@ -623,4 +718,5 @@ it.runIf(Boolean(process.env.PRIVACY_RESTORE_TEST_URL))(
       await rm(temporary, { recursive: true, force: true });
     }
   },
+  30000,
 );

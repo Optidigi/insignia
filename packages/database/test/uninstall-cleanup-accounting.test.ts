@@ -115,11 +115,11 @@ test('generic cleanup accounting freezes its local ceiling and cannot use an old
     expect(await core.webhooks.processUninstall(current.id)).toBe('deactivated');
     await core.uninstallPrivacy.recoverPending();
     await core.uninstallLifecycle.coverGenericCleanup();
-    expect((await core.webhooks.getById(second.id))?.state).toBe('processed');
+    expect((await core.webhooks.getById(second.id))?.state).toBe('pending');
     expect(
       (await pool.query('SELECT classification FROM generic_uninstall_dispositions WHERE inbox_id=$1', [second.id]))
         .rows,
-    ).toEqual([{ classification: 'GENERATION_PRIVATE_CLEANUP_STAGED' }]);
+    ).toEqual([]);
     expect(
       (await pool.query('SELECT operation FROM customer_privacy_receipts WHERE inbox_id=$1', [privacy.id])).rows,
     ).toEqual([{ operation: 'SHOP_ERASURE_BLOCKED' }]);

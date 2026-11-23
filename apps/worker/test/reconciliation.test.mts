@@ -68,6 +68,10 @@ function fixture(): Omit<Input, 'queue'> & {
       },
     },
     customerPrivacy: {
+      async finalizePendingShops() {
+        seen.push('shop-privacy-finalization');
+        return {};
+      },
       async cleanupInboxes() {
         return 0;
       },
@@ -145,6 +149,7 @@ test('privacy cleanup failure cannot suppress ordinary transport retention or in
   await createWorkerReconciliation(input).runOnce();
   assert.ok(input.seen.includes('payload-erasure'));
   assert.ok(input.seen.includes('artwork-cleanup'));
+  assert.ok(input.seen.includes('shop-privacy-finalization'));
   assert.ok(input.errors.some((entry) => entry.metadata?.errorClass === 'CUSTOMER_PRIVACY_CLEANUP_UNAVAILABLE'));
 });
 
@@ -159,11 +164,13 @@ test('persistent expired-job removal failure never blocks independent uninstall 
     'uninstall-recovery',
     'uninstall-enqueued',
     'artwork-cleanup',
+    'shop-privacy-finalization',
     'payload-erasure',
     'queue-removal',
     'uninstall-recovery',
     'uninstall-enqueued',
     'artwork-cleanup',
+    'shop-privacy-finalization',
   ]);
   assert.deepEqual(input.errors, [
     { event: 'queue_job_rejected', metadata: { errorClass: 'WEBHOOK_RETENTION_UNAVAILABLE' } },
@@ -190,9 +197,11 @@ test('uninstall and artwork failures are reported independently and a later pass
     'payload-erasure',
     'uninstall-recovery',
     'artwork-cleanup',
+    'shop-privacy-finalization',
     'payload-erasure',
     'uninstall-recovery',
     'artwork-cleanup',
+    'shop-privacy-finalization',
   ]);
   assert.deepEqual(
     input.errors.map((entry) => entry.metadata?.errorClass),

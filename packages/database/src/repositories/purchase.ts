@@ -523,6 +523,13 @@ export function createPurchaseRepository(db: Kysely<Database>) {
           input.bindings[0]?.quote.installationGeneration ??
           origin ??
           order.installationGeneration;
+        const erasedGeneration = await sql`SELECT 1 FROM public.shop_privacy_fences
+          WHERE shop_id=${order.shopId} AND installation_generation IN (${purchaseGeneration}::bigint,${origin ?? null}::bigint)
+          LIMIT 1`.execute(tx);
+        if (erasedGeneration.rows.length) {
+          await completeDelivery();
+          return null;
+        }
         const purchaseId = previous?.purchase_id ?? randomUUID();
         const changedOrder =
           !!previous &&

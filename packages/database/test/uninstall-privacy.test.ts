@@ -275,8 +275,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('independent generation-only u
     });
     await qualify({ ...f, uninstall: next.id }, '2', 'gid://shopify/AppInstallation/8');
     await expect(repo.recover(f.privacy, next.id)).rejects.toThrow('exceeds frozen privacy scope');
-    await repo.recover(second.id, next.id);
-    expect((await repo.status()).unrecoveredBlockedReceiptCount).toBe(baseline.unrecoveredBlockedReceiptCount);
+    await expect(repo.recover(second.id, next.id)).rejects.toThrow('cannot qualify a successor');
+    expect((await repo.status()).unrecoveredBlockedReceiptCount).toBe(baseline.unrecoveredBlockedReceiptCount + 1);
   });
   it('legacy first recovery snapshots NOW without clearing unknown historical coverage', async () => {
     const repo = createUninstallPrivacyRepository(db),

@@ -24,6 +24,15 @@ export type PrivacyOrderLink = { orderId: string; purchaseId: string | null };
  * This is not export delivery or confirmation that R2 objects are already gone. */
 export function createCustomerPrivacyRepository(db: Kysely<Database>) {
   return {
+    async finalizePendingShops() {
+      const result = await sql<{
+        summary: Partial<
+          Record<'progress' | 'drained' | 'storage_pending' | 'dependency_pending' | 'busy' | 'failed', number>
+        >;
+      }>`SELECT public.finalize_pending_shop_privacy(3) AS summary`.execute(db);
+      if (!result.rows[0]) throw new Error('Shop privacy finalization returned no durable outcome');
+      return result.rows[0].summary;
+    },
     async blockedShopErasureCount(): Promise<number> {
       return (
         (await sql<{ count: number }>`SELECT public.blocked_shop_privacy_count() AS count`.execute(db)).rows[0]

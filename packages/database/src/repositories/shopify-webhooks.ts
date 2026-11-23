@@ -570,6 +570,31 @@ export function createShopifyWebhookRepository(database: Kysely<Database>) {
       const id = randomUUID();
       const now = new Date();
       return database.transaction().execute(async (tx) => {
+        // Serialize delivery lookup with the finalizer's raw-to-digest move.
+        // Older schema rehearsals predate the compact replay table.
+        const { rows } = await sql<{ compactReplay: boolean }>`
+          SELECT pg_advisory_xact_lock(hashtextextended(
+            jsonb_build_array('shopify-delivery',${input.shopDomain}::text,${input.deliveryId}::text)::text,0)),
+            to_regclass('public.shop_privacy_replays') IS NOT NULL AS "compactReplay"
+        `.execute(tx);
+        if (rows[0]?.compactReplay) {
+          const replay = (
+            await sql<{ id: string; exact: boolean; shop_id: string | null; installation_generation: string | null }>`
+              SELECT * FROM public.lookup_shop_privacy_replay(
+                ${input.shopDomain},${input.deliveryId},${input.topic},${input.apiVersion},
+                ${input.triggeredAt},${input.eventId},${input.name},${hash})
+            `.execute(tx)
+          ).rows[0];
+          if (replay) {
+            if (!replay.exact) throw new ShopifyDeliveryConflictError();
+            return {
+              kind: 'processed',
+              id: replay.id,
+              shopId: replay.shop_id,
+              installationGeneration: replay.installation_generation,
+            };
+          }
+        }
         // The generic M3-001 key remains per generation. Shopify additionally
         // has a stable key that never changes when the inbox row is resolved.
         const inserted = await tx
@@ -637,7 +662,7 @@ export function createShopifyWebhookRepository(database: Kysely<Database>) {
         const locked = await lockById(tx, existing.inbox_id);
         if (!locked) throw new Error('Shopify delivery identity lost its inbox row');
         assertSame(locked, input, hash, body);
-        await bindUninstallAuthority(tx, locked.inbox.id, input);
+        if (locked.inbox.erasure_state !== 'erased') await bindUninstallAuthority(tx, locked.inbox.id, input);
         const resolved = await resolveLocked(tx, locked);
         if (input.topic === 'app/uninstalled' && input.uninstallCapabilityDigest === undefined)
           await snapshotGenericScope(tx, locked.inbox.id);

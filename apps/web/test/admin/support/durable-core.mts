@@ -75,6 +75,7 @@ export function fixtureCore(overrides: Overrides = {}): DurableCore {
       ...overrides.customerArtwork,
     },
     customerPrivacy: {
+      finalizePendingShops: unexpected,
       blockedShopErasureCount: unexpected,
       cleanupInboxes: unexpected,
       listDataRequests: unexpected,
