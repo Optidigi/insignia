@@ -519,6 +519,54 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('shop privacy finalizer', () =
     ).toEqual([{ order_id: 'gid://shopify/Order/104', installation_generation: '2' }]);
   });
 
+  it('erases only fenced release evidence with a separate release custodian', async () => {
+    const f = await fixture();
+    const other = await fixture();
+    await f.deactivate();
+    expect(await f.receive()).toMatchObject({ kind: 'SHOP_ERASURE_STAGED' });
+    const rollback = new Error('rollback production ownership fixture');
+    await expect(
+      db.transaction().execute(async (tx) => {
+        const custodian = sql.id(`release_custody_${randomUUID().replaceAll('-', '')}`);
+        await sql`CREATE ROLE ${custodian} NOLOGIN`.execute(tx);
+        await sql`ALTER TABLE public.trusted_release_records OWNER TO ${custodian}`.execute(tx);
+        for (const scope of [f, other])
+          await sql`WITH evidence AS (
+          SELECT ${scope.shopId}::text AS id,clock_timestamp() AS observed_at
+        ) INSERT INTO trusted_release_records(record_id,shop_id,installation_generation,app_client_id,
+            active_app_version_ref,expected_build,trusted_record,active_version_observed_at,
+            active_version_evidence_sha256,evidence_digest)
+          SELECT id,id,1,'app','version',
+            jsonb_build_object('appVersionRef','version','shopId',id,'installationGeneration','1','appClientId','app'),
+            jsonb_build_object('version','m5-trusted-release-v1','recordId',id,'activeAppVersionRef','version',
+              'attestation',jsonb_build_object('evidenceKind','RELEASE_BOUND','appVersionRef','version','shopId',id,
+                'installationGeneration','1','appClientId','app','observedAt',observed_at)),
+            observed_at,repeat('a',64),repeat('b',64) FROM evidence`.execute(tx);
+
+        await sql`SAVEPOINT spoofed_scope`.execute(tx);
+        await sql`SET LOCAL ROLE ${custodian}`.execute(tx);
+        await sql`SELECT set_config('insignia.shop_privacy_shop',${f.shopId},true),
+        set_config('insignia.shop_privacy_generation','1',true)`.execute(tx);
+        await expect(sql`DELETE FROM trusted_release_records WHERE shop_id=${f.shopId}`.execute(tx)).rejects.toThrow();
+        await sql`ROLLBACK TO SAVEPOINT spoofed_scope`.execute(tx);
+
+        for (let n = 0; n < 100; n++) {
+          const { rows } = await sql<{ result: string }>`
+          SELECT public.finalize_shop_privacy_generation(${f.shopId},1,20) AS result`.execute(tx);
+          if (rows[0]?.result !== 'progress') break;
+        }
+        expect(
+          (
+            await sql`SELECT shop_id FROM trusted_release_records WHERE shop_id IN (${f.shopId},${other.shopId})`.execute(
+              tx,
+            )
+          ).rows,
+        ).toEqual([{ shop_id: other.shopId }]);
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
+  });
+
   it('erases retired usage records linked to retail orders under the exact shop fence', async () => {
     const f = await fixture();
     const purchaseId = randomUUID();
