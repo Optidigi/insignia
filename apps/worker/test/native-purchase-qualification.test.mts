@@ -54,6 +54,7 @@ test('observed native origin binds only the closed release profile and validated
 });
 
 for (const [releaseProfile, expectedVersion] of [
+  ['native-review-market-6967baed', '1263125463041'],
   ['native-scope60-9b677033', '1257303638017'],
   ['native-noallorders-fc8f9e08', '1248762724353'],
   ['native-batch-9b677033', '1234668191745'],

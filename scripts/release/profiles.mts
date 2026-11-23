@@ -94,6 +94,12 @@ import reviewCartModules from '../../deployment/m5-runtime/native-review-cart-mo
 import reviewCartCandidate from '../../deployment/m5-runtime/native-review-cart-release-binding.json' with {
   type: 'json',
 };
+import reviewMarketModules from '../../deployment/m5-runtime/native-review-market-module-baseline.json' with {
+  type: 'json',
+};
+import reviewMarketBinding from '../../deployment/m5-runtime/native-review-market-release-binding.json' with {
+  type: 'json',
+};
 import reviewNavModules from '../../deployment/m5-runtime/native-review-nav-module-baseline.json' with { type: 'json' };
 import reviewNavBinding from '../../deployment/m5-runtime/native-review-nav-release-binding.json' with { type: 'json' };
 import scope60Modules from '../../deployment/m5-runtime/native-scope60-module-baseline.json' with { type: 'json' };
@@ -202,6 +208,15 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  'native-review-market-6967baed': {
+    versionId: reviewMarketBinding.versionId,
+    versionTag: reviewMarketBinding.versionTag,
+    versionIds: reviewMarketBinding.versionIds,
+    moduleHash: reviewMarketBinding.moduleHash,
+    modules: reviewMarketModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   // Same 14 modules as noallorders, created by CLI so the theme files are uploaded (the Dashboard version lacked them).
   'native-scope60-9b677033': {
     versionId: scope60Binding.versionId,
