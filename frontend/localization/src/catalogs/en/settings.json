@@ -51,6 +51,7 @@
     "billingStatusUnavailable": "Billing status unavailable",
     "tryAgain": "Try again",
     "per30Days": "per 30 days",
+    "perYear": "per year",
     "standardPlanPrice": "Standard plan price",
     "discount": "Discount",
     "trialEnds": "Trial ends",

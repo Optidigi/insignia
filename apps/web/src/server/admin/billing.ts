@@ -33,9 +33,12 @@ export function createMerchantBillingReader(ports: {
     });
     const fresh = projection.freshness === 'fresh';
     const recognized = fresh && projection.recognizedPolicyId !== null;
+    const billingPeriod = recognized ? snapshot.billingPeriod : null;
     const item = recognized ? snapshot.items[0] : null;
     const recurringPrice =
-      item?.price.kind === 'flat' ? { amount: item.price.amount, currency: item.price.currency } : null;
+      item?.price.kind === 'flat' && billingPeriod
+        ? { amount: item.price.amount, currency: item.price.currency, billingPeriod }
+        : null;
     return {
       status: !fresh
         ? 'unavailable'
@@ -52,7 +55,8 @@ export function createMerchantBillingReader(ports: {
       scheduledCancellation: fresh && projection.scheduledCancellation,
       pendingChange: fresh && projection.pendingProviderUpdate !== null,
       newActionsAllowed: recognized && projection.qualifyingUsageDisposition === 'NOT_METERED',
-      standardPrice: { amount: '49.99', currency: 'USD', intervalDays: 30 },
+      // The nominal Standard rate is known for the 30-day option.
+      standardPrice: billingPeriod === 'ANNUAL' ? null : { amount: '49.99', currency: 'USD', intervalDays: 30 },
       recurringPrice,
       // Shopify charges development stores $0 for a recognized paid plan.
       developmentTerms: recognized && recurringPrice?.currency === 'USD' && /^0(?:\.0+)?$/.test(recurringPrice.amount),

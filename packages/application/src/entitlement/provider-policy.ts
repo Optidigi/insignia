@@ -169,7 +169,7 @@ export function projectEntitlement(
   const plan = matched[0];
   if (!plan) return base;
   if (
-    snapshot.billingPeriod !== 'EVERY_30_DAYS' ||
+    (snapshot.billingPeriod !== 'EVERY_30_DAYS' && snapshot.billingPeriod !== 'ANNUAL') ||
     snapshot.items.length !== 1 ||
     snapshot.items[0]?.handle !== plan.planHandle ||
     snapshot.items[0]?.usage !== null

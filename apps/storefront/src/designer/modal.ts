@@ -142,12 +142,18 @@ export function createDesignerModal(input: {
       loading.hidden = true;
       loading.style.display = 'none';
     },
-    failed() {
+    failed(reason?: 'unsupported-market') {
       settled?.();
       main.className = 'admin-preview-message';
       message.setAttribute('role', 'alert');
-      message.textContent = t('customer:startup.failure');
-      retry.hidden = !input.onRetry;
+      if (reason === 'unsupported-market') {
+        heading.textContent = t('common:summary.unavailable');
+        dialog.setAttribute('aria-label', heading.textContent);
+      }
+      message.textContent = t(
+        reason === 'unsupported-market' ? 'customer:recovery.unsupportedMarket' : 'customer:startup.failure',
+      );
+      retry.hidden = reason === 'unsupported-market' || !input.onRetry;
       if (dialog.open) close.focus();
     },
     destroy() {

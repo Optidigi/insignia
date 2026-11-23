@@ -101,6 +101,7 @@ export class InsigniaBuyer extends HTMLElement {
           proxyBase: this.getAttribute('proxy-base') ?? '/apps/insignia',
           productId,
           country: this.getAttribute('country') ?? '',
+          marketId: this.getAttribute('market-id') ?? undefined,
         }).config(controller.signal);
         // Presentation must not outlive a signed preview capability, even inside
         // the short advisory cache. Quotes/acceptance never use this as authority.
@@ -377,7 +378,12 @@ export class InsigniaBuyer extends HTMLElement {
     try {
       const { createBuyerApi } = await import('./buyer');
       const country = this.getAttribute('country') ?? '';
-      const api = createBuyerApi({ proxyBase, productId, country });
+      const api = createBuyerApi({
+        proxyBase,
+        productId,
+        country,
+        marketId: this.hasAttribute('repair') ? undefined : (this.getAttribute('market-id') ?? undefined),
+      });
       const candidate = prepared ? await prepared.source : undefined;
       const source =
         candidate && prepared && prepared.expiresAt > Date.now() ? candidate : await api.config(opening.signal);
@@ -400,8 +406,19 @@ export class InsigniaBuyer extends HTMLElement {
         this.liveFrame = controller;
         return;
       }
-    } catch {
+    } catch (error) {
       if (opening.signal.aborted || generation !== this.generation) return;
+      if ((error as { code?: unknown } | null)?.code === 'UNSUPPORTED_MARKET') {
+        pending.failed('unsupported-market');
+        // Keep ownership with the element until the shopper closes the message.
+        this.liveFrame = { open: pending.show, destroy: pending.destroy };
+        pending.setCancelHandler(() => {
+          this.liveFrame = undefined;
+          pending.destroy();
+        });
+        adopted = true;
+        return;
+      }
       const { mountUnavailableDesigner } = await import('./designer/unavailable');
       const unavailable = await mountUnavailableDesigner({
         modal: pending,

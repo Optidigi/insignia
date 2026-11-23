@@ -2099,6 +2099,7 @@ export interface AdminMessageTable {
   'settings:merchantBilling.ownerAccess': object;
   'settings:merchantBilling.per30Days': object;
   'settings:merchantBilling.percentageDiscount': { percentage: string };
+  'settings:merchantBilling.perYear': object;
   'settings:merchantBilling.priceUnverified': object;
   'settings:merchantBilling.remainingCycles': { count: number };
   'settings:merchantBilling.reopenAccess': object;

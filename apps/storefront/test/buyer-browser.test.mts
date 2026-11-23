@@ -1911,7 +1911,7 @@ async function withProductDesigner(
   }) => Promise<void>,
   mobile = false,
   engine: typeof chromium = chromium,
-  opening: 'editable' | 'unavailable' = 'editable',
+  opening: 'editable' | 'unavailable' | 'unsupported-market' = 'editable',
 ) {
   const server = await createServer({
     plugins: [selectedFrameAssets()],
@@ -1933,8 +1933,13 @@ async function withProductDesigner(
     await page.route('**/cart.js', (route) => route.fulfill({ json: { items: [], currency: 'EUR' } }));
     await page.route('**/apps/insignia/v1/**', (route) => {
       const path = new URL(route.request().url()).pathname;
-      if (path.endsWith('/config'))
+      if (path.endsWith('/config')) {
+        if (opening === 'unsupported-market') {
+          assert.equal(new URL(route.request().url()).searchParams.get('marketId'), '42');
+          return route.fulfill({ status: 422, json: { code: 'UNSUPPORTED_MARKET' } });
+        }
         return cfg ? route.fulfill({ json: cfg }) : route.fulfill({ status: 404, json: { error: 'Not found' } });
+      }
       // Opening an editable Designer warms the tab's session; it is not a private data request.
       if (path.endsWith('/sessions')) {
         sessions++;
@@ -1964,6 +1969,14 @@ async function withProductDesigner(
     const trigger = page.locator('insignia-buyer').getByRole('button', { name: 'Customize this product' });
     await trigger.click();
     const ui = page.frameLocator('iframe:not([hidden])');
+    if (opening === 'unsupported-market') {
+      await page
+        .getByRole('alert')
+        .filter({ hasText: /isn't available for your country or currency/ })
+        .waitFor(firstLoad);
+      await run({ page, ui, trigger, privateRequests: () => privateRequests, sessions: () => sessions });
+      return;
+    }
     if (opening === 'unavailable') {
       await ui.getByRole('heading', { name: 'Unavailable', exact: true }).waitFor(firstLoad);
       assert.equal(await ui.locator('input,select,textarea').count(), 0);
@@ -1982,6 +1995,24 @@ async function withProductDesigner(
     await server.close();
   }
 }
+
+test('an unsupported storefront Market gives a localized explanation before opening the Designer', async () => {
+  await withProductDesigner(
+    config,
+    async ({ page, trigger, privateRequests, sessions }) => {
+      assert.equal(await page.locator('dialog[open] iframe').count(), 0);
+      assert.equal(await page.getByRole('button', { name: 'Retry', exact: true }).count(), 0);
+      assert.equal(sessions(), 0);
+      assert.equal(privateRequests(), 0);
+      await page.getByRole('button', { name: 'Close customizer', exact: true }).click();
+      assert.equal(await page.locator('dialog[open]').count(), 0);
+      assert.equal(await trigger.evaluate((element) => element === document.activeElement), true);
+    },
+    false,
+    chromium,
+    'unsupported-market',
+  );
+});
 
 test('Firefox opens the selected Designer when srcdoc has no document referrer', async () => {
   await withProductDesigner(

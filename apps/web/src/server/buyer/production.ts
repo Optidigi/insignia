@@ -210,12 +210,8 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
       throw new Error('Buyer signing key identity mismatch');
     return { keyScope, selected };
   }
-  function ports(scope: ArtworkScope): QuoteAuthorityPorts & { renewalStore: QuoteRenewalStore } {
-    if (scope.kind !== 'guest' || !scope.ownerHash || !/^[a-f0-9]{64}$/.test(scope.ownerHash))
-      throw new Error('Buyer resource ownership unavailable');
-    const artwork = createArtworkUsabilityPort(input.core.artwork, clock, scope);
-    const credentialSource = credentials(scope);
-    const leanContext: NonNullable<QuoteAuthorityPorts['leanContext']> =
+  function marketAdmission(scope: Scope, credentialSource: AdminCredentialSource) {
+    return (
       input.leanContext ??
       createLeanPrimaryMarketAdmission({
         scope,
@@ -228,7 +224,15 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
         clock,
         eurQualification,
         expectedRelease: resolveRuntimeReleaseProfile(input.env.INSIGNIA_RELEASE_PROFILE),
-      });
+      })
+    );
+  }
+  function ports(scope: ArtworkScope): QuoteAuthorityPorts & { renewalStore: QuoteRenewalStore } {
+    if (scope.kind !== 'guest' || !scope.ownerHash || !/^[a-f0-9]{64}$/.test(scope.ownerHash))
+      throw new Error('Buyer resource ownership unavailable');
+    const artwork = createArtworkUsabilityPort(input.core.artwork, clock, scope);
+    const credentialSource = credentials(scope);
+    const leanContext = marketAdmission(scope, credentialSource);
     let composed: QuoteAuthorityPorts | undefined, pending: Promise<QuoteAuthorityPorts> | undefined;
     const compose = () =>
       (pending ??= proposalStage('native-configuration', async () => {
@@ -435,6 +439,16 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
             },
           })
         : undefined,
+    async checkConfigMarket(scope, { country, marketId, currency }) {
+      const current = await active(scope);
+      await marketAdmission(scope, credentials(scope)).assertSupported({
+        tenant: { ...current, shopifyShopGid: `gid://shopify/Shop/${current.shopifyShopId}` },
+        country,
+        marketId,
+        currency,
+        shopCurrency: currency,
+      });
+    },
     async availability(scope, productId, variantIds, phase) {
       if (
         !/^[1-9][0-9]{0,19}$/.test(productId) ||

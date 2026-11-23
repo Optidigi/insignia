@@ -196,7 +196,7 @@ export function settingsPreviewResponse(path: string, example: string): { status
       standardPrice: { amount: '49.99', currency: 'USD', intervalDays: 30 },
       recurringPrice: ['inactive', 'unverified'].includes(example)
         ? null
-        : { amount: example === 'development' ? '0.00' : '49.99', currency: 'USD' },
+        : { amount: example === 'development' ? '0.00' : '49.99', currency: 'USD', billingPeriod: 'EVERY_30_DAYS' },
       recurringDiscount:
         example === 'discounted'
           ? { amount: '5.00', percentage: null, remainingCycles: 2, endsAt: '2026-12-14T10:30:00Z' }
