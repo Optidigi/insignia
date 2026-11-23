@@ -151,7 +151,7 @@ Production on host alias `prod`, as of 23 November 2026 (deploys AN and AO). One
 | Shopify Active version | `1263125463041`, profile `native-review-market-6967baed` (deploy AN, 23 Nov). Exactly 51 versions and 14 modules. Only theme assets changed from scope60. Module hash `d166f4e9…`. Required scopes `read_markets,read_orders,read_publications,write_app_proxy,write_cart_transforms,write_products,write_validations` and optional `read_product_listings`. Earlier `read_all_orders` grants may remain on old installations. Version `1248762724353` must never be released. | theme `6967baed`; binding `fee9927c` (#610) |
 | Functions | "Insignia cart transform" wasm `5c8708b5…` (module `826a9059…`, query `02ab5bce…`), "Insignia cart validation" wasm `6c362b36…` (module `076bfef2…`, query `5867e61f…`); handles unchanged | `aa3b6166` |
 | Web | `insignia-web`, `insignia/web:8c6e7555` = `sha256:13a7232b…` (deploy AO; EUR v2 bound to `1263125463041`) | main tree at `8c6e7555` |
-| Worker | `insignia-worker`, `insignia/worker:8c6e7555` = `sha256:9b216be9…` (deploy AO; automatic shop erasure grant withheld) | main tree at `8c6e7555` |
+| Worker | `insignia-worker`, `insignia/worker:8c6e7555` = `sha256:9b216be9…` (deploy AO; automatic shop erasure grant enabled 23 Nov) | main tree at `8c6e7555` |
 | Verifier | `insignia-verifier`, `insignia/verifier:fee9927c` = `sha256:6659b742…` (deploy AN; code manifest `08c1334c…`) | main tree at `fee9927c` |
 | Signer | `insignia-signer`, `insignia/signer:afc3c1da` = `sha256:e9b1f153…` (since 13 Nov `21:54:55Z`, #431); wrapping key `secrets/signing-wrap-keys.json` (10101, 0400) | main `afc3c1da` |
 | Monitor | `insignia-heartbeat` and `insignia-heartbeat-snapshot`, `insignia/heartbeat:c54c7820` = `sha256:78d0a8da…`; state in `/srv/data/saas/insignia/monitor` | main `c54c7820` |
@@ -185,14 +185,23 @@ zero fixture orders, artwork, product configuration, credentials, raw webhook ro
 release records. The raw store identity was cleared and its keyed reinstall fingerprint remains.
 Protected counts for other installations stayed equal within the transaction. A schema-74
 post-erasure restore retained the proof key and did not restore the deleted records. Temporary
-pre-erasure backup was removed after verification. The automatic worker grant remains withheld
-and four historical rows remain outside the authorized test scope. The worker's SQL selection
+pre-erasure backup was removed after verification. The automatic worker grant was withheld
+at the end of the scoped fixture test. Four historical rows remained outside that test scope. The worker's SQL selection
 includes three first-generation recoveries from reinstalled review stores and one inactive
 installation with a staged receipt. Their presence in the SQL selection is not operator
 authorization. Do not enable the worker without reconciling those rows. An isolated production
 restore confirmed that the automatic worker would remove five release records and three credential
 rows before reporting all four still pending. Production was read only during this rehearsal.
 Receipt folder on prod is `erasure-8c6e7555-preflight`.
+
+**Automatic shop erasure** (23 Nov): the owner authorized verified requests beyond the fixture.
+An encrypted schema-74 restore matched the live proof key and contained the four pending targets.
+The reviewed worker grant was enabled at `22:55:44Z`. The runtime role cannot execute the scope-specific
+finalizer or read the proof key. Live readback at `23:01:57Z` shows two completed installations
+including the original fixture. On the three remaining earlier generations, the worker removed
+the five scoped release records, three credential rows and old uninstall destinations. Three
+generationless product drafts are still shared with later installations and remain on hold.
+Completion requires independent authority for that shared data.
 
 **Deploy AM** (23 Nov, web only): main `6967baed`, CI run `45236726941`. The database checkpoint restored to schema 72 in an isolated container. Web replaced at `18:32:46Z`; Compose delta `services.web.image`, exact digest verified and `/live` returned 200. Shopify Standard lists $49.99/30 days and $449.99/year. On rewrite-dev both $0 cadence changes were approved natively and returned to Insignia. The production Partner reader confirmed the same `insignia-standard` handle, non-metered entitlement and effective cadence in both directions. Merchant charge history proof and the reviewer purchase path are open.
 
@@ -227,8 +236,10 @@ Both cadence changes have native no-charge evidence.
 **Storefront network declaration:** Shopify requires `network_access.allowed_sources` for public
 storefront apps from December 1, 2026. The live Designer loaded private preview assets from the
 exact configured production R2 origin. A local staging copy of the active app manifest declares
-that origin, preserves every other setting, and passed Shopify CLI validation. It awaits dev
-preview and a separately qualified app version release.
+that origin, preserves every other setting, and passed Shopify CLI validation. The authorized
+disposable `insignia-network-qa` dev store was created with the Network access testing preview.
+Shopify CLI started the preview with existing app URLs. Storefront verification and a separately
+qualified app version release are still pending.
 
 **Deploy AL** (19 Nov, web only): main `e930b8be` — #606 the Methods page keeps `shop`/`host`/`embedded` when it updates its own URL (found in the cookie-blocked browser test after #604). Web replaced `19:03:55Z`; compose delta `services.web.image` only; readback clean; database baseline identical. Receipt folder `methods-deploy-AL` on both hosts.
 
