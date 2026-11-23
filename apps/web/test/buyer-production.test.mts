@@ -17,6 +17,7 @@ import { createHash, createHmac, createPrivateKey, sign } from 'node:crypto';
 import { test } from 'node:test';
 import { buildPublicConfig, materialHash, publicKeyFingerprint, publicKeyFromSeed } from '@insignia/application';
 import { decodeLineCarrierV3, issueLineSetV3 } from '@insignia/cart-authorization';
+import { handleBuyerRequest } from '../src/server/buyer/http.ts';
 import { createProductionBuyerServices, type ProductionBuyerInputs } from '../src/server/buyer/production.ts';
 import { runSigningFence } from '../src/server/buyer/signing-fence.ts';
 import { fixtureTransaction } from './admin/support/fixtures.mts';
@@ -53,12 +54,13 @@ function testSigner(): ProductionBuyerInputs['signer'] {
     }),
   };
 }
-function signed() {
+function signed(extra: Record<string, string> = {}) {
   const values = {
     shop: 'buyer.myshopify.com',
     timestamp: String(Math.floor(Date.now() / 1000)),
     path_prefix: '/apps/insignia',
     productId: '111',
+    ...extra,
   };
   const query = new URLSearchParams(values);
   const message = Object.entries(values)
@@ -1686,6 +1688,71 @@ test('production config reads real country-contextual base amounts and selected 
         assert.equal(contextReads, 1);
       },
     );
+});
+
+test('storefront config rejects unsupported Markets and currencies before opening the Designer', async () => {
+  const { input } = catalogFixture();
+  const catalogFetch = required(input.fetchImpl);
+  let priceCurrency = 'EUR';
+  input.core.transactions.run = async (work) => work(fixtureTransaction);
+  input.core.preferences.readWording = async () => ({
+    wordingVersion: '0',
+    overlays: { en: { locale: 'en', messages: {} } },
+  });
+  input.fetchImpl = async (url, options) => {
+    const query = text(record(JSON.parse(text(required(options).body))).query);
+    if (query.includes('InsigniaVariantContext')) {
+      return Response.json({
+        data: {
+          nodes: [
+            {
+              __typename: 'ProductVariant',
+              id: 'gid://shopify/ProductVariant/222',
+              product: { id: 'gid://shopify/Product/111' },
+              contextualPricing: { price: { amount: '10.99', currencyCode: priceCurrency } },
+            },
+          ],
+        },
+      });
+    }
+    if (!query.includes('LeanPrimaryMarket')) return catalogFetch(url, options);
+    return Response.json(
+      {
+        data: {
+          shop: { id: 'gid://shopify/Shop/9', currencyCode: 'USD' },
+          primaryMarket: {
+            id: 'gid://shopify/Market/42',
+            status: 'ACTIVE',
+            conditions: {
+              regionsCondition: {
+                regions: {
+                  nodes: [{ __typename: 'MarketRegionCountry', code: 'US' }],
+                  pageInfo: { hasNextPage: false, endCursor: null },
+                },
+              },
+            },
+          },
+        },
+      },
+      { headers: { 'x-shopify-api-version': '2026-07' } },
+    );
+  };
+  const services = createProductionBuyerServices(input);
+  const read = (marketId: string) =>
+    handleBuyerRequest(
+      new Request(signed({ country: 'US', marketId })),
+      services,
+      'config',
+      () => {},
+      () => {},
+    );
+  for (const marketId of ['43', '42']) {
+    const response = await read(marketId);
+    assert.equal(response.status, 422, `Market ${marketId}`);
+    assert.equal((await response.json()).code, 'UNSUPPORTED_MARKET');
+  }
+  priceCurrency = 'USD';
+  assert.equal((await read('42')).status, 200, 'a rejected context is not kept in the config cache');
 });
 
 test('selection configuration does not wait for signing or release authority; purchase readiness remains separate', async () => {

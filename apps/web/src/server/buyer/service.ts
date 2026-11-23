@@ -7,6 +7,7 @@ import {
   BuyerRejectedError,
   localDay,
   materialHash,
+  normalizeMarketId,
   proposeQuote,
   type QuoteAuthorityPorts,
   type QuoteReadinessObservation,
@@ -111,6 +112,10 @@ export function createBuyerServices(input: {
     }[];
     imageUrls: Record<string, string>;
   }>;
+  checkConfigMarket?(
+    scope: { shopId: string; installationGeneration: string },
+    context: { country: string; marketId: string; currency: string },
+  ): Promise<void>;
   /** Late readiness only; full catalog remains the presentation/restore contract. */
   availability?(
     scope: { shopId: string; installationGeneration: string },
@@ -338,20 +343,44 @@ export function createBuyerServices(input: {
       if (!geometryRecord || !presentation) throw new Error('Published presentation missing');
       const geometry = buyerGeometry(geometryRecord.value as GeometryV1),
         config = revision.config;
-      const country = new URL(request.url).searchParams.get('country');
+      const params = new URL(request.url).searchParams;
+      const country = params.get('country');
+      const rawMarketId = params.get('marketId');
+      let marketId: string | undefined;
+      if (rawMarketId !== null) {
+        try {
+          marketId = normalizeMarketId(rawMarketId);
+        } catch {
+          throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'Storefront Market is unavailable');
+        }
+      }
       const contextual = !!country && /^[A-Z]{2}$/.test(country);
-      if (presentation.selectedSetup && (!country || !/^[A-Z]{2}$/.test(country)))
+      if ((presentation.selectedSetup || marketId) && !contextual)
         throw new BuyerRejectedError('COUNTRY_REQUIRED', 'Country context required');
       // Selection reads complete published/contextual facts. Purchase authority is
       // checked by proposal/acceptance, not by opening the editor. Provider reads are reused for
       // 30 s per exact revision and country; proposal and acceptance re-check and re-price.
+      const { checkConfigMarket } = input;
       const loaded = await configCache.read(
         scope.shopId,
-        [scope.installationGeneration, scope.productId, config.revisionId, config.revisionContentHash, country ?? ''],
+        [
+          scope.installationGeneration,
+          scope.productId,
+          config.revisionId,
+          config.revisionContentHash,
+          country ?? '',
+          marketId ?? '',
+        ],
         async () => {
+          if (marketId && country && checkConfigMarket) {
+            const context = { country, marketId, currency: config.shopCurrency };
+            await proposalStage('primary-context', () => checkConfigMarket(scope, context));
+          }
           const catalog = await proposalStage('variant', () =>
             input.catalog(scope, scope.productId, undefined, country ? { country } : undefined),
           );
+          if (marketId && catalog.currency && catalog.currency !== config.shopCurrency)
+            throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'Storefront currency differs from shop currency');
           const wording = contextual
             ? await proposalStage('presentation', () =>
                 input.core.transactions.run((tx) => input.core.preferences.readWording(tx, scope)),

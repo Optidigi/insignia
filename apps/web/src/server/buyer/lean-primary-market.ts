@@ -193,9 +193,9 @@ export function createLeanPrimaryMarketAdmission(input: {
     async assertSupported(target) {
       if (target.shopCurrency !== target.currency || !['USD', 'EUR'].includes(target.currency))
         throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'Lean primary-Market context unavailable');
-      const profile = input.eurQualification;
+      const profile = target.currency === 'EUR' ? input.eurQualification : null;
       const now = () => +input.clock();
-      if (target.currency === 'EUR' && profile?.version === 'eur-qualification-v2') {
+      if (profile?.version === 'eur-qualification-v2') {
         // Release-level: any shop whose shop currency is EUR (checked above and re-read below), to the
         // qualified countries only. A different release than the one qualified is an outage, not a refusal.
         if (!profile.countries.includes(target.country))
@@ -217,7 +217,7 @@ export function createLeanPrimaryMarketAdmission(input: {
             v1.shopifyShopGid !== target.tenant.shopifyShopGid)
         )
           throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'EUR Netherlands qualification unavailable');
-        // The covered shop's profile no longer matches its release, installation epoch or Market: an outage.
+        // The covered shop's profile no longer matches its release or installation epoch: an outage.
         if (
           target.currency === 'EUR' &&
           (!v1 ||
@@ -226,7 +226,6 @@ export function createLeanPrimaryMarketAdmission(input: {
             v1.installationGeneration !== target.tenant.installationGeneration ||
             v1.authorizationGeneration !== target.tenant.authorizationGeneration ||
             v1.authorizationEpoch !== target.tenant.authorizationEpoch ||
-            v1.primaryMarketGid !== `gid://shopify/Market/${target.marketId}` ||
             Date.parse(v1.qualifiedAt) > now())
         )
           throw new Error('EUR Netherlands qualification unavailable');
@@ -253,7 +252,6 @@ export function createLeanPrimaryMarketAdmission(input: {
         observed.installationGeneration !== input.scope.installationGeneration ||
         observed.shopifyShopId !== before.shopifyShopId ||
         observed.shopCurrency !== target.currency ||
-        observed.primaryMarketId !== `gid://shopify/Market/${target.marketId}` ||
         !Number.isFinite(at) ||
         !Number.isFinite(observedAt) ||
         !Number.isFinite(freshUntil) ||
@@ -263,8 +261,13 @@ export function createLeanPrimaryMarketAdmission(input: {
         at >= freshUntil
       )
         throw new Error('Lean primary-Market context unavailable');
-      // The buyer's country is outside the shop's primary Market.
-      if (!observed.countryCodes.includes(target.country))
+      if (profile?.version === 'eur-nl-qualification-v1' && profile.primaryMarketGid !== observed.primaryMarketId)
+        throw new Error('EUR Netherlands qualification unavailable');
+      // The storefront can legitimately select a different Market or a country outside the primary Market.
+      if (
+        observed.primaryMarketId !== `gid://shopify/Market/${target.marketId}` ||
+        !observed.countryCodes.includes(target.country)
+      )
         throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'Lean primary-Market context unavailable');
     },
   };

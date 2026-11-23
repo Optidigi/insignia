@@ -105,10 +105,12 @@ export function createBuyerApi({
   fetchImpl = fetch,
   storage = sharedBuyerStorage(),
   country,
+  marketId,
 }: {
   proxyBase: string;
   productId: string;
   country?: string;
+  marketId?: string;
   fetchImpl?: typeof fetch;
   /** Where the session capability lives; by default the store every tab shares (buyer-session.ts). */
   storage?: BuyerSessionStorage;
@@ -243,11 +245,10 @@ export function createBuyerApi({
       ),
     config: (signal?: AbortSignal, targetProduct = productId) => {
       if (!/^[1-9][0-9]{0,19}$/.test(targetProduct)) throw new Error('Invalid product');
-      return request<BuyerConfig>(
-        `${proxyBase}/v1/config?productId=${targetProduct}${country && /^[A-Z]{2}$/.test(country) ? `&country=${country}` : ''}`,
-        undefined,
-        signal,
-      );
+      const params = new URLSearchParams({ productId: targetProduct });
+      if (country && /^[A-Z]{2}$/.test(country)) params.set('country', country);
+      if (marketId !== undefined) params.set('marketId', marketId);
+      return request<BuyerConfig>(`${proxyBase}/v1/config?${params}`, undefined, signal);
     },
     async private<T>(
       path: string,

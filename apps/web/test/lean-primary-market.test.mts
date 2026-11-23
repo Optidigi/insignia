@@ -92,7 +92,6 @@ test('qualified EUR cannot bypass independently read shop, Market, country, curr
     { shopifyShopId: '999' },
     { installationGeneration: '2' },
     { shopCurrency: 'USD' },
-    { primaryMarketId: 'gid://shopify/Market/99' },
     { countryCodes: ['BE'] },
     { observedAt: 'invalid' },
     { freshUntil: '2026-11-05T11:01:00Z' },
@@ -163,6 +162,17 @@ test('EUR at a shop the qualification profile does not cover is an unsupported m
   await assert.rejects(
     () => withProfile({ primaryMarketGid: 'gid://shopify/Market/99' }).assertSupported(target),
     drifted,
+  );
+});
+
+test('legacy EUR distinguishes a secondary storefront Market from drift in the qualified primary Market', async () => {
+  await assert.rejects(() => setup().assertSupported({ ...target, marketId: '99' }), {
+    name: 'BuyerRejectedError',
+    code: 'UNSUPPORTED_MARKET',
+  });
+  await assert.rejects(
+    () => setup({ ...snapshot, primaryMarketId: 'gid://shopify/Market/99' }).assertSupported(target),
+    /EUR Netherlands qualification unavailable/,
   );
 });
 
@@ -276,6 +286,13 @@ test('v2 bound to another release is an outage, not a refusal; independent reads
     { freshUntil: '2026-11-05T11:01:00Z' },
   ])
     await assert.rejects(() => setupV2({ ...snapshot, ...change }).assertSupported(target), /context/);
+});
+
+test('a storefront Market other than the shop primary Market is unsupported with the same currency', async () => {
+  const primary = { ...snapshot, shopCurrency: 'USD', countryCodes: ['PH', 'US'] };
+  const buyer = { ...target, currency: 'USD', shopCurrency: 'USD', country: 'US' };
+  await setup(primary, null).assertSupported(buyer);
+  await assert.rejects(() => setup(primary, null).assertSupported({ ...buyer, marketId: '99' }), unsupportedMarket);
 });
 
 test('the USD path is unchanged under a v2 profile', async () => {
