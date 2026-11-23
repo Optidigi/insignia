@@ -68,6 +68,12 @@ import merchantBatchBinding from '../../deployment/m5-runtime/native-merchant-ba
 };
 import namesModules from '../../deployment/m5-runtime/native-names-module-baseline.json' with { type: 'json' };
 import namesBinding from '../../deployment/m5-runtime/native-names-release-binding.json' with { type: 'json' };
+import networkAccessModules from '../../deployment/m5-runtime/native-network-access-module-baseline.json' with {
+  type: 'json',
+};
+import networkAccessBinding from '../../deployment/m5-runtime/native-network-access-release-binding.json' with {
+  type: 'json',
+};
 import noAllOrdersModules from '../../deployment/m5-runtime/native-noallorders-module-baseline.json' with {
   type: 'json',
 };
@@ -96,12 +102,6 @@ import reviewCartModules from '../../deployment/m5-runtime/native-review-cart-mo
   type: 'json',
 };
 import reviewCartBinding from '../../deployment/m5-runtime/native-review-cart-release-binding.json' with {
-  type: 'json',
-};
-import networkAccessModules from '../../deployment/m5-runtime/native-network-access-module-baseline.json' with {
-  type: 'json',
-};
-import networkAccessBinding from '../../deployment/m5-runtime/native-network-access-release-binding.json' with {
   type: 'json',
 };
 import reviewMarketModules from '../../deployment/m5-runtime/native-review-market-module-baseline.json' with {
