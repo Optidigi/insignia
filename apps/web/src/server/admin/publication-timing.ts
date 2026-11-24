@@ -45,6 +45,11 @@ export async function timePublication<T>(
   return settled.value;
 }
 
+/** Runs `run` (and its async continuations) outside any publish request's timing: no spans. */
+export function outsidePublicationTiming<T>(run: () => T): T {
+  return context.exit(run);
+}
+
 /** Records `run` as one span of the publish request in progress; outside one it only runs `run`. */
 export async function publicationStage<T>(stage: PublicationTimingStage, run: () => Promise<T>): Promise<T> {
   const parent = context.getStore();

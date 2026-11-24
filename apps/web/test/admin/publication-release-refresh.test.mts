@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { test } from 'node:test';
 import { createPublicationReleaseRefresh } from '../../src/server/admin/publication-release.ts';
+import { publicationStage, timePublication } from '../../src/server/admin/publication-timing.ts';
 import { RELEASE_REFRESH_AFTER_MS } from '../../src/server/buyer/release-refresh.ts';
 
 /** Deterministic timer queue: `advance` fires due timers in order and drains their async work. */
@@ -174,5 +175,73 @@ test('the refresh runs outside the async context of the request that began it', 
   await new Promise((resolve) => setTimeout(resolve, 20));
   assert.deepEqual(seen, [undefined, undefined]);
   end();
+  refresh.close();
+});
+
+test('a refresh due after the last publish ended starts nothing and leaves the next publish its refresh', async () => {
+  const t = timers();
+  const start = t.clock();
+  const c = collector(t, { observedAt: start - 20_000 });
+  const refresh = createPublicationReleaseRefresh<Staff>({ ...c, clock: t.clock, setTimer: t.setTimer });
+  const first = refresh.begin(actor(t));
+  await t.advance(10_000);
+  first();
+  // The next refresh falls due 27 s in with no publish in progress: it collects nothing.
+  await t.advance(20_000);
+  assert.equal(c.starts.length, 1);
+  // A publish 30 s in, on a record 27 s old, gets its refresh at once, not 25 s after the idle run.
+  const second = refresh.begin(actor(t, 'staff-2'));
+  await t.advance(10_000);
+  assert.deepEqual(
+    c.starts.map((entry) => [entry.at - start, entry.staff]),
+    [
+      [2_001, 'staff-1'],
+      [30_000, 'staff-2'],
+    ],
+  );
+  second();
+  refresh.close();
+});
+
+test('a refresh adds no span to the publish that began it or to a request that composed the services', async () => {
+  const reports: string[][] = [];
+  const report = (timing: { spans: { stage: string }[] }) => reports.push(timing.spans.map((span) => span.stage));
+  const accepted = () => ({ outcome: 'accepted' as const });
+  const refreshed = Promise.withResolvers<void>();
+  const composed = Promise.withResolvers<ReturnType<typeof createPublicationReleaseRefresh>>();
+  // Composed lazily inside a request's timing context that is still in progress when the refresh runs.
+  const composing = timePublication(
+    async () => {
+      composed.resolve(
+        createPublicationReleaseRefresh({
+          async refresh() {
+            await publicationStage('release-collect', async () => {});
+            refreshed.resolve();
+            return null;
+          },
+          observedAt: async () => null,
+        }),
+      );
+      await refreshed.promise;
+    },
+    accepted,
+    report,
+  );
+  const refresh = await composed.promise;
+  await timePublication(
+    async () => {
+      const end = refresh.begin({
+        tenantShopId: 'tenant',
+        installationGeneration: '1',
+        expiresAtMs: Date.now() + 60_000,
+      });
+      await refreshed.promise;
+      end();
+    },
+    accepted,
+    report,
+  );
+  await composing;
+  assert.deepEqual(reports, [[], []]);
   refresh.close();
 });

@@ -157,6 +157,8 @@ export function createProductionAdminServices(
   const storeSetup = env.INSIGNIA_STORE_SETUP_ENABLED === '1';
   const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host, fetchImpl: fetch });
   const offlineBootstrap = env.INSIGNIA_M7_BUYER_ENABLED === '1';
+  // Owner decision 3: on unless explicitly switched off; each step still checks its own record.
+  const publishReleaseRefresh = env.INSIGNIA_PUBLICATION_RELEASE_REFRESH !== '0';
   const credentialKeys = offlineBootstrap ? loadCredentialKeys(env) : undefined;
   const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }), { credentialKeys });
   const enrollUninstall = createAutomaticUninstallEnrollment({
@@ -250,6 +252,9 @@ export function createProductionAdminServices(
       },
       deadline: () => deadlineMs,
       inFlight: collecting,
+      // A step that joined a collection it did not start (usually the background refresh) and got no
+      // record collects once on its own, as it would have without the refresh.
+      collectAfterJoinedMiss: !refreshAhead,
       async isCurrent() {
         await active(actor);
         grant(actor);
@@ -1172,7 +1177,7 @@ export function createProductionAdminServices(
     configs: {
       ...service,
       async publish(actor, productId, data) {
-        const end = releaseCollector ? publicationRelease.begin(actor) : () => {};
+        const end = releaseCollector && publishReleaseRefresh ? publicationRelease.begin(actor) : () => {};
         try {
           return await service.publish(actor, productId, data);
         } finally {

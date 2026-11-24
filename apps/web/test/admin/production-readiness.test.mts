@@ -237,3 +237,58 @@ test('a delayed empty release read cannot start another collection after a sibli
   assert.deepEqual(await pending, stored);
   assert.equal(calls, 1);
 });
+
+test('a read that joined a collection it did not start, which ended without a record, collects once on its own', async () => {
+  for (const second of ['COMPLETE', 'STOPPED'] as const) {
+    const inFlight: NonNullable<DemandInput['inFlight']> = new Map();
+    const current = new Date('2026-10-08T12:00:00Z');
+    let stored: Stored = null;
+    const states: string[] = [];
+    const started = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    const base: DemandInput = {
+      records: { read: async () => stored },
+      now: () => current,
+      binding: {
+        ...scope,
+        authorizationGeneration: 'test-auth',
+        authorizationEpoch: 0,
+        externalInstallationId: 'installation-9',
+      },
+      isCurrent: async () => {},
+      deadline: () => current.getTime() + 60_000,
+      inFlight,
+      collector: {
+        async collect(request) {
+          if (states.length === 0) {
+            states.push('STOPPED');
+            started.resolve();
+            await release.promise;
+            return { requestId: request.requestId, recordId: null, state: 'STOPPED' };
+          }
+          states.push(second);
+          if (second === 'STOPPED') return { requestId: request.requestId, recordId: null, state: 'STOPPED' };
+          stored = {
+            record,
+            expectedBuild: build,
+            activeVersionEvidenceSha256: 'f'.repeat(64),
+            evidenceDigest: 'e'.repeat(64),
+          };
+          return { requestId: request.requestId, recordId: record.recordId, state: 'COMPLETE' };
+        },
+      },
+    };
+    const request = { scope, expectedActiveAppVersionRef: '1163229200385', now: current };
+    // The starter (a background refresh) keeps the old rule: its own miss is final.
+    const starter = readiness.createDemandDrivenReleaseReader(base).read(request);
+    await started.promise;
+    const joiner = readiness.createDemandDrivenReleaseReader({ ...base, collectAfterJoinedMiss: true }).read(request);
+    await new Promise((resolve) => setImmediate(resolve));
+    release.resolve();
+    assert.equal(await starter, null);
+    // One more collection only, never two in flight; a second miss still fails closed.
+    assert.deepEqual(await joiner, second === 'COMPLETE' ? stored : null);
+    assert.deepEqual(states, ['STOPPED', second]);
+    assert.equal(inFlight.size, 0);
+  }
+});

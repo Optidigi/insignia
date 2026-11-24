@@ -132,6 +132,9 @@ function releaseModel(config: ReleaseModel) {
       deadline: () => clock() + 300_000,
       now: () => new Date(clock()),
       inFlight: collecting,
+      // As production.ts: a publication step that joined a collection it did not start, which ended
+      // without a record, collects once on its own; the background refresh does not.
+      ...(refreshAhead ? {} : { collectAfterJoinedMiss: true }),
     });
   const read = (target: ReturnType<typeof reader>) =>
     target.read({ scope: binding, expectedActiveAppVersionRef: activeVersionRef, now: new Date(clock()) });
@@ -1020,6 +1023,27 @@ test('decision 3: a background refresh that fails leaves the publish to collect 
     assert.deepEqual([first.status, first.state], [202, 'ACTIVE'], JSON.stringify(first));
     assert.equal(first.backgroundCollections, 1);
     assert.equal(first.synchronousCollections, 1, 'the step that found the record stale collected it');
+    assert.equal(maxConcurrent, 1);
+  } finally {
+    await core.close();
+  }
+});
+
+test('decision 3: a cold publish whose background collection fails collects once on its own step and reaches ACTIVE', {
+  skip: !database,
+  timeout: 120000,
+}, async () => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  try {
+    // No record: the refresh starts collecting at begin and preparation joins it; it stops without one.
+    const { first, maxConcurrent } = await measuredPublication(core, {
+      background: true,
+      recordAgeMs: null,
+      failing: (collection) => collection === 1,
+    });
+    assert.deepEqual([first.status, first.state], [202, 'ACTIVE'], JSON.stringify(first));
+    assert.equal(first.backgroundCollections, 1);
+    assert.equal(first.synchronousCollections, 1, 'preparation collected once after the joined collection failed');
     assert.equal(maxConcurrent, 1);
   } finally {
     await core.close();

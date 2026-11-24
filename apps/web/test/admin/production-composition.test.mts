@@ -441,10 +441,9 @@ for (const releaseMode of [
           verificationClient = {
             async collect(request) {
               const initiating = requestScope.getStore();
-              // A publish's background release refresh runs outside every request. This fixture
-              // choreographs the request path, so it refuses that refresh before the collector; the
-              // publish then collects on its own step exactly as without one (publication-latency
-              // measures the refresh itself).
+              // Every collection here comes from a publication request: the publish's background
+              // release refresh is switched off below (INSIGNIA_PUBLICATION_RELEASE_REFRESH), since
+              // this fixture choreographs request-path collections; publication-latency measures it.
               assert(initiating !== undefined, 'Demand collection must originate from a publication request');
               collectionOwners.set(request.requestId, initiating);
               try {
@@ -756,6 +755,7 @@ for (const releaseMode of [
             INSIGNIA_SHOPIFY_APP_ID: binding.appId,
             INSIGNIA_PARTNER_ORGANIZATION_ID: '12345',
             INSIGNIA_PARTNER_ACCESS_TOKEN: 'synthetic-partner-grant',
+            INSIGNIA_PUBLICATION_RELEASE_REFRESH: '0',
             INSIGNIA_M5_ENTITLEMENT_POLICY_JSON: JSON.stringify(policy),
             INSIGNIA_M5_FEATURES_JSON: JSON.stringify(features),
             INSIGNIA_M8_MERCHANT_PREVIEWS_ENABLED: '1',
