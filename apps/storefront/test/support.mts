@@ -23,7 +23,7 @@ export async function createStorefrontTestServer(config: InlineConfig = {}): Pro
     server.close = () =>
       (closing ??= (async () => {
         try {
-          await dependencyOptimizerSettled(server);
+          await settledWithin(dependencyOptimizerSettled(server), OPTIMIZER_SETTLE_LIMIT_MS);
           await close();
         } finally {
           await rm(cacheDir, { recursive: true, force: true });
@@ -33,6 +33,25 @@ export async function createStorefrontTestServer(config: InlineConfig = {}): Pro
   } catch (error) {
     await rm(cacheDir, { recursive: true, force: true });
     throw error;
+  }
+}
+
+/**
+ * A failed dependency bundle never settles its discovered batches (Vite resolves them only on commit or close),
+ * so the wait is bounded: past the limit, close and remove the cache as before. A failed bundle writes nothing.
+ */
+const OPTIMIZER_SETTLE_LIMIT_MS = 10_000;
+async function settledWithin(work: Promise<void>, limitMs: number): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      work.catch(() => undefined),
+      new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, limitMs);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
   }
 }
 

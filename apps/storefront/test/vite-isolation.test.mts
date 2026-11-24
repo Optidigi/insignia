@@ -38,7 +38,9 @@ test('parallel storefront servers own independent optimizer caches and survive a
   if (second) await assert.rejects(access(second.config.cacheDir));
 });
 
-test('a fixture closed while its post-scan dependency bundle runs leaves no optimizer write behind', async () => {
+test('a fixture closed while its post-scan dependency bundle runs leaves no optimizer write behind', {
+  timeout: 30_000,
+}, async () => {
   let bundleStart!: () => void;
   let bundleClose!: () => void;
   const bundleStarted = new Promise<void>((resolve) => {
