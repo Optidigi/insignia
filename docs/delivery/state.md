@@ -213,7 +213,7 @@ QA product is `10645326954779`, variant `54801578623259`, revision
 and checkout each showed two units at $15.00 ($10.00 product + $5.00 surcharge), or $30.00 before
 shipping. The cart used `_insignia_line_v3`. Test order #1011 (`DAZ15F0CZ`) paid $38.00 including
 $8.00 shipping, was recorded with one purchase binding, and showed complete artwork in Insignia.
-The current production rewrite-dev protected facts are 11 orders, 1 paid, 2 refunds, 1 binding and
+After that order, the production rewrite-dev protected facts were 11 orders, 1 paid, 2 refunds, 1 binding and
 1 line. The cart was empty after checkout. In a browser-only Market-ID simulation, the live config
 route changed from 200 to 422 and the localized explanation appeared before artwork collection.
 A native country switch on an existing cart remains unverified. The previously published demo is
@@ -252,6 +252,13 @@ quiesced worker-role read agreed on fresh scoped release record `3d261c1a…`. T
 fixture loaded the new CDN assets, returned config HTTP 200 and displayed its private R2 image.
 All 15 Shopify CDN asset bytes match the qualified build. Phase B's protected facts matched.
 Automatic erasure retained its reviewed worker grant.
+
+**Native QA wave (24 Nov):** on active version `1263405170689`, repeat test-gateway order #1012
+(`8I8WLXCMV`) confirmed 2 × $15.00, $30.00 merchandise and $38.00 including shipping.
+An exact-store readback showed the paid fact, signed purchase binding and retained design.
+The rewrite-dev protected facts are 12 orders, 2 paid, 2 refunds, 2 bindings and 2 lines.
+The live Canada pass reproduced a blank restriction dialog on the disposable theme.
+See the [review checklist](shopify-review-resubmission.md#native-qa-wave-on-24-november).
 
 **Deploy AL** (19 Nov, web only): main `e930b8be` — #606 the Methods page keeps `shop`/`host`/`embedded` when it updates its own URL (found in the cookie-blocked browser test after #604). Web replaced `19:03:55Z`; compose delta `services.web.image` only; readback clean; database baseline identical. Receipt folder `methods-deploy-AL` on both hosts.
 

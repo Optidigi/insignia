@@ -1959,6 +1959,9 @@ async function withProductDesigner(
     });
     await installDesignBoundary(page);
     await page.goto(origin);
+    if (opening === 'unsupported-market') {
+      await page.addStyleTag({ content: 'div:empty { display: none; }' });
+    }
     await page.evaluate(() => {
       const buyer = document.createElement('insignia-buyer');
       buyer.setAttribute('product-id', '111');
@@ -1996,7 +1999,7 @@ async function withProductDesigner(
   }
 }
 
-test('an unsupported storefront Market gives a localized explanation before opening the Designer', async () => {
+test('an unsupported storefront Market gives a visible explanation on themes that hide empty elements', async () => {
   await withProductDesigner(
     config,
     async ({ page, trigger, privateRequests, sessions }) => {
