@@ -23,6 +23,7 @@ const EVENTS = new Set([
   'signing_key_destruction',
   'public_config_drift',
   'queue_job_rejected',
+  'queue_job_rejection_cleared',
   'lifecycle_credential_unavailable',
   'web_listen_failed',
   'publication_abandonment',
@@ -55,6 +56,8 @@ export type RuntimeEvent =
   | 'signing_key_destruction'
   | 'public_config_drift'
   | 'queue_job_rejected'
+  /** Info: a held-row class that `queue_job_rejected` reported has no held rows left. */
+  | 'queue_job_rejection_cleared'
   /** Warn: an active installation has no usable offline credential; it needs reauthorization, not a retry. */
   | 'lifecycle_credential_unavailable'
   /** Error: the web server could not bind its address; the process exits non-zero. */

@@ -7,6 +7,7 @@ import {
   recoverPendingUninstalls,
   recoverUninstallPrivacy,
 } from './handlers.js';
+import { createHeldRowReporter } from './held-rows.js';
 import type { PgBossRuntime } from './runtime.js';
 
 /** Production maintenance composition; facade/queue implementations own durable effects. */
@@ -26,6 +27,8 @@ export function createWorkerReconciliation(input: {
   let stopped = false;
   const clock = input.clock ?? (() => new Date());
   const signingKeys = input.signingKeys ?? input.core.signingKeys;
+  // Held rows repeat every pass: one line per class when it appears, changes or clears, else hourly.
+  const held = createHeldRowReporter(() => clock().getTime());
   // Daily: retired or revoked signing keys whose window closed become destroyed. Idempotent; a
   // failed day is retried on the next pass, a completed day is skipped until the UTC day changes.
   let signingKeysDestroyedDay: number | undefined;
@@ -52,10 +55,16 @@ export function createWorkerReconciliation(input: {
         { errorClass: 'UNINSTALL_PRIVACY_RECOVERY_UNAVAILABLE', run: () => recoverUninstallPrivacy(input.core) },
         {
           errorClass: 'CUSTOMER_PRIVACY_CLEANUP_UNAVAILABLE',
-          run: () => maintainCustomerPrivacy(input.core, input.queue),
+          run: () => maintainCustomerPrivacy(input.core, input.queue, held),
         },
-        { errorClass: 'WEBHOOK_RETENTION_UNAVAILABLE', run: () => maintainWebhookRetention(input.core, input.queue) },
-        { errorClass: 'UNINSTALL_RECOVERY_UNAVAILABLE', run: () => recoverPendingUninstalls(input.core, input.queue) },
+        {
+          errorClass: 'WEBHOOK_RETENTION_UNAVAILABLE',
+          run: () => maintainWebhookRetention(input.core, input.queue, held),
+        },
+        {
+          errorClass: 'UNINSTALL_RECOVERY_UNAVAILABLE',
+          run: () => recoverPendingUninstalls(input.core, input.queue, held),
+        },
         { errorClass: 'PURCHASE_RECOVERY_UNAVAILABLE', run: () => input.purchases?.recover() },
         { errorClass: 'PURCHASE_DISCOVERY_UNAVAILABLE', run: () => input.purchases?.discoverChanges() },
         {
@@ -77,11 +86,11 @@ export function createWorkerReconciliation(input: {
           run: async () => {
             const summary = await input.core.customerPrivacy.finalizePendingShops();
             if (summary.failed) throw new Error('Shop privacy finalization failed');
-            if (summary.dependency_pending)
-              input.queue.observability.logger.error('queue_job_rejected', {
-                errorClass: 'SHOP_PRIVACY_DEPENDENCY_PENDING',
-                count: summary.dependency_pending,
-              });
+            held.report(
+              input.queue.observability.logger,
+              'SHOP_PRIVACY_DEPENDENCY_PENDING',
+              summary.dependency_pending ?? 0,
+            );
           },
         },
         { errorClass: 'UNINSTALL_ENROLLMENT_UNAVAILABLE', run: () => input.lifecycle?.runOnce() },

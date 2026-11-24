@@ -559,3 +559,104 @@ test('every class reconciliation reports reaches the operator through the real l
     emitted.map((errorClass) => ['queue_job_rejected', errorClass]),
   );
 });
+
+// Held rows stay held for hours or days: one error line per class per minute (about 4,300 a day in
+// production) says nothing new. A class logs when it appears, when its count changes, at most hourly
+// while it is unchanged, and once at info when it clears; the failure counter still counts every pass.
+test('held-row errors log on change and at most hourly while unchanged; the failure metric counts every pass', async () => {
+  const input = fixture();
+  let now = Date.parse('2026-11-24T00:00:00Z');
+  input.clock = () => new Date(now);
+  input.queue.removeExpiredWebhookJob = async () => true;
+  const lines: [string, string, unknown, unknown][] = [];
+  let failures = 0;
+  input.queue.observability = {
+    ...input.queue.observability,
+    metrics: {
+      ...input.queue.observability.metrics,
+      queue(outcome) {
+        if (outcome === 'failure') failures++;
+      },
+    },
+    logger: {
+      info(event, metadata) {
+        if (event.startsWith('queue_job')) lines.push(['info', event, metadata?.errorClass, metadata?.count]);
+      },
+      warn() {},
+      error(event, metadata) {
+        if (event.startsWith('queue_job')) lines.push(['error', event, metadata?.errorClass, metadata?.count]);
+      },
+    },
+  };
+  let held = 0;
+  const erase = input.core.webhooks.eraseExpiredPayloads;
+  input.core.webhooks.eraseExpiredPayloads = async (limit) => ({ ...(await erase(limit)), blockedPrivacyCount: held });
+  let pending = 0;
+  input.core.customerPrivacy.finalizePendingShops = async () => ({ dependency_pending: pending });
+  let holds = 0;
+  const status = input.core.uninstallPrivacy.status;
+  input.core.uninstallPrivacy.status = async () => ({ ...(await status()), activeGenerationHoldCount: holds });
+  let enqueue = true;
+  input.queue.ensureWebhookEnqueued = async (inboxId) => {
+    if (enqueue) throw new Error('queue unavailable');
+    return { inboxId, status: 'enqueued' };
+  };
+  const maintenance = createWorkerReconciliation(input);
+  const pass = async (minutes = 1) => {
+    now += minutes * 60_000;
+    lines.length = 0;
+    await maintenance.runOnce();
+    return [...lines];
+  };
+
+  held = 2;
+  pending = 1;
+  holds = 3;
+  const first = await pass();
+  assert.deepEqual(first, [
+    ['error', 'queue_job_rejected', 'ShopPrivacyAuthorityRequired', 3],
+    ['error', 'queue_job_rejected', 'PrivacyRetentionBlocked', 2],
+    ['error', 'queue_job_rejected', 'UninstallRecoveryUnresolved', 1],
+    ['error', 'queue_job_rejected', 'SHOP_PRIVACY_DEPENDENCY_PENDING', 1],
+  ]);
+  assert.equal(failures, 3, 'the metric counts as before (dependency_pending never counted)');
+  // Unchanged counts: silent for the rest of the hour, while the metric keeps counting.
+  for (let minute = 1; minute < 60; minute++) assert.deepEqual(await pass(), [], `minute ${minute}`);
+  assert.equal(failures, 3 * 60);
+  assert.deepEqual(await pass(), first, 'repeated after an hour');
+  // A changed count logs at once; the others stay quiet.
+  held = 5;
+  assert.deepEqual(await pass(), [['error', 'queue_job_rejected', 'PrivacyRetentionBlocked', 5]]);
+  // Cleared classes log once at info, then nothing; a class that returns logs immediately.
+  held = 0;
+  pending = 0;
+  holds = 0;
+  enqueue = false;
+  assert.deepEqual(await pass(), [
+    ['info', 'queue_job_rejection_cleared', 'ShopPrivacyAuthorityRequired', undefined],
+    ['info', 'queue_job_rejection_cleared', 'PrivacyRetentionBlocked', undefined],
+    ['info', 'queue_job_rejection_cleared', 'UninstallRecoveryUnresolved', undefined],
+    ['info', 'queue_job_rejection_cleared', 'SHOP_PRIVACY_DEPENDENCY_PENDING', undefined],
+  ]);
+  assert.deepEqual(await pass(), []);
+  held = 5;
+  assert.deepEqual(await pass(), [['error', 'queue_job_rejected', 'PrivacyRetentionBlocked', 5]]);
+  await maintenance.stop();
+});
+
+test('a cleared held-row class is a known runtime event for the real logger', () => {
+  const lines: Record<string, unknown>[] = [];
+  const real = createObservability({
+    stream: new Writable({
+      write(chunk, _encoding, done) {
+        lines.push(JSON.parse(String(chunk)));
+        done();
+      },
+    }),
+  });
+  real.logger.info('queue_job_rejection_cleared', { errorClass: 'PrivacyRetentionBlocked' });
+  assert.deepEqual(
+    lines.map((line) => [line.level, line.event, line.errorClass]),
+    [[30, 'queue_job_rejection_cleared', 'PrivacyRetentionBlocked']],
+  );
+});
