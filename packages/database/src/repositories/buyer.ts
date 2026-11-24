@@ -88,18 +88,23 @@ export function createBuyerRepository(db: Kysely<Database>) {
       )
     ).rows[0];
   }
+  /**
+   * Every buyer session write waits behind a held shop fence no longer than the fence itself (spec §8.4,
+   * owner decision 2, 24 November 2026): 55P03 is a retryable 409 BUSY and rolls back everything the
+   * transaction wrote. The bound covers every lock it takes: the shop and installation rows, the session
+   * row and a concurrent write of the same idempotency key.
+   */
+  async function boundLockWait(tx: Transaction<Database>) {
+    await sql`SET LOCAL lock_timeout = '2s'`.execute(tx);
+  }
   async function write<T>(
     scope: BuyerScope,
     now: Date,
     run: (tx: Transaction<Database>, row: NonNullable<Awaited<ReturnType<typeof session>>>) => Promise<T>,
     charge = true,
-    boundedLockWait = false,
   ) {
     return db.transaction().execute(async (tx) => {
-      // Acceptance and renewal bound waiting behind a held shop fence like the fence itself (spec §8.4):
-      // 55P03 is a retryable 409 BUSY and rolls back everything this transaction wrote. The bound covers
-      // every lock below too: the session row and a concurrent write of the same idempotency key.
-      if (boundedLockWait) await sql`SET LOCAL lock_timeout = '2s'`.execute(tx);
+      await boundLockWait(tx);
       // Installation lock prevents a concurrent uninstall crossing a successful command.
       const tenant =
         await sql`SELECT i.generation FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation
@@ -238,8 +243,6 @@ export function createBuyerRepository(db: Kysely<Database>) {
           return { applicationId: null };
         },
         false,
-        // Only acceptance and renewal reserve commands; their lock wait is bounded (spec §8.4).
-        true,
       );
     },
     async completeCommand(
@@ -306,8 +309,6 @@ export function createBuyerRepository(db: Kysely<Database>) {
           return { applicationId: input.id };
         },
         false,
-        // The last step of acceptance and renewal: bounded; a retry of the same key replays the signed set.
-        true,
       );
     },
     async issueSession(input: {
@@ -324,6 +325,7 @@ export function createBuyerRepository(db: Kysely<Database>) {
       if (!(+expiresAt > +now && +expiresAt <= +now + BUYER_SESSION_POLICY.maxSessionMs)) fail('INVALID');
       if (visitorKey && visitorKey.byteLength !== 32) fail('INVALID');
       return db.transaction().execute(async (tx) => {
+        await boundLockWait(tx);
         const tenant =
           await sql`SELECT s.shop_id FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=${scope.shopId} AND s.current_generation=${scope.installationGeneration}::bigint AND i.deactivated_at IS NULL FOR UPDATE OF s,i`.execute(
             tx,
@@ -546,8 +548,6 @@ export function createBuyerRepository(db: Kysely<Database>) {
           );
         },
         false,
-        // After signing: bounded so the acceptance's automatic retry replays the signed set.
-        true,
       );
     },
     async getOwnedQuote(scope: BuyerScope, id: string, ownerBinding: string, now: Date) {
