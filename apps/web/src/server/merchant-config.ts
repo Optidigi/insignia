@@ -14,6 +14,7 @@ import { GEOMETRY_VERSION, type GeometryV1, validateGeometryBridge } from '@insi
 import type { ConfigRejectionCode } from '../shared/config-rejection.ts';
 import { projectActivationPublicationState } from './admin/activation-state.ts';
 import type { AdminActor as Actor, CatalogProduct } from './admin/contracts.js';
+import { publicationStage } from './admin/publication-timing.ts';
 import {
   reconcileIncomingSelectedSetup,
   SelectedMethodBindingContinuityError,
@@ -689,7 +690,7 @@ export function createMerchantConfigService(input: {
       if (abandoned) return abandoned;
       const stop = continuing();
       if (stop) return stop;
-      const catalogProduct = await product(actor, productId);
+      const catalogProduct = await publicationStage('product-read', () => product(actor, productId));
       if (data.authority) await core.transactions.run((tx) => currentLocked(actor, tx, data.authority));
       const allowed = new Map<string, number>();
       async function eligible(draft: MerchantDraft) {
@@ -698,9 +699,10 @@ export function createMerchantConfigService(input: {
         const reused = allowed.get(key);
         if (reused !== undefined && checkedAt - reused < PUBLICATION_ELIGIBILITY_REUSE_MS)
           return { allowed: true, reason: null };
-        const result = await input
-          .eligibility(actor, draft)
-          .catch(() => ({ allowed: false, reason: 'Entitlement unavailable' }));
+        const result = await publicationStage('eligibility', () => input.eligibility(actor, draft)).catch(() => ({
+          allowed: false,
+          reason: 'Entitlement unavailable',
+        }));
         if (result.allowed) allowed.set(key, checkedAt);
         else allowed.delete(key);
         return result;
@@ -804,14 +806,22 @@ export function createMerchantConfigService(input: {
             code: 'PUBLICATION_INCOMPLETE',
             message: 'At least one view, placement and method is required',
           };
-        const shopCurrency = await input.catalog.shopCurrency(actor);
+        // Two independent provider reads, run together; a changed currency is still reported first.
+        // The subscription read is drained before a currency failure is rethrown.
+        const checkingEligibility = eligible(snapshot);
+        const shopCurrency = await publicationStage('shop-currency', () => input.catalog.shopCurrency(actor)).catch(
+          async (error) => {
+            await checkingEligibility.catch(() => undefined);
+            throw error;
+          },
+        );
+        const eligibility = await checkingEligibility;
         if (snapshot.shopCurrency !== shopCurrency)
           return {
             kind: 'invalid',
             code: 'SHOP_CURRENCY_CHANGED',
             message: 'Shop currency changed. Reload and review the draft.',
           };
-        const eligibility = await eligible(snapshot);
         if (!eligibility.allowed)
           return {
             kind: 'invalid',
@@ -822,33 +832,42 @@ export function createMerchantConfigService(input: {
         if (!input.capturePublicationPreviews) throw new Error('Complete customer previews are unavailable');
         const beforeCapture = continuing();
         if (beforeCapture) return beforeCapture;
-        const previewAssets = input.capturePublicationPreviews
-          ? await input.capturePublicationPreviews(actor, {
-              productId,
-              configId: data.configId,
-              draftVersion: data.draftVersion,
-              idempotencyKey: data.idempotencyKey,
-              draft: structuredClone(snapshot),
-            })
+        const capture = input.capturePublicationPreviews;
+        const previewAssets = capture
+          ? await publicationStage('preview-capture', () =>
+              capture(actor, {
+                productId,
+                configId: data.configId,
+                draftVersion: data.draftVersion,
+                idempotencyKey: data.idempotencyKey,
+                draft: structuredClone(snapshot),
+              }),
+            )
           : undefined;
         {
-          const stillCurrent = await core.transactions.run(async (tx) => {
-            await currentLocked(actor, tx, data.authority);
-            const checked = await core.configs.getConfigForUpdate(tx, actor.tenantShopId, data.configId);
-            return (
-              !!checked &&
-              checked.externalProductId === productNumber(productId) &&
-              checked.draftVersion === data.draftVersion &&
-              sha256CanonicalJson(validatedDraft(checked.draftValue, actor, productId)) === capturedDraftDigest
-            );
+          const verified = await publicationStage('preview-verify', async () => {
+            const stillCurrent = await core.transactions.run(async (tx) => {
+              await currentLocked(actor, tx, data.authority);
+              const checked = await core.configs.getConfigForUpdate(tx, actor.tenantShopId, data.configId);
+              return (
+                !!checked &&
+                checked.externalProductId === productNumber(productId) &&
+                checked.draftVersion === data.draftVersion &&
+                sha256CanonicalJson(validatedDraft(checked.draftValue, actor, productId)) === capturedDraftDigest
+              );
+            });
+            return stillCurrent
+              ? selectedPreviewCoverage(actor, productNumber(productId), snapshot.geometry, previewAssets)
+              : ('conflict' as const);
           });
-          if (!stillCurrent) return { kind: 'conflict', message: 'Draft changed. Reload before publication.' };
-          if (!(await selectedPreviewCoverage(actor, productNumber(productId), snapshot.geometry, previewAssets)))
-            throw new Error('Complete customer previews are unavailable');
+          if (verified === 'conflict')
+            return { kind: 'conflict', message: 'Draft changed. Reload before publication.' };
+          if (!verified) throw new Error('Complete customer previews are unavailable');
           const beforePreparation = continuing();
           if (beforePreparation) return beforePreparation;
-          if (input.preparePublication) {
-            const preparation = await input.preparePublication(actor);
+          const prepare = input.preparePublication;
+          if (prepare) {
+            const preparation = await publicationStage('preparation', () => prepare(actor));
             // Release collection is bounded by the session: one cut short by it is resent, not denied.
             if (!preparation.ready)
               return (
@@ -864,11 +883,8 @@ export function createMerchantConfigService(input: {
         // Preparation and the durable command are one span: the command commits under the session.
         const beforeCommand = continuing();
         if (beforeCommand) return beforeCommand;
-        const result = await executeCommand(
-          commandTransactions(actor, data.authority),
-          core.commands,
-          identity,
-          async (tx) => {
+        const result = await publicationStage('command', () =>
+          executeCommand(commandTransactions(actor, data.authority), core.commands, identity, async (tx) => {
             const config = await core.configs.getConfigForUpdate(tx, actor.tenantShopId, data.configId);
             if (
               !config ||
@@ -945,7 +961,7 @@ export function createMerchantConfigService(input: {
               }),
             );
             return `${revisionId}:${draft.mode}`;
-          },
+          }),
         );
         resultRef = result.resultRef;
         requestShopCurrency = shopCurrency;
@@ -1008,7 +1024,10 @@ export function createMerchantConfigService(input: {
       if (!revision || revision.configId !== data.configId || !geometry || geometry.mode !== mode)
         throw new Error('Immutable publication revision unavailable');
       const published = PublishedConfigSchema.parse(revision.publishedValue);
-      if (published.shopCurrency !== (requestShopCurrency ?? (await input.catalog.shopCurrency(actor))))
+      if (
+        published.shopCurrency !==
+        (requestShopCurrency ?? (await publicationStage('shop-currency', () => input.catalog.shopCurrency(actor))))
+      )
         return {
           kind: 'invalid',
           code: 'SHOP_CURRENCY_CHANGED',
@@ -1051,13 +1070,15 @@ export function createMerchantConfigService(input: {
       const publication = input.publication(actor);
       let prepared: Awaited<ReturnType<typeof publication.prepare>>;
       try {
-        prepared = await publication.prepare({
-          shopId: actor.tenantShopId,
-          configId: data.configId,
-          revisionId,
-          operationId: revisionId,
-          mode,
-        });
+        prepared = await publicationStage('publication-prepare', () =>
+          publication.prepare({
+            shopId: actor.tenantShopId,
+            configId: data.configId,
+            revisionId,
+            operationId: revisionId,
+            mode,
+          }),
+        );
       } catch (error) {
         // Nothing was journaled or written; the unprepared request lapses (spec §6.2) and a retry
         // is refused the same way until support reconciles the product's fields (spec §5.5).
@@ -1089,7 +1110,9 @@ export function createMerchantConfigService(input: {
         // The stop points: between persisted steps, before each advance that can write to a provider.
         const beforePublicationStep = continuing(revisionId);
         if (beforePublicationStep) return beforePublicationStep;
-        const advanced = await publication.advance(actor.tenantShopId, data.configId, prepared.operationId);
+        const advanced = await publicationStage('publication-advance', () =>
+          publication.advance(actor.tenantShopId, data.configId, prepared.operationId),
+        );
         phase = advanced.phase;
         if (advanced.kind === 'ABANDONED') break; // #466: claimed or restored; nothing was read or written
         if (advanced.kind === 'CONFLICT' || advanced.kind === 'OPERATOR_HOLD') {
@@ -1109,11 +1132,13 @@ export function createMerchantConfigService(input: {
         const activated: Pick<ActivationResult, 'kind'> | null = activation
           ? activationWaiting
             ? { kind: activationKind! }
-            : await activation.advance({
-                shopId: actor.tenantShopId,
-                configId: data.configId,
-                operationId: prepared.operationId,
-              })
+            : await publicationStage('activation-advance', () =>
+                activation.advance({
+                  shopId: actor.tenantShopId,
+                  configId: data.configId,
+                  operationId: prepared.operationId,
+                }),
+              )
           : null;
         activationKind = activated?.kind ?? null;
         if (activated?.kind === 'ABANDONED') break;

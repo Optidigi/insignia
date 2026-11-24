@@ -27,6 +27,7 @@ const EVENTS = new Set([
   'web_listen_failed',
   'publication_abandonment',
   'publication_preparation_stopped',
+  'publication_request_timing',
 ]);
 
 export type RuntimeEvent =
@@ -61,7 +62,9 @@ export type RuntimeEvent =
   /** #466 abandoned publication hold: restored/finalized at info; flagged/ambiguous/conflict at warn. */
   | 'publication_abandonment'
   /** Warn: a publish could not be prepared (Functions, release verification or signing); names the step only. */
-  | 'publication_preparation_stopped';
+  | 'publication_preparation_stopped'
+  /** Info: one line per publish request, its total and its finite-stage timing spans. */
+  | 'publication_request_timing';
 
 export const PUBLICATION_ABANDONMENT_OUTCOMES = [
   'restored',
@@ -358,6 +361,45 @@ export type BuyerTimingDiagnostic = {
   spans: BuyerTimingSpan[];
 };
 
+/** The steps of one publish request (`POST .../config` action publish), in rough order. */
+export const PUBLICATION_TIMING_STAGES = [
+  'authentication',
+  'product-read',
+  'shop-currency',
+  'eligibility',
+  'preview-capture',
+  'preview-verify',
+  'preparation',
+  'functions-setup',
+  'release-verification',
+  'release-collect',
+  'signing',
+  'command',
+  'publication-prepare',
+  'publication-advance',
+  'activation-advance',
+  'release-check',
+] as const;
+export type PublicationTimingStage = (typeof PUBLICATION_TIMING_STAGES)[number];
+export const PUBLICATION_TIMING_OUTCOMES = ['accepted', 'resend', 'conflict', 'invalid', 'refused', 'failure'] as const;
+/** One summary per publish request; at most 64 spans. Spans nest and overlap: never sum them. */
+export type PublicationTimingDiagnostic = {
+  correlationId: string;
+  outcome: (typeof PUBLICATION_TIMING_OUTCOMES)[number];
+  /** The projected publication state of an accepted request (for example ACTIVE). */
+  state?: string;
+  totalMs: number;
+  truncated: boolean;
+  spans: {
+    id: number;
+    parentId: number | null;
+    stage: PublicationTimingStage;
+    offsetMs: number;
+    durationMs: number;
+    outcome: 'success' | 'failure' | 'unfinished';
+  }[];
+};
+
 const ARTWORK_OPERATIONS = ['begin', 'complete', 'status'] as const;
 const ARTWORK_STATES = [
   'UPLOADING',
@@ -449,6 +491,8 @@ export type RuntimeErrorClass = (typeof RUNTIME_ERROR_CLASSES)[number];
 export interface RuntimeLogDetails {
   timing?: BuyerTimingDiagnostic;
   artworkTiming?: ArtworkTimingDiagnostic;
+  /** publication_request_timing only. */
+  publicationTiming?: PublicationTimingDiagnostic;
   buyerStage?: BuyerFailureDiagnostic['buyerStage'];
   proposalStage?: BuyerFailureDiagnostic['proposalStage'];
   authStage?: AdminAuthenticationStage;
@@ -525,8 +569,57 @@ function artworkTimingDetails(t: ArtworkTimingDiagnostic | undefined) {
   };
 }
 
+const timingMs = (v: unknown) => Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 86400000;
+function publicationTimingDetails(t: PublicationTimingDiagnostic | undefined) {
+  if (
+    !t ||
+    typeof t.correlationId !== 'string' ||
+    !UUID.test(t.correlationId) ||
+    !PUBLICATION_TIMING_OUTCOMES.includes(t.outcome) ||
+    (t.state !== undefined && (typeof t.state !== 'string' || !/^[A-Z][A-Z_]{0,63}$/.test(t.state))) ||
+    !timingMs(t.totalMs) ||
+    typeof t.truncated !== 'boolean' ||
+    !Array.isArray(t.spans) ||
+    t.spans.length > 64
+  )
+    throw new Error('Invalid publication timing diagnostic');
+  const ids = new Set<number>();
+  const spans = t.spans.map((s) => {
+    if (
+      !Number.isInteger(s.id) ||
+      s.id < 1 ||
+      s.id > 64 ||
+      ids.has(s.id) ||
+      (s.parentId !== null && !ids.has(s.parentId)) ||
+      !PUBLICATION_TIMING_STAGES.includes(s.stage) ||
+      !timingMs(s.offsetMs) ||
+      !timingMs(s.durationMs) ||
+      !['success', 'failure', 'unfinished'].includes(s.outcome)
+    )
+      throw new Error('Invalid publication timing span');
+    ids.add(s.id);
+    return {
+      id: s.id,
+      parentId: s.parentId,
+      stage: s.stage,
+      offsetMs: s.offsetMs,
+      durationMs: s.durationMs,
+      outcome: s.outcome,
+    };
+  });
+  return {
+    correlationId: t.correlationId,
+    outcome: t.outcome,
+    ...(t.state === undefined ? {} : { state: t.state }),
+    totalMs: t.totalMs,
+    truncated: t.truncated,
+    spans,
+  };
+}
+
 function eventDetails(event: RuntimeEvent, input: RuntimeLogDetails) {
   if (event === 'artwork_request_timing') return artworkTimingDetails(input.artworkTiming);
+  if (event === 'publication_request_timing') return publicationTimingDetails(input.publicationTiming);
   if (event === 'buyer_request_timing') {
     const t = input.timing;
     const ms = (v: number) => Number.isInteger(v) && v >= 0 && v <= 86400000;

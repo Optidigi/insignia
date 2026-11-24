@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
+import { Writable } from 'node:stream';
 import { test } from 'node:test';
 import type { ExpectedFunctionBuild, FunctionArtifactIdentity } from '@insignia/application';
 import { SigningKeyLifecycle } from '@insignia/application';
 import { createDurableCore, type DurableCore } from '@insignia/database';
+import { createObservability, type PublicationTimingDiagnostic } from '@insignia/observability';
 import { createShopifyAvailabilityHoldV3Port, PublicationAdminError } from '@insignia/shopify';
 import { Pool } from 'pg';
 import type { AdminActor } from '../../src/server/admin/contracts.ts';
@@ -329,8 +331,10 @@ async function firstPublication(core: DurableCore, options: { preparePublication
     capturePublicationPreviews: (owner, input) => captureSyntheticPublicationPreviews(core, owner, input),
     ...(options.preparePublication ? { preparePublication: options.preparePublication } : {}),
   });
+  const timings: PublicationTimingDiagnostic[] = [];
   const services = adminServices({
     appOrigin: 'https://synthetic.example',
+    recordPublicationTiming: (timing) => timings.push(timing),
     authenticate: async () => actor,
     catalog,
     configs,
@@ -387,6 +391,7 @@ async function firstPublication(core: DurableCore, options: { preparePublication
       beforeCall = hook;
     },
     steps,
+    timings,
     publish,
     setDenials: (value: number) => {
       denials = value;
@@ -407,6 +412,7 @@ test('#436: a first publication spends its provider calls on sequencing, not rep
       status: currentStatus,
       setDenials,
       steps,
+      timings,
     } = await firstPublication(core);
     const started = performance.now();
     const response = await publish('m5-436-first-publication');
@@ -416,6 +422,51 @@ test('#436: a first publication spends its provider calls on sequencing, not rep
     assert.equal(response.status, 202);
     assert.equal((await response.json()).state, 'ACTIVE');
     assert.equal(status, 'ACTIVE', 'the owned hold was acquired and restored');
+    // One timing line per publish request, through the production log whitelist.
+    assert.equal(timings.length, 1);
+    const [timing] = timings;
+    assert.ok(timing);
+    let line = '';
+    createObservability({
+      stream: new Writable({
+        write(chunk, _encoding, callback) {
+          line += chunk;
+          callback();
+        },
+      }),
+    }).logger.info('publication_request_timing', { publicationTiming: timing });
+    assert.match(line, /"event":"publication_request_timing"/);
+    assert.equal(timing.outcome, 'accepted');
+    assert.equal(timing.state, 'ACTIVE');
+    assert.equal(timing.truncated, false);
+    assert.ok(timing.totalMs >= rounds * latencyMs && timing.totalMs <= elapsed, `${timing.totalMs}`);
+    const byStage = new Map<string, { count: number; ms: number }>();
+    for (const span of timing.spans) {
+      const entry = byStage.get(span.stage) ?? { count: 0, ms: 0 };
+      byStage.set(span.stage, { count: entry.count + 1, ms: entry.ms + span.durationMs });
+      assert.equal(span.outcome, 'success');
+    }
+    t.diagnostic(`timing ${timing.totalMs} ms ${JSON.stringify(Object.fromEntries(byStage))}`);
+    assert.deepEqual(
+      [...byStage.keys()],
+      [
+        'authentication',
+        'product-read',
+        'eligibility',
+        'shop-currency',
+        'preview-capture',
+        'preview-verify',
+        'command',
+        'publication-prepare',
+        'publication-advance',
+        'activation-advance',
+      ],
+    );
+    assert.equal(
+      byStage.get('publication-advance')?.count,
+      steps.filter((entry) => entry.kind === 'publication').length,
+    );
+    assert.equal(byStage.get('activation-advance')?.count, steps.filter((entry) => entry.kind === 'activation').length);
     const budget = Object.fromEntries([...calls].sort());
     const total = [...calls.values()].reduce((sum, value) => sum + value, 0);
     t.diagnostic(
@@ -435,7 +486,8 @@ test('#436: a first publication spends its provider calls on sequencing, not rep
     assert.equal(calls.get('shop currency read'), 1);
     // A held-product observation reads its four sales channels together, and is not repeated
     // between two field writes. Before #436 this publication took 146 rounds.
-    assert.ok(rounds <= 75, `${rounds} rounds ${JSON.stringify(budget)}`);
+    // The shop currency and subscription reads before the command are independent: one round.
+    assert.ok(rounds <= 69, `${rounds} rounds ${JSON.stringify(budget)}`);
 
     // A denial is never reused: the next request reads the subscription again and proceeds.
     const read = () => calls.get('subscription read') ?? 0;
@@ -467,6 +519,7 @@ async function interruptedPublication(core: DurableCore, key: string) {
   assert.equal(body.kind, 'resend', JSON.stringify(body));
   assert.equal(body.minimumValidityMs, PUBLICATION_RESEND_VALIDITY_MS);
   assert.match(body.revisionId, /^[a-f0-9-]{36}$/);
+  assert.equal(f.timings.at(-1)?.outcome, 'resend');
   // Its progress is persisted: the publication operation stays open, not failed or held.
   const progress = await core.configs.getCurrentPublication(f.shopId, f.configId);
   assert.equal(progress?.operationId, body.revisionId);
