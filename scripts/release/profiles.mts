@@ -144,6 +144,12 @@ import nativeThemeModules from '../../deployment/m5-runtime/native-theme-module-
 import nativeThemeCandidate from '../../deployment/m5-runtime/native-theme-release-binding.json' with { type: 'json' };
 import uiFixModules from '../../deployment/m5-runtime/native-uifix-module-baseline.json' with { type: 'json' };
 import uiFixBinding from '../../deployment/m5-runtime/native-uifix-release-binding.json' with { type: 'json' };
+import unsupportedRepairModules from '../../deployment/m5-runtime/native-unsupported-repair-module-baseline.json' with {
+  type: 'json',
+};
+import unsupportedRepairBinding from '../../deployment/m5-runtime/native-unsupported-repair-release-binding.json' with {
+  type: 'json',
+};
 import refreshModules from '../../deployment/m5-runtime/selected-refresh-module-baseline.json' with { type: 'json' };
 import refreshCandidate from '../../deployment/m5-runtime/selected-refresh-release-binding.json' with { type: 'json' };
 import selectedModules from '../../deployment/m5-runtime/selected-ui-module-baseline.json' with { type: 'json' };
@@ -226,6 +232,15 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  'native-cart-repair-2ed66ade': {
+    versionId: unsupportedRepairBinding.versionId,
+    versionTag: unsupportedRepairBinding.versionTag,
+    versionIds: unsupportedRepairBinding.versionIds,
+    moduleHash: unsupportedRepairBinding.moduleHash,
+    modules: unsupportedRepairModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   'native-sticky-keyboard-1127c3e2': {
     versionId: stickyKeyboardBinding.versionId,
     versionTag: stickyKeyboardBinding.versionTag,
