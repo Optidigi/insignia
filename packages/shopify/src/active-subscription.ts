@@ -338,7 +338,13 @@ function classifyGraphql(errors: unknown): PartnerSubscriptionFailureKind {
   if (message === 'Shop not found') return 'shop_not_found';
   if (/feature.*not enabled/i.test(message)) return 'feature_unavailable';
   if (code === '401' || code === '403') return 'auth_or_permission';
-  if (code === '429' || code === 'THROTTLED') return 'rate_limited';
+  // Throttling or a Shopify-side failure in any reported error is transient, like the Admin readers.
+  const codes = errors.map((error) => {
+    const extensions = record(error).extensions;
+    return extensions && typeof extensions === 'object' ? (extensions as Record<string, unknown>).code : null;
+  });
+  if (codes.some((value) => value === '429' || value === 'THROTTLED')) return 'rate_limited';
+  if (codes.some((value) => value === 'INTERNAL_SERVER_ERROR')) return 'provider_unavailable';
   if (/access denied|forbidden|permission|unauthorized/i.test(message)) return 'auth_or_permission';
   return 'provider_error';
 }
