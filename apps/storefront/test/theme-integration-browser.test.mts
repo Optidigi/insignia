@@ -70,6 +70,46 @@ test('automatic Customise replaces only the published product purchase controls 
   assert.equal(reads.filter((id) => id === '111').length <= 1, true);
 });
 
+test('the sticky Customise trigger joins the tab order only when the sticky bar is on screen', async (t) => {
+  const page = await fixture(t);
+  await page.evaluate(() => {
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      `
+      <style>
+        sticky-add-to-cart { position: fixed; top: calc(100vh + 30px); }
+        sticky-add-to-cart.shown { top: 40px; }
+      </style>
+      <button id="before-sticky">Before sticky</button>
+      <sticky-add-to-cart data-product-id="111">
+        <button class="sticky-add-to-cart__button">Sticky Buy</button>
+      </sticky-add-to-cart>
+      <button id="after-sticky">After sticky</button>
+      <insignia-theme-integration product-id="111" known-required trigger-label="Customise"></insignia-theme-integration>
+      `,
+    );
+  });
+  const trigger = page.locator('sticky-add-to-cart').getByRole('button', { name: 'Customise', exact: true });
+  await trigger.waitFor();
+  await page.locator('#before-sticky').focus();
+  await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'after-sticky');
+  await page.evaluate(() => document.querySelector('sticky-add-to-cart')?.classList.add('shown'));
+  await page.waitForFunction(
+    () => document.querySelector<HTMLButtonElement>('sticky-add-to-cart [slot="trigger"]')?.tabIndex === 0,
+  );
+  await page.locator('#before-sticky').focus();
+  await page.keyboard.press('Tab');
+  assert.equal(await trigger.evaluate((button) => button === document.activeElement), true);
+  await page.evaluate(() => document.querySelector('sticky-add-to-cart')?.classList.remove('shown'));
+  await page.waitForFunction(
+    () => document.querySelector<HTMLButtonElement>('sticky-add-to-cart [slot="trigger"]')?.tabIndex === -1,
+  );
+  await page.locator('#before-sticky').focus();
+  await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'after-sticky');
+});
+
 test('manual placement wins without duplication and section, variant, quick-add and theme-editor lifecycles preserve product isolation', async (t) => {
   const page = await fixture(t);
   await page.route('**/apps/insignia/v1/eligibility?*', (route) => {
