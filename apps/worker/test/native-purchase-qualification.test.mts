@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
+import { readdirSync, readFileSync } from 'node:fs';
 import test from 'node:test';
+import { parseReleaseVerificationRequest, resolveRuntimeReleaseProfile } from '@insignia/shopify';
 import * as admission from '../dist/purchase-admission.js';
 import { createPurchaseReleasePreparation } from '../dist/purchase-release.js';
 import { durableCoreFixture } from './support/durable-core-fixture.mts';
@@ -8,6 +10,35 @@ import { orderFixture } from './support/order-fixture.mts';
 const input = { appId: '123', appClientId: 'synthetic-client', releaseProfile: 'm8-cookie-91b35ab' as const };
 const resolve = (changes: Partial<Parameters<typeof admission.resolveNativePurchaseQualification>[0]> = {}) =>
   admission.resolveNativePurchaseQualification({ ...input, ...changes });
+
+test('each cart-line v3 theme binding resolves in the runtime and authorizes the exact release protocol target', () => {
+  const directory = new URL('../../../deployment/m5-runtime/', import.meta.url);
+  const supportedSource = resolveRuntimeReleaseProfile('native-cart-line-v3-aa3b6166').functionsSourceCommit;
+  const bindingFiles = readdirSync(directory).filter((file) => /^native-.*-release-binding\.json$/.test(file));
+  assert(bindingFiles.length > 0);
+  for (const file of bindingFiles) {
+    const binding = JSON.parse(readFileSync(new URL(file, directory), 'utf8'));
+    if (binding.functionsSourceCommit !== supportedSource) continue;
+    const profile = resolveRuntimeReleaseProfile(binding.versionTag);
+    assert.equal(profile.activeVersionRef, binding.versionId, file);
+    assert.equal(profile.functionsSourceCommit, binding.functionsSourceCommit, file);
+    assert.equal(resolve({ releaseProfile: profile.name })?.activeVersionRef, binding.versionId, file);
+    const request = {
+      requestId: '11111111-1111-4111-8111-111111111111',
+      deadlineMs: 1_795_520_000_000,
+      expectedActiveAppVersionRef: binding.versionId,
+      binding: {
+        appClientId: '1443cf6d03d39edae7c101a943c5c684',
+        shopId: 'synthetic-shop',
+        installationGeneration: '1',
+        authorizationGeneration: '11111111-1111-4111-8111-111111111111',
+        authorizationEpoch: 0,
+        externalInstallationId: 'gid://shopify/AppInstallation/1',
+      },
+    };
+    assert.deepEqual(parseReleaseVerificationRequest(request, profile.activeVersionRef), request, file);
+  }
+});
 function required<T>(value: T | undefined): T {
   assert(value !== undefined);
   return value;
@@ -54,6 +85,7 @@ test('observed native origin binds only the closed release profile and validated
 });
 
 for (const [releaseProfile, expectedVersion] of [
+  ['native-market-dialog-fdd262ea', '1264361504769'],
   ['native-network-access-f57facc8', '1263405170689'],
   ['native-review-market-6967baed', '1263125463041'],
   ['native-scope60-9b677033', '1257303638017'],

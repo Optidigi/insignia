@@ -32,6 +32,7 @@ export function resolveNativePurchaseQualification(input: {
   const profile = resolveRuntimeReleaseProfile(input.releaseProfile);
   if (
     ![
+      'native-market-dialog-fdd262ea',
       'native-network-access-f57facc8',
       'native-review-market-6967baed',
       'native-scope60-9b677033',
