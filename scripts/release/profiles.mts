@@ -56,6 +56,12 @@ import functionsRenewBinding from '../../deployment/m5-runtime/native-functions-
 };
 import loadingModules from '../../deployment/m5-runtime/native-loading-module-baseline.json' with { type: 'json' };
 import loadingCandidate from '../../deployment/m5-runtime/native-loading-release-binding.json' with { type: 'json' };
+import marketDialogModules from '../../deployment/m5-runtime/native-market-dialog-module-baseline.json' with {
+  type: 'json',
+};
+import marketDialogBinding from '../../deployment/m5-runtime/native-market-dialog-release-binding.json' with {
+  type: 'json',
+};
 import merchantBatchModules from '../../deployment/m5-runtime/native-merchant-batch-module-baseline.json' with {
   type: 'json',
 };
@@ -214,6 +220,15 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  'native-market-dialog-fdd262ea': {
+    versionId: marketDialogBinding.versionId,
+    versionTag: marketDialogBinding.versionTag,
+    versionIds: marketDialogBinding.versionIds,
+    moduleHash: marketDialogBinding.moduleHash,
+    modules: marketDialogModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   'native-network-access-f57facc8': {
     versionId: networkAccessBinding.versionId,
     versionTag: networkAccessBinding.versionTag,
