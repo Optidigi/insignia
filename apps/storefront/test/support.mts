@@ -23,6 +23,7 @@ export async function createStorefrontTestServer(config: InlineConfig = {}): Pro
     server.close = () =>
       (closing ??= (async () => {
         try {
+          await settledWithin(dependencyOptimizerSettled(server), OPTIMIZER_SETTLE_LIMIT_MS);
           await close();
         } finally {
           await rm(cacheDir, { recursive: true, force: true });
@@ -32,6 +33,43 @@ export async function createStorefrontTestServer(config: InlineConfig = {}): Pro
   } catch (error) {
     await rm(cacheDir, { recursive: true, force: true });
     throw error;
+  }
+}
+
+/**
+ * A failed dependency bundle never settles its discovered batches (Vite resolves them only on commit or close),
+ * so the wait is bounded: past the limit, close and remove the cache as before. A failed bundle writes nothing.
+ */
+const OPTIMIZER_SETTLE_LIMIT_MS = 10_000;
+async function settledWithin(work: Promise<void>, limitMs: number): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      work.catch(() => undefined),
+      new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, limitMs);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Vite's close() neither cancels nor awaits a dependency bundle that its crawl-end handler already owns, so
+ * that bundle can recreate the removed cache. Close only after every discovered dependency batch settles.
+ */
+async function dependencyOptimizerSettled(server: ViteDevServer): Promise<void> {
+  const optimizer = server.environments.client.depsOptimizer;
+  const awaited = new Set<Promise<void>>();
+  for (;;) {
+    await optimizer?.scanProcessing;
+    const pending = Object.values(optimizer?.metadata.discovered ?? {}).flatMap(({ processing }) =>
+      processing && !awaited.has(processing) ? [processing] : [],
+    );
+    if (pending.length === 0) return;
+    for (const batch of pending) awaited.add(batch);
+    await Promise.all(pending);
   }
 }
 
