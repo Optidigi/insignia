@@ -23,6 +23,7 @@ export async function createStorefrontTestServer(config: InlineConfig = {}): Pro
     server.close = () =>
       (closing ??= (async () => {
         try {
+          await dependencyOptimizerSettled(server);
           await close();
         } finally {
           await rm(cacheDir, { recursive: true, force: true });
@@ -32,6 +33,24 @@ export async function createStorefrontTestServer(config: InlineConfig = {}): Pro
   } catch (error) {
     await rm(cacheDir, { recursive: true, force: true });
     throw error;
+  }
+}
+
+/**
+ * Vite's close() neither cancels nor awaits a dependency bundle that its crawl-end handler already owns, so
+ * that bundle can recreate the removed cache. Close only after every discovered dependency batch settles.
+ */
+async function dependencyOptimizerSettled(server: ViteDevServer): Promise<void> {
+  const optimizer = server.environments.client.depsOptimizer;
+  const awaited = new Set<Promise<void>>();
+  for (;;) {
+    await optimizer?.scanProcessing;
+    const pending = Object.values(optimizer?.metadata.discovered ?? {}).flatMap(({ processing }) =>
+      processing && !awaited.has(processing) ? [processing] : [],
+    );
+    if (pending.length === 0) return;
+    for (const batch of pending) awaited.add(batch);
+    await Promise.all(pending);
   }
 }
 
