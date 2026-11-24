@@ -55,13 +55,25 @@ The independent Canada run returned 422 with the correct explanation in the DOM.
 that hides empty elements hid the shadow-DOM wrapper, including the explanation and Close button.
 The regression applies that rule in a browser and requires the visible message and functional
 Close button. The fix was activated in Shopify version `1264361504769` on 24 November.
-Repeat the flow against that version and verify that the explanation and Close button are visible.
+The live Canada retest showed the explanation and Close button. Closing returned focus to
+**Customise**, with no artwork workspace or cart change. The reviewer fixture also verified one
+signed line for two items and $30.00 in checkout on the recovered runtime.
 All five snowboard variants were unavailable in Canada, so the same-stock check remains open.
 
 The independent reviewer pass reached $30.00 in Designer Review. Shopify's connection verification
 screen blocked Admin before sign-in. The merchant walkthrough needs an explicit Admin entry point
 and a native rerun. Local billing QA also reproduced loss of **Manage plan in Shopify** while the
 subscription read returns 503. The action returned after a successful retry.
+
+In the owner session, Billing showed $0 development terms and opened Shopify's Standard plan
+selector. Order #1012 showed $38.00 paid, two items and complete artwork. The billing outage fix
+passed in a local browser with a simulated provider failure. The signed-out reviewer journey still
+needs independent merchant-admin proof.
+
+The live retest also found that Tab focused the sticky **Customise** button below the viewport.
+The storefront regression verifies that Tab skips it off screen and reaches it when visible.
+Shopify activated the fix in version `1264667197441` on 24 November. Live keyboard and buyer
+retests on that version are in progress.
 
 ## Other review items
 
