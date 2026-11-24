@@ -222,6 +222,20 @@ const defaultCartLock: CartApplicationLock = {
     }
   },
 };
+function pause(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) return reject(signal.reason);
+    const abort = () => {
+      clearTimeout(timer);
+      reject(signal?.reason);
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', abort);
+      resolve();
+    }, ms);
+    signal?.addEventListener('abort', abort, { once: true });
+  });
+}
 export function createAjaxCartAdapter({
   root,
   fetchImpl = fetch,
@@ -283,7 +297,9 @@ export function createAjaxCartAdapter({
     if (!response.ok) {
       // A 4xx refusal is a definite outcome; Shopify explains it (e.g. stock) in `description`, shown as plain
       // text without control or bidi/format characters.
-      const failure: unknown = await bounded(response).then(JSON.parse, () => null);
+      const failure: unknown = await bounded(response)
+        .then((text) => JSON.parse(text))
+        .catch(() => null);
       const text =
         failure && typeof failure === 'object' && 'description' in failure && typeof failure.description === 'string'
           ? failure.description
@@ -294,10 +310,21 @@ export function createAjaxCartAdapter({
           : '';
       throw Object.assign(new Error('Cart request failed'), {
         status: response.status,
+        // Throttling (often Shopify's HTML bot check) and server errors say nothing about the cart.
+        ...(response.status === 429 || response.status >= 500
+          ? { transient: true, retryAfter: Number(response.headers.get('Retry-After')) || 0 }
+          : {}),
         ...(text ? { description: text } : {}),
       });
     }
-    const parsed: unknown = JSON.parse(await bounded(response));
+    const bodyText = await bounded(response);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(bodyText);
+    } catch (error) {
+      // A page in place of cart JSON (a bot check, a theme redirect) is not an answer about the cart either.
+      throw Object.assign(error as Error, { transient: true });
+    }
     if (parsed && typeof parsed === 'object' && 'errors' in parsed && parsed.errors)
       throw new Error('Cart response error');
     return parsed;
@@ -325,7 +352,21 @@ export function createAjaxCartAdapter({
       reader.releaseLock();
     }
   }
-  const read = async (signal?: AbortSignal) => snapshot(await request('cart.js', undefined, signal));
+  /**
+   * A cart read is safe to repeat: a transient answer is read again at most twice, after `Retry-After` clamped to
+   * 1–10 s plus up to 250 ms jitter, like an acceptance on `BUSY`. Nothing that writes is ever repeated.
+   */
+  async function read(signal?: AbortSignal): Promise<CartSnapshot> {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return snapshot(await request('cart.js', undefined, signal));
+      } catch (error) {
+        const { transient, retryAfter } = error as { transient?: unknown; retryAfter?: number };
+        if (attempt >= 2 || transient !== true) throw error;
+        await pause(Math.min(Math.max(retryAfter ?? 0, 1), 10) * 1000 + Math.random() * 250, signal);
+      }
+    }
+  }
   async function applyUnlocked(
     buckets: CartBucket[],
     {
@@ -485,6 +526,8 @@ export function createAjaxCartAdapter({
       let created: CartBucket[] = additions;
       /** Old lines replaced in place by the stock fallback, newest last. */
       const swapped: { line: CartLine; bucket: CartBucket }[] = [];
+      /** Whether Shopify acknowledged a write of this application since the cart was last seen at its start. */
+      let written = false;
       // After a definite failure, undo this application's own writes (B1): swapped lines get their old carrier
       // back, then the lines it added go in one write. If any swapped line cannot be restored, nothing is removed
       // (B3). Only a cart whose customized lines are back at the start settles the intent; anything else stays
@@ -522,7 +565,26 @@ export function createAjaxCartAdapter({
         } catch {
           /* The compensation's own outcome is unknown, or it could not restore every line. */
         }
+        // Shopify refused the only write it was sent and the cart could not be read back: nothing of this
+        // application is pending, so it is a refusal. Its set, none of whose lines the cart held, is tombstoned in
+        // case part of a refused add landed unseen; a line of it in the cart still makes a later Add need review.
+        if (!restored && refused && !written && desired.length > 0 && additions.length === desired.length) {
+          settle({
+            ...own,
+            abandoned: own.abandoned.some((entry) => entry.set === own.quote)
+              ? own.abandoned
+              : [...own.abandoned, { set: own.quote, at: now() }],
+          });
+          return {
+            status: 'review_required',
+            cart: null,
+            reason,
+            refusal: refused.status,
+            ...(refused.detail ? { detail: refused.detail } : {}),
+          };
+        }
         if (!restored) return { status: 'review_required', cart: current, reason: 'mutation_unresolved' };
+        written = false;
         settle(own);
         return {
           status: 'review_required',
@@ -538,6 +600,7 @@ export function createAjaxCartAdapter({
         let refused: Refusal | undefined;
         try {
           await request('cart/add.js', items(additions));
+          written = true;
         } catch (error) {
           refused = refusal(error);
         }
@@ -568,7 +631,8 @@ export function createAjaxCartAdapter({
           pairs.sort((a, b) => a.bucket.quantity - a.line.quantity - (b.bucket.quantity - b.line.quantity));
           if (refused.status !== 422 || !pairs.length) return failed('rejected', refused);
           const undone = await failed('rejected', refused);
-          if (undone.reason !== 'rejected') return undone;
+          // Only a cart seen back at its start may be written again.
+          if (undone.reason !== 'rejected' || !undone.cart) return undone;
           saveIntent(own); // The same intent covers the fallback.
           created = rest;
           try {
@@ -578,9 +642,11 @@ export function createAjaxCartAdapter({
                 quantity: pair.bucket.quantity,
                 properties: pair.bucket.properties,
               });
+              written = true;
               swapped.push(pair);
             }
             if (rest.length) await request('cart/add.js', items(rest));
+            written = true;
             current = await read();
           } catch (error) {
             const again = refusal(error);

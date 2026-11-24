@@ -1488,6 +1488,96 @@ test('an explicit removal clears earlier tombstones; an ordinary Add does not (#
   }
 });
 
+/** Shopify's bot check answers a storefront request with an HTML page, not JSON. */
+const botCheck = () =>
+  new Response('<!doctype html><title>Verifying your connection…</title>', {
+    status: 429,
+    headers: { 'Content-Type': 'text/html' },
+  });
+const soldOut = () =>
+  Response.json(
+    { status: 422, message: "The product 'Shirt - S' is already sold out.", description: 'Already sold out.' },
+    { status: 422 },
+  );
+
+test('a sold-out add whose witness read meets a transient bot check is still a definite stock refusal', async () => {
+  const journal = memoryJournal();
+  let refuse = true;
+  let checks = 0;
+  const remote = provider([ordinary], ({ url, requests }) => {
+    if (url.endsWith('cart/add.js') && refuse) return soldOut();
+    // Right after the refused add, Shopify answers the next two cart reads with its HTML bot check.
+    const afterAdd = requests.some((r) => r.url.endsWith('cart/add.js'));
+    if (url.endsWith('cart.js') && afterAdd && refuse && checks < 2) {
+      checks++;
+      return botCheck();
+    }
+    return undefined;
+  });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await cart.read();
+  const refused = await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint });
+  assert.equal(checks, 2, 'both bot checks were met and retried');
+  assert.equal(refused.reason, 'rejected', 'a transient read never turns a definite refusal into an unknown write');
+  assert.equal(refused.refusal, 422);
+  assert.equal(refused.detail, 'Already sold out.');
+  assert.equal(journal.state, null, 'nothing is left pending');
+  assert.equal(journal.flag, false);
+  refuse = false;
+  const retried = await cart.apply(freshDesired(), { expectedFingerprint: required(refused.cart).fingerprint });
+  assert.equal(retried.status, 'applied', 'the next Add to cart dispatches the add again');
+  assert.equal(posts(remote.requests).filter(([url]) => url.endsWith('cart/add.js')).length, 2);
+});
+
+test('a refused add whose cart stays unreadable tombstones its own set and blocks nothing else', async () => {
+  const journal = memoryJournal();
+  let unreadable = true;
+  const remote = provider([ordinary], ({ url, requests }) => {
+    if (url.endsWith('cart/add.js') && unreadable) return soldOut();
+    if (url.endsWith('cart.js') && unreadable && requests.some((r) => r.url.endsWith('cart/add.js'))) return botCheck();
+    return undefined;
+  });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await cart.read();
+  const refused = await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint });
+  assert.equal(refused.reason, 'rejected', 'Shopify refused the only write; the buyer gets the stock wording');
+  assert.equal(refused.refusal, 422);
+  assert.equal(journal.state?.phase, 'abandoned', 'no write of this application is pending');
+  assert.deepEqual(
+    journal.state?.abandoned.map((entry) => entry.set),
+    [tombstoneOf(required(fresh.carriers[0]))],
+    'the refused set is kept as a tombstone in case part of the add landed unseen',
+  );
+  unreadable = false;
+  const current = await cart.read();
+  const next = await cart.apply(desired, { expectedFingerprint: current.fingerprint });
+  assert.equal(next.status, 'applied', 'a freshly signed set is applied with no repair');
+  // A line of the refused set that did land unseen still makes the cart need review.
+  remote.items.push({
+    key: '42:unseen',
+    variant_id: 42,
+    quantity: 1,
+    properties: { [LINE]: required(fresh.carriers[0]) },
+  });
+  const landed = await cart.read();
+  assert.equal((await cart.apply(desired, { expectedFingerprint: landed.fingerprint })).reason, 'mutation_unresolved');
+});
+
+test('a cart read retries a transient bot check or non-JSON answer at most twice', async () => {
+  for (const [answer, ok] of [
+    [[botCheck, botCheck], true],
+    [[() => new Response('<html></html>', { status: 200 }), () => Response.json({}, { status: 503 })], true],
+    [[botCheck, botCheck, botCheck], false],
+  ] as const) {
+    const queue: (() => Response)[] = [...answer];
+    const remote = provider([ordinary], ({ url }) => (url.endsWith('cart.js') ? queue.shift()?.() : undefined));
+    const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });
+    if (ok) assert.equal((await cart.read()).items.length, 1);
+    else await assert.rejects(cart.read());
+    assert.equal(remote.requests.length, ok ? answer.length + 1 : 3);
+  }
+});
+
 declare global {
   interface Window {
     testCart: ReturnType<typeof createAjaxCartAdapter>;
