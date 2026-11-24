@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { mkdtemp, rm } from 'node:fs/promises';
-import { request } from 'node:http';
+import { createServer, request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -269,5 +269,36 @@ test('signer contract: provisioning returns only the public half', async () => {
     );
   } finally {
     await h.close();
+  }
+});
+
+test('signer contract: a signer that never answers fails closed as TRANSPORT at the client deadline', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'insignia-signer-slow-'));
+  const socketPath = join(directory, 'signer.sock');
+  let received = 0;
+  // Accepts the request and never responds, as a wedged or overloaded signer would.
+  const server = createServer(() => {
+    received++;
+  });
+  await new Promise<void>((resolve) => server.listen(socketPath, resolve));
+  try {
+    const client = createSignerClient({ socketPath, signTimeoutMs: 200 });
+    const started = Date.now();
+    await assert.rejects(
+      issueLineSetV3(
+        claims(),
+        [{ index: 0, variantId: '42', unitMinor: '1' }],
+        today,
+        client.authorizationSigner(scope),
+      ),
+      (error: unknown) => error instanceof SignerUnavailableError && error.code === 'TRANSPORT',
+    );
+    const elapsed = Date.now() - started;
+    assert.ok(elapsed >= 150 && elapsed < 2000, `deadline honoured (${elapsed} ms)`);
+    assert.equal(received, 1);
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    await rm(directory, { recursive: true, force: true });
   }
 });

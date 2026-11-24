@@ -6,11 +6,13 @@ import {
   CatalogContextUnavailable,
   EntitlementObservationUnavailableError,
   ShopDayChangedError,
+  SignerUnavailableError,
 } from '@insignia/application';
 import { BuyerStateError } from '@insignia/database';
 import type { BuyerFailureDiagnostic } from '@insignia/observability';
 import {
   ContextualPricingError,
+  PartnerSubscriptionError,
   PrimaryMarketError,
   ShopContextError,
   ShopifyAdminUnavailableError,
@@ -634,4 +636,44 @@ test('a revoked token, missing scope or retired API version stays 503 UNAVAILABL
       },
       error.message,
     );
+});
+
+test('an unavailable, rate-limited or timed-out signer is 503 UNAVAILABLE with its own class (spec §8.3 "anything else")', async () => {
+  for (const code of ['TRANSPORT', 'UNAVAILABLE', 'RATE_LIMITED', 'KEY_UNAVAILABLE'] as const)
+    assert.deepEqual(
+      await failure(new SignerUnavailableError(code)),
+      {
+        status: 503,
+        code: 'UNAVAILABLE',
+        retryable: undefined,
+        retryAfter: null,
+        logged: [{ errorClass: 'SignerUnavailable', level: 'error' }],
+      },
+      code,
+    );
+});
+
+// Spec §8.3 lists Shopify 429, 5xx, THROTTLED, network failure or timeout as transient 409 BUSY. The
+// Partner subscription read (config, proposal, acceptance and renewal all read it) types no
+// transience, so a throttled or unreachable Partner API is a 503 UnexpectedFailure: the app proxy turns
+// it into a bare 500 and the acceptance gets no automatic retry. Reported, not changed here: the fix
+// changes buyer-visible status codes.
+test('a throttled, failing or unreachable Partner subscription read is 409 BUSY like other Shopify reads', {
+  todo: 'PartnerSubscriptionError declares no transience; spec §8.3 expects BUSY',
+}, async () => {
+  for (const kind of ['rate_limited', 'provider_error', 'network_or_timeout'] as const) {
+    const result = await failure(new PartnerSubscriptionError(kind));
+    assert.deepEqual(
+      { status: result.status, code: result.code, retryable: result.retryable, logged: result.logged },
+      {
+        status: 409,
+        code: 'BUSY',
+        retryable: true,
+        logged: [{ errorClass: 'ProviderReadUnavailable', level: 'warn' }],
+      },
+      kind,
+    );
+  }
+  for (const kind of ['auth_or_permission', 'malformed_response'] as const)
+    assert.equal((await failure(new PartnerSubscriptionError(kind))).status, 503, kind);
 });
