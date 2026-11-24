@@ -561,8 +561,9 @@ export function createAjaxCartAdapter({
       const swapped: { line: CartLine; bucket: CartBucket }[] = [];
       // After a definite failure, undo this application's own writes (B1): swapped lines get their old carrier
       // back, then the lines it added go in one write. If any swapped line cannot be restored, nothing is removed
-      // (B3). Only a cart whose customized lines are back at the start settles the intent; anything else stays
-      // unresolved for explicit repair.
+      // (B3). Only a cart whose customized lines are back at the start settles the intent here. Anything else stays
+      // unresolved: if every write was answered, a later application's first clean read that finds the start
+      // lines settles it (§8.4); otherwise it waits for its goal or explicit repair.
       const failed = async (reason: 'rejected' | 'vector_mismatch', refused?: Refusal): Promise<CartApplication> => {
         let restored = false;
         /** A compensating write went unanswered (no 4xx): its effect may still land. */
@@ -767,6 +768,8 @@ export function createAjaxCartAdapter({
       }
     );
   }
+  /** Goal-only: settles a pending intent only when the cart is at its goal. The start-lines settle (§8.4)
+   * runs on the first read of the next application, not here. Test-only today. */
   async function reconcile(): Promise<CartApplication> {
     return (
       (await lock.run(async () => {
