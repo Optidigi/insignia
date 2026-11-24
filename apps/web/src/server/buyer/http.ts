@@ -353,6 +353,13 @@ async function handleRequest(
             buyerStage,
             errorClass: failure.errorClass,
             ...(proposalStage === undefined ? {} : { proposalStage }),
+            ...(error instanceof BuyerRejectedError && error.market
+              ? {
+                  refusalReason: error.market.reason,
+                  ...(error.market.storefrontMarketId ? { storefrontMarketId: error.market.storefrontMarketId } : {}),
+                  ...(error.market.primaryMarketId ? { primaryMarketId: error.market.primaryMarketId } : {}),
+                }
+              : {}),
           },
           failure.status >= 500 ? 'error' : failure.retryable ? 'warn' : 'info',
         );

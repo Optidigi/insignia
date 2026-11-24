@@ -27,12 +27,37 @@ export type BuyerRejectionCode =
  */
 export type BuyerRejectionReason = 'NOT_OWNED' | 'NOT_OWNED_EXPIRED' | 'CART_LINES' | 'SESSION_QUOTA';
 
+/**
+ * Which check refused an UNSUPPORTED_MARKET, for the operator log only (never the response). Finite; mirrored
+ * by `@insignia/observability` (the compiler rejects a code the log vocabulary lacks).
+ * STOREFRONT_MARKET_UNAVAILABLE: the storefront Market ID is not a valid Market ID.
+ * MARKET_NOT_PRIMARY: the storefront Market is not the shop's primary Market.
+ * COUNTRY_NOT_IN_PRIMARY_MARKET: the buyer's country is not served by the primary Market.
+ * COUNTRY_UNRECOGNISED: the country is not an ISO 3166-1 code.
+ * CURRENCY_UNSUPPORTED: the currency is not USD or EUR.
+ * CURRENCY_MISMATCH: the presentment currency differs from the shop currency.
+ * EUR_COUNTRY_NOT_QUALIFIED: the EUR release qualification does not list the country.
+ * EUR_PROFILE_UNAVAILABLE: no EUR profile covers this shop (EUR Netherlands v1, or none).
+ */
+export type MarketRefusalReason =
+  | 'STOREFRONT_MARKET_UNAVAILABLE'
+  | 'MARKET_NOT_PRIMARY'
+  | 'COUNTRY_NOT_IN_PRIMARY_MARKET'
+  | 'COUNTRY_UNRECOGNISED'
+  | 'CURRENCY_UNSUPPORTED'
+  | 'CURRENCY_MISMATCH'
+  | 'EUR_COUNTRY_NOT_QUALIFIED'
+  | 'EUR_PROFILE_UNAVAILABLE';
+/** Shop configuration only: numeric Market IDs when known. Never the buyer's country, IP or cart. */
+export type MarketRefusal = { reason: MarketRefusalReason; storefrontMarketId?: string; primaryMarketId?: string };
+
 export class BuyerRejectedError extends Error {
-  /** `detail` is for tests and debugging only; it never reaches a response or log. */
+  /** `detail` is for tests and debugging only; it never reaches a response or log. `market` reaches the log only. */
   constructor(
     readonly code: BuyerRejectionCode,
     detail: string = code,
     readonly reason?: BuyerRejectionReason,
+    readonly market?: MarketRefusal,
   ) {
     super(detail);
     this.name = 'BuyerRejectedError';

@@ -1,4 +1,4 @@
-import { BuyerRejectedError, type QuoteAuthorityPorts } from '@insignia/application';
+import { BuyerRejectedError, type MarketRefusalReason, type QuoteAuthorityPorts } from '@insignia/application';
 import { PRIMARY_MARKET_API_VERSION, PRIMARY_MARKET_FRESHNESS_MS, type PrimaryMarketSnapshot } from '@insignia/shopify';
 
 export type LeanMarketAuthority = {
@@ -191,15 +191,24 @@ export function createLeanPrimaryMarketAdmission(input: {
 }): NonNullable<QuoteAuthorityPorts['leanContext']> {
   return {
     async assertSupported(target) {
-      if (target.shopCurrency !== target.currency || !['USD', 'EUR'].includes(target.currency))
-        throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'Lean primary-Market context unavailable');
+      const storefrontMarketId = target.marketId;
+      const refuse = (detail: string, reason: MarketRefusalReason, primaryMarketId?: string) =>
+        new BuyerRejectedError('UNSUPPORTED_MARKET', detail, undefined, {
+          reason,
+          storefrontMarketId,
+          ...(primaryMarketId ? { primaryMarketId } : {}),
+        });
+      if (!['USD', 'EUR'].includes(target.currency))
+        throw refuse('Lean primary-Market context unavailable', 'CURRENCY_UNSUPPORTED');
+      if (target.shopCurrency !== target.currency)
+        throw refuse('Lean primary-Market context unavailable', 'CURRENCY_MISMATCH');
       const profile = target.currency === 'EUR' ? input.eurQualification : null;
       const now = () => +input.clock();
       if (profile?.version === 'eur-qualification-v2') {
         // Release-level: any shop whose shop currency is EUR (checked above and re-read below), to the
         // qualified countries only. A different release than the one qualified is an outage, not a refusal.
         if (!profile.countries.includes(target.country))
-          throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'EUR qualification does not cover this country');
+          throw refuse('EUR qualification does not cover this country', 'EUR_COUNTRY_NOT_QUALIFIED');
         if (
           profile.activeVersionRef !== input.expectedRelease.activeVersionRef ||
           profile.functionsSourceCommit !== input.expectedRelease.functionsSourceCommit ||
@@ -216,7 +225,7 @@ export function createLeanPrimaryMarketAdmission(input: {
             v1.shopId !== target.tenant.shopId ||
             v1.shopifyShopGid !== target.tenant.shopifyShopGid)
         )
-          throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'EUR Netherlands qualification unavailable');
+          throw refuse('EUR Netherlands qualification unavailable', 'EUR_PROFILE_UNAVAILABLE');
         // The covered shop's profile no longer matches its release or installation epoch: an outage.
         if (
           target.currency === 'EUR' &&
@@ -264,11 +273,11 @@ export function createLeanPrimaryMarketAdmission(input: {
       if (profile?.version === 'eur-nl-qualification-v1' && profile.primaryMarketGid !== observed.primaryMarketId)
         throw new Error('EUR Netherlands qualification unavailable');
       // The storefront can legitimately select a different Market or a country outside the primary Market.
-      if (
-        observed.primaryMarketId !== `gid://shopify/Market/${target.marketId}` ||
-        !observed.countryCodes.includes(target.country)
-      )
-        throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'Lean primary-Market context unavailable');
+      const primaryMarketId = /^gid:\/\/shopify\/Market\/([1-9][0-9]*)$/.exec(observed.primaryMarketId)?.[1];
+      if (observed.primaryMarketId !== `gid://shopify/Market/${target.marketId}`)
+        throw refuse('Lean primary-Market context unavailable', 'MARKET_NOT_PRIMARY', primaryMarketId);
+      if (!observed.countryCodes.includes(target.country))
+        throw refuse('Lean primary-Market context unavailable', 'COUNTRY_NOT_IN_PRIMARY_MARKET', primaryMarketId);
     },
   };
 }

@@ -490,7 +490,10 @@ function validatedRequest(
     request.groups.length === 0
   )
     throw new Error('invalid quote request');
-  if (!isIsoCountry(request.country)) throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'unsupported country');
+  if (!isIsoCountry(request.country))
+    throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'unsupported country', undefined, {
+      reason: 'COUNTRY_UNRECOGNISED',
+    });
   if (
     !request.capacity ||
     !Number.isSafeInteger(request.capacity.ordinaryLineCount) ||
@@ -754,7 +757,10 @@ async function prepareValidatedQuote(
     throw new Error('published shop currency mismatch');
   // The Market check ran for the published (= observed shop) currency; Lean requires presentment to match it.
   if (presentment !== shop.currency)
-    throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'Lean primary-Market context unavailable');
+    throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'Lean primary-Market context unavailable', undefined, {
+      reason: 'CURRENCY_MISMATCH',
+      storefrontMarketId: marketId,
+    });
   settledValue(leanResult);
   const exponent = ports.currency.exponent(presentment);
   const shopExponent = ports.currency.exponent(shop.currency);

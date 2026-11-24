@@ -677,3 +677,58 @@ test('a throttled, failing or unreachable Partner subscription read is 409 BUSY 
   for (const kind of ['auth_or_permission', 'malformed_response'] as const)
     assert.equal((await failure(new PartnerSubscriptionError(kind))).status, 503, kind);
 });
+
+test('an UNSUPPORTED_MARKET refusal logs its check and Market IDs while the buyer response is unchanged', async () => {
+  const attempt = async (error: unknown) => {
+    const seen: BuyerFailureDiagnostic[] = [];
+    const response = await handleBuyerRequest(
+      new Request('https://app.invalid/v1/config?productId=1'),
+      buyerFixture({
+        config: async () => {
+          throw error;
+        },
+      }),
+      'config',
+      (value) => seen.push(value),
+    );
+    const body = record(await response.json());
+    return { status: response.status, body: { ...body, requestId: undefined }, seen: seen.map((v) => ({ ...v })) };
+  };
+  const plain = await attempt(new BuyerRejectedError('UNSUPPORTED_MARKET', 'free text'));
+  const known = await attempt(
+    new BuyerRejectedError('UNSUPPORTED_MARKET', 'free text', undefined, {
+      reason: 'MARKET_NOT_PRIMARY',
+      storefrontMarketId: '99',
+      primaryMarketId: '42',
+    }),
+  );
+  const partial = await attempt(
+    new BuyerRejectedError('UNSUPPORTED_MARKET', 'other text', undefined, {
+      reason: 'CURRENCY_MISMATCH',
+      storefrontMarketId: '99',
+    }),
+  );
+  // The response never carries the reason or IDs: identical code, message, status and keys.
+  for (const result of [known, partial]) {
+    assert.equal(result.status, plain.status);
+    assert.deepEqual(result.body, plain.body);
+    assert.deepEqual(Object.keys(result.body).sort(), ['code', 'message', 'requestId']);
+  }
+  assert.equal(plain.seen[0]?.refusalReason, undefined);
+  assert.deepEqual(known.seen[0] && { ...known.seen[0], correlationId: undefined }, {
+    correlationId: undefined,
+    buyerStage: 'config',
+    errorClass: 'UnsupportedMarket',
+    refusalReason: 'MARKET_NOT_PRIMARY',
+    storefrontMarketId: '99',
+    primaryMarketId: '42',
+  });
+  assert.deepEqual(partial.seen[0] && { ...partial.seen[0], correlationId: undefined }, {
+    correlationId: undefined,
+    buyerStage: 'config',
+    errorClass: 'UnsupportedMarket',
+    refusalReason: 'CURRENCY_MISMATCH',
+    storefrontMarketId: '99',
+  });
+  assert.equal('primaryMarketId' in (partial.seen[0] ?? {}), false);
+});

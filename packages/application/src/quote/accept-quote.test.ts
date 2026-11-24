@@ -977,7 +977,10 @@ describe('buyer-actionable acceptance conditions are typed, not plain errors (#3
   it('an ISO-shaped country outside the snapshot is an unsupported market before provider reads', async () => {
     for (const country of ['XX', 'XK']) {
       const { ports } = fixture();
-      await expect(acceptQuote({ ...request, country }, ports)).rejects.toMatchObject(rejected('UNSUPPORTED_MARKET'));
+      await expect(acceptQuote({ ...request, country }, ports)).rejects.toMatchObject({
+        ...rejected('UNSUPPORTED_MARKET'),
+        market: { reason: 'COUNTRY_UNRECOGNISED' },
+      });
       expect(ports.tenant.getActive).not.toHaveBeenCalled();
     }
     const { ports } = fixture();
@@ -1057,7 +1060,10 @@ describe('buyer-actionable acceptance conditions are typed, not plain errors (#3
     const { ports } = fixture();
     const [snapshot] = await ports.catalog.resolveVariantContext({} as never);
     vi.mocked(ports.catalog.resolveVariantContext).mockResolvedValueOnce([{ ...snapshot!, currencyCode: 'EUR' }]);
-    await expect(acceptQuote(request, ports)).rejects.toMatchObject(rejected('UNSUPPORTED_MARKET'));
+    await expect(acceptQuote(request, ports)).rejects.toMatchObject({
+      ...rejected('UNSUPPORTED_MARKET'),
+      market: { reason: 'CURRENCY_MISMATCH' },
+    });
   });
 
   it('a denied entitlement is a typed denial, distinct from a stale observation', async () => {

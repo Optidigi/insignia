@@ -836,3 +836,52 @@ test('publication timing lines whitelist a bounded stage vocabulary and integer 
       /publication timing/,
     );
 });
+
+test('market refusal reason and numeric Market IDs pass the buyer filter; anything else is rejected or dropped', () => {
+  let output = '';
+  const { logger } = createObservability({
+    stream: new Writable({
+      write(chunk, _encoding, callback) {
+        output += chunk;
+        callback();
+      },
+    }),
+  });
+  const base = {
+    correlationId: '01234567-89ab-4cde-8123-456789abcdef',
+    buyerStage: 'config',
+    errorClass: 'UnsupportedMarket',
+  } as const;
+  logger.info('buyer_request_rejected', {
+    ...base,
+    refusalReason: 'MARKET_NOT_PRIMARY',
+    storefrontMarketId: '99',
+    primaryMarketId: '42',
+  });
+  const entry = parseRecord(output.trim());
+  assert.equal(entry.refusalReason, 'MARKET_NOT_PRIMARY');
+  assert.equal(entry.storefrontMarketId, '99');
+  assert.equal(entry.primaryMarketId, '42');
+  output = '';
+  // Absent or malformed IDs are omitted, never logged as empty strings or free text.
+  logger.info('buyer_request_rejected', {
+    ...base,
+    refusalReason: 'CURRENCY_MISMATCH',
+    storefrontMarketId: '',
+    primaryMarketId: 'SECRET-gid',
+  });
+  const dropped = parseRecord(output.trim());
+  assert.equal(dropped.refusalReason, 'CURRENCY_MISMATCH');
+  assert.equal('storefrontMarketId' in dropped, false);
+  assert.equal('primaryMarketId' in dropped, false);
+  assert.doesNotMatch(output, /SECRET/);
+  assert.throws(
+    () =>
+      logger.info('buyer_request_rejected', {
+        ...base,
+        // @ts-expect-error Deliberately inject an unlisted reason to prove runtime rejection.
+        refusalReason: 'SECRET-reason',
+      }),
+    /Invalid buyer market refusal reason/,
+  );
+});

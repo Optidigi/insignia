@@ -351,7 +351,9 @@ export function createBuyerServices(input: {
         try {
           marketId = normalizeMarketId(rawMarketId);
         } catch {
-          throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'Storefront Market is unavailable');
+          throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'Storefront Market is unavailable', undefined, {
+            reason: 'STOREFRONT_MARKET_UNAVAILABLE',
+          });
         }
       }
       const contextual = !!country && /^[A-Z]{2}$/.test(country);
@@ -380,7 +382,15 @@ export function createBuyerServices(input: {
             input.catalog(scope, scope.productId, undefined, country ? { country } : undefined),
           );
           if (marketId && catalog.currency && catalog.currency !== config.shopCurrency)
-            throw new BuyerRejectedError('UNSUPPORTED_MARKET', 'Storefront currency differs from shop currency');
+            throw new BuyerRejectedError(
+              'UNSUPPORTED_MARKET',
+              'Storefront currency differs from shop currency',
+              undefined,
+              {
+                reason: 'CURRENCY_MISMATCH',
+                storefrontMarketId: marketId,
+              },
+            );
           const wording = contextual
             ? await proposalStage('presentation', () =>
                 input.core.transactions.run((tx) => input.core.preferences.readWording(tx, scope)),
