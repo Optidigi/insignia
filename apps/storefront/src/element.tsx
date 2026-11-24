@@ -382,7 +382,8 @@ export class InsigniaBuyer extends HTMLElement {
         proxyBase,
         productId,
         country,
-        marketId: this.hasAttribute('repair') ? undefined : (this.getAttribute('market-id') ?? undefined),
+        // Cart repair sends the Market too: an unsupported context is then known before anything opens (below).
+        marketId: this.getAttribute('market-id') ?? undefined,
       });
       const candidate = prepared ? await prepared.source : undefined;
       const source =
@@ -408,7 +409,8 @@ export class InsigniaBuyer extends HTMLElement {
       }
     } catch (error) {
       if (opening.signal.aborted || generation !== this.generation) return;
-      if ((error as { code?: unknown } | null)?.code === 'UNSUPPORTED_MARKET') {
+      const unsupported = (error as { code?: unknown } | null)?.code === 'UNSUPPORTED_MARKET';
+      if (unsupported && !this.hasAttribute('repair')) {
         pending.failed('unsupported-market');
         // Keep ownership with the element until the shopper closes the message.
         this.liveFrame = { open: pending.show, destroy: pending.destroy };
@@ -420,7 +422,10 @@ export class InsigniaBuyer extends HTMLElement {
         return;
       }
       const { mountUnavailableDesigner } = await import('./designer/unavailable');
+      // In cart repair an unsupported context still offers removal of the cart's customized lines. That path needs
+      // no configuration, session or signing: only the observed cart and an explicit, reviewed removal.
       const unavailable = await mountUnavailableDesigner({
+        unsupported,
         modal: pending,
         locale: this.getAttribute('language') || document.documentElement.lang || 'en',
         cartRoot,
@@ -642,6 +647,37 @@ export function markCustomizedLines(
   }
 }
 
+/**
+ * Whether the shop's Insignia serves a storefront context, per product, country and Market: `true` when the public
+ * config read answers UNSUPPORTED_MARKET, `false` when it answers. The context cannot change without a page load,
+ * so an answer holds for the page; a pending read is shared. A failed read (network, 429, timeout) is no answer: it
+ * is forgotten so a later refresh asks again, and the notice keeps the ordinary context wording meanwhile. The read
+ * mints no session.
+ */
+const contextAnswers = new Map<string, boolean | Promise<boolean | undefined>>();
+function contextSupport(input: {
+  proxyBase: string;
+  productId: string;
+  country: string;
+  marketId?: string;
+}): boolean | Promise<boolean | undefined> {
+  const key = JSON.stringify([input.proxyBase, input.productId, input.country, input.marketId ?? '']);
+  const known = contextAnswers.get(key);
+  if (known !== undefined) return known;
+  const asked = import('./buyer')
+    .then(({ createBuyerApi }) => createBuyerApi(input).config())
+    .then(
+      () => false,
+      (error: unknown) => ((error as { code?: unknown } | null)?.code === 'UNSUPPORTED_MARKET' ? true : undefined),
+    )
+    .then((answer) => {
+      if (answer === undefined) contextAnswers.delete(key);
+      else contextAnswers.set(key, answer);
+      return answer;
+    });
+  contextAnswers.set(key, asked);
+  return asked;
+}
 export class InsigniaCartRepair extends HTMLElement {
   private abort?: AbortController;
   private observer?: PerformanceObserver;
@@ -729,7 +765,25 @@ export class InsigniaCartRepair extends HTMLElement {
               .catch(() => false);
           if (controller.signal.aborted || this.abort !== controller) return;
           this.renewableNow = renewable;
-          this.render(String(line.product_id), reason);
+          const productId = String(line.product_id);
+          // A changed context the shop's Insignia does not serve (#609's UNSUPPORTED_MARKET) cannot be repaired by
+          // re-quoting: the notice says so and points to removal. The notice shows the context wording at once and
+          // swaps the text when the (page-lifetime, shared) support answer arrives.
+          const support =
+            reason === 'context'
+              ? contextSupport({
+                  proxyBase,
+                  productId,
+                  country: this.getAttribute('country') ?? '',
+                  marketId: this.getAttribute('market-id') ?? undefined,
+                })
+              : undefined;
+          this.render(productId, reason, support === true);
+          if (support instanceof Promise)
+            void support.then((unsupported) => {
+              if (unsupported && !controller.signal.aborted && this.abort === controller)
+                this.render(productId, reason, true);
+            });
           return;
         }
         this.clearNotice();
@@ -826,7 +880,7 @@ export class InsigniaCartRepair extends HTMLElement {
     this.notice?.querySelector<HTMLButtonElement>('insignia-buyer button[slot="trigger"]')?.focus();
     this.load();
   }
-  private render(productId: string, reason: CartReviewReason | undefined) {
+  private render(productId: string, reason: CartReviewReason | undefined, unsupported = false) {
     const needsReview = !!reason;
     const renewable = reason === 'expired' && !this.renewFailed && this.renewableNow;
     let notice = this.notice;
@@ -860,17 +914,20 @@ export class InsigniaCartRepair extends HTMLElement {
     if (text) {
       text.textContent = !needsReview
         ? ''
-        : reason === 'context'
-          ? (this.getAttribute('context-message') ??
-            'Prices changed because your country or currency changed. Review customized items to update them.')
-          : renewable
-            ? (this.getAttribute('expired-message') ??
-              'Your customization prices expired and are not applied. Renew them before checkout.')
-            : reason === 'expired' && this.renewFailed
-              ? (this.getAttribute('renew-failed-message') ??
-                'Prices could not be renewed. Review your customized items before checkout.')
-              : (this.getAttribute('review-message') ??
-                'Your customized items changed and are shown without customization prices. Review them before checkout.');
+        : reason === 'context' && unsupported
+          ? (this.getAttribute('unsupported-message') ??
+            "Customization isn't available for your country or currency. Review customized items to remove them before checkout.")
+          : reason === 'context'
+            ? (this.getAttribute('context-message') ??
+              'Prices changed because your country or currency changed. Review customized items to update them.')
+            : renewable
+              ? (this.getAttribute('expired-message') ??
+                'Your customization prices expired and are not applied. Renew them before checkout.')
+              : reason === 'expired' && this.renewFailed
+                ? (this.getAttribute('renew-failed-message') ??
+                  'Prices could not be renewed. Review your customized items before checkout.')
+                : (this.getAttribute('review-message') ??
+                  'Your customized items changed and are shown without customization prices. Review them before checkout.');
       text.hidden = !needsReview;
       text.style.margin = '0 0 0.75rem';
     }

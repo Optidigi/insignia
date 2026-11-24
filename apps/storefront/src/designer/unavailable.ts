@@ -3,8 +3,12 @@ import { cartJournal } from '../buyer.ts';
 import { createAjaxCartAdapter } from '../cart.ts';
 import { createDesignerFrame } from './frame-host.ts';
 import type { createDesignerModal } from './modal';
-/** Missing editable facts do not create a dummy catalogue or quote. Only observed cart removal is available. */
+/**
+ * Missing editable facts do not create a dummy catalogue or quote. Only observed cart removal is available.
+ * `unsupported`: the storefront context is one Insignia does not serve, which the view says at once.
+ */
 export async function mountUnavailableDesigner(input: {
+  unsupported?: boolean;
   modal?: ReturnType<typeof createDesignerModal>;
   title?: string;
   locale: string;
@@ -31,7 +35,7 @@ export async function mountUnavailableDesigner(input: {
     title: input.title,
     locale: input.locale,
     wording: input.wording,
-    repair: { cause: 'unavailable', canRemoveAll },
+    repair: { cause: input.unsupported ? 'unsupported-context' : 'unavailable', canRemoveAll },
     onClose: input.onClose,
     async onRepair(action) {
       if (action === 'retry') {

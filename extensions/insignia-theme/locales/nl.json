@@ -7,6 +7,7 @@
       "renew_label": "Prijzen vernieuwen",
       "expired_message": "Je personalisatieprijzen zijn verlopen en worden niet toegepast. Vernieuw ze voordat je afrekent.",
       "context_message": "De prijzen zijn gewijzigd omdat je land of valuta is gewijzigd. Controleer je gepersonaliseerde artikelen om ze bij te werken.",
+      "unsupported_message": "Personaliseren is niet beschikbaar voor je land of valuta. Controleer je gepersonaliseerde artikelen om ze te verwijderen voordat je afrekent.",
       "renew_failed_message": "De prijzen konden niet worden vernieuwd. Controleer je gepersonaliseerde artikelen voordat je afrekent.",
       "line_label": "Gepersonaliseerd",
       "line_review_label": "Gepersonaliseerd · controleren"

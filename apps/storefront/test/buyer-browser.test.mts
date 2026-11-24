@@ -2621,6 +2621,143 @@ test('unavailable-state removal succeeds in a tab whose earlier unknown write wa
   }
 });
 
+/**
+ * Cart repair for a line signed elsewhere (NL), opened in another storefront context. `unsupported`: the shop's
+ * Insignia cannot serve this country or Market (a Canada-like Market), so the config read answers 422.
+ */
+async function withContextRepair(
+  context: 'unsupported' | 'supported',
+  run: (input: {
+    page: Page;
+    ui: FrameLocator;
+    trigger: Locator;
+    items: () => AjaxItem[];
+    updates: () => number;
+    configReads: () => URLSearchParams[];
+    otherRequests: () => string[];
+  }) => Promise<void>,
+) {
+  const server = await createServer({
+    plugins: [selectedFrameAssets()],
+    server: { host: '127.0.0.1', port: 0, strictPort: true, watch: null },
+  });
+  let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
+  try {
+    await server.listen();
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage({ reducedMotion: 'reduce' });
+    const origin = `http://127.0.0.1:${serverPort(server.httpServer)}`;
+    await prepareSelectedPage(page, origin);
+    let items: AjaxItem[] = [
+      { key: 'custom', variant_id: 222, quantity: 1, properties: { _insignia_line_v3: v3Carrier('222') } },
+    ];
+    let updates = 0;
+    const configReads: URLSearchParams[] = [];
+    const otherRequests: string[] = [];
+    await page.route('**/cart.js', (route) => route.fulfill({ json: { items, attributes: {}, currency: 'EUR' } }));
+    await page.route('**/cart/update.js', (route) => {
+      updates++;
+      const body = ajaxBody(route.request().postDataJSON());
+      items = items.filter((item) => body.updates?.[item.key] !== 0);
+      return route.fulfill({ json: { items, attributes: {}, currency: 'EUR' } });
+    });
+    await page.route('**/apps/insignia/v1/**', (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname.endsWith('/config')) {
+        configReads.push(url.searchParams);
+        return context === 'unsupported'
+          ? route.fulfill({
+              status: 422,
+              json: { code: 'UNSUPPORTED_MARKET', message: 'Storefront Market is unavailable', requestId: 'r' },
+            })
+          : route.fulfill({ json: config });
+      }
+      // Sessions, owned cart state, proposals and acceptances: none may start in an unsupported context.
+      otherRequests.push(url.pathname);
+      return route.fulfill({ status: 409, json: { code: 'REVIEW_REQUIRED', details: { reason: 'NOT_OWNED' } } });
+    });
+    await page.goto(origin);
+    await page.evaluate(
+      ({ country, marketId }) => {
+        const buyer = document.createElement('insignia-buyer');
+        buyer.setAttribute('product-id', '111');
+        buyer.setAttribute('country', country);
+        buyer.setAttribute('market-id', marketId);
+        buyer.setAttribute('repair', '');
+        document.body.append(buyer);
+      },
+      context === 'unsupported' ? { country: 'CA', marketId: '77' } : { country: 'DE', marketId: '42' },
+    );
+    const trigger = page.locator('insignia-buyer').getByRole('button', { name: 'Review customized cart' });
+    await trigger.click();
+    await run({
+      page,
+      ui: page.frameLocator('iframe:not([hidden])'),
+      trigger,
+      items: () => items,
+      updates: () => updates,
+      configReads: () => configReads,
+      otherRequests: () => otherRequests,
+    });
+  } finally {
+    await browser?.close();
+    await server.close();
+  }
+}
+
+test('cart repair in an unsupported country or Market explains it at once and removes by keyboard without signing', async () => {
+  await withContextRepair('unsupported', async ({ page, ui, trigger, items, updates, configReads, otherRequests }) => {
+    await ui.getByRole('heading', { name: 'Unavailable', exact: true }).waitFor(firstLoad);
+    await ui
+      .getByText("Customization isn't available for your country or currency. Your cart is unchanged.", {
+        exact: true,
+      })
+      .waitFor();
+    // The repair read carries the storefront Market, so the server decides support before anything opens.
+    assert.equal(configReads()[0]?.get('country'), 'CA');
+    assert.equal(configReads()[0]?.get('marketId'), '77');
+    const remove = ui.getByRole('button', { name: 'Review removing all customized items', exact: true });
+    assert.equal(await remove.getAttribute('class'), 'primary-button', 'removal is the primary action');
+    assert.equal(await ui.getByRole('button', { name: 'Close', exact: true }).count(), 1);
+    assert.equal(await ui.getByRole('button', { name: 'Retry', exact: true }).count(), 0);
+    assert.equal(await ui.locator('input,select,textarea,.app').count(), 0, 'no editable Designer');
+
+    // Close, from the keyboard, leaves the cart untouched and returns focus to the cart entry.
+    await ui.getByRole('button', { name: 'Close', exact: true }).focus();
+    await page.keyboard.press('Enter');
+    await page.locator('dialog[open]').waitFor({ state: 'detached' });
+    assert.equal(await trigger.evaluate((element) => element === document.activeElement), true);
+    assert.equal(updates(), 0);
+
+    // Reopened from the keyboard, removal is reviewed and confirmed with Enter.
+    await page.keyboard.press('Enter');
+    await remove.waitFor();
+    await remove.focus();
+    await page.keyboard.press('Enter');
+    const confirm = ui.getByRole('button', { name: 'Confirm cart update', exact: true });
+    await confirm.waitFor();
+    await confirm.focus();
+    await page.keyboard.press('Enter');
+    await page.locator('dialog[open]').waitFor({ state: 'detached' });
+    assert.equal(updates(), 1);
+    assert.deepEqual(items(), []);
+    assert.deepEqual(otherRequests(), [], 'no session, cart-state, proposal or acceptance request');
+  });
+});
+
+test('cart repair in a supported country or Market keeps the owned-cart review and never shows the Market explanation', async () => {
+  await withContextRepair('supported', async ({ ui, updates, configReads, otherRequests }) => {
+    // Unchanged owned-cart repair: this tab's session does not own the NL-signed lines.
+    await ui.getByRole('heading', { name: 'Customized in an earlier session', exact: true }).waitFor(firstLoad);
+    assert.equal(configReads()[0]?.get('country'), 'DE');
+    assert.equal(configReads()[0]?.get('marketId'), '42');
+    assert.equal(await ui.getByText(/isn't available for your country or currency/).count(), 0);
+    // The owned-cart path runs as before; it never starts a proposal or acceptance.
+    assert.equal(otherRequests().filter((path) => /quote-proposals/.test(path)).length, 0);
+    assert.equal(updates(), 0);
+  });
+});
+
 test('lost optional captured product preview keeps valid production choices and explicit authoritative quote review available', async () => {
   const cfg = structuredClone(config);
   cfg.imageUrls = {};

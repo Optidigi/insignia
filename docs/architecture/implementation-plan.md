@@ -572,8 +572,14 @@ The storefront sends every retained cart group with the edited one, so it checks
 
 New Designer openings send the storefront country and Market ID with the config read. The server checks
 Shopify's primary Market, the published currency and contextual price currency before opening the Designer. An unsupported context
-shows a localized explanation with a close control before any buyer session is created. Configuration
-reads from older storefront assets and cart repair may omit the Market ID. Proposal, acceptance and renewal
+shows a localized explanation with a close control before any buyer session is created. Cart repair sends the
+Market ID as well (owner decision, 24 November 2026). In an unsupported context it opens straight to the same explanation, with the
+reviewed removal of all customized lines as its primary action and Close. That view needs no configuration, buyer session or
+signing: it reads the cart and removes only after the buyer confirms. A supported context repairs as before. When the cart's
+signed context differs from the storefront's, the app embed's cart notice makes the same public config read. If that read
+answers `UNSUPPORTED_MARKET`, the notice says that customization isn't available for the buyer's country or currency and asks
+them to review the customized items to remove them before checkout. Any other answer keeps the ordinary context wording.
+Configuration reads from older storefront assets may omit the Market ID. Proposal, acceptance and renewal
 still independently verify the context before signing.
 
 In the cart repair view a failed removal uses the same copy for `CAPACITY_EXCEEDED` and for a held cart lock (`CART_BUSY`, when confirming); anything else is the generic cart failure. Only a held lock offers Retry, in the confirmation's place: the reviewed removal and its accepted set are kept, so Retry applies the same set (#371). Close uses the Designer's usual close flow, which keeps the design. A failed draft save (`PUT /v1/designs/:id`) no longer fails the review: the proposal never reads the draft, which only lets the buyer reopen the design later. A failed save leaves the reopen pointer as it was: nothing to reopen when no earlier save in this visit succeeded, otherwise that earlier saved version (which the resume offer then shows). The storefront has no logging channel, so the failure is not recorded.

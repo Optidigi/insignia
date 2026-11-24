@@ -42,6 +42,7 @@ async function renderTheme(t: TestContext, mode: 'required' | 'optional' | null,
     'insignia.cart_review.renew_label': 'Renew prices',
     'insignia.cart_review.expired_message': 'Customization prices expired.',
     'insignia.cart_review.context_message': 'Country or currency changed.',
+    'insignia.cart_review.unsupported_message': 'Not available for this country & currency; remove them.',
     'insignia.cart_review.renew_failed_message': 'Prices could not be renewed.',
     'insignia.cart_review.line_label': 'Customized',
     'insignia.cart_review.line_review_label': 'Customized · needs review',
@@ -407,6 +408,154 @@ test('cart repair names a currency or Market change and repairs in the current s
   await page.evaluate(() => window.dispatchEvent(new Event('insignia-cart-updated')));
   await page.waitForResponse((response) => response.url().endsWith('/cart.js'));
   await repair.getByText('Country or currency changed.').waitFor();
+});
+
+test('cart repair says plainly when the current country or Market is not supported and offers removal', async (t) => {
+  const html = await renderTheme(t, null);
+  const page = await browserFixture(t);
+  // An NL-signed line, viewed in a storefront Market the shop's Insignia does not serve (Canada-like).
+  const cart = {
+    currency: 'EUR',
+    items: [
+      {
+        product_id: 111,
+        quantity: 1,
+        original_price: 920,
+        properties: {
+          _insignia_line_v3: v3Line({ currency: 'EUR', country: 'NL', marketId: '7', validThroughDay: utcDay() + 2 }),
+        },
+      },
+    ],
+  };
+  const configReads: URLSearchParams[] = [];
+  const other: string[] = [];
+  await page.route('**/cart.js', (route) => route.fulfill({ json: cart }));
+  await page.route('**/apps/insignia/v1/**', (route) => {
+    const url = new URL(route.request().url());
+    if (!url.pathname.endsWith('/config')) {
+      other.push(url.pathname);
+      return route.fulfill({ status: 500, json: {} });
+    }
+    configReads.push(url.searchParams);
+    return route.fulfill({ status: 422, json: { code: 'UNSUPPORTED_MARKET', message: 'Unsupported', requestId: 'r' } });
+  });
+  await page.evaluate((markup) => document.body.insertAdjacentHTML('beforeend', markup), html);
+  const repair = page.locator('insignia-cart-repair');
+  await repair.getByText('Not available for this country & currency; remove them.').waitFor();
+  assert.equal(await repair.getByText('Country or currency changed.').count(), 0);
+  assert.equal(await repair.getByRole('button', { name: 'Review customized items', exact: true }).count(), 1);
+  // The storefront's own country and Market decide support; nothing private is read or started.
+  assert.equal(configReads[0]?.get('productId'), '111');
+  assert.equal(configReads[0]?.get('country'), 'US');
+  assert.equal(configReads[0]?.get('marketId'), '42');
+  assert.deepEqual(other, []);
+});
+
+test('cart repair shows the context wording at once, asks support once per context and retries a failed read', async (t) => {
+  const html = await renderTheme(t, null);
+  const page = await browserFixture(t);
+  const cart = {
+    currency: 'EUR',
+    items: [
+      {
+        product_id: 111,
+        quantity: 1,
+        original_price: 920,
+        properties: {
+          _insignia_line_v3: v3Line({ currency: 'EUR', country: 'NL', marketId: '7', validThroughDay: utcDay() + 2 }),
+        },
+      },
+    ],
+  };
+  let cartReads = 0;
+  let configReads = 0;
+  let release: (() => void) | undefined;
+  await page.route('**/cart.js', (route) => {
+    cartReads++;
+    return route.fulfill({ json: cart });
+  });
+  await page.route('**/apps/insignia/v1/config?*', async (route) => {
+    configReads++;
+    // The first read is rate limited: not an answer, so it must not stick.
+    if (configReads === 1)
+      return route.fulfill({ status: 429, headers: { 'Retry-After': '60' }, json: { code: 'RATE_LIMITED' } });
+    // The second answers late: the notice must not wait for it.
+    await new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    return route.fulfill({ status: 422, json: { code: 'UNSUPPORTED_MARKET', message: 'Unsupported', requestId: 'r' } });
+  });
+  await page.evaluate((markup) => document.body.insertAdjacentHTML('beforeend', markup), html);
+  const repair = page.locator('insignia-cart-repair');
+  await repair.getByText('Country or currency changed.').waitFor();
+  // The wording does not wait for the support read, which follows.
+  while (configReads < 1) await page.waitForTimeout(10);
+  assert.equal(configReads, 1);
+  // Each refresh is awaited before the next, so no load is aborted before its own support check.
+  async function refresh() {
+    const before = cartReads;
+    await page.evaluate(() => window.dispatchEvent(new Event('insignia-cart-updated')));
+    while (cartReads === before) await page.waitForTimeout(10);
+    // Settle: any support read this load starts reaches the route well within this.
+    await page.waitForTimeout(150);
+  }
+  await refresh();
+  // The read is pending; the notice already shows the context wording and keeps its trigger.
+  assert.equal(configReads, 2, 'a failed read is asked again');
+  assert.equal(await repair.getByText('Country or currency changed.').count(), 1);
+  assert.equal(await repair.getByRole('button', { name: 'Review customized items', exact: true }).count(), 1);
+  // A refresh while the answer is pending shares it.
+  await refresh();
+  assert.equal(configReads, 2, 'a pending read is shared');
+  release?.();
+  await repair.getByText('Not available for this country & currency; remove them.').waitFor();
+  assert.equal(await repair.getByText('Country or currency changed.').count(), 0);
+  for (let index = 0; index < 3; index++) {
+    await refresh();
+    assert.equal(await repair.getByText('Not available for this country & currency; remove them.').count(), 1);
+  }
+  assert.equal(configReads, 2, 'the answer holds for the page lifetime');
+});
+
+test('cart repair keeps the context wording when the new country or Market is supported, and asks nothing otherwise', async (t) => {
+  const html = await renderTheme(t, null);
+  const page = await browserFixture(t);
+  let cart = {
+    currency: 'USD',
+    items: [
+      {
+        product_id: 111,
+        quantity: 1,
+        original_price: 995,
+        properties: { _insignia_line_v3: v3Line({ marketId: '7', validThroughDay: utcDay() + 2 }) },
+      },
+    ],
+  };
+  let configReads = 0;
+  await page.route('**/cart.js', (route) => route.fulfill({ json: cart }));
+  await page.route('**/apps/insignia/v1/config?*', (route) => {
+    configReads++;
+    return route.fulfill({ json: {} });
+  });
+  await page.evaluate((markup) => document.body.insertAdjacentHTML('beforeend', markup), html);
+  const repair = page.locator('insignia-cart-repair');
+  await repair.getByText('Country or currency changed.').waitFor();
+  // The wording does not wait for the support read, which follows.
+  while (configReads < 1) await page.waitForTimeout(10);
+  assert.equal(configReads, 1);
+  assert.equal(await repair.getByText(/Not available for this country/).count(), 0);
+  // A line still valid in this context needs no notice and no context check.
+  cart = {
+    ...cart,
+    items: cart.items.map((item) => ({
+      ...item,
+      original_price: 1745,
+      properties: { _insignia_line_v3: v3Line({ validThroughDay: utcDay() + 2 }) },
+    })),
+  };
+  await page.evaluate(() => window.dispatchEvent(new Event('insignia-cart-updated')));
+  await repair.getByText('Country or currency changed.').waitFor({ state: 'hidden' });
+  assert.equal(configReads, 1);
 });
 
 test('an expired offer renews in one click at the edited cart quantity and otherwise falls back to Designer repair', async (t) => {
