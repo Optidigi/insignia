@@ -647,6 +647,37 @@ export function markCustomizedLines(
   }
 }
 
+/**
+ * Whether the shop's Insignia serves a storefront context, per product, country and Market: `true` when the public
+ * config read answers UNSUPPORTED_MARKET, `false` when it answers. The context cannot change without a page load,
+ * so an answer holds for the page; a pending read is shared. A failed read (network, 429, timeout) is no answer: it
+ * is forgotten so a later refresh asks again, and the notice keeps the ordinary context wording meanwhile. The read
+ * mints no session.
+ */
+const contextAnswers = new Map<string, boolean | Promise<boolean | undefined>>();
+function contextSupport(input: {
+  proxyBase: string;
+  productId: string;
+  country: string;
+  marketId?: string;
+}): boolean | Promise<boolean | undefined> {
+  const key = JSON.stringify([input.proxyBase, input.productId, input.country, input.marketId ?? '']);
+  const known = contextAnswers.get(key);
+  if (known !== undefined) return known;
+  const asked = import('./buyer')
+    .then(({ createBuyerApi }) => createBuyerApi(input).config())
+    .then(
+      () => false,
+      (error: unknown) => ((error as { code?: unknown } | null)?.code === 'UNSUPPORTED_MARKET' ? true : undefined),
+    )
+    .then((answer) => {
+      if (answer === undefined) contextAnswers.delete(key);
+      else contextAnswers.set(key, answer);
+      return answer;
+    });
+  contextAnswers.set(key, asked);
+  return asked;
+}
 export class InsigniaCartRepair extends HTMLElement {
   private abort?: AbortController;
   private observer?: PerformanceObserver;
@@ -732,27 +763,27 @@ export class InsigniaCartRepair extends HTMLElement {
                 }),
               )
               .catch(() => false);
-          // A changed context the shop's Insignia does not serve (#609's UNSUPPORTED_MARKET) cannot be repaired by
-          // re-quoting: the notice says so and points to removal. The public config read decides it; it mints no
-          // session. Any other answer keeps the ordinary context wording.
-          const unsupported =
-            reason === 'context' &&
-            (await import('./buyer')
-              .then(({ createBuyerApi }) =>
-                createBuyerApi({
-                  proxyBase,
-                  productId: String(line.product_id),
-                  country: this.getAttribute('country') ?? '',
-                  marketId: this.getAttribute('market-id') ?? undefined,
-                }).config(controller.signal),
-              )
-              .then(
-                () => false,
-                (error: unknown) => (error as { code?: unknown } | null)?.code === 'UNSUPPORTED_MARKET',
-              ));
           if (controller.signal.aborted || this.abort !== controller) return;
           this.renewableNow = renewable;
-          this.render(String(line.product_id), reason, unsupported);
+          const productId = String(line.product_id);
+          // A changed context the shop's Insignia does not serve (#609's UNSUPPORTED_MARKET) cannot be repaired by
+          // re-quoting: the notice says so and points to removal. The notice shows the context wording at once and
+          // swaps the text when the (page-lifetime, shared) support answer arrives.
+          const support =
+            reason === 'context'
+              ? contextSupport({
+                  proxyBase,
+                  productId,
+                  country: this.getAttribute('country') ?? '',
+                  marketId: this.getAttribute('market-id') ?? undefined,
+                })
+              : undefined;
+          this.render(productId, reason, support === true);
+          if (support instanceof Promise)
+            void support.then((unsupported) => {
+              if (unsupported && !controller.signal.aborted && this.abort === controller)
+                this.render(productId, reason, true);
+            });
           return;
         }
         this.clearNotice();
