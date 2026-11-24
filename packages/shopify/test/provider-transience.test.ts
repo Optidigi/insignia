@@ -136,12 +136,24 @@ describe('Partner subscription read', () => {
   it.each(Object.entries(transient))('%s is transient', async (_case, fetchImpl) => {
     expect((await read(fetchImpl)).transient).toBe(true);
   });
-  it('a 429 GraphQL error is transient', async () => {
-    expect((await read(graphqlError('429'))).transient).toBe(true);
+  it.each([
+    ['GraphQL 429', graphqlError('429')],
+    ['THROTTLED', graphqlError('THROTTLED')],
+  ] as const)('a %s error is transient', async (_case, fetchImpl) => {
+    expect((await read(fetchImpl)).transient).toBe(true);
   });
+  // Spec §8.3: a retired API version, a changed schema or another 4xx fails the same way on every retry (503).
   it.each([
     ['401', status(401)],
     ['403', status(403)],
+    ['400', status(400)],
+    ['404', status(404)],
+    [
+      'retired schema field',
+      async () =>
+        Response.json({ errors: [{ message: "Field 'activeSubscription' doesn't exist on type 'QueryRoot'" }] }),
+    ],
+    ['unrecognised GraphQL error', graphqlError('INTERNAL_SERVER_ERROR')],
     ['GraphQL 403', graphqlError('403')],
     [
       'app not public',

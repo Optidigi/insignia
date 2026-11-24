@@ -656,7 +656,7 @@ test('an unavailable, rate-limited or timed-out signer is 503 UNAVAILABLE with i
 // Spec §8.3: Shopify 429, 5xx, network failure or timeout are transient. Config, proposal, acceptance
 // and renewal all read the Partner subscription (entitlement), so it answers like the Admin reads.
 test('a throttled, failing or unreachable Partner subscription read is 409 BUSY like other Shopify reads', async () => {
-  for (const kind of ['rate_limited', 'provider_error', 'network_or_timeout'] as const)
+  for (const kind of ['rate_limited', 'provider_unavailable', 'network_or_timeout'] as const)
     assert.deepEqual(
       await failure(new PartnerSubscriptionError(kind)),
       {
@@ -668,8 +668,10 @@ test('a throttled, failing or unreachable Partner subscription read is 409 BUSY 
       },
       kind,
     );
-  // Credentials, a non-public app, a missing shop or a changed response shape fail the same way on every retry.
+  // Credentials, a non-public app, a missing shop, another 4xx, a retired API version or a changed
+  // response shape fail the same way on every retry.
   for (const kind of [
+    'provider_error',
     'auth_or_permission',
     'app_not_public',
     'shop_not_found',
