@@ -42,6 +42,26 @@ whether a signed line can survive a switch between Markets that both stock it. A
 authorization, transform and validation tests passed, including checkout rejection for the
 wrong country or Market.
 
+### Native QA wave on 24 November
+
+The exact review fixture completed a second authorized test-gateway order on active release
+`1263405170689`. Designer, cart and checkout agreed on $30.00 for two units. Shopify confirmed
+$38.00 with shipping and Insignia recorded #1012, paid, with one binding, quantity 2,
+$15.00 per unit and retained design. Double-clicking **Add to cart** produced one signed line.
+The narrow browser restored the artwork and quantities after reload. All 15 storefront CDN
+assets matched the qualified build.
+
+The independent Canada run returned 422 with the correct explanation in the DOM. A theme rule
+that hides empty elements hid the shadow-DOM wrapper, including the explanation and Close button.
+The regression applies that rule in a browser and requires the visible message and functional
+Close button. The active Shopify theme still needs the fix released and this flow repeated.
+All five snowboard variants were unavailable in Canada, so the same-stock check remains open.
+
+The independent reviewer pass reached $30.00 in Designer Review. Shopify's connection verification
+screen blocked Admin before sign-in. The merchant walkthrough needs an explicit Admin entry point
+and a native rerun. Local billing QA also reproduced loss of **Manage plan in Shopify** while the
+subscription read returns 503. The action returned after a successful retry.
+
 ## Other review items
 
 | Requirement | Verified and remaining evidence |

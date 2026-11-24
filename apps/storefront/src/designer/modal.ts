@@ -32,6 +32,8 @@ export function createDesignerModal(input: {
   dialog.style.cssText =
     'position:fixed;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;border:0;padding:0;background:Canvas;color:CanvasText;overflow:hidden;';
   const loading = document.createElement('div');
+  // Theme rules can hide this empty light-DOM element despite its shadow content.
+  loading.style.display = 'block';
   loading.dataset.theme = resolveThemePreference(
     readThemePreference(),
     window.matchMedia('(prefers-color-scheme: dark)').matches,
