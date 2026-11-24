@@ -27,13 +27,28 @@ verify the matching order in Insignia. Repeat opening the Designer in an unsuppo
 verify it explains the restriction before collecting artwork. Check that changing Market with an
 existing customized cart cannot bypass validation.
 
+### Native country switch on 24 November
+
+On active Shopify release `1263405170689`, the disposable `insignia-network-qa` store started in
+the Netherlands (EUR). The Complete Snowboard, Ice variant `54050604384592`, reached the Shopify
+cart at €699.95 with one signed customization line. Shopify's localization form changed the
+same session to Canada while keeping EUR. Shopify emptied the cart. The Designer config returned
+422 and showed the country-or-currency explanation before collecting artwork. Returning to the
+Netherlands left the cart empty. The disposable theme's Insignia embed was restored to its
+original disabled state.
+
+Shopify offered no stock for this variant in Canada. The native result therefore leaves open
+whether a signed line can survive a switch between Markets that both stock it. All 66 local
+authorization, transform and validation tests passed, including checkout rejection for the
+wrong country or Market.
+
 ## Other review items
 
-| Requirement | What to verify before resubmission |
+| Requirement | Verified and remaining evidence |
 | --- | --- |
-| 1.2.3 Plan changes | **Settings → Billing → Manage plan** opens the Shopify plan selector. On 23 November rewrite-dev showed only Insignia Standard, with development terms at $0. Owner decision on 23 November: Standard at $49.99 every 30 days or $449.99 annually, with identical features. Qualify both choices through Shopify approval, return to the app, effective access and Shopify charge history. Enable annual pricing after the app recognizes the annual subscription. |
-| 3.2.1 Older order scope | Verify the active release and a fresh installation request only the required scopes. Demonstrate recent orders with `read_orders`. The released scope baseline excludes `read_all_orders`. The old EUR review installation may still show a historical grant. |
-| 4.5.4 and 4.5.5 Access | Start from a signed-out browser with third-party storage blocked. Follow the submission instructions with the dedicated reviewer account, login details and any storefront password supplied in Shopify’s private submission fields. Walk every step with that access, including billing and checkout. Confirm there is no live verification challenge. Keep the access valid after publication. |
+| 1.2.3 Plan changes | **Settings → Billing → Manage plan** opens Shopify's selector for Standard at $49.99 every 30 days or $449.99 per year with identical features. Both no-charge switches passed on 23 November. On 24 November, Shopify admin **Settings → Apps → Insignia** showed **Insignia Standard · $0/month** on rewrite-dev. The owner confirmed there is no eligible billed installation for paid invoice evidence. Shopify's acceptance of switching billing periods under this requirement is open. |
+| 3.2.1 Older order scope | The active scope baseline excludes `read_all_orders`. The 19 November fresh installation verified the required grant and recent orders. The old EUR review installation may still show a historical grant. |
+| 4.5.4 and 4.5.5 Access | On 24 November the listing form showed the app-account exemption selected. The saved private instructions direct reviewers through Shopify admin and give the test storefront, access instructions, expected cart total and both prices. The storefront path passed earlier in a signed-out session. Access to the merchant admin using the reviewer's own Shopify account remains unverified. |
 
 ## Release record
 
