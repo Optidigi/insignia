@@ -72,8 +72,22 @@ needs independent merchant-admin proof.
 
 The live retest also found that Tab focused the sticky **Customise** button below the viewport.
 The storefront regression verifies that Tab skips it off screen and reaches it when visible.
-Shopify activated the fix in version `1264667197441` on 24 November. Live keyboard and buyer
-retests on that version are in progress.
+Shopify activated the fix in version `1264667197441` on 24 November. On the exact reviewer
+fixture, Tab skipped the off-screen button and reached it after scrolling it into view. Enter
+opened the Designer and closing restored focus. Two items at $15.00 each produced one signed
+line and a $30.00 checkout subtotal. The tester stopped before payment and emptied the test cart.
+An independent pass reached the same $30.00 in Designer Review and verified merchant navigation,
+order #1012 and both plan choices in the authenticated owner session. The clean buyer path passed.
+Independent access to Shopify Admin remains unverified. The last full paid test order and the
+Canada dialog retest are recorded above against their respective earlier releases.
+
+### Remaining hardening
+
+Keep the USD and qualified EUR primary-Market scope in the [pricing specification](../architecture/implementation-plan.md#4-pricing-engine).
+Refresh performance measurements on the deployed release. Run fresh merchant setup through publish,
+artwork, test checkout and order readback on USD and EUR fixtures. Repeat no-charge billing switches
+and test the same stocked variant across two Markets. See the [delivery state](state.md#active-assignment)
+for the next planning pass.
 
 ## Other review items
 
@@ -93,6 +107,7 @@ retests on that version are in progress.
    Record the exact released versions and fixture used in delivery state. Use the Partner Dashboard
    to resubmit after the pause ends and the evidence is complete.
 
-Shop erasure remains a release gate. The [retention decision](shopify-erasure-retention.md) defines
-what may remain. Qualify the genuine callback, database and object erasure, and isolated backup
-restore before recording completion.
+Automatic shop erasure is live. The [delivery state](state.md#deployed-identities) records live
+completion and isolated restore evidence. Three historical drafts remain on hold because later
+installations share those rows. The [retention decision](shopify-erasure-retention.md) defines
+what may remain.
