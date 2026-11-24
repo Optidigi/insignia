@@ -88,6 +88,26 @@ const cases: { state: RepairState; view: ReturnType<typeof summary> }[] = [
       actions: ['start*:customer:recovery.startNew', retry],
     },
   },
+  {
+    // The storefront's country or Market is not supported: say so at once and lead with removal. Retry and Start
+    // cannot change the context, so neither is offered.
+    state: { cause: 'unsupported-context', canRemoveAll: true },
+    view: {
+      heading: 'customer:chrome.unavailable',
+      label: 'customer:chrome.unavailable',
+      help: 'customer:recovery.unsupportedMarket',
+      actions: ['remove-all*:customer:recovery.removeAll'],
+    },
+  },
+  {
+    state: { cause: 'unsupported-context', canRemoveAll: false },
+    view: {
+      heading: 'customer:chrome.unavailable',
+      label: 'customer:chrome.unavailable',
+      help: 'customer:recovery.unsupportedMarket',
+      actions: [],
+    },
+  },
 ];
 
 test('every repair cause derives its copy and actions in one place', () => {
@@ -98,6 +118,7 @@ test('every repair cause derives its copy and actions in one place', () => {
     'review-required',
     'unavailable',
     'unresolved-write',
+    'unsupported-context',
   ]);
   for (const { state, view } of cases) assert.deepEqual(summary(state), view, state.cause);
 });
@@ -108,6 +129,9 @@ test('only an offered action is reported as offered', () => {
   assert.equal(repairOffers({ cause: 'earlier-session', lines: 'valid', canRemoveAll: true }, 'retry'), false);
   assert.equal(repairOffers({ cause: 'unresolved-write' }, 'remove-all'), true);
   assert.equal(repairOffers(undefined, 'start'), false);
+  assert.equal(repairOffers({ cause: 'unsupported-context', canRemoveAll: true }, 'remove-all'), true);
+  assert.equal(repairOffers({ cause: 'unsupported-context', canRemoveAll: true }, 'start'), false);
+  assert.equal(repairOffers({ cause: 'unsupported-context', canRemoveAll: true }, 'retry'), false);
 });
 
 test('a repair state crossing the frame is rebuilt from its own fields only', () => {
@@ -131,6 +155,7 @@ test('a repair state crossing the frame is rebuilt from its own fields only', ()
     { canStart: true, canRemoveGroup: false },
     { cause: 'unknown' },
     { cause: 'unavailable' },
+    { cause: 'unsupported-context' },
     { cause: 'earlier-session', lines: 'other', canRemoveAll: true },
     { cause: 'earlier-session', lines: 'valid' },
     { cause: 'review-required', canStart: true, canRemoveGroup: 'yes', canRemoveAll: true },

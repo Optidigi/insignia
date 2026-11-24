@@ -7,6 +7,7 @@
       "renew_label": "Renouveler les prix",
       "expired_message": "Vos prix de personnalisation ont expiré et ne sont pas appliqués. Renouvelez-les avant de passer commande.",
       "context_message": "Les prix ont changé, car votre pays ou votre devise a changé. Vérifiez vos articles personnalisés pour les mettre à jour.",
+      "unsupported_message": "La personnalisation n’est pas disponible pour votre pays ou votre devise. Vérifiez vos articles personnalisés pour les retirer avant de passer commande.",
       "renew_failed_message": "Les prix n’ont pas pu être renouvelés. Vérifiez vos articles personnalisés avant de passer commande.",
       "line_label": "Personnalisé",
       "line_review_label": "Personnalisé · à vérifier"

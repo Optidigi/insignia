@@ -19,6 +19,11 @@ export type RepairState =
   /** The customization cannot be shown (unreadable, incompatible or unowned): only observed removal is offered. */
   | { cause: 'unavailable'; canRemoveAll: boolean }
   /**
+   * The storefront's current country, Market or currency is one Insignia does not serve (`UNSUPPORTED_MARKET`), so
+   * the cart's customized lines cannot be re-signed here: only observed removal is offered, as the primary action.
+   */
+  | { cause: 'unsupported-context'; canRemoveAll: boolean }
+  /**
    * The publication or this design's cart line changed, or Shopify declined the acceptance: the buyer chooses.
    * `canRemoveGroup`: this design's own cart line is still there.
    */
@@ -33,6 +38,7 @@ type RepairCopy =
   | 'customer:recovery.earlierSessionHelp'
   | 'customer:recovery.earlierSessionExpiredHelp'
   | 'customer:recovery.unavailableHelp'
+  | 'customer:recovery.unsupportedMarket'
   | 'customer:recovery.startNew'
   | 'customer:recovery.reopenFromCart'
   | 'customer:recovery.removeGroup'
@@ -88,6 +94,14 @@ export function repairView(state: RepairState): RepairView {
       return review(undefined, false, state.canRemoveAll);
     case 'unresolved-write':
       return review(undefined, false, true);
+    // Another try or a new design cannot change the storefront context, so neither is offered.
+    case 'unsupported-context':
+      return {
+        heading: 'customer:chrome.unavailable',
+        label: 'customer:chrome.unavailable',
+        help: 'customer:recovery.unsupportedMarket',
+        actions: state.canRemoveAll ? [{ ...removeAll, primary: true }] : [],
+      };
     case 'cart-changed':
       return review('customer:recovery.reopenFromCart', false, true);
     // Another try cannot change which session owns the cart's lines, and this one can neither reopen nor replace them.
@@ -127,6 +141,7 @@ export function parseRepairState(value: unknown): RepairState | undefined {
     case 'unresolved-write':
       return { cause: value.cause };
     case 'unavailable':
+    case 'unsupported-context':
       return canRemoveAll === undefined ? undefined : { cause: value.cause, canRemoveAll };
     case 'earlier-session': {
       const lines = 'lines' in value ? value.lines : undefined;
