@@ -41,7 +41,8 @@ export async function fixture(
   const isolated = options.isolated ? await isolatedDatabase('buyer_cleanup') : undefined;
   const target = isolated?.connectionString ?? connectionString;
   const pool = new Pool({ connectionString: target, max: 4 });
-  const core = createDurableCore(new Pool({ connectionString: target, max: 8 }));
+  // `let`: restart() replaces the core, Artwork authority and services as a new web process would.
+  let core = createDurableCore(new Pool({ connectionString: target, max: 8 }));
   const db = createDatabase(new Pool({ connectionString: target, max: 4 }));
   t.after(async () => {
     await core.close();
@@ -158,16 +159,20 @@ export async function fixture(
   let now = options.clock ? options.clock() : new Date('2026-10-12T12:00:00Z'),
     amount = options.representativePricing ? '20.00' : '10.00',
     signings = 0,
+    signAttempts = 0,
+    signerFault: Error | null = null,
     catalogUnavailable = false,
     available: boolean | ((phase?: 'final') => boolean | Promise<boolean>) = true,
     qualified = true;
-  const guest = createArtworkGuestAuthority({
-    core,
-    secret: 'synthetic-m7-http-private-capability',
-    clock: () => +now,
-    sessionDurationMs: 7 * 86400000,
-    verifyProxy: async (url) => (url.searchParams.get('shop') === shopDomain ? { shop: shopDomain } : null),
-  });
+  const createGuest = () =>
+    createArtworkGuestAuthority({
+      core,
+      secret: 'synthetic-m7-http-private-capability',
+      clock: () => +now,
+      sessionDurationMs: 7 * 86400000,
+      verifyProxy: async (url) => (url.searchParams.get('shop') === shopDomain ? { shop: shopDomain } : null),
+    });
+  let guest = createGuest();
   function ports(scope: ArtworkScope): QuoteAuthorityPorts {
     const value = createQuoteAuthorityPorts({
       core,
@@ -191,6 +196,8 @@ export async function fixture(
         keyId: 7,
         signer: {
           async signWholeQuote(input) {
+            signAttempts++;
+            if (signerFault) throw signerFault;
             signings++;
             return {
               keyId: 7,
@@ -255,38 +262,40 @@ export async function fixture(
       artwork: createArtworkUsabilityPort(core.artwork, () => now, scope),
     };
   }
-  const services = createBuyerServices({
-    core,
-    guest,
-    ports,
-    releaseRefresh: options.releaseRefresh,
-    clock: () => now,
-    availability: options.narrowAvailability
-      ? async (_scope, productId, selectedIds, phase) => options.narrowAvailability!(productId, selectedIds, phase)
-      : undefined,
-    catalog: async (_scope, _productId, phase) => ({
-      variants: [
-        {
-          id: '222',
-          label: 'Blue M',
-          available: typeof available === 'function' ? await available(phase) : available,
-          ...(options.selectedBrowser
-            ? {
-                selectedOptions: [
-                  { name: 'Color', value: 'Blue' },
-                  { name: 'Size', value: 'M' },
-                ],
-                baseUnitMinor: amount.replace('.', ''),
-              }
-            : {}),
-        },
-      ],
-      ...(options.selectedBrowser ? { title: 'Synthetic retained shirt', currency: 'EUR' } : {}),
-      imageUrls: Object.fromEntries(
-        options.selectedBrowser ? [['photo', 'https://synthetic.invalid/product.png']] : [],
-      ),
-    }),
-  });
+  const createServices = () =>
+    createBuyerServices({
+      core,
+      guest,
+      ports,
+      releaseRefresh: options.releaseRefresh,
+      clock: () => now,
+      availability: options.narrowAvailability
+        ? async (_scope, productId, selectedIds, phase) => options.narrowAvailability!(productId, selectedIds, phase)
+        : undefined,
+      catalog: async (_scope, _productId, phase) => ({
+        variants: [
+          {
+            id: '222',
+            label: 'Blue M',
+            available: typeof available === 'function' ? await available(phase) : available,
+            ...(options.selectedBrowser
+              ? {
+                  selectedOptions: [
+                    { name: 'Color', value: 'Blue' },
+                    { name: 'Size', value: 'M' },
+                  ],
+                  baseUnitMinor: amount.replace('.', ''),
+                }
+              : {}),
+          },
+        ],
+        ...(options.selectedBrowser ? { title: 'Synthetic retained shirt', currency: 'EUR' } : {}),
+        imageUrls: Object.fromEntries(
+          options.selectedBrowser ? [['photo', 'https://synthetic.invalid/product.png']] : [],
+        ),
+      }),
+    });
+  let services = createServices();
   async function http(route: string, body: unknown, method = 'POST') {
     return handleBuyerRequest(
       new Request(`https://app.test/apps/insignia/v1/${route}?shop=${shopDomain}&productId=${productId}`, {
@@ -379,14 +388,20 @@ export async function fixture(
     capability: session.capability,
   };
   return {
-    core,
+    get core() {
+      return core;
+    },
     pool,
     db,
     repo,
     configId,
-    guest,
+    get guest() {
+      return guest;
+    },
     scope: { ...scope, ownerHash: scope.ownerHash },
-    services,
+    get services() {
+      return services;
+    },
     http,
     body,
     group,
@@ -411,6 +426,20 @@ export async function fixture(
       qualified = value;
     },
     signings: () => signings,
+    /** Signer calls, including refused ones; `signings` counts only signatures issued. */
+    signAttempts: () => signAttempts,
+    /** While set, the signer refuses every request with this error (unavailable, timed out). */
+    signerFault: (error: Error | null) => {
+      signerFault = error;
+    },
+    /** A new web process: fresh core, pool and in-memory caches over the same database. */
+    restart: async () => {
+      const previous = core;
+      core = createDurableCore(new Pool({ connectionString: target, max: 8 }));
+      guest = createGuest();
+      services = createServices();
+      await previous.close();
+    },
     now: () => now,
     authorizationScope: identity,
   };
