@@ -653,29 +653,41 @@ test('an unavailable, rate-limited or timed-out signer is 503 UNAVAILABLE with i
     );
 });
 
-// Spec §8.3 lists Shopify 429, 5xx, THROTTLED, network failure or timeout as transient 409 BUSY. The
-// Partner subscription read (config, proposal, acceptance and renewal all read it) types no
-// transience, so a throttled or unreachable Partner API is a 503 UnexpectedFailure: the app proxy turns
-// it into a bare 500 and the acceptance gets no automatic retry. Reported, not changed here: the fix
-// changes buyer-visible status codes.
-test('a throttled, failing or unreachable Partner subscription read is 409 BUSY like other Shopify reads', {
-  todo: 'PartnerSubscriptionError declares no transience; spec §8.3 expects BUSY',
-}, async () => {
-  for (const kind of ['rate_limited', 'provider_error', 'network_or_timeout'] as const) {
-    const result = await failure(new PartnerSubscriptionError(kind));
+// Spec §8.3: Shopify 429, 5xx, network failure or timeout are transient. Config, proposal, acceptance
+// and renewal all read the Partner subscription (entitlement), so it answers like the Admin reads.
+test('a throttled, failing or unreachable Partner subscription read is 409 BUSY like other Shopify reads', async () => {
+  for (const kind of ['rate_limited', 'provider_error', 'network_or_timeout'] as const)
     assert.deepEqual(
-      { status: result.status, code: result.code, retryable: result.retryable, logged: result.logged },
+      await failure(new PartnerSubscriptionError(kind)),
       {
         status: 409,
         code: 'BUSY',
         retryable: true,
+        retryAfter: '2',
         logged: [{ errorClass: 'ProviderReadUnavailable', level: 'warn' }],
       },
       kind,
     );
-  }
-  for (const kind of ['auth_or_permission', 'malformed_response'] as const)
-    assert.equal((await failure(new PartnerSubscriptionError(kind))).status, 503, kind);
+  // Credentials, a non-public app, a missing shop or a changed response shape fail the same way on every retry.
+  for (const kind of [
+    'auth_or_permission',
+    'app_not_public',
+    'shop_not_found',
+    'feature_unavailable',
+    'invalid_request',
+    'malformed_response',
+  ] as const)
+    assert.deepEqual(
+      await failure(new PartnerSubscriptionError(kind)),
+      {
+        status: 503,
+        code: 'UNAVAILABLE',
+        retryable: undefined,
+        retryAfter: null,
+        logged: [{ errorClass: 'ProviderReadUnavailable', level: 'error' }],
+      },
+      kind,
+    );
 });
 
 test('an UNSUPPORTED_MARKET refusal logs its check and Market IDs while the buyer response is unchanged', async () => {

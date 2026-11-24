@@ -21,6 +21,10 @@ export class PartnerSubscriptionError extends Error {
     super(`Partner active subscription read failed: ${kind}`);
     this.name = 'PartnerSubscriptionError';
   }
+  /** Throttling, a provider failure or an unreachable API: a later retry can succeed (spec §8.3). */
+  get transient(): boolean {
+    return this.kind === 'rate_limited' || this.kind === 'provider_error' || this.kind === 'network_or_timeout';
+  }
 }
 export type SubscriptionPrice =
   | { kind: 'flat'; providerTypename: 'FlatRatePrice'; active: boolean; currency: string; amount: string }

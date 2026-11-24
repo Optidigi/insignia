@@ -93,8 +93,12 @@ export function createBuyerRepository(db: Kysely<Database>) {
     now: Date,
     run: (tx: Transaction<Database>, row: NonNullable<Awaited<ReturnType<typeof session>>>) => Promise<T>,
     charge = true,
+    boundedLockWait = false,
   ) {
     return db.transaction().execute(async (tx) => {
+      // Acceptance and renewal bound waiting behind a held shop fence like the fence itself (spec §8.4):
+      // 55P03 is a retryable 409 BUSY and rolls back everything this transaction wrote.
+      if (boundedLockWait) await sql`SET LOCAL lock_timeout = '2s'`.execute(tx);
       // Installation lock prevents a concurrent uninstall crossing a successful command.
       const tenant =
         await sql`SELECT i.generation FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation
@@ -232,6 +236,8 @@ export function createBuyerRepository(db: Kysely<Database>) {
           return { applicationId: null };
         },
         false,
+        // Only acceptance and renewal reserve commands; their lock wait is bounded (spec §8.4).
+        true,
       );
     },
     async completeCommand(
@@ -536,6 +542,8 @@ export function createBuyerRepository(db: Kysely<Database>) {
           );
         },
         false,
+        // The acceptance's last step: bounded so its automatic retry replays the signed set.
+        true,
       );
     },
     async getOwnedQuote(scope: BuyerScope, id: string, ownerBinding: string, now: Date) {

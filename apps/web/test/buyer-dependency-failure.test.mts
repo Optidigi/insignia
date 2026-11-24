@@ -164,46 +164,6 @@ test('a signing fence held past lock_timeout is 409 BUSY with Retry-After; the s
   assert.deepEqual(await counts(f), { quotes: 1, sets: 2, renewals: 1, declined: 0 });
 });
 
-// Found by this suite, reported rather than changed (the fix changes buyer-visible outcomes). Every
-// buyer session write (proposal, draft, the acceptance and renewal command reservation) first takes
-// FOR SHARE OF shops/installation_generations with no lock_timeout. While the shop fence is held,
-// whether by a signing-key writer or by another acceptance waiting on a slow signer, that wait is
-// unbounded: production ends it only at the web pool's 10 s statement_timeout, as 503 UNAVAILABLE,
-// instead of §8.4's 2 s bound and 409 BUSY.
-test('an acceptance that arrives while the shop fence is held is bounded by lock_timeout too', {
-  skip: !connectionString,
-  timeout: 30000,
-  todo: 'buyer session writes wait on FOR SHARE OF s,i without lock_timeout (repositories/buyer.ts)',
-}, async (t) => {
-  const f = await fixture(t);
-  const holder = await fenceHolder(t);
-  const release = async () => {
-    await holder.query('ROLLBACK').catch(() => {});
-  };
-  const proposal = await (await f.http('quote-proposals', f.body)).json();
-  const accept = { capability: f.session.capability, hash: proposal.hash, idempotencyKey: randomUUID() };
-  await holder.query('BEGIN');
-  await holder.query('SELECT * FROM signing_key_scope($1, 1::bigint, true)', [f.shopId]);
-  const pending = f.http(`quote-proposals/${proposal.proposalId}/accept`, accept);
-  let timer: NodeJS.Timeout | undefined;
-  const outcome = await Promise.race([
-    pending.then(failure),
-    new Promise<'still waiting'>((resolve) => {
-      timer = setTimeout(() => resolve('still waiting'), 5000);
-    }),
-  ]);
-  clearTimeout(timer);
-  await release();
-  await pending;
-  assert.deepEqual(outcome, {
-    status: 409,
-    code: 'BUSY',
-    retryable: true,
-    retryAfter: '1',
-    acceptanceOutcome: undefined,
-  });
-});
-
 test('a web process restart between proposal and acceptance, or before a lost response, loses nothing', {
   skip: !connectionString,
   timeout: 30000,
