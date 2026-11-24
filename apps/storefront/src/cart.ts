@@ -19,9 +19,8 @@ export type CartApplication = {
   cart: CartSnapshot | null;
   recovery?: 'late_effects_possible';
   /**
-   * `rejected`: Shopify refused a write with a 4xx (typically stock) and nothing is left pending: the cart is back at
-   * its starting customized lines, or (with `cart: null`) Shopify refused a single-line add, which cannot land in
-   * part, and the cart could not be read back. `detail` carries Shopify's own explanation when it gave one.
+   * `rejected`: Shopify refused a write with a 4xx (typically stock) and the cart is back at its starting
+   * customized lines, so nothing is left pending. `detail` carries Shopify's own explanation when it gave one.
    */
   reason?: 'cart_changed' | 'mutation_unresolved' | 'vector_mismatch' | 'cart_unavailable' | 'busy' | 'rejected';
   /** The HTTP status of the refusal behind `rejected` (422 is Shopify's stock/limit refusal). */
@@ -139,6 +138,12 @@ export type CartTombstone = { set: string; at: number };
 export type CartMutationIntent = {
   version: 2;
   phase: 'pending' | 'abandoned';
+  /**
+   * The digest of the whole cart before the write. Once Shopify answered every write of the application but the
+   * cart could not be seen back at its start, the digest of its starting customized lines (`startDigest`) instead: a
+   * later read that finds them there settles the intent. The two digests never coincide, so an intent with a write
+   * still unanswered only settles at its goal or by explicit repair.
+   */
   before: string;
   goal: string;
   quote: string;
@@ -203,6 +208,8 @@ async function observedSets(cart: CartSnapshot): Promise<Set<string>> {
   return new Set(await Promise.all(carriers.map((v) => digest(String(v)))));
 }
 const logicalState = (cart: CartSnapshot) => JSON.stringify([cart.currency, normalized(cart.items), cart.attributes]);
+/** The digest of a cart's customized lines alone, domain-separated from every `logicalState` digest. */
+const startDigest = (cart: CartSnapshot) => digest(JSON.stringify(['customized', normalized(cart.customized)]));
 export type CartApplicationLock = { run<T>(action: () => Promise<T>): Promise<T | null> };
 let samePageLocked = false;
 const defaultCartLock: CartApplicationLock = {
@@ -460,6 +467,13 @@ export function createAjaxCartAdapter({
           };
         prior = loadIntent();
       }
+      // Nothing of an answered but unseen write is in flight: a cart back at its starting customized lines settles it
+      // (spec §8.4), so a refusal whose cart was unreadable does not block the next Add once the cart can be read.
+      if (prior?.phase === 'pending' && prior.before === (await startDigest(current))) {
+        settle(prior);
+        prior = loadIntent();
+        inherited = new Set(prior?.abandoned.map((entry) => entry.set));
+      }
       if (current.fingerprint !== expectedFingerprint)
         return { status: 'review_required', cart: current, reason: 'cart_changed' };
       // The journal identifies an effect by its signed set: the shared v3 prefix.
@@ -545,21 +559,23 @@ export function createAjaxCartAdapter({
       let created: CartBucket[] = additions;
       /** Old lines replaced in place by the stock fallback, newest last. */
       const swapped: { line: CartLine; bucket: CartBucket }[] = [];
-      /** Whether Shopify acknowledged a write of this application since the cart was last seen at its start. */
-      let written = false;
       // After a definite failure, undo this application's own writes (B1): swapped lines get their old carrier
       // back, then the lines it added go in one write. If any swapped line cannot be restored, nothing is removed
-      // (B3). Only a cart whose customized lines are back at the start settles the intent; anything else stays
-      // unresolved for explicit repair.
+      // (B3). Only a cart whose customized lines are back at the start settles the intent here. Anything else stays
+      // unresolved: if every write was answered, a later application's first clean read that finds the start
+      // lines settles it (§8.4); otherwise it waits for its goal or explicit repair.
       const failed = async (reason: 'rejected' | 'vector_mismatch', refused?: Refusal): Promise<CartApplication> => {
         let restored = false;
-        /** Only the compensation's first read failed: none of its own writes was sent. */
-        let unread = false;
-        try {
-          let now = await readNow().catch((error) => {
-            unread = true;
+        /** A compensating write went unanswered (no 4xx): its effect may still land. */
+        let unanswered = false;
+        const write = (path: string, body: unknown) =>
+          request(path, body).catch((error: unknown) => {
+            const status = error && typeof error === 'object' && 'status' in error ? Number(error.status) : 0;
+            if (status < 400 || status >= 500) unanswered = true;
             throw error;
           });
+        try {
+          let now = await readNow();
           let lost = false;
           for (const { line, bucket } of swapped.reverse()) {
             const replaced = now.customized.find((candidate) => sameLine(candidate, bucket));
@@ -568,7 +584,7 @@ export function createAjaxCartAdapter({
               continue;
             }
             now = snapshot(
-              await request('cart/change.js', {
+              await write('cart/change.js', {
                 id: replaced.key,
                 quantity: line.quantity,
                 properties: line.properties,
@@ -582,29 +598,20 @@ export function createAjaxCartAdapter({
           );
           if (added.length)
             now = snapshot(
-              await request('cart/update.js', { updates: Object.fromEntries(added.map((line) => [line.key, 0])) }),
+              await write('cart/update.js', { updates: Object.fromEntries(added.map((line) => [line.key, 0])) }),
             );
           current = now;
           restored = normalized(now.customized) === normalized(start.customized);
         } catch {
           /* The compensation's own outcome is unknown, or it could not restore every line. */
         }
-        // Shopify refused the only write it was sent, an add of one line (which cannot land in part) of a set the cart
-        // did not hold, and the cart could not be read back: nothing of this application is pending, so it is that
-        // refusal. Nothing can have landed, so no tombstone is spent on it. A compensating write that failed or went
-        // unanswered, or a refused add of several lines (some may have landed), stays unresolved (#339).
-        if (!restored && unread && refused && !written && additions.length === 1 && desired.length === 1) {
-          settle(own);
-          return {
-            status: 'review_required',
-            cart: null,
-            reason,
-            refusal: refused.status,
-            ...(refused.detail ? { detail: refused.detail } : {}),
-          };
+        // Even a refused add of one line can land in part ("Only 50 items were added"), so an outcome not seen back at
+        // the start stays unresolved (#339). If Shopify answered every write, nothing is in flight: the next read that
+        // finds the starting customized lines settles it, without a tombstone.
+        if (!restored) {
+          if (!unanswered) saveIntent({ ...own, before: await startDigest(start) });
+          return { status: 'review_required', cart: current, reason: 'mutation_unresolved' };
         }
-        if (!restored) return { status: 'review_required', cart: current, reason: 'mutation_unresolved' };
-        written = false;
         settle(own);
         return {
           status: 'review_required',
@@ -620,7 +627,6 @@ export function createAjaxCartAdapter({
         let refused: Refusal | undefined;
         try {
           await request('cart/add.js', items(additions));
-          written = true;
         } catch (error) {
           refused = refusal(error);
         }
@@ -662,11 +668,9 @@ export function createAjaxCartAdapter({
                 quantity: pair.bucket.quantity,
                 properties: pair.bucket.properties,
               });
-              written = true;
               swapped.push(pair);
             }
             if (rest.length) await request('cart/add.js', items(rest));
-            written = true;
             current = await readNow();
           } catch (error) {
             const again = refusal(error);
@@ -764,6 +768,8 @@ export function createAjaxCartAdapter({
       }
     );
   }
+  /** Goal-only: settles a pending intent only when the cart is at its goal. The start-lines settle (§8.4)
+   * runs on the first read of the next application, not here. Test-only today. */
   async function reconcile(): Promise<CartApplication> {
     return (
       (await lock.run(async () => {

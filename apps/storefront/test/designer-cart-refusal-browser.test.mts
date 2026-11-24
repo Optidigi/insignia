@@ -16,8 +16,9 @@ import {
 
 /**
  * A first Add to cart that Shopify refuses as sold out, followed by its HTML bot check on the next cart reads
- * (observed natively on 24 November 2026): the buyer is told about stock and can add again, never sent to a
- * review of customized items the cart does not hold.
+ * (observed natively on 24 November 2026). Within the read retries the buyer is told about stock and can add again.
+ * A refused add can still land in part ("Only 50 items were added"), so a cart that stays unreadable leaves the
+ * write pending for repair, and the next readable cart without the line settles it.
  */
 const config: BuyerConfig = {
   version: 'm7-config-v1',
@@ -71,10 +72,18 @@ type Scenario = {
   addCalls: () => number;
   /** Makes the variant available again and the cart readable. */
   restock: () => void;
+  /** Makes the cart readable while the variant stays sold out. */
+  unblock: () => void;
+  cartItems: () => AjaxItem[];
   mount: () => Promise<void>;
 };
 
-async function withRefusedAdd(botChecks: number, run: (scenario: Scenario) => Promise<void>) {
+/** `landed`: units Shopify adds before refusing the rest, as it does for a quantity above the stock. */
+async function withRefusedAdd(
+  botChecks: number,
+  run: (scenario: Scenario) => Promise<void>,
+  { landed = 0 }: { landed?: number } = {},
+) {
   const server = await createServer({
     plugins: [selectedFrameAssets()],
     server: { host: '127.0.0.1', port: 0, strictPort: true, watch: null },
@@ -123,6 +132,15 @@ async function withRefusedAdd(botChecks: number, run: (scenario: Scenario) => Pr
       adds++;
       if (soldOut) {
         checksLeft = botChecks;
+        const line = required(ajaxBody(route.request().postDataJSON()).items)[0];
+        if (landed && line) {
+          items = [
+            ...items,
+            { key: `landed${adds}`, variant_id: line.id, quantity: landed, properties: line.properties },
+          ];
+          const copy = `Only ${landed} items were added to your cart due to availability.`;
+          return route.fulfill({ status: 422, json: { status: 422, message: copy, description: copy } });
+        }
         return route.fulfill({
           status: 422,
           json: {
@@ -249,6 +267,10 @@ async function withRefusedAdd(botChecks: number, run: (scenario: Scenario) => Pr
       restock: () => {
         soldOut = false;
       },
+      unblock: () => {
+        checksLeft = 0;
+      },
+      cartItems: () => items,
       mount,
     });
   } finally {
@@ -309,15 +331,43 @@ test('a sold-out add followed by two bot-checked cart reads is a stock refusal; 
   });
 });
 
-test('a sold-out single-line add whose cart stays bot-checked is a stock refusal that survives a reload as no review', async () => {
+async function assertPendingRepair(page: Page, ui: FrameLocator) {
+  await ui.getByText(reviewCopy).filter({ visible: true }).first().waitFor();
+  await ui.getByRole('button', { name: 'Review removing all customized items', exact: true }).waitFor();
+  assert.equal(await ui.getByText(soldOutCopy).filter({ visible: true }).count(), 0, 'never told it was refused');
+  const intent = await page.evaluate(() => sessionStorage.getItem('insignia-cart-intent-v1'));
+  assert.equal(JSON.parse(intent ?? 'null')?.phase, 'pending', 'the write stays pending for repair');
+  assert.equal(new URL(page.url()).pathname, '/');
+}
+
+test('a sold-out add whose cart stays bot-checked waits for repair; Retry with a readable empty cart lets Add proceed', async () => {
+  await withRefusedAdd(-1, async ({ page, ui, addCalls, restock }) => {
+    await designTwo(ui);
+    await reviewTwo(ui);
+    await addToCart(ui).click();
+    await assertPendingRepair(page, ui);
+    assert.equal(addCalls(), 1);
+    restock();
+    // The cart reads back empty: Retry clears the panel and the next Add settles the refusal and adds again.
+    await ui.getByRole('button', { name: 'Retry', exact: true }).click();
+    await ui.getByText(reviewCopy).filter({ visible: true }).first().waitFor({ state: 'detached' });
+    // The unresolved accepted set was dropped: the first Add prepares a fresh review, the next one adds it.
+    await addToCart(ui).click();
+    await ui.getByText('€61.00', { exact: true }).filter({ visible: true }).first().waitFor();
+    assert.equal(addCalls(), 1);
+    await addToCart(ui).click();
+    await page.waitForURL('**/cart', { timeout: 15_000 });
+    assert.equal(addCalls(), 2, 'the next Add to cart dispatches the add again');
+    assert.equal(await page.evaluate(() => sessionStorage.getItem('insignia-cart-intent-v1')), 'null');
+  });
+});
+
+test('a sold-out add whose cart stays bot-checked lets Add proceed after a reload once the cart reads back empty', async () => {
   await withRefusedAdd(-1, async ({ page, ui, addCalls, restock, mount }) => {
     await designTwo(ui);
     await reviewTwo(ui);
     await addToCart(ui).click();
-    await assertStockRefusal(page, ui);
-    assert.equal(addCalls(), 1);
-    // One refused line cannot have landed in part: no pending write and no tombstone.
-    assert.equal(await page.evaluate(() => sessionStorage.getItem('insignia-cart-intent-v1')), 'null');
+    await assertPendingRepair(page, ui);
     restock();
     await page.reload();
     await mount();
@@ -331,4 +381,26 @@ test('a sold-out single-line add whose cart stays bot-checked is a stock refusal
     await page.waitForURL('**/cart', { timeout: 15_000 });
     assert.equal(addCalls(), 2, 'after the reload Add to cart dispatches the add again');
   });
+});
+
+test('a refused add that landed in part while the cart is bot-checked is repaired, never reported as refused', async () => {
+  await withRefusedAdd(
+    -1,
+    async ({ page, ui, addCalls, unblock, cartItems }) => {
+      await designTwo(ui);
+      await reviewTwo(ui);
+      await addToCart(ui).click();
+      await assertPendingRepair(page, ui);
+      assert.equal(cartItems()[0]?.quantity, 1, 'one signed unit sits in the cart');
+      assert.equal(await ui.getByText('Only 1 items were added').count(), 0);
+      // Once the cart can be read, the repair review finds the landed line and removes it.
+      unblock();
+      await ui.getByRole('button', { name: 'Review removing all customized items', exact: true }).click();
+      await ui.getByRole('button', { name: 'Confirm cart update', exact: true }).click();
+      await page.waitForURL('**/cart', { timeout: 15_000 });
+      assert.deepEqual(cartItems(), []);
+      assert.equal(addCalls(), 1, 'the refused set is never added again');
+    },
+    { landed: 1 },
+  );
 });
