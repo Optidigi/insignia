@@ -334,11 +334,27 @@ export const BUYER_PROPOSAL_FAILURE_STAGES = [
   'response-validation',
   'ambiguous',
 ] as const;
+/** Which check refused an UNSUPPORTED_MARKET; one code per check (the application's MarketRefusalReason). */
+export const MARKET_REFUSAL_REASONS = [
+  'STOREFRONT_MARKET_UNAVAILABLE',
+  'MARKET_NOT_PRIMARY',
+  'COUNTRY_NOT_IN_PRIMARY_MARKET',
+  'COUNTRY_UNRECOGNISED',
+  'CURRENCY_UNSUPPORTED',
+  'CURRENCY_MISMATCH',
+  'EUR_COUNTRY_NOT_QUALIFIED',
+  'EUR_PROFILE_UNAVAILABLE',
+] as const;
 export type BuyerFailureDiagnostic = {
   proposalStage?: (typeof BUYER_PROPOSAL_FAILURE_STAGES)[number];
   correlationId: string;
   buyerStage: (typeof BUYER_STAGES)[number];
   errorClass: (typeof BUYER_FAILURES)[number];
+  /** UNSUPPORTED_MARKET only. Shop configuration, never the buyer's country, IP or cart. */
+  refusalReason?: (typeof MARKET_REFUSAL_REASONS)[number];
+  /** Numeric Market IDs (digits only), present only when the check knew them. */
+  storefrontMarketId?: string;
+  primaryMarketId?: string;
 };
 
 // One summary per proposal/acceptance; at most 64 spans, each with finite vocabulary.
@@ -495,6 +511,9 @@ export interface RuntimeLogDetails {
   publicationTiming?: PublicationTimingDiagnostic;
   buyerStage?: BuyerFailureDiagnostic['buyerStage'];
   proposalStage?: BuyerFailureDiagnostic['proposalStage'];
+  refusalReason?: BuyerFailureDiagnostic['refusalReason'];
+  storefrontMarketId?: string;
+  primaryMarketId?: string;
   authStage?: AdminAuthenticationStage;
   providerCode?: AdminProviderDiagnosticCode;
   configAction?: AdminConfigAction;
@@ -678,11 +697,17 @@ function eventDetails(event: RuntimeEvent, input: RuntimeLogDetails) {
       throw new Error('Invalid buyer failure diagnostic');
     if (input.proposalStage !== undefined && !BUYER_PROPOSAL_FAILURE_STAGES.includes(input.proposalStage))
       throw new Error('Invalid buyer proposal failure stage');
+    if (input.refusalReason !== undefined && !MARKET_REFUSAL_REASONS.includes(input.refusalReason))
+      throw new Error('Invalid buyer market refusal reason');
+    const marketId = (value: unknown) => typeof value === 'string' && /^[1-9][0-9]{0,19}$/.test(value);
     return {
       buyerStage: input.buyerStage,
       correlationId: input.correlationId,
       errorClass: input.errorClass,
       ...(input.proposalStage === undefined ? {} : { proposalStage: input.proposalStage }),
+      ...(input.refusalReason === undefined ? {} : { refusalReason: input.refusalReason }),
+      ...(marketId(input.storefrontMarketId) ? { storefrontMarketId: input.storefrontMarketId } : {}),
+      ...(marketId(input.primaryMarketId) ? { primaryMarketId: input.primaryMarketId } : {}),
     };
   }
   if (event === 'admin_config_rejected') {

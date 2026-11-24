@@ -1738,12 +1738,13 @@ test('storefront config rejects unsupported Markets and currencies before openin
     );
   };
   const services = createProductionBuyerServices(input);
+  const logged: Array<{ refusalReason?: string; storefrontMarketId?: string; primaryMarketId?: string }> = [];
   const read = (marketId: string) =>
     handleBuyerRequest(
       new Request(signed({ country: 'US', marketId })),
       services,
       'config',
-      () => {},
+      (value) => logged.push(value),
       () => {},
     );
   for (const marketId of ['43', '42']) {
@@ -1751,6 +1752,18 @@ test('storefront config rejects unsupported Markets and currencies before openin
     assert.equal(response.status, 422, `Market ${marketId}`);
     assert.equal((await response.json()).code, 'UNSUPPORTED_MARKET');
   }
+  // The log says which check refused and which two Market IDs were compared; the response says neither.
+  assert.deepEqual(
+    logged.map(({ refusalReason, storefrontMarketId, primaryMarketId }) => ({
+      refusalReason,
+      storefrontMarketId,
+      primaryMarketId,
+    })),
+    [
+      { refusalReason: 'MARKET_NOT_PRIMARY', storefrontMarketId: '43', primaryMarketId: '42' },
+      { refusalReason: 'CURRENCY_MISMATCH', storefrontMarketId: '42', primaryMarketId: undefined },
+    ],
+  );
   priceCurrency = 'USD';
   assert.equal((await read('42')).status, 200, 'a rejected context is not kept in the config cache');
 });

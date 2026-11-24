@@ -303,3 +303,47 @@ test('the USD path is unchanged under a v2 profile', async () => {
     country: 'US',
   });
 });
+
+/** The refusal log names the failed check and the two Market IDs the check compared (numeric, when known). */
+const refusal = async (run: () => Promise<unknown>) => {
+  try {
+    await run();
+  } catch (error) {
+    return (error as { market?: unknown }).market;
+  }
+  return assert.fail('expected a refusal');
+};
+test('every UNSUPPORTED_MARKET refusal names its check and only the Market IDs it knows', async () => {
+  const v2setup = (observed = snapshot, change: Record<string, unknown> = {}) => setupV2(observed, change);
+  assert.deepEqual(await refusal(() => setup().assertSupported({ ...target, currency: 'GBP', shopCurrency: 'GBP' })), {
+    reason: 'CURRENCY_UNSUPPORTED',
+    storefrontMarketId: '42',
+  });
+  assert.deepEqual(await refusal(() => setup().assertSupported({ ...target, shopCurrency: 'USD' })), {
+    reason: 'CURRENCY_MISMATCH',
+    storefrontMarketId: '42',
+  });
+  assert.deepEqual(await refusal(() => v2setup().assertSupported({ ...target, country: 'US' })), {
+    reason: 'EUR_COUNTRY_NOT_QUALIFIED',
+    storefrontMarketId: '42',
+  });
+  assert.deepEqual(await refusal(() => setup(snapshot, null).assertSupported(target)), {
+    reason: 'EUR_PROFILE_UNAVAILABLE',
+    storefrontMarketId: '42',
+  });
+  assert.deepEqual(await refusal(() => setup().assertSupported({ ...target, marketId: '99' })), {
+    reason: 'MARKET_NOT_PRIMARY',
+    storefrontMarketId: '99',
+    primaryMarketId: '42',
+  });
+  assert.deepEqual(await refusal(() => v2setup({ ...snapshot, countryCodes: ['BE'] }).assertSupported(target)), {
+    reason: 'COUNTRY_NOT_IN_PRIMARY_MARKET',
+    storefrontMarketId: '42',
+    primaryMarketId: '42',
+  });
+  // An unparseable primary Market GID is absent, never an empty string or a partial value.
+  const unknown = await refusal(() =>
+    v2setup({ ...snapshot, primaryMarketId: 'not-a-gid' }).assertSupported({ ...target, marketId: '99' }),
+  );
+  assert.deepEqual(unknown, { reason: 'MARKET_NOT_PRIMARY', storefrontMarketId: '99' });
+});
