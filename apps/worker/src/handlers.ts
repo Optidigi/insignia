@@ -1,7 +1,7 @@
 import { type OfflineCredentialLifecyclePort, refreshExpiringOfflineCredentials } from '@insignia/application';
 import type { DurableCore } from '@insignia/database';
 import type { ShopifyOfflineRefreshTransport } from '@insignia/shopify';
-import { createHeldRowReporter, type HeldRowReporter } from './held-rows.js';
+import type { HeldRowReporter } from './held-rows.js';
 import type { PgBossRuntime, WorkerHandlers } from './runtime.js';
 
 /** Maps the opaque durable facade to the application refresh port. */
@@ -72,11 +72,25 @@ export function createDurableWorkerHandlers(
   };
 }
 
+/**
+ * Without the reconciliation loop's shared reporter (direct calls), every non-zero pass logs as before.
+ * Type-only import: apps/web loads this file as source, so it must not import worker siblings at runtime.
+ */
+function reportHeld(
+  held: HeldRowReporter | undefined,
+  logger: PgBossRuntime['observability']['logger'],
+  errorClass: Parameters<HeldRowReporter['report']>[1],
+  count: number,
+) {
+  if (held) held.report(logger, errorClass, count);
+  else if (count) logger.error('queue_job_rejected', { errorClass, count });
+}
+
 /** Bounded queue handoff recovery preserves receipts; it cannot supply uninstall authority. */
 export async function recoverPendingUninstalls(
   core: DurableCore,
   queue: PgBossRuntime,
-  held: HeldRowReporter = createHeldRowReporter(),
+  held?: HeldRowReporter,
 ): Promise<number> {
   const ids = await core.webhooks.selectUninstallRecoveryIds(100);
   let confirmed = 0,
@@ -90,22 +104,18 @@ export async function recoverPendingUninstalls(
       queue.observability.metrics.queue('failure');
     }
   }
-  held.report(queue.observability.logger, 'UninstallRecoveryUnresolved', unresolved);
+  reportHeld(held, queue.observability.logger, 'UninstallRecoveryUnresolved', unresolved);
   return confirmed;
 }
 
 /** Separate failure boundary: privacy capability failure cannot suspend ordinary
  * transport expiration, economic reconciliation or isolated object cleanup. */
-export async function maintainCustomerPrivacy(
-  core: DurableCore,
-  queue: PgBossRuntime,
-  held: HeldRowReporter = createHeldRowReporter(),
-) {
+export async function maintainCustomerPrivacy(core: DurableCore, queue: PgBossRuntime, held?: HeldRowReporter) {
   await core.customerPrivacy.cleanupInboxes(100);
   const status = await core.uninstallPrivacy.status();
   const blockedShopErasures = Math.max(status.activeGenerationHoldCount, status.unrecoveredBlockedReceiptCount);
   if (blockedShopErasures) queue.observability.metrics.queue('failure');
-  held.report(queue.observability.logger, 'ShopPrivacyAuthorityRequired', blockedShopErasures);
+  reportHeld(held, queue.observability.logger, 'ShopPrivacyAuthorityRequired', blockedShopErasures);
 }
 
 /** Independent from unrelated transport expiry failures. */
@@ -115,11 +125,7 @@ export async function recoverUninstallPrivacy(core: DurableCore) {
 }
 
 /** Source-owned bounded transient cleanup, not privacy request fulfillment. */
-export async function maintainWebhookRetention(
-  core: DurableCore,
-  queue: PgBossRuntime,
-  held: HeldRowReporter = createHeldRowReporter(),
-) {
+export async function maintainWebhookRetention(core: DurableCore, queue: PgBossRuntime, held?: HeldRowReporter) {
   const result = await core.webhooks.eraseExpiredPayloads(100);
   for (const [category, count] of [
     ['TransientPayloadExpiredUnresolved', result.unresolvedExpiredCount],
@@ -129,7 +135,7 @@ export async function maintainWebhookRetention(
     ['UnsupportedPayloadRetentionBlocked', result.blockedUnsupportedCount],
   ] as const) {
     if (count) queue.observability.metrics.queue('failure');
-    held.report(queue.observability.logger, category, count);
+    reportHeld(held, queue.observability.logger, category, count);
   }
   const cleanedIds = await core.webhooks.cleanupExpiredQueueJobs(100, (id) => queue.removeExpiredWebhookJob(id));
   return { ...result, cleanedIds };
