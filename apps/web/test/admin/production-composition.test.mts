@@ -441,6 +441,10 @@ for (const releaseMode of [
           verificationClient = {
             async collect(request) {
               const initiating = requestScope.getStore();
+              // A publish's background release refresh runs outside every request. This fixture
+              // choreographs the request path, so it refuses that refresh before the collector; the
+              // publish then collects on its own step exactly as without one (publication-latency
+              // measures the refresh itself).
               assert(initiating !== undefined, 'Demand collection must originate from a publication request');
               collectionOwners.set(request.requestId, initiating);
               try {

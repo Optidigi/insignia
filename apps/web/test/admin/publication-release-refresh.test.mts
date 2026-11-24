@@ -1,0 +1,178 @@
+import assert from 'node:assert/strict';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { test } from 'node:test';
+import { createPublicationReleaseRefresh } from '../../src/server/admin/publication-release.ts';
+import { RELEASE_REFRESH_AFTER_MS } from '../../src/server/buyer/release-refresh.ts';
+
+/** Deterministic timer queue: `advance` fires due timers in order and drains their async work. */
+function timers(start = 1_800_000_000_000) {
+  let now = start;
+  const queue: { at: number; run: () => void }[] = [];
+  const settle = async () => {
+    for (let i = 0; i < 20; i++) await new Promise<void>((resolve) => setImmediate(resolve));
+  };
+  return {
+    clock: () => now,
+    setTimer: (run: () => void, delayMs: number) => {
+      const timer = { at: now + delayMs, run };
+      queue.push(timer);
+      return timer;
+    },
+    async advance(ms: number) {
+      const end = now + ms;
+      await settle();
+      for (;;) {
+        const next = queue.filter((timer) => timer.at <= end).sort((a, b) => a.at - b.at)[0];
+        if (!next) break;
+        queue.splice(queue.indexOf(next), 1);
+        now = Math.max(now, next.at);
+        next.run();
+        await settle();
+      }
+      now = end;
+    },
+  };
+}
+
+/** A synthetic collector behind the refresh: collecting takes 5 s and observes 1 s in. */
+function collector(t: ReturnType<typeof timers>, options: { fail?: boolean; observedAt?: number } = {}) {
+  let observedAt: number | null = options.observedAt ?? null;
+  let running = 0;
+  const starts: { at: number; staff: string }[] = [];
+  let maxConcurrent = 0;
+  return {
+    starts,
+    maxConcurrent: () => maxConcurrent,
+    async observedAt() {
+      return observedAt !== null && t.clock() - observedAt <= 30_000 ? observedAt : null;
+    },
+    async refresh(actor: { staffId: string }) {
+      // As the collector process: reuse a record that stays fresh (≤ 30 s) for another 8 s.
+      if (observedAt !== null && t.clock() - observedAt <= RELEASE_REFRESH_AFTER_MS) return observedAt;
+      starts.push({ at: t.clock(), staff: actor.staffId });
+      maxConcurrent = Math.max(maxConcurrent, ++running);
+      const begun = t.clock();
+      try {
+        await new Promise<void>((resolve) => t.setTimer(resolve, 5_000));
+        if (options.fail) throw new Error('Publication verification unavailable');
+        observedAt = begun + 1_000;
+        return observedAt;
+      } finally {
+        running--;
+      }
+    },
+  };
+}
+
+const actor = (t: ReturnType<typeof timers>, staffId = 'staff-1', sessionMs = 60_000) => ({
+  tenantShopId: 'tenant',
+  installationGeneration: '1',
+  staffId,
+  expiresAtMs: t.clock() + sessionMs,
+});
+type Staff = ReturnType<typeof actor>;
+
+test('a publish in progress keeps its release record fresh in the background, and stops when it ends', async () => {
+  const t = timers();
+  const c = collector(t);
+  const refresh = createPublicationReleaseRefresh<Staff>({ ...c, clock: t.clock, setTimer: t.setTimer });
+  const start = t.clock();
+  const end = refresh.begin(actor(t));
+  assert.equal(c.starts.length, 0, 'begin never collects on the request path');
+  await t.advance(0);
+  assert.deepEqual(
+    c.starts.map((entry) => entry.at - start),
+    [0],
+  );
+  // A 40 s publish: the record is asked for again once it is 22 s old, at most once per 25 s.
+  await t.advance(40_000);
+  assert.deepEqual(
+    c.starts.map((entry) => entry.at - start),
+    [0, 25_000],
+  );
+  end();
+  // After the publish ends nothing more is collected, though its session is still valid.
+  await t.advance(120_000);
+  assert.equal(c.starts.length, 2);
+  refresh.close();
+});
+
+test('concurrent publishes on one shop share one refresh; a later publish does not start another early', async () => {
+  const t = timers();
+  const c = collector(t);
+  const refresh = createPublicationReleaseRefresh<Staff>({ ...c, clock: t.clock, setTimer: t.setTimer });
+  const start = t.clock();
+  const first = refresh.begin(actor(t, 'staff-1', 30_000));
+  await t.advance(1_000);
+  const second = refresh.begin(actor(t, 'staff-2', 60_000));
+  await t.advance(10_000);
+  assert.equal(c.starts.length, 1, 'one collection in flight per shop');
+  first();
+  await t.advance(30_000);
+  // The second publish keeps it fresh under its own session after the first ends.
+  assert.deepEqual(
+    c.starts.map((entry) => [entry.at - start, entry.staff]),
+    [
+      [0, 'staff-1'],
+      [25_000, 'staff-2'],
+    ],
+  );
+  assert.equal(c.maxConcurrent(), 1);
+  second();
+  refresh.close();
+});
+
+test('a failing refresh never reaches the publish and is not retried within 25 s', async () => {
+  const t = timers();
+  const c = collector(t, { fail: true });
+  const refresh = createPublicationReleaseRefresh<Staff>({ ...c, clock: t.clock, setTimer: t.setTimer });
+  const start = t.clock();
+  const end = refresh.begin(actor(t));
+  await t.advance(30_000);
+  assert.deepEqual(
+    c.starts.map((entry) => entry.at - start),
+    [0, 25_000],
+  );
+  end();
+  refresh.close();
+});
+
+test('a record still fresh when the publish begins is refreshed once it is 22 s old, before it lapses', async () => {
+  const t = timers();
+  const start = t.clock();
+  // Observed 20 s before the publish: it lapses 10 s into the publish.
+  const c = collector(t, { observedAt: start - 20_000 });
+  const refresh = createPublicationReleaseRefresh<Staff>({ ...c, clock: t.clock, setTimer: t.setTimer });
+  const end = refresh.begin(actor(t));
+  await t.advance(30_000);
+  // Asked just past 22 s of age (2 s in), so the new record lands 7 s in, before the old one lapses at 10 s.
+  assert.deepEqual(
+    c.starts.map((entry) => entry.at - start),
+    [2_001, 27_001],
+  );
+  end();
+  refresh.close();
+});
+
+test('the refresh runs outside the async context of the request that began it', async () => {
+  const request = new AsyncLocalStorage<string>();
+  const seen: (string | undefined)[] = [];
+  const refresh = createPublicationReleaseRefresh({
+    async refresh() {
+      seen.push(request.getStore());
+      return null;
+    },
+    async observedAt() {
+      seen.push(request.getStore());
+      return null;
+    },
+  });
+  let end = () => {};
+  request.run('publish-request', () => {
+    end = refresh.begin({ tenantShopId: 'tenant', installationGeneration: '1', expiresAtMs: Date.now() + 60_000 });
+  });
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.deepEqual(seen, [undefined, undefined]);
+  end();
+  refresh.close();
+});
