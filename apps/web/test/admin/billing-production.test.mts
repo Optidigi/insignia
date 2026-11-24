@@ -142,12 +142,13 @@ test('installation change during provider observation rejects the entire display
 });
 test('a failed Shopify subscription lookup keeps the current merchant’s plan link without granting access', async () => {
   let checks = 0;
+  let authorityFailure: Error | null = null;
   const billing = createMerchantBillingReader({
     appId: 'gid://shopify/App/2',
     policy,
     now: () => at,
     current: async () => {
-      if (++checks === 4) throw new Error('installation changed');
+      if (++checks % 2 === 0 && authorityFailure) throw authorityFailure;
     },
     read: async () => {
       throw new PartnerSubscriptionError('network_or_timeout');
@@ -155,12 +156,24 @@ test('a failed Shopify subscription lookup keeps the current merchant’s plan l
   });
   const result = await billing(actor);
   assert.equal(checks, 2);
-  assert.equal(result.status, 'unavailable');
-  assert.equal(result.observedAt, null);
-  assert.equal(result.recurringPrice, null);
-  assert.equal(result.newActionsAllowed, false);
-  assert.equal(result.managementUrl, 'https://admin.shopify.com/store/example/charges/insignia-1/pricing_plans');
-  await assert.rejects(billing(actor), /installation changed/);
+  assert.deepEqual(result, {
+    status: 'unavailable',
+    observedAt: null,
+    trialEndsAt: null,
+    currentCycle: null,
+    scheduledCancellation: false,
+    pendingChange: false,
+    newActionsAllowed: false,
+    standardPrice: null,
+    recurringPrice: null,
+    developmentTerms: false,
+    managementUrl: 'https://admin.shopify.com/store/example/charges/insignia-1/pricing_plans',
+  });
+  for (const message of ['installation changed', 'online staff grant unavailable']) {
+    authorityFailure = new Error(message);
+    await assert.rejects(billing(actor), authorityFailure);
+  }
+  assert.equal(checks, 6);
 });
 test('zero recurring terms of a recognized plan are development terms on any shop; a priced plan is not', async () => {
   const rewrite = { ...actor, shop: 'development-example.myshopify.com', shopId: 'gid://shopify/Shop/3' };
