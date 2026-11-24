@@ -885,3 +885,33 @@ test('market refusal reason and numeric Market IDs pass the buyer filter; anythi
     /Invalid buyer market refusal reason/,
   );
 });
+
+test('a buyer failure names its provider failure kind from a finite vocabulary, never provider text', () => {
+  let output = '';
+  const { logger } = createObservability({
+    stream: new Writable({
+      write(chunk, _encoding, callback) {
+        output += chunk;
+        callback();
+      },
+    }),
+  });
+  const base = {
+    correlationId: '01234567-89ab-4cde-8123-456789abcdef',
+    buyerStage: 'quote-proposals',
+    errorClass: 'ProviderReadUnavailable',
+    proposalStage: 'availability',
+  } as const;
+  logger.error('buyer_request_failed', { ...base, providerKind: 'catalog.graphql_error' });
+  assert.equal(parseRecord(lastLine(output)).providerKind, 'catalog.graphql_error');
+  logger.warn('buyer_request_rejected', { ...base, providerKind: 'shopify_admin.internal_server_error' });
+  assert.equal(parseRecord(lastLine(output)).providerKind, 'shopify_admin.internal_server_error');
+  // An unlisted kind is omitted; the failure itself is still logged.
+  output = '';
+  // @ts-expect-error Deliberately inject an unlisted kind to prove runtime omission.
+  logger.error('buyer_request_failed', { ...base, providerKind: 'SECRET https://synthetic.myshopify.com' });
+  const dropped = parseRecord(output.trim());
+  assert.equal(dropped.errorClass, 'ProviderReadUnavailable');
+  assert.equal('providerKind' in dropped, false);
+  assert.doesNotMatch(output, /SECRET|myshopify/);
+});

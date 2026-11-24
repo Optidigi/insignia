@@ -1,7 +1,12 @@
+/** Why a Shopify Admin read was unavailable: a fixed, data-free vocabulary for diagnostics. */
+export type ShopifyAdminUnavailableReason = 'timeout' | 'throttled' | 'http_5xx' | 'internal_server_error';
 /** A Shopify Admin request timed out, was throttled or hit a Shopify 5xx; a later retry can succeed. */
 export class ShopifyAdminUnavailableError extends Error {
   readonly transient = true;
-  constructor(message: string) {
+  constructor(
+    message: string,
+    readonly reason?: ShopifyAdminUnavailableReason,
+  ) {
     super(message);
     this.name = 'ShopifyAdminUnavailableError';
   }
@@ -16,6 +21,20 @@ export function graphqlThrottled(errors: unknown): boolean {
     Array.isArray(errors) &&
     errors.some((error) => (error as { extensions?: { code?: unknown } } | null)?.extensions?.code === 'THROTTLED')
   );
+}
+
+/** Shopify reports a failure on its side as HTTP 200 with an INTERNAL_SERVER_ERROR GraphQL error. */
+export function graphqlInternalError(errors: unknown): boolean {
+  return (
+    Array.isArray(errors) &&
+    errors.some(
+      (error) => (error as { extensions?: { code?: unknown } } | null)?.extensions?.code === 'INTERNAL_SERVER_ERROR',
+    )
+  );
+}
+/** Throttling or a Shopify-side failure in any reported GraphQL error: a later retry can succeed (spec §8.3). */
+export function graphqlTransient(errors: unknown): boolean {
+  return graphqlThrottled(errors) || graphqlInternalError(errors);
 }
 
 /** Hard wall-clock bound even when an injected transport ignores AbortSignal. */
@@ -35,7 +54,7 @@ export async function withAdminDeadline<T>(
       } catch {
         /* cancellation is best effort */
       }
-      reject(new ShopifyAdminUnavailableError(label + ' timed out'));
+      reject(new ShopifyAdminUnavailableError(label + ' timed out', 'timeout'));
     }, timeoutMs);
   });
   try {

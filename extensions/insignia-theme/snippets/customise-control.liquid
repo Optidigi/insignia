@@ -9,7 +9,10 @@
   if control == 'automatic'
     assign control_tag = 'insignia-theme-integration'
   endif
-  assign default_label = 'insignia.customise' | t
+  assign trigger_label = block.settings.button_label | escape
+  if block.settings.button_label == blank
+    assign trigger_label = 'insignia.customise' | t
+  endif
 -%}
 {%- if control == 'automatic' or required -%}
   <{{ control_tag }}
@@ -24,7 +27,7 @@
     proxy-base="{{ routes.root_url }}apps/{{ block.settings.proxy_prefix | escape }}"
     cart-root="{{ routes.root_url }}" country="{{ localization.country.iso_code }}" market-id="{{ localization.market.id }}"
     language="{{ request.locale.iso_code | escape }}" store-name="{{ shop.name | escape }}"
-    trigger-label="{{ block.settings.button_label | default: default_label | escape }}"
+    trigger-label="{{ trigger_label }}"
     button-style="{{ block.settings.button_style | escape }}"
     button-width="{{ block.settings.button_width | escape }}"
     {% if block.settings.button_background != blank %}button-background="{{ block.settings.button_background | escape }}"{% endif %}

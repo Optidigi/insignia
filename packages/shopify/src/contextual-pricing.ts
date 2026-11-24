@@ -266,6 +266,8 @@ function classifyGraphqlErrors(body: Record<string, unknown>): ContextualPricing
   // MAX_COST_EXCEEDED is a query over Shopify's cost limit; unlike THROTTLED, a retry cannot fix it.
   if (codes.some((code) => code === 'THROTTLED')) return 'throttled';
   if (codes.some((code) => code === 'ACCESS_DENIED')) return 'forbidden';
+  // A Shopify-side failure: a retry seconds later succeeds, as for the other Admin readers.
+  if (codes.some((code) => code === 'INTERNAL_SERVER_ERROR')) return 'provider_unavailable';
   return 'graphql_error';
 }
 

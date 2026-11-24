@@ -1,9 +1,29 @@
 import {
+  graphqlInternalError,
   graphqlThrottled,
   ShopifyAdminUnavailableError,
   transientStatus,
   withAdminDeadline,
 } from './admin-deadline.js';
+/** A catalog read Shopify answered but a retry cannot fix; `kind` is a fixed, data-free diagnostic. */
+export class CatalogReadError extends Error {
+  constructor(
+    readonly kind:
+      | 'credential_unavailable'
+      | 'http_error'
+      | 'missing_body'
+      | 'too_large'
+      | 'invalid_json'
+      | 'graphql_error'
+      | 'invalid_shape',
+    message: string,
+  ) {
+    super(message);
+  }
+  get transient(): boolean {
+    return false;
+  }
+}
 /** Bounded, read-only Admin catalog projection. The caller supplies a verified online grant. */
 export interface CatalogTransport {
   read<T>(operation: 'list' | 'detail' | 'currency' | 'availability', variables: Record<string, unknown>): Promise<T>;
@@ -266,7 +286,8 @@ export function createCatalogReader(transport: CatalogTransport) {
           variants: { nodes: { id: string }[]; pageInfo: { hasNextPage: boolean } };
         } | null;
       }>('availability', { id: productId });
-      if (!response || !Object.hasOwn(response, 'product')) throw new Error('Invalid availability product');
+      if (!response || !Object.hasOwn(response, 'product'))
+        throw new CatalogReadError('invalid_shape', 'Invalid availability product');
       if (response.product === null) return null;
       const product = response.product;
       if (
@@ -284,7 +305,7 @@ export function createCatalogReader(transport: CatalogTransport) {
         ) ||
         new Set(product.variants.nodes.map((variant) => variant.id)).size !== product.variants.nodes.length
       )
-        throw new Error('Invalid or incomplete availability product');
+        throw new CatalogReadError('invalid_shape', 'Invalid or incomplete availability product');
       return {
         id: product.id,
         status: product.status as CatalogProduct['status'],
@@ -399,10 +420,11 @@ export function createCatalogTransport(input: {
             body: JSON.stringify({ query, variables }),
             signal,
           });
-          if (transientStatus(response.status)) throw new ShopifyAdminUnavailableError('Catalog read failed');
-          if (!response.ok) throw new Error('Catalog read failed');
+          if (transientStatus(response.status))
+            throw new ShopifyAdminUnavailableError('Catalog read failed', 'http_5xx');
+          if (!response.ok) throw new CatalogReadError('http_error', 'Catalog read failed');
           reader = response.body?.getReader();
-          if (!reader) throw new Error('Catalog response body missing');
+          if (!reader) throw new CatalogReadError('missing_body', 'Catalog response body missing');
           const chunks: Uint8Array[] = [];
           let bytes = 0;
           try {
@@ -410,7 +432,7 @@ export function createCatalogTransport(input: {
               const part = await reader.read();
               if (part.done) break;
               bytes += part.value.byteLength;
-              if (bytes > 1_000_000) throw new Error('Catalog response too large');
+              if (bytes > 1_000_000) throw new CatalogReadError('too_large', 'Catalog response too large');
               chunks.push(part.value);
             }
           } catch (error) {
@@ -429,17 +451,15 @@ export function createCatalogTransport(input: {
           try {
             payload = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(buffer));
           } catch {
-            throw new Error('Catalog JSON response invalid');
+            throw new CatalogReadError('invalid_json', 'Catalog JSON response invalid');
           }
           const errors = (payload as { errors?: unknown } | null)?.errors;
-          if (graphqlThrottled(errors)) throw new ShopifyAdminUnavailableError('Catalog read throttled');
-          if (
-            !payload ||
-            typeof payload !== 'object' ||
-            errors !== undefined ||
-            (payload as { data?: unknown }).data === undefined
-          )
-            throw new Error('Catalog GraphQL response invalid');
+          if (graphqlThrottled(errors)) throw new ShopifyAdminUnavailableError('Catalog read throttled', 'throttled');
+          if (graphqlInternalError(errors))
+            throw new ShopifyAdminUnavailableError('Catalog read failed', 'internal_server_error');
+          if (errors !== undefined) throw new CatalogReadError('graphql_error', 'Catalog GraphQL response invalid');
+          if (!payload || typeof payload !== 'object' || (payload as { data?: unknown }).data === undefined)
+            throw new CatalogReadError('invalid_shape', 'Catalog GraphQL response invalid');
           return (payload as { data: T }).data;
         },
         'Catalog read',

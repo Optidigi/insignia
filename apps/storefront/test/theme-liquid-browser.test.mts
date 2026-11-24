@@ -7,7 +7,31 @@ import { Liquid } from 'liquidjs';
 import { chromium } from 'playwright';
 import { createStorefrontTestServer, lineCarriers, serverPort } from './support.mts';
 
-async function renderTheme(t: TestContext, mode: 'required' | 'optional' | null, manual = false) {
+/** Shopify's `t` filter HTML-escapes a translation unless its key ends in `_html`. */
+function shopifyTranslationEscape(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+function flattenLocale(value: unknown, prefix = ''): Record<string, string> {
+  if (typeof value === 'string') return { [prefix]: value };
+  return Object.assign(
+    {},
+    ...Object.entries(value as Record<string, unknown>).map(([key, child]) =>
+      flattenLocale(child, prefix ? `${prefix}.${key}` : key),
+    ),
+  );
+}
+
+async function renderTheme(
+  t: TestContext,
+  mode: 'required' | 'optional' | null,
+  manual = false,
+  options: { locale?: 'en.default' | 'fr'; buttonLabel?: string } = {},
+) {
   const directory = await mkdtemp(join(tmpdir(), 'insignia-liquid-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const source = new URL('../../../extensions/insignia-theme/', import.meta.url);
@@ -35,21 +59,24 @@ async function renderTheme(t: TestContext, mode: 'required' | 'optional' | null,
       request: { locale: { iso_code: 'en' }, design_mode: false },
     },
   });
-  const translations: Record<string, string> = {
-    'insignia.customise': 'Customise',
-    'insignia.cart_review.label': 'Review customized items',
-    'insignia.cart_review.message': 'Customized items changed & need review.',
-    'insignia.cart_review.renew_label': 'Renew prices',
-    'insignia.cart_review.expired_message': 'Customization prices expired.',
-    'insignia.cart_review.context_message': 'Country or currency changed.',
-    'insignia.cart_review.unsupported_message': 'Not available for this country & currency; remove them.',
-    'insignia.cart_review.renew_failed_message': 'Prices could not be renewed.',
-    'insignia.cart_review.line_label': 'Customized',
-    'insignia.cart_review.line_review_label': 'Customized · needs review',
-  };
+  const translations: Record<string, string> = options.locale
+    ? flattenLocale(JSON.parse(await readFile(new URL(`locales/${options.locale}.json`, source), 'utf8')))
+    : {
+        'insignia.customise': "Customise it's",
+        'insignia.cart_review.label': 'Review customized items',
+        'insignia.cart_review.message': 'Customized items changed & need review.',
+        'insignia.cart_review.renew_label': 'Renew prices',
+        'insignia.cart_review.expired_message': 'Customization prices expired.',
+        'insignia.cart_review.context_message': 'Country or currency changed.',
+        'insignia.cart_review.unsupported_message': 'Not available for this country & currency; remove them.',
+        'insignia.cart_review.renew_failed_message': 'Prices could not be renewed.',
+        'insignia.cart_review.line_label': 'Customized',
+        'insignia.cart_review.line_review_label': 'Customized · needs review',
+      };
   engine.registerFilter('t', (key: unknown) => {
     assert.ok(typeof key === 'string' && key in translations, `unexpected translation key ${String(key)}`);
-    return translations[key as string];
+    const value = translations[key as string] ?? '';
+    return key.endsWith('_html') ? value : shopifyTranslationEscape(value);
   });
   const values = {
     product: {
@@ -62,7 +89,7 @@ async function renderTheme(t: TestContext, mode: 'required' | 'optional' | null,
       settings: {
         proxy_prefix: 'insignia',
         auto_placement: true,
-        button_label: 'Customise & draw',
+        button_label: options.buttonLabel ?? 'Customise & draw',
         button_style: 'auto',
         button_width: 'theme',
         override_radius: false,
@@ -718,3 +745,58 @@ async function expectEventually(check: () => boolean) {
   for (let i = 0; i < 50 && !check(); i++) await new Promise((resolve) => setTimeout(resolve, 20));
   assert.ok(check());
 }
+
+for (const [locale, expected] of [
+  ['en.default', "Customization isn't available for your country or currency."],
+  ['fr', 'La personnalisation n’est pas disponible pour votre pays ou votre devise.'],
+] as const) {
+  test(`cart repair shows ${locale} translations once escaped, with literal apostrophes (D2)`, async (t) => {
+    const html = await renderTheme(t, null, false, { locale });
+    const page = await browserFixture(t);
+    await page.route('**/cart.js', (route) =>
+      route.fulfill({
+        json: {
+          currency: 'EUR',
+          items: [
+            {
+              product_id: 111,
+              quantity: 1,
+              original_price: 920,
+              properties: {
+                _insignia_line_v3: v3Line({
+                  currency: 'EUR',
+                  country: 'NL',
+                  marketId: '7',
+                  validThroughDay: utcDay() + 2,
+                }),
+              },
+            },
+          ],
+        },
+      }),
+    );
+    await page.route('**/apps/insignia/v1/**', (route) =>
+      route.fulfill({ status: 422, json: { code: 'UNSUPPORTED_MARKET', message: 'Unsupported', requestId: 'r' } }),
+    );
+    await page.evaluate((markup) => document.body.insertAdjacentHTML('beforeend', markup), html);
+    const repair = page.locator('insignia-cart-repair');
+    const notice = repair.getByText(expected);
+    await notice.waitFor();
+    assert.match(await notice.innerText(), /['’]/);
+    assert.doesNotMatch(await repair.innerText(), /&#39;|&amp;|&quot;/);
+  });
+}
+
+test('the manual Customise block falls back to its translated label, escaped once (D2)', async (t) => {
+  const html = await renderTheme(t, 'required', true, { buttonLabel: '' });
+  const page = await browserFixture(t);
+  await page.evaluate(
+    (markup) =>
+      document.body.insertAdjacentHTML(
+        'beforeend',
+        `<section><product-form-component data-product-id="111"><form action="/cart/add"><input name="id" value="101"><button type="submit" name="add">Buy</button></form></product-form-component>${markup}</section>`,
+      ),
+    html,
+  );
+  assert.equal(await page.locator('insignia-buyer').getAttribute('trigger-label'), "Customise it's");
+});

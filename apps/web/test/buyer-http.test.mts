@@ -11,6 +11,7 @@ import {
 import { BuyerStateError } from '@insignia/database';
 import type { BuyerFailureDiagnostic } from '@insignia/observability';
 import {
+  CatalogReadError,
   ContextualPricingError,
   PartnerSubscriptionError,
   PrimaryMarketError,
@@ -745,4 +746,75 @@ test('an UNSUPPORTED_MARKET refusal logs its check and Market IDs while the buye
     storefrontMarketId: '99',
   });
   assert.equal('primaryMarketId' in (partial.seen[0] ?? {}), false);
+});
+
+test('a provider read failure logs which fixed provider kind failed; the response stays generic (D1)', async () => {
+  const cases = [
+    [new VariantAvailabilityError('provider_error'), 'variant_availability.provider_error', 503],
+    [new VariantAvailabilityError('wrong_identity'), 'variant_availability.wrong_identity', 503],
+    [new VariantAvailabilityError('provider_unavailable'), 'variant_availability.provider_unavailable', 409],
+    [new ContextualPricingError('graphql_error'), 'contextual_pricing.graphql_error', 503],
+    [new PrimaryMarketError('wrong_shop'), 'primary_market.wrong_shop', 503],
+    [new ShopContextError('provider_error'), 'shop_context.provider_error', 503],
+    [new PartnerSubscriptionError('app_not_public'), 'partner_subscription.app_not_public', 503],
+    [new CatalogContextUnavailable('wrong_identity'), 'catalog_context.wrong_identity', 503],
+    [new CatalogReadError('graphql_error', 'Catalog GraphQL response invalid'), 'catalog.graphql_error', 503],
+    [new CatalogReadError('invalid_shape', 'Invalid availability product'), 'catalog.invalid_shape', 503],
+    [
+      new ShopifyAdminUnavailableError('Catalog read failed', 'internal_server_error'),
+      'shopify_admin.internal_server_error',
+      409,
+    ],
+    [new ShopifyAdminUnavailableError('Catalog read timed out', 'timeout'), 'shopify_admin.timeout', 409],
+    [new ShopifyAdminUnavailableError('Catalog read failed'), 'shopify_admin.unavailable', 409],
+  ] as const;
+  for (const [error, providerKind, status] of cases) {
+    const seen: BuyerFailureDiagnostic[] = [];
+    const response = await handleBuyerRequest(
+      new Request('https://app.invalid/v1/config?productId=1'),
+      buyerFixture({
+        config: async () => {
+          throw error;
+        },
+      }),
+      'config',
+      (value) => seen.push(value),
+    );
+    const body = record(await response.json());
+    assert.equal(response.status, status, providerKind);
+    // Byte-identical to every other failure of the same status: no kind, message or provider text.
+    assert.deepEqual(
+      { ...body, requestId: 'fixed' },
+      status === 409
+        ? {
+            code: 'BUSY',
+            message: 'Customization is busy. Try again in a moment.',
+            requestId: 'fixed',
+            retryable: true,
+          }
+        : { code: 'UNAVAILABLE', message: 'Customization request could not be completed.', requestId: 'fixed' },
+      providerKind,
+    );
+    assert.deepEqual(
+      seen.map((value) => ({ errorClass: value.errorClass, providerKind: value.providerKind })),
+      [{ errorClass: 'ProviderReadUnavailable', providerKind }],
+      providerKind,
+    );
+  }
+  // A failure that is not a provider read carries no provider kind.
+  const seen: BuyerFailureDiagnostic[] = [];
+  await handleBuyerRequest(
+    new Request('https://app.invalid/v1/config?productId=1'),
+    buyerFixture({
+      config: async () => {
+        throw new Error('Catalog read failed');
+      },
+    }),
+    'config',
+    (value) => seen.push(value),
+  );
+  assert.deepEqual(
+    seen.map((value) => Object.hasOwn(value, 'providerKind')),
+    [false],
+  );
 });

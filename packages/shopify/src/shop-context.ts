@@ -1,4 +1,4 @@
-import { graphqlThrottled, transientStatus } from './admin-deadline.js';
+import { graphqlTransient, transientStatus } from './admin-deadline.js';
 import type { AdminCredentialSource } from './contextual-pricing.js';
 
 export const SHOP_CONTEXT_API_VERSION = '2026-07' as const;
@@ -23,7 +23,7 @@ export class ShopContextError extends Error {
       | 'invalid_request'
       | 'credential_unavailable'
       | 'network'
-      /** Shopify 429/5xx or a THROTTLED GraphQL error: a later retry can succeed. */
+      /** Shopify 429/5xx or a THROTTLED or INTERNAL_SERVER_ERROR GraphQL error: a later retry can succeed. */
       | 'provider_unavailable'
       | 'provider_error'
       | 'invalid_shape'
@@ -128,7 +128,7 @@ export async function readShopContext(
       throw new ShopContextError('invalid_shape');
     }
     const result = record(body);
-    if (graphqlThrottled(result?.errors)) throw new ShopContextError('provider_unavailable');
+    if (graphqlTransient(result?.errors)) throw new ShopContextError('provider_unavailable');
     if (!result || result.errors !== undefined) throw new ShopContextError('provider_error');
     const shop = record(record(result.data)?.shop);
     if (!shop || typeof shop.id !== 'string' || !/^gid:\/\/shopify\/Shop\/[1-9][0-9]*$/.test(shop.id))
