@@ -189,6 +189,11 @@ export function connectThemeIntegration(host: HTMLElement): () => void {
   const mainId = host.getAttribute('product-id') ?? '';
   const variants = new Set((host.getAttribute('variant-ids') ?? '').split(',').filter((id) => idPattern.test(id)));
   if (idPattern.test(mainId) && host.hasAttribute('known-required')) eligibility.set(mainId, true);
+  const stickyVisibility = new IntersectionObserver((entries) => {
+    for (const { target, isIntersecting } of entries) {
+      if (target instanceof HTMLButtonElement) target.tabIndex = isIntersecting ? 0 : -1;
+    }
+  });
   let interactionFrame: number | undefined;
   let queued = false;
   let disposed = false;
@@ -216,8 +221,14 @@ export function connectThemeIntegration(host: HTMLElement): () => void {
       },
     );
   }
-  function restore(root: HTMLElement, placement: Placement) {
+  function removeBuyer(placement: Placement) {
+    const trigger = placement.buyer?.querySelector('button[slot="trigger"]');
+    if (trigger) stickyVisibility.unobserve(trigger);
     placement.buyer?.remove();
+    placement.buyer = undefined;
+  }
+  function restore(root: HTMLElement, placement: Placement) {
+    removeBuyer(placement);
     for (const [control, before] of placement.hidden) {
       if (
         control.style.getPropertyValue('display') !== 'none' ||
@@ -326,9 +337,9 @@ export function connectThemeIntegration(host: HTMLElement): () => void {
       }
       if (manual) {
         placement.manual = manual;
-        placement.buyer?.remove();
-        placement.buyer = undefined;
+        removeBuyer(placement);
       } else if (!placement.buyer?.isConnected) {
+        removeBuyer(placement);
         placement.manual = undefined;
         const buyer = document.createElement('insignia-buyer');
         buyer.setAttribute('data-insignia-auto', '');
@@ -352,6 +363,11 @@ export function connectThemeIntegration(host: HTMLElement): () => void {
           button.style.minWidth = 'max-content';
         }
         buyer.append(button);
+        // Some themes slide the sticky bar out of view while its controls stay focusable.
+        if (root.matches('sticky-add-to-cart')) {
+          button.tabIndex = -1;
+          stickyVisibility.observe(button);
+        }
         primary.before(buyer);
         placement.buyer = buyer;
       }
@@ -401,6 +417,7 @@ export function connectThemeIntegration(host: HTMLElement): () => void {
     if (interactionFrame !== undefined) cancelAnimationFrame(interactionFrame);
     abort.abort();
     observer.disconnect();
+    stickyVisibility.disconnect();
     document.removeEventListener('submit', preventPlainSubmission, true);
     document.removeEventListener('shopify:section:load', retryFailedLookups);
     document.removeEventListener('change', schedule);
