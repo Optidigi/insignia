@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 import { parseReleaseVerificationRequest, resolveRuntimeReleaseProfile } from '@insignia/shopify';
+import { APP_CLIENT_ID } from '../../../scripts/release/tenant-binding.mts';
 import * as admission from '../dist/purchase-admission.js';
 import { createPurchaseReleasePreparation } from '../dist/purchase-release.js';
 import { durableCoreFixture } from './support/durable-core-fixture.mts';
@@ -28,7 +29,7 @@ test('each cart-line v3 theme binding resolves in the runtime and authorizes the
       deadlineMs: 1_795_520_000_000,
       expectedActiveAppVersionRef: binding.versionId,
       binding: {
-        appClientId: '1443cf6d03d39edae7c101a943c5c684',
+        appClientId: APP_CLIENT_ID,
         shopId: 'synthetic-shop',
         installationGeneration: '1',
         authorizationGeneration: '11111111-1111-4111-8111-111111111111',
