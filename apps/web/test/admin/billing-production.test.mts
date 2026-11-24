@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { mkdir, rm } from 'node:fs/promises';
 import { test } from 'node:test';
 import type { EntitlementPolicyConfig } from '@insignia/application';
-import type { ActiveSubscriptionSnapshot } from '@insignia/shopify';
+import { type ActiveSubscriptionSnapshot, PartnerSubscriptionError } from '@insignia/shopify';
 import { build } from 'esbuild';
 import { createMerchantBillingReader } from '../../src/server/admin/billing.ts';
 import { adminActor, adminServices } from './support/fixtures.mts';
@@ -139,6 +139,41 @@ test('installation change during provider observation rejects the entire display
     })(actor),
     /installation changed/,
   );
+});
+test('a failed Shopify subscription lookup keeps the current merchant’s plan link without granting access', async () => {
+  let checks = 0;
+  let authorityFailure: Error | null = null;
+  const billing = createMerchantBillingReader({
+    appId: 'gid://shopify/App/2',
+    policy,
+    now: () => at,
+    current: async () => {
+      if (++checks % 2 === 0 && authorityFailure) throw authorityFailure;
+    },
+    read: async () => {
+      throw new PartnerSubscriptionError('network_or_timeout');
+    },
+  });
+  const result = await billing(actor);
+  assert.equal(checks, 2);
+  assert.deepEqual(result, {
+    status: 'unavailable',
+    observedAt: null,
+    trialEndsAt: null,
+    currentCycle: null,
+    scheduledCancellation: false,
+    pendingChange: false,
+    newActionsAllowed: false,
+    standardPrice: null,
+    recurringPrice: null,
+    developmentTerms: false,
+    managementUrl: 'https://admin.shopify.com/store/example/charges/insignia-1/pricing_plans',
+  });
+  for (const message of ['installation changed', 'online staff grant unavailable']) {
+    authorityFailure = new Error(message);
+    await assert.rejects(billing(actor), authorityFailure);
+  }
+  assert.equal(checks, 6);
 });
 test('zero recurring terms of a recognized plan are development terms on any shop; a priced plan is not', async () => {
   const rewrite = { ...actor, shop: 'development-example.myshopify.com', shopId: 'gid://shopify/Shop/3' };
