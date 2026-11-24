@@ -86,6 +86,7 @@ test('observed native origin binds only the closed release profile and validated
 });
 
 for (const [releaseProfile, expectedVersion] of [
+  ['native-sticky-keyboard-1127c3e2', '1264667197441'],
   ['native-market-dialog-fdd262ea', '1264361504769'],
   ['native-network-access-f57facc8', '1263405170689'],
   ['native-review-market-6967baed', '1263125463041'],

@@ -1,6 +1,7 @@
 /** Deployment selects a closed reviewed target, never release authority.
  * Every consumer still independently reads and qualifies trusted release evidence. */
 export type RuntimeReleaseProfileName =
+  | 'native-sticky-keyboard-1127c3e2'
   | 'native-market-dialog-fdd262ea'
   | 'native-network-access-f57facc8'
   | 'native-review-market-6967baed'
@@ -48,6 +49,11 @@ export type RuntimeReleaseProfileName =
   | 'lean-markets-7b17cd9'
   | 'lean-privacy-theme-23fd116';
 const profiles = Object.freeze({
+  'native-sticky-keyboard-1127c3e2': Object.freeze({
+    name: 'native-sticky-keyboard-1127c3e2' as const,
+    activeVersionRef: '1264667197441',
+    functionsSourceCommit: 'aa3b6166eb2b4679f27e1b7f128d914137ba8412',
+  }),
   'native-market-dialog-fdd262ea': Object.freeze({
     name: 'native-market-dialog-fdd262ea' as const,
     activeVersionRef: '1264361504769',

@@ -134,6 +134,12 @@ import speedModules from '../../deployment/m5-runtime/native-speed-module-baseli
 import speedCandidate from '../../deployment/m5-runtime/native-speed-release-binding.json' with { type: 'json' };
 import startupModules from '../../deployment/m5-runtime/native-startup-module-baseline.json' with { type: 'json' };
 import startupCandidate from '../../deployment/m5-runtime/native-startup-release-binding.json' with { type: 'json' };
+import stickyKeyboardModules from '../../deployment/m5-runtime/native-sticky-keyboard-module-baseline.json' with {
+  type: 'json',
+};
+import stickyKeyboardBinding from '../../deployment/m5-runtime/native-sticky-keyboard-release-binding.json' with {
+  type: 'json',
+};
 import nativeThemeModules from '../../deployment/m5-runtime/native-theme-module-baseline.json' with { type: 'json' };
 import nativeThemeCandidate from '../../deployment/m5-runtime/native-theme-release-binding.json' with { type: 'json' };
 import uiFixModules from '../../deployment/m5-runtime/native-uifix-module-baseline.json' with { type: 'json' };
@@ -220,6 +226,15 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  'native-sticky-keyboard-1127c3e2': {
+    versionId: stickyKeyboardBinding.versionId,
+    versionTag: stickyKeyboardBinding.versionTag,
+    versionIds: stickyKeyboardBinding.versionIds,
+    moduleHash: stickyKeyboardBinding.moduleHash,
+    modules: stickyKeyboardModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   'native-market-dialog-fdd262ea': {
     versionId: marketDialogBinding.versionId,
     versionTag: marketDialogBinding.versionTag,
