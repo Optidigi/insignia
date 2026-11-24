@@ -1,5 +1,5 @@
 import { createCustomerTranslator } from '@insignia/ui-localization/customer';
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { portFailure } from '../../../../frontend/designer/src/port-failure';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
 import { quoteReviewMoney } from '../../../../frontend/designer/src/quote-review';
@@ -37,6 +37,21 @@ export function DesignerRepair({
       setBusy(false);
     }
   }
+  useEffect(() => {
+    // §8.1: Escape does exactly what Close does. Keys pressed in this frame never reach the host dialog,
+    // so the view handles them: an open removal confirmation closes first, and nothing happens while an
+    // action is pending (Close is disabled then). Capture on window so the suspended Designer behind this
+    // view sees the key as handled.
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      event.preventDefault();
+      if (busy) return;
+      if (review) setReview(undefined);
+      else onClose();
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [busy, review, onClose]);
   const view = repairView(repair);
   // Fixed slots, so the buttons keep their places (and focus) when a removal review replaces them.
   function offer(kind: RepairOffer['action']) {
