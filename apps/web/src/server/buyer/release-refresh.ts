@@ -19,6 +19,9 @@ export function createReleaseRefresher(input: {
   /** Refresh if the current record is older than RELEASE_REFRESH_AFTER_MS; resolve to the current
    * record's observation time (ms), or null when none is available. */
   refresh(scope: Scope): Promise<number | null>;
+  /** Whether the shop still needs a refresh when one is due (default: always). A due run that is no
+   * longer wanted starts nothing and leaves the shop's last start, so it uses up no interval. */
+  wanted?(scope: Scope): boolean;
   clock?: () => number;
   setTimer?: (run: () => void, delayMs: number) => Timer;
   clearTimer?: (timer: Timer) => void;
@@ -43,6 +46,11 @@ export function createReleaseRefresher(input: {
     state.timer = undefined;
     if (clock() > state.activeUntil) {
       shops.delete(key);
+      return;
+    }
+    if (input.wanted && !input.wanted(state.scope)) {
+      // Idle until the next touch; forget the shop once its last start no longer limits one.
+      if (clock() >= state.lastStart + RELEASE_REFRESH_INTERVAL_MS) shops.delete(key);
       return;
     }
     state.running = true;

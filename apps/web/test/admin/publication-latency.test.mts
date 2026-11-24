@@ -6,11 +6,20 @@ import type { ExpectedFunctionBuild, FunctionArtifactIdentity } from '@insignia/
 import { SigningKeyLifecycle } from '@insignia/application';
 import { createDurableCore, type DurableCore } from '@insignia/database';
 import { createObservability, type PublicationTimingDiagnostic } from '@insignia/observability';
-import { createShopifyAvailabilityHoldV3Port, PublicationAdminError } from '@insignia/shopify';
+import {
+  createShopifyAvailabilityHoldV3Port,
+  PublicationAdminError,
+  resolveRuntimeReleaseProfile,
+} from '@insignia/shopify';
 import { Pool } from 'pg';
 import type { AdminActor } from '../../src/server/admin/contracts.ts';
 import { handleAdminRequest } from '../../src/server/admin/http.ts';
-import { createServerActivationReadiness } from '../../src/server/admin/release-evidence.ts';
+import { createPublicationReleaseRefresh } from '../../src/server/admin/publication-release.ts';
+import {
+  createDemandDrivenReleaseReader,
+  createServerActivationReadiness,
+} from '../../src/server/admin/release-evidence.ts';
+import { RELEASE_FRESHNESS_MS, RELEASE_REFRESH_AFTER_MS } from '../../src/server/buyer/release-refresh.ts';
 import {
   createMerchantConfigService,
   PUBLICATION_RESEND_VALIDITY_MS,
@@ -28,6 +37,149 @@ const delay = () => new Promise((resolve) => setTimeout(resolve, latencyMs));
 // #468: the largest step, in serial provider rounds; see PUBLICATION_STEP_MARGIN_MS.
 const LARGEST_STEP_ROUNDS = 15;
 
+/** Production's measured Admin call latency: a first publication's 69 rounds took ~24 s. */
+const VIRTUAL_CALL_MS = 350;
+/** A trusted release collection (spec: ~4.5–6 s). */
+const COLLECTION_MS = 5_000;
+type ReleaseModel = {
+  /** Keep the record fresh in the background while the publish runs (production.ts). */
+  background: boolean;
+  /** Age of the stored record when the publish starts; null when there is none. */
+  recordAgeMs: number | null;
+  /** Collections (1-based, in start order) that stop without a record. */
+  failing?: (collection: number) => boolean;
+};
+
+/**
+ * Release verification as production.ts composes it for a publish, on a clock that runs
+ * VIRTUAL_CALL_MS / latencyMs faster than real time, so a synthetic provider call takes production
+ * time: the real demand-driven reader under the unchanged 30 s freshness, a collector that takes
+ * COLLECTION_MS (and, like the collector process, reuses a record fresh for another 8 s), the write
+ * gate on the step's own evidence and, when enabled, the publish-scoped background refresh sharing
+ * the reader's single-flight map.
+ */
+function releaseModel(config: ReleaseModel) {
+  const scale = VIRTUAL_CALL_MS / latencyMs;
+  const origin = performance.now();
+  const base = Date.parse('2026-10-01T12:00:00.000Z');
+  const clock = () => base + (performance.now() - origin) * scale;
+  const iso = (ms: number) => new Date(ms).toISOString();
+  let stored: { recordId: string; observedAt: number } | null =
+    config.recordAgeMs === null ? null : { recordId: randomUUID(), observedAt: clock() - config.recordAgeMs };
+  const evidenceAt = (at: number) =>
+    stored && stored.observedAt <= at && at - stored.observedAt <= RELEASE_FRESHNESS_MS
+      ? ({
+          record: {
+            recordId: stored.recordId,
+            attestation: {
+              observedAt: iso(stored.observedAt),
+              expiresAt: iso(stored.observedAt + RELEASE_FRESHNESS_MS),
+            },
+          },
+        } as never as Awaited<ReturnType<ReturnType<typeof createDemandDrivenReleaseReader>['read']>>)
+      : null;
+  const stats = {
+    /** Collections started by a publication step, which waits for them. */
+    synchronous: 0,
+    /** Collections started by the background refresh. */
+    background: 0,
+    maxConcurrent: 0,
+    /** Virtual time the publish spent in its release checks (critical path). */
+    waitMs: 0,
+    checks: 0,
+    /** Writes the release write gate refused because the step's own evidence lapsed mid-step. */
+    refusedWrites: 0,
+  };
+  let running = 0;
+  const collector = (kind: 'synchronous' | 'background') => ({
+    async collect(request: { requestId: string }) {
+      const reusable = evidenceAt(clock() + 8_000);
+      if (reusable)
+        return { requestId: request.requestId, recordId: reusable.record.recordId, state: 'COMPLETE' as const };
+      stats[kind]++;
+      stats.maxConcurrent = Math.max(stats.maxConcurrent, ++running);
+      const begun = clock();
+      try {
+        await new Promise((resolve) => setTimeout(resolve, COLLECTION_MS / scale));
+      } finally {
+        running--;
+      }
+      if (config.failing?.(stats.synchronous + stats.background))
+        return { requestId: request.requestId, recordId: null, state: 'STOPPED' as const };
+      stored = { recordId: randomUUID(), observedAt: begun + 1_000 };
+      return { requestId: request.requestId, recordId: stored.recordId, state: 'COMPLETE' as const };
+    },
+  });
+  const binding = {
+    shopId: 'synthetic-tenant',
+    installationGeneration: '1',
+    appClientId: 'a'.repeat(32),
+    authorizationGeneration: randomUUID(),
+    authorizationEpoch: 0,
+    externalInstallationId: 'gid://shopify/AppInstallation/1',
+  };
+  const activeVersionRef = resolveRuntimeReleaseProfile().activeVersionRef;
+  const collecting = new Map<string, Promise<string | null>>();
+  const reader = (refreshAhead: boolean) =>
+    createDemandDrivenReleaseReader({
+      records: {
+        read: async (request) =>
+          evidenceAt(+request.now + (refreshAhead ? RELEASE_FRESHNESS_MS - RELEASE_REFRESH_AFTER_MS : 0)),
+      },
+      binding,
+      collector: collector(refreshAhead ? 'background' : 'synchronous'),
+      isCurrent: async () => {},
+      deadline: () => clock() + 300_000,
+      now: () => new Date(clock()),
+      inFlight: collecting,
+      // As production.ts: a publication step that joined a collection it did not start, which ended
+      // without a record, collects once on its own; the background refresh does not.
+      ...(refreshAhead ? {} : { collectAfterJoinedMiss: true }),
+    });
+  const read = (target: ReturnType<typeof reader>) =>
+    target.read({ scope: binding, expectedActiveAppVersionRef: activeVersionRef, now: new Date(clock()) });
+  const publishing = reader(false);
+  let verified: ReturnType<typeof evidenceAt> = null;
+  const refreshing = reader(true);
+  const refresh = createPublicationReleaseRefresh<AdminActor>({
+    async refresh() {
+      const evidence = await read(refreshing);
+      return evidence ? Date.parse(evidence.record.attestation.observedAt) : null;
+    },
+    async observedAt() {
+      const evidence = evidenceAt(clock());
+      return evidence ? Date.parse(evidence.record.attestation.observedAt) : null;
+    },
+    clock,
+    setTimer: (run, delayMs) => setTimeout(run, delayMs / scale),
+  });
+  return {
+    stats,
+    clock,
+    /** A publication step's release check, as production.ts `verifyPublicationRelease`. */
+    async verify() {
+      const started = clock();
+      stats.checks++;
+      try {
+        verified = await read(publishing);
+        return verified !== null;
+      } finally {
+        stats.waitMs += clock() - started;
+      }
+    },
+    /** The release part of production.ts `publicationAuthorityFresh`, on the step's own evidence. */
+    fresh() {
+      const at = clock();
+      const observed = Date.parse(verified?.record.attestation.observedAt ?? '');
+      const fresh = Number.isFinite(observed) && observed <= at && at - observed <= RELEASE_FRESHNESS_MS;
+      if (!fresh) stats.refusedWrites++;
+      return fresh;
+    },
+    begin: (actor: AdminActor) => (config.background ? refresh.begin(actor) : () => {}),
+    close: () => refresh.close(),
+  };
+}
+
 /**
  * A first publication (ACTIVE product, so the owned availability hold and restore really
  * dispatch) through the real admin HTTP route, merchant-config loop and PG activation coordinator.
@@ -35,7 +187,11 @@ const LARGEST_STEP_ROUNDS = 15;
  * the request's serial wait. `authenticate` answers the current `actor` (one per request session).
  */
 type Preparation = (actor: AdminActor) => Promise<{ ready: boolean; reason: string | null }>;
-async function firstPublication(core: DurableCore, options: { preparePublication?: Preparation } = {}) {
+async function firstPublication(
+  core: DurableCore,
+  options: { preparePublication?: Preparation; release?: ReturnType<typeof releaseModel> } = {},
+) {
+  const release = options.release;
   const shopId = randomUUID();
   const configId = randomUUID();
   const clientId = 'a'.repeat(32);
@@ -283,10 +439,20 @@ async function firstPublication(core: DurableCore, options: { preparePublication
         steps.push({ kind, ms: Math.round(performance.now() - started), rounds: rounds - before });
       }
     };
+  // As production.ts: each advance first checks (and if stale collects) its own release record.
+  const releaseChecked =
+    <A extends unknown[], R>(advance: (...args: A) => Promise<R>) =>
+    async (...args: A): Promise<R> => {
+      if (release && !(await release.verify())) throw new Error('Publication verification unavailable');
+      return advance(...args);
+    };
   const measured = {
     ...activation,
-    advance: step('activation', activation.advance),
-    publications: { ...activation.publications, advance: step('publication', activation.publications.advance) },
+    advance: step('activation', releaseChecked(activation.advance)),
+    publications: {
+      ...activation.publications,
+      advance: step('publication', releaseChecked(activation.publications.advance)),
+    },
   };
   let actor: AdminActor = {
     shop: `s${shopId.replaceAll('-', '')}.myshopify.com`,
@@ -301,7 +467,7 @@ async function firstPublication(core: DurableCore, options: { preparePublication
     canEdit: true,
   };
   // The session part of production.ts's publicationAuthorityFresh, checked before every write.
-  const authorityFresh = () => actor.expiresAtMs > Date.now();
+  const authorityFresh = () => actor.expiresAtMs > Date.now() && (release?.fresh() ?? true);
   const catalog = {
     get: async (_actor: unknown, gid: string) => {
       await count('product read');
@@ -330,6 +496,14 @@ async function firstPublication(core: DurableCore, options: { preparePublication
     activation: () => measured,
     capturePublicationPreviews: (owner, input) => captureSyntheticPublicationPreviews(core, owner, input),
     ...(options.preparePublication ? { preparePublication: options.preparePublication } : {}),
+    ...(release
+      ? {
+          preparePublication: async () =>
+            (await release.verify())
+              ? { ready: true, reason: null }
+              : { ready: false, reason: 'Publication verification is unavailable. Contact support.' },
+        }
+      : {}),
   });
   const timings: PublicationTimingDiagnostic[] = [];
   const services = adminServices({
@@ -337,7 +511,18 @@ async function firstPublication(core: DurableCore, options: { preparePublication
     recordPublicationTiming: (timing) => timings.push(timing),
     authenticate: async () => actor,
     catalog,
-    configs,
+    configs: {
+      ...configs,
+      // As production.ts: the background refresh runs while this publish request is in progress.
+      async publish(...args: Parameters<typeof configs.publish>) {
+        const end = release?.begin(args[0]) ?? (() => {});
+        try {
+          return await configs.publish(...args);
+        } finally {
+          end();
+        }
+      },
+    },
   });
   const publish = (key: string) =>
     handleAdminRequest(
@@ -731,6 +916,165 @@ test('#466 B with #468: an abandoned request is answered, never resent or resume
     // Publish again: a new request runs to ACTIVE.
     const again = await (await f.publish('m5-466-again')).json();
     assert.deepEqual([again.kind, again.state], ['accepted', 'ACTIVE']);
+  } finally {
+    await core.close();
+  }
+});
+
+/** One publish request with the release model; times are virtual (production call latency). */
+async function measuredPublication(core: DurableCore, config: ReleaseModel) {
+  const release = releaseModel(config);
+  try {
+    const f = await firstPublication(core, { release });
+    const run = async (key: string) => {
+      const started = release.clock();
+      const before = { ...release.stats };
+      const rounds = f.rounds();
+      const steps = f.steps.length;
+      const response = await f.publish(key);
+      const body = await response.json();
+      return {
+        status: response.status,
+        state: body.state as string | undefined,
+        kind: body.kind as string,
+        ms: Math.round(release.clock() - started),
+        rounds: f.rounds() - rounds,
+        synchronousCollections: release.stats.synchronous - before.synchronous,
+        backgroundCollections: release.stats.background - before.background,
+        releaseWaitMs: Math.round(release.stats.waitMs - before.waitMs),
+        checks: release.stats.checks - before.checks,
+        refusedWrites: release.stats.refusedWrites - before.refusedWrites,
+        steps: f.steps.length - steps,
+        timing: f.timings.at(-1),
+      };
+    };
+    const first = await run('d3-first');
+    // Republish: the same merchant publishes again right away (a new request on a fresh record).
+    const again = await run('d3-again');
+    return { first, again, maxConcurrent: release.stats.maxConcurrent };
+  } finally {
+    release.close();
+  }
+}
+
+test('decision 3: a publish keeps its release record fresh in the background instead of collecting on its steps', {
+  skip: !database,
+  timeout: 300000,
+}, async (t) => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  try {
+    for (const [scenario, recordAgeMs] of [
+      ['cold (no record)', null],
+      ['aging record (20 s old)', 20_000],
+    ] as const) {
+      const [before, after] = [
+        await measuredPublication(core, { background: false, recordAgeMs }),
+        await measuredPublication(core, { background: true, recordAgeMs }),
+      ];
+      for (const [label, result] of [
+        ['before', before],
+        ['after', after],
+      ] as const)
+        for (const [request, value] of [
+          ['first', result.first],
+          ['republish', result.again],
+        ] as const) {
+          const { timing, ...shown } = value;
+          t.diagnostic(`${scenario} ${label} ${request} ${JSON.stringify({ ...shown, outcome: timing?.outcome })}`);
+        }
+      // Today a step collects on the request path: preparation without a record, a later step once it lapses.
+      assert.ok(before.first.synchronousCollections >= 1);
+      for (const value of [after.first, after.again]) {
+        // Every collection ran in the background; a step that needed one joined it in flight.
+        assert.equal(value.synchronousCollections, 0, JSON.stringify(value));
+        // Timing spans are still emitted for every request.
+        assert.ok(value.timing && value.timing.spans.length > 0, JSON.stringify(value));
+        // Not asserted: the outcome. A step that starts on a 25-30 s old record can still have its
+        // write refused once that evidence lapses mid-step (`refusedWrites`), before and after this
+        // change; the refresh only narrows that window, which the measured 30 s publish can reach
+        // under load. Preparation and every advance still check their own record.
+        if (value.state === 'ACTIVE') {
+          assert.equal(value.checks, value.steps + 1);
+          assert.ok(value.timing?.spans.some((span) => span.stage === 'preparation'));
+        }
+      }
+      assert.equal(after.maxConcurrent, 1, 'never more than one collection per shop');
+      assert.ok(
+        after.first.releaseWaitMs + after.again.releaseWaitMs < before.first.releaseWaitMs + before.again.releaseWaitMs,
+      );
+    }
+  } finally {
+    await core.close();
+  }
+});
+
+test('decision 3: a background refresh that fails leaves the publish to collect on its step, as today', {
+  skip: !database,
+  timeout: 120000,
+}, async () => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  try {
+    // The record lapses 10 s in; the background refresh 2 s in stops without one.
+    const { first, maxConcurrent } = await measuredPublication(core, {
+      background: true,
+      recordAgeMs: 20_000,
+      failing: (collection) => collection === 1,
+    });
+    assert.equal(maxConcurrent, 1);
+    assert.ok(first.backgroundCollections <= 1, JSON.stringify(first));
+    if (first.refusedWrites > 0) {
+      // Under load a step can still start on a record about to lapse and see its write refused mid-step: the
+      // existing hazard this change narrows but does not remove (owner decision pending). As today, the step
+      // either recovers on a fresh record and the publish reaches ACTIVE, or it fails without effect (503).
+      assert.ok((first.status === 202 && first.state === 'ACTIVE') || first.status === 503, JSON.stringify(first));
+      return;
+    }
+    assert.deepEqual([first.status, first.state], [202, 'ACTIVE'], JSON.stringify(first));
+    assert.equal(first.synchronousCollections, 1, 'the step that found the record stale collected it');
+  } finally {
+    await core.close();
+  }
+});
+
+test('decision 3: a cold publish whose background collection fails collects once on its own step and reaches ACTIVE', {
+  skip: !database,
+  timeout: 120000,
+}, async () => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  try {
+    // No record: the refresh starts collecting at begin and preparation joins it; it stops without one.
+    const { first, maxConcurrent } = await measuredPublication(core, {
+      background: true,
+      recordAgeMs: null,
+      failing: (collection) => collection === 1,
+    });
+    assert.deepEqual([first.status, first.state], [202, 'ACTIVE'], JSON.stringify(first));
+    assert.equal(first.backgroundCollections, 1);
+    assert.equal(first.synchronousCollections, 1, 'preparation collected once after the joined collection failed');
+    assert.equal(maxConcurrent, 1);
+  } finally {
+    await core.close();
+  }
+});
+
+test('decision 3: without any record the publish still fails closed before a provider write', {
+  skip: !database,
+  timeout: 120000,
+}, async () => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  try {
+    for (const background of [false, true]) {
+      const release = releaseModel({ background, recordAgeMs: null, failing: () => true });
+      try {
+        const f = await firstPublication(core, { release });
+        const response = await f.publish('d3-unavailable');
+        assert.equal(response.status, 422, await response.clone().text());
+        assert.equal((await response.json()).code, 'PUBLICATION_UNAVAILABLE');
+        assert.equal(writesSoFar(f), 0);
+      } finally {
+        release.close();
+      }
+    }
   } finally {
     await core.close();
   }

@@ -43,6 +43,7 @@ import { loadArtworkStorageProfile } from '@insignia/storage';
 import { createAutomaticUninstallEnrollment, inspectArtworkPrivately } from '@insignia/worker';
 import { Pool } from 'pg';
 import { loadCredentialKeys } from '../../../../worker/src/config.ts';
+import { RELEASE_FRESHNESS_MS, RELEASE_REFRESH_AFTER_MS } from '../buyer/release-refresh.ts';
 import { createMerchantConfigService } from '../merchant-config.js';
 import { createSignerClient, type SignerClient } from '../signer-client.ts';
 import {
@@ -61,6 +62,7 @@ import { createMerchantPublicationCapture } from './merchant-previews.js';
 import { createMethodLibrary } from './methods.js';
 import { createMerchantPreferences } from './preferences.js';
 import { productSummary } from './product-summary.js';
+import { createPublicationReleaseRefresh } from './publication-release.ts';
 import { publicationStage } from './publication-timing.js';
 import {
   createBoundProductionActivationReadiness,
@@ -155,6 +157,8 @@ export function createProductionAdminServices(
   const storeSetup = env.INSIGNIA_STORE_SETUP_ENABLED === '1';
   const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host, fetchImpl: fetch });
   const offlineBootstrap = env.INSIGNIA_M7_BUYER_ENABLED === '1';
+  // Owner decision 3: on unless explicitly switched off; each step still checks its own record.
+  const publishReleaseRefresh = env.INSIGNIA_PUBLICATION_RELEASE_REFRESH !== '0';
   const credentialKeys = offlineBootstrap ? loadCredentialKeys(env) : undefined;
   const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }), { credentialKeys });
   const enrollUninstall = createAutomaticUninstallEnrollment({
@@ -179,6 +183,7 @@ export function createProductionAdminServices(
   const authenticationCache = createAdminAuthenticationCache<OnlineStaffGrant>();
   const activations = new WeakMap<AdminActor, ReturnType<typeof core.productionActivations.create>>();
   const verifications = new WeakMap<AdminActor, DurableCoreReleaseReader>();
+  const refreshReaders = new WeakMap<AdminActor, DurableCoreReleaseReader>();
   const verified = new WeakMap<AdminActor, NonNullable<Awaited<ReturnType<DurableCoreReleaseReader['read']>>>>();
   const collecting = new Map<string, Promise<string | null>>();
   const policy = featurePolicy(env);
@@ -206,59 +211,81 @@ export function createProductionAdminServices(
       throw new Error('Online staff grant unavailable');
     return online;
   }
+  /** The actor's demand-driven release reader. `refreshAhead` (the background refresh) treats a
+   * record older than RELEASE_REFRESH_AFTER_MS as missing, so it collects ahead of expiry; it shares
+   * `collecting` with the publish's own reads, so one shop has one collection in flight. */
+  async function releaseReader(actor: AdminActor, refreshAhead: boolean): Promise<DurableCoreReleaseReader | null> {
+    const readers = refreshAhead ? refreshReaders : verifications;
+    const cached = readers.get(actor);
+    if (cached) return cached;
+    const collector = releaseCollector;
+    if (!collector) return null;
+    const online = grant(actor);
+    const scope = await core.tenants.getActiveAuthorizationScope({
+      shopId: actor.tenantShopId,
+      installationGeneration: actor.installationGeneration,
+    });
+    if (!scope) return null;
+    const deadlineMs = Math.min(actor.expiresAtMs, online.expiresAtMs - 30_000, Date.now() + 300_000);
+    const reader = createDemandDrivenReleaseReader({
+      releaseProfile: releaseProfile.name,
+      records: refreshAhead
+        ? {
+            read: (request) =>
+              core.trustedReleaseRecords.read({
+                ...request,
+                now: new Date(+request.now + RELEASE_FRESHNESS_MS - RELEASE_REFRESH_AFTER_MS),
+              }),
+          }
+        : core.trustedReleaseRecords,
+      // A collection on a publish request is its own timing span; a background refresh has none.
+      collector: refreshAhead
+        ? collector
+        : { collect: (request) => publicationStage('release-collect', () => collector.collect(request)) },
+      binding: {
+        shopId: actor.tenantShopId,
+        installationGeneration: actor.installationGeneration,
+        appClientId: apiKey,
+        authorizationGeneration: scope.authorizationGeneration,
+        authorizationEpoch: scope.authorizationEpoch,
+        externalInstallationId: actor.installationId,
+      },
+      deadline: () => deadlineMs,
+      inFlight: collecting,
+      // A step that joined a collection it did not start (usually the background refresh) and got no
+      // record collects once on its own, as it would have without the refresh.
+      collectAfterJoinedMiss: !refreshAhead,
+      async isCurrent() {
+        await active(actor);
+        grant(actor);
+        const managed = await core.tenants.getManagedInstallationState(actor.shop);
+        if (
+          !managed?.active ||
+          managed.shopId !== actor.tenantShopId ||
+          managed.currentGeneration !== actor.installationGeneration ||
+          managed.externalInstallationId !== actor.installationId
+        )
+          throw new Error('Publication installation changed');
+        const current = await core.tenants.getActiveAuthorizationScope({
+          shopId: actor.tenantShopId,
+          installationGeneration: actor.installationGeneration,
+        });
+        if (
+          current?.authorizationGeneration !== scope.authorizationGeneration ||
+          current.authorizationEpoch !== scope.authorizationEpoch
+        )
+          throw new Error('Publication authorization changed');
+      },
+    });
+    readers.set(actor, reader);
+    return reader;
+  }
   async function verifyPublicationRelease(actor: AdminActor): Promise<boolean> {
     if (!releaseCollector) return true; // Existing passive gates still deny absent authority.
     await active(actor);
-    const online = grant(actor);
-    let reader = verifications.get(actor);
-    if (!reader) {
-      const scope = await core.tenants.getActiveAuthorizationScope({
-        shopId: actor.tenantShopId,
-        installationGeneration: actor.installationGeneration,
-      });
-      if (!scope) return false;
-      const deadlineMs = Math.min(actor.expiresAtMs, online.expiresAtMs - 30_000, Date.now() + 300_000);
-      reader = createDemandDrivenReleaseReader({
-        releaseProfile: releaseProfile.name,
-        records: core.trustedReleaseRecords,
-        // A collection on a publish request is its own timing span.
-        collector: {
-          collect: (request) => publicationStage('release-collect', () => releaseCollector.collect(request)),
-        },
-        binding: {
-          shopId: actor.tenantShopId,
-          installationGeneration: actor.installationGeneration,
-          appClientId: apiKey,
-          authorizationGeneration: scope.authorizationGeneration,
-          authorizationEpoch: scope.authorizationEpoch,
-          externalInstallationId: actor.installationId,
-        },
-        deadline: () => deadlineMs,
-        inFlight: collecting,
-        async isCurrent() {
-          await active(actor);
-          grant(actor);
-          const managed = await core.tenants.getManagedInstallationState(actor.shop);
-          if (
-            !managed?.active ||
-            managed.shopId !== actor.tenantShopId ||
-            managed.currentGeneration !== actor.installationGeneration ||
-            managed.externalInstallationId !== actor.installationId
-          )
-            throw new Error('Publication installation changed');
-          const current = await core.tenants.getActiveAuthorizationScope({
-            shopId: actor.tenantShopId,
-            installationGeneration: actor.installationGeneration,
-          });
-          if (
-            current?.authorizationGeneration !== scope.authorizationGeneration ||
-            current.authorizationEpoch !== scope.authorizationEpoch
-          )
-            throw new Error('Publication authorization changed');
-        },
-      });
-      verifications.set(actor, reader);
-    }
+    grant(actor);
+    const reader = await releaseReader(actor, false);
+    if (!reader) return false;
     const evidence = await reader.read({
       scope: { shopId: actor.tenantShopId, installationGeneration: actor.installationGeneration, appClientId: apiKey },
       expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
@@ -268,6 +295,41 @@ export function createProductionAdminServices(
     else verified.delete(actor);
     return evidence !== null;
   }
+  /** While a publish is in progress its release record is kept fresh off the request path; each
+   * step still verifies its own record (above) and the write gate still uses that step's evidence. */
+  const publicationRelease = createPublicationReleaseRefresh<AdminActor>({
+    async refresh(actor) {
+      await active(actor);
+      grant(actor);
+      const reader = await releaseReader(actor, true);
+      const evidence = reader
+        ? await reader.read({
+            scope: {
+              shopId: actor.tenantShopId,
+              installationGeneration: actor.installationGeneration,
+              appClientId: apiKey,
+            },
+            expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
+            now: new Date(),
+          })
+        : null;
+      const observedAt = evidence ? Date.parse(evidence.record.attestation.observedAt) : Number.NaN;
+      return Number.isFinite(observedAt) ? observedAt : null;
+    },
+    async observedAt(actor) {
+      const evidence = await core.trustedReleaseRecords.read({
+        scope: {
+          shopId: actor.tenantShopId,
+          installationGeneration: actor.installationGeneration,
+          appClientId: apiKey,
+        },
+        expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
+        now: new Date(),
+      });
+      const observedAt = evidence ? Date.parse(evidence.record.attestation.observedAt) : Number.NaN;
+      return Number.isFinite(observedAt) ? observedAt : null;
+    },
+  });
   /** True when the store's cart transform and validation are deployed, deploying both if it has
    * neither. A fresh release record already attests them, so it costs no provider read then. */
   const functionSetups = new Map<string, Promise<boolean>>();
@@ -1112,7 +1174,17 @@ export function createProductionAdminServices(
       return result;
     },
     catalog: { list: catalog.list, get: catalog.get },
-    configs: service,
+    configs: {
+      ...service,
+      async publish(actor, productId, data) {
+        const end = releaseCollector && publishReleaseRefresh ? publicationRelease.begin(actor) : () => {};
+        try {
+          return await service.publish(actor, productId, data);
+        } finally {
+          end();
+        }
+      },
+    },
     methods: createMethodLibrary(core, {
       currency: async (actor) => {
         await active(actor);

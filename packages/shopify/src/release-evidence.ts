@@ -46,6 +46,10 @@ export function createDemandDrivenReleaseReader(input: {
   now?: () => Date;
   releaseProfile?: RuntimeReleaseProfileName;
   inFlight?: Map<string, Promise<string | null>>;
+  /** When a read joined a collection another reader started and it ended without a record (stopped,
+   * uncertain or a failed transport), collect once more: joining a new in-flight one still counts,
+   * so a shop keeps one collection in flight; if that also yields nothing, the read fails closed. */
+  collectAfterJoinedMiss?: boolean;
 }): TrustedReleaseEvidenceRecordsPort {
   const acceptedActiveAppVersionRef = resolveRuntimeReleaseProfile(input.releaseProfile).activeVersionRef;
   const binding = Object.freeze({ ...input.binding });
@@ -76,39 +80,47 @@ export function createDemandDrivenReleaseReader(input: {
         await current();
         return existing;
       }
-      let collection = inFlight.get(key);
-      if (!collection) {
-        // An older empty read can arrive after a sibling collection settles.
-        // Publish this recheck before awaiting it, so only a still-missing record
-        // starts collection; the shared result is an ID, never cached authority.
-        collection = (async () => {
-          const available = await read();
-          if (available) return available.record.recordId;
-          const requestId = randomUUID();
-          const result = await input.collector.collect({
-            requestId,
-            binding,
-            expectedActiveAppVersionRef: acceptedActiveAppVersionRef,
-            deadlineMs: input.deadline(),
-          });
-          if (result.requestId !== requestId) throw new Error('Verification completion mismatch');
-          return result.state === 'COMPLETE' ? result.recordId : null;
-        })();
-        inFlight.set(key, collection);
+      for (let attempt = 0; ; attempt++) {
+        let collection = inFlight.get(key);
+        const joined = collection !== undefined;
+        if (!collection) {
+          // An older empty read can arrive after a sibling collection settles.
+          // Publish this recheck before awaiting it, so only a still-missing record
+          // starts collection; the shared result is an ID, never cached authority.
+          collection = (async () => {
+            const available = await read();
+            if (available) return available.record.recordId;
+            const requestId = randomUUID();
+            const result = await input.collector.collect({
+              requestId,
+              binding,
+              expectedActiveAppVersionRef: acceptedActiveAppVersionRef,
+              deadlineMs: input.deadline(),
+            });
+            if (result.requestId !== requestId) throw new Error('Verification completion mismatch');
+            return result.state === 'COMPLETE' ? result.recordId : null;
+          })();
+          inFlight.set(key, collection);
+        }
+        const retry = joined && attempt === 0 && input.collectAfterJoinedMiss === true;
+        let completed: Awaited<typeof collection>;
+        try {
+          completed = await collection;
+        } catch {
+          if (!retry) return null;
+          completed = null;
+        } finally {
+          if (inFlight.get(key) === collection) inFlight.delete(key);
+        }
+        // A retry runs only while the deadline and binding still hold.
+        await current();
+        if (completed) {
+          const evidence = await read();
+          await current();
+          return evidence?.record.recordId === completed ? evidence : null;
+        }
+        if (!retry) return null;
       }
-      let completed: Awaited<typeof collection>;
-      try {
-        completed = await collection;
-      } catch {
-        return null;
-      } finally {
-        if (inFlight.get(key) === collection) inFlight.delete(key);
-      }
-      await current();
-      if (!completed) return null;
-      const evidence = await read();
-      await current();
-      return evidence?.record.recordId === completed ? evidence : null;
     },
   });
 }
