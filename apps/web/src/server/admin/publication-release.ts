@@ -39,8 +39,10 @@ export function createPublicationReleaseRefresh<A extends Publisher>(input: {
   // run their work in it, and explicitly outside any publish request's timing, so a refresh is never
   // attributed to the request that began it nor to the one that composed the services.
   const composed = AsyncLocalStorage.snapshot();
-  const detached = <T>(run: () => T): T => composed(() => outsidePublicationTiming(run));
-  const publishing = new Map<string, A[]>();
+  function detached<T>(run: () => T): T {
+    return composed(() => outsidePublicationTiming(run));
+  }
+  const publishing: Map<string, A[]> = new Map();
   const key = (scope: { shopId: string; installationGeneration: string }) =>
     `${scope.shopId}\0${scope.installationGeneration}`;
   const publisher = (scope: { shopId: string; installationGeneration: string }) => {
