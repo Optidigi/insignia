@@ -1,5 +1,6 @@
 import { type EntitlementPolicyConfig, projectEntitlement } from '@insignia/application';
-import type { ActiveSubscriptionSnapshot } from '@insignia/shopify';
+import { createObservability } from '@insignia/observability';
+import { type ActiveSubscriptionSnapshot, PartnerSubscriptionError } from '@insignia/shopify';
 import type { BillingView } from '../../shared/billing-view.js';
 import type { AdminActor } from './contracts.js';
 
@@ -12,6 +13,8 @@ function managementUrl(shop: string): string | null {
 }
 
 type BoundSubscription = ActiveSubscriptionSnapshot & { tenantShopId: string; installationGeneration: string };
+const logger = createObservability().logger;
+
 export function createMerchantBillingReader(ports: {
   appId: string;
   policy: EntitlementPolicyConfig;
@@ -22,7 +25,20 @@ export function createMerchantBillingReader(ports: {
 }): (actor: AdminActor) => Promise<BillingView> {
   return async (actor) => {
     await ports.current(actor);
-    const snapshot = await ports.read(actor);
+    let snapshot: BoundSubscription | null = null;
+    try {
+      snapshot = await ports.read(actor);
+    } catch (error) {
+      if (!(error instanceof PartnerSubscriptionError)) throw error;
+      logger.error('admin_request_failed', {
+        adminFailure: {
+          adminRoute: 'billing',
+          httpMethod: 'GET',
+          errorClass: error.name,
+          errorCode: error.kind.toUpperCase(),
+        },
+      });
+    }
     await ports.current(actor);
     const projection = projectEntitlement(snapshot, ports.policy, {
       appId: ports.appId,
@@ -33,8 +49,8 @@ export function createMerchantBillingReader(ports: {
     });
     const fresh = projection.freshness === 'fresh';
     const recognized = fresh && projection.recognizedPolicyId !== null;
-    const billingPeriod = recognized ? snapshot.billingPeriod : null;
-    const item = recognized ? snapshot.items[0] : null;
+    const billingPeriod = recognized ? snapshot?.billingPeriod : null;
+    const item = recognized ? snapshot?.items[0] : null;
     const recurringPrice =
       item?.price.kind === 'flat' && billingPeriod
         ? { amount: item.price.amount, currency: item.price.currency, billingPeriod }
@@ -49,14 +65,15 @@ export function createMerchantBillingReader(ports: {
             : projection.trial
               ? 'trial'
               : 'active',
-      observedAt: fresh ? snapshot.observedAt : null,
-      trialEndsAt: recognized && projection.trial ? snapshot.trialEndsAt : null,
-      currentCycle: recognized ? snapshot.currentBillingCycle : null,
+      observedAt: fresh ? (snapshot?.observedAt ?? null) : null,
+      trialEndsAt: recognized && projection.trial ? (snapshot?.trialEndsAt ?? null) : null,
+      currentCycle: recognized ? (snapshot?.currentBillingCycle ?? null) : null,
       scheduledCancellation: fresh && projection.scheduledCancellation,
       pendingChange: fresh && projection.pendingProviderUpdate !== null,
       newActionsAllowed: recognized && projection.qualifyingUsageDisposition === 'NOT_METERED',
       // The nominal Standard rate is known for the 30-day option.
-      standardPrice: billingPeriod === 'ANNUAL' ? null : { amount: '49.99', currency: 'USD', intervalDays: 30 },
+      standardPrice:
+        !snapshot || billingPeriod === 'ANNUAL' ? null : { amount: '49.99', currency: 'USD', intervalDays: 30 },
       recurringPrice,
       // Shopify charges development stores $0 for a recognized paid plan.
       developmentTerms: recognized && recurringPrice?.currency === 'USD' && /^0(?:\.0+)?$/.test(recurringPrice.amount),

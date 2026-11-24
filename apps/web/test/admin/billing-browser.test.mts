@@ -34,15 +34,28 @@ test('merchant billing shows current monthly and annual terms, links Shopify man
     developmentTerms: true,
     managementUrl: 'https://admin.shopify.com/store/example/charges/insignia-1/pricing_plans',
   };
-  let failing = true;
+  let response: 'error' | 'unverified' | 'current' = 'error';
   let calls = 0;
   await page.route('**/api/admin/billing', (route) => {
     calls++;
     assert.equal(route.request().method(), 'GET');
     assert.equal(route.request().headers().authorization, 'Bearer synthetic-billing-actor');
-    return failing
-      ? route.fulfill({ status: 503, json: { error: 'Billing status unavailable' } })
-      : route.fulfill({ json: view });
+    if (response === 'error') return route.fulfill({ status: 503, json: { error: 'Billing status unavailable' } });
+    if (response === 'unverified') {
+      return route.fulfill({
+        json: {
+          ...view,
+          status: 'unavailable',
+          observedAt: null,
+          trialEndsAt: null,
+          standardPrice: null,
+          recurringPrice: null,
+          developmentTerms: false,
+          newActionsAllowed: false,
+        },
+      });
+    }
+    return route.fulfill({ json: view });
   });
   await page.goto(`${base}/admin/settings/billing`);
   await page.getByText('Billing status could not be verified.').waitFor();
@@ -70,7 +83,14 @@ test('merchant billing shows current monthly and annual terms, links Shopify man
     '/admin/settings',
   );
   assert.equal(await page.locator('s-text[data-date-time]').count(), 0);
-  failing = false;
+  response = 'unverified';
+  await page.getByRole('button', { name: 'Try again', exact: true }).click();
+  const fallback = page.getByRole('link', { name: 'View plans in Shopify' });
+  await fallback.waitFor();
+  assert.equal(await fallback.getAttribute('href'), view.managementUrl);
+  assert.equal(await fallback.getAttribute('target'), '_top');
+  assert.equal(await page.locator('.billing-amount').count(), 0);
+  response = 'current';
   await page.getByRole('button', { name: 'Try again', exact: true }).click();
   await page.getByText('Development test terms', { exact: true }).waitFor();
   await page
@@ -131,5 +151,5 @@ test('merchant billing shows current monthly and annual terms, links Shopify man
   const inactiveManagement = page.getByRole('link', { name: 'Choose a plan in Shopify', exact: true });
   assert.equal(await inactiveManagement.getAttribute('href'), view.managementUrl);
   assert.equal(await inactiveManagement.getAttribute('target'), '_top');
-  assert.equal(calls, 5);
+  assert.equal(calls, 6);
 });

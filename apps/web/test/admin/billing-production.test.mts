@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { mkdir, rm } from 'node:fs/promises';
 import { test } from 'node:test';
 import type { EntitlementPolicyConfig } from '@insignia/application';
-import type { ActiveSubscriptionSnapshot } from '@insignia/shopify';
+import { type ActiveSubscriptionSnapshot, PartnerSubscriptionError } from '@insignia/shopify';
 import { build } from 'esbuild';
 import { createMerchantBillingReader } from '../../src/server/admin/billing.ts';
 import { adminActor, adminServices } from './support/fixtures.mts';
@@ -139,6 +139,28 @@ test('installation change during provider observation rejects the entire display
     })(actor),
     /installation changed/,
   );
+});
+test('a failed Shopify subscription lookup keeps the current merchant’s plan link without granting access', async () => {
+  let checks = 0;
+  const billing = createMerchantBillingReader({
+    appId: 'gid://shopify/App/2',
+    policy,
+    now: () => at,
+    current: async () => {
+      if (++checks === 4) throw new Error('installation changed');
+    },
+    read: async () => {
+      throw new PartnerSubscriptionError('network_or_timeout');
+    },
+  });
+  const result = await billing(actor);
+  assert.equal(checks, 2);
+  assert.equal(result.status, 'unavailable');
+  assert.equal(result.observedAt, null);
+  assert.equal(result.recurringPrice, null);
+  assert.equal(result.newActionsAllowed, false);
+  assert.equal(result.managementUrl, 'https://admin.shopify.com/store/example/charges/insignia-1/pricing_plans');
+  await assert.rejects(billing(actor), /installation changed/);
 });
 test('zero recurring terms of a recognized plan are development terms on any shop; a priced plan is not', async () => {
   const rewrite = { ...actor, shop: 'development-example.myshopify.com', shopId: 'gid://shopify/Shop/3' };
