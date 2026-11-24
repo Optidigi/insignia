@@ -6,7 +6,7 @@ Updated 23 November 2026. **Shopify App Store review is paused until 25 November
 that customized products could not be added to the cart (2.1.1) and requested evidence for plan changes,
 order scopes and reviewer access. Use the [resubmission checklist](shopify-review-resubmission.md)
 for the current findings and release verification. The November 19 resubmission remains historical
-evidence below. Insignia runs only on `app.insigniacustomizer.com` on host alias `prod`: one Compose project `insignia` from `/srv/saas/infra/stacks/insignia` (installed from [deployment/production/compose.yaml](../../deployment/production/compose.yaml)), data on the encrypted volume `/srv/data/saas/insignia`. **Exact running versions live only in [Deployed identities](#deployed-identities)** (as of 23 Nov: Shopify Active `1263125463041`, profile `native-review-market-6967baed`; web and worker deploy AO; verifier deploy AN; inspector deploy AD; schema 74). Since the production cutover (16 Nov, fresh database) only the owner's dev and review stores are installed in production; no real merchant yet. The first real merchants are the Stitchs/Superfunny pilot, after the owner's backup and secret-rotation items. **A separate agent tests the storefront and merchant UI on rewrite-dev; its new issues wait for the owner's review before engineering picks them up.** Open engineering issues: #573; deferred work: [backlog](../backlog/README.md). The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
+evidence below. Insignia runs only on `app.insigniacustomizer.com` on host alias `prod`: one Compose project `insignia` from `/srv/saas/infra/stacks/insignia` (installed from [deployment/production/compose.yaml](../../deployment/production/compose.yaml)), data on the encrypted volume `/srv/data/saas/insignia`. **Exact running versions live only in [Deployed identities](#deployed-identities)** (as of 23 Nov: Shopify Active `1263405170689`, profile `native-network-access-f57facc8`; web, worker and verifier deploy AP; inspector deploy AD; schema 74). Since the production cutover (16 Nov, fresh database) only the owner's dev and review stores are installed in production; no real merchant yet. The first real merchants are the Stitchs/Superfunny pilot, after the owner's backup and secret-rotation items. **A separate agent tests the storefront and merchant UI on rewrite-dev; its new issues wait for the owner's review before engineering picks them up.** Open engineering issues: #573; deferred work: [backlog](../backlog/README.md). The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
 
 ### Picking this up
 
@@ -144,15 +144,15 @@ All on production (`app.insigniacustomizer.com`), proven on the review store `in
 
 ### Deployed identities
 
-Production on host alias `prod`, as of 23 November 2026 (deploys AN and AO). One Compose project `insignia`: stack `/srv/saas/infra/stacks/insignia` (`compose.yaml` from [deployment/production/compose.yaml](../../deployment/production/compose.yaml), `.env`, `secrets/`); data on the LUKS2 volume mounted at `/srv/data/saas/insignia` (`srv-data-saas-insignia.mount`; docker drop-in `insignia-volume.conf` `Wants`/`After` it). Images run by local tag `insignia/<service>:<commit>`.
+Production on host alias `prod`, as of 23 November 2026 (deploy AP). One Compose project `insignia`: stack `/srv/saas/infra/stacks/insignia` (`compose.yaml` from [deployment/production/compose.yaml](../../deployment/production/compose.yaml), `.env`, `secrets/`); data on the LUKS2 volume mounted at `/srv/data/saas/insignia` (`srv-data-saas-insignia.mount`; docker drop-in `insignia-volume.conf` `Wants`/`After` it). Images run by local tag `insignia/<service>:<commit>`.
 
 | Component | Identity | Source |
 | --- | --- | --- |
-| Shopify Active version | `1263125463041`, profile `native-review-market-6967baed` (deploy AN, 23 Nov). Exactly 51 versions and 14 modules. Only theme assets changed from scope60. Module hash `d166f4e9…`. Required scopes `read_markets,read_orders,read_publications,write_app_proxy,write_cart_transforms,write_products,write_validations` and optional `read_product_listings`. Earlier `read_all_orders` grants may remain on old installations. Version `1248762724353` must never be released. | theme `6967baed`; binding `fee9927c` (#610) |
+| Shopify Active version | `1263405170689`, profile `native-network-access-f57facc8` (deploy AP, 23 Nov). Exactly 52 versions and 15 modules. The new network access module declares the production R2 origin. Module hash `1c9a2729…`. Required scopes `read_markets,read_orders,read_publications,write_app_proxy,write_cart_transforms,write_products,write_validations` and optional `read_product_listings`. Earlier `read_all_orders` grants may remain on old installations. Version `1248762724353` must never be released. | theme `6967baed`; binding `656faf1d` (#619) |
 | Functions | "Insignia cart transform" wasm `5c8708b5…` (module `826a9059…`, query `02ab5bce…`), "Insignia cart validation" wasm `6c362b36…` (module `076bfef2…`, query `5867e61f…`); handles unchanged | `aa3b6166` |
-| Web | `insignia-web`, `insignia/web:8c6e7555` = `sha256:13a7232b…` (deploy AO; EUR v2 bound to `1263125463041`) | main tree at `8c6e7555` |
-| Worker | `insignia-worker`, `insignia/worker:8c6e7555` = `sha256:9b216be9…` (deploy AO; automatic shop erasure grant enabled 23 Nov) | main tree at `8c6e7555` |
-| Verifier | `insignia-verifier`, `insignia/verifier:fee9927c` = `sha256:6659b742…` (deploy AN; code manifest `08c1334c…`) | main tree at `fee9927c` |
+| Web | `insignia-web`, `insignia/web:656faf1d` = `sha256:7ad55441…` (deploy AP; EUR v2 bound to `1263405170689`) | main tree at `656faf1d` |
+| Worker | `insignia-worker`, `insignia/worker:656faf1d` = `sha256:a831ab59…` (deploy AP; automatic shop erasure enabled) | main tree at `656faf1d` |
+| Verifier | `insignia-verifier`, `insignia/verifier:656faf1d` = `sha256:5ce38587…` (deploy AP; code manifest `b69f6b1c…`) | main tree at `656faf1d` |
 | Signer | `insignia-signer`, `insignia/signer:afc3c1da` = `sha256:e9b1f153…` (since 13 Nov `21:54:55Z`, #431); wrapping key `secrets/signing-wrap-keys.json` (10101, 0400) | main `afc3c1da` |
 | Monitor | `insignia-heartbeat` and `insignia-heartbeat-snapshot`, `insignia/heartbeat:c54c7820` = `sha256:78d0a8da…`; state in `/srv/data/saas/insignia/monitor` | main `c54c7820` |
 | Host inspector | `/srv/data/saas/insignia/artwork-inspector/releases/19c6dc6629000cfbf6069610e3c791c905c82dd8/` (deploy AD: sharp 0.35.5 / librsvg 2.63.2, GHSA-wq5f-xc86-pv6w), env `/srv/data/saas/insignia/artwork-inspector/inspection.env` (deploy V: bundled read-only fonts for SVG text; moved in deploy AC; its unit keeps the 16 Nov host edits, reapplied with the data-volume paths by `canonical-deploy-AC/host-unit-AC.py`; prior `96726b31…` kept for rollback) | main `9b677033` (#575) |
@@ -242,9 +242,16 @@ Shopify CLI started the preview with existing app URLs. In the disposable store,
 uploaded a synthetic PNG to the declared R2 origin with HTTP 200 and decoded its private preview.
 The same-origin proxy returned 202 for upload completion and 200 for preview. No undeclared-source
 warning appeared in the captured diagnostics. The dev preview was cleaned from that store.
-CLI created inactive version `1263405170689` (`native-network-access-f57facc8`). Readback shows 52
-versions and a single new network access module. All other modules and extension artifacts match
-the active release. Checkout quotes are held pending qualification and Phase B activation.
+Version `1263405170689` is active with the tested declaration.
+
+**Deploy AP** (23 Nov): Shopify CLI activated `1263405170689` after Phase B installed the qualified
+web, worker and verifier images. Runtime run `45287950908` built tree `c3fceae5…`, identical to main
+`656faf1d`. An encrypted checkpoint restored all 74 migrations and the exact erasure proof key.
+The sole Active version matches the 52-version, 15-module binding. At `23:39:09Z`, web and the
+quiesced worker-role read agreed on fresh scoped release record `3d261c1a…`. The signed-out review
+fixture loaded the new CDN assets, returned config HTTP 200 and displayed its private R2 image.
+All 15 Shopify CDN asset bytes match the qualified build. Phase B's protected facts matched.
+Automatic erasure retained its reviewed worker grant.
 
 **Deploy AL** (19 Nov, web only): main `e930b8be` — #606 the Methods page keeps `shop`/`host`/`embedded` when it updates its own URL (found in the cookie-blocked browser test after #604). Web replaced `19:03:55Z`; compose delta `services.web.image` only; readback clean; database baseline identical. Receipt folder `methods-deploy-AL` on both hosts.
 
