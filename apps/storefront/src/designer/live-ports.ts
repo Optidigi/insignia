@@ -675,7 +675,11 @@ export function createLiveDesignerPorts(input: {
         }
         request.signal.throwIfAborted();
         request.onMutating?.();
-        const applied = await cart.apply(accepted.buckets, { expectedFingerprint: review?.baseline.fingerprint ?? '' });
+        // Cancelling or unmounting ends waits for a throttled cart read, never a cart write in flight.
+        const applied = await cart.apply(accepted.buckets, {
+          expectedFingerprint: review?.baseline.fingerprint ?? '',
+          signal: request.signal,
+        });
         // `late_effects_possible` only repeats that an earlier unknown write was retired by explicit repair:
         // the cart is at the reviewed state, and its tombstone still refuses a late carrier.
         if (applied.status !== 'applied' || !applied.cart) {
@@ -706,7 +710,7 @@ export function createLiveDesignerPorts(input: {
             // Another tab or the repair view is applying the cart. The accepted set is kept, so Retry applies it.
             throw Object.assign(new Error('Cart update in progress elsewhere'), { code: 'CART_BUSY' });
           } else if (reason === 'rejected') {
-            // A definite refusal (typically stock) with the buyer's lines intact: say so, never "uncertain".
+            // A definite refusal (typically stock) that left nothing pending: say so, never "uncertain".
             throw Object.assign(new Error('Shopify refused the cart update'), {
               cartRejected: true,
               // Only Shopify's 422 is a stock or limit refusal; other 4xx get neutral wording.

@@ -19,8 +19,9 @@ export type CartApplication = {
   cart: CartSnapshot | null;
   recovery?: 'late_effects_possible';
   /**
-   * `rejected`: Shopify refused a write with a 4xx (typically stock) and the cart is back at its starting
-   * customized lines, so nothing is left pending. `detail` carries Shopify's own explanation when it gave one.
+   * `rejected`: Shopify refused a write with a 4xx (typically stock) and nothing is left pending: the cart is back at
+   * its starting customized lines, or (with `cart: null`) Shopify refused a single-line add, which cannot land in
+   * part, and the cart could not be read back. `detail` carries Shopify's own explanation when it gave one.
    */
   reason?: 'cart_changed' | 'mutation_unresolved' | 'vector_mismatch' | 'cart_unavailable' | 'busy' | 'rejected';
   /** The HTTP status of the refusal behind `rejected` (422 is Shopify's stock/limit refusal). */
@@ -222,32 +223,38 @@ const defaultCartLock: CartApplicationLock = {
     }
   },
 };
-function pause(ms: number, signal?: AbortSignal): Promise<void> {
+/** Resolves after `ms`, or rejects with the signal's reason as soon as it aborts. */
+export function waitFor(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) return reject(signal.reason);
-    const abort = () => {
-      clearTimeout(timer);
-      reject(signal?.reason);
-    };
     const timer = setTimeout(() => {
       signal?.removeEventListener('abort', abort);
       resolve();
     }, ms);
+    const abort = () => {
+      clearTimeout(timer);
+      reject(signal?.reason);
+    };
     signal?.addEventListener('abort', abort, { once: true });
   });
 }
+/** All transient cart-read retries of one read or one application together wait at most this long. */
+const READ_RETRY_BUDGET_MS = 12_000;
 export function createAjaxCartAdapter({
   root,
   fetchImpl = fetch,
   journal,
   lock = defaultCartLock,
   now = Date.now,
+  wait = waitFor,
 }: {
   root: string;
   fetchImpl?: typeof fetch;
   journal?: CartMutationJournal;
   lock?: CartApplicationLock;
   now?: () => number;
+  /** The pause before a cart read is retried (tests replace it). */
+  wait?: (ms: number, signal?: AbortSignal) => Promise<void>;
 }) {
   // Shopify.routes.root is a same-origin locale path, never a remote URL.
   if (!/^\/(?:[A-Za-z0-9_-]+\/)*$/.test(root)) throw new Error('Invalid locale cart root');
@@ -354,16 +361,23 @@ export function createAjaxCartAdapter({
   }
   /**
    * A cart read is safe to repeat: a transient answer is read again at most twice, after `Retry-After` clamped to
-   * 1–10 s plus up to 250 ms jitter, like an acceptance on `BUSY`. Nothing that writes is ever repeated.
+   * 1–10 s plus up to 250 ms jitter, like an acceptance on `BUSY`. Nothing that writes is ever repeated. A retry
+   * starts only if its wait ends by `deadline` (one shared budget per application). `signal` aborts the read and
+   * its waits; `retrySignal` only the waits.
    */
-  async function read(signal?: AbortSignal): Promise<CartSnapshot> {
+  async function read(
+    signal?: AbortSignal,
+    deadline = now() + READ_RETRY_BUDGET_MS,
+    retrySignal = signal,
+  ): Promise<CartSnapshot> {
     for (let attempt = 0; ; attempt++) {
       try {
         return snapshot(await request('cart.js', undefined, signal));
       } catch (error) {
         const { transient, retryAfter } = error as { transient?: unknown; retryAfter?: number };
-        if (attempt >= 2 || transient !== true) throw error;
-        await pause(Math.min(Math.max(retryAfter ?? 0, 1), 10) * 1000 + Math.random() * 250, signal);
+        const delay = Math.min(Math.max(retryAfter ?? 0, 1), 10) * 1000 + Math.random() * 250;
+        if (attempt >= 2 || transient !== true || now() + delay > deadline) throw error;
+        await wait(delay, retrySignal);
       }
     }
   }
@@ -373,7 +387,8 @@ export function createAjaxCartAdapter({
       expectedFingerprint,
       repair = false,
       removal = false,
-    }: { expectedFingerprint: string; repair?: boolean; removal?: boolean },
+      signal,
+    }: { expectedFingerprint: string; repair?: boolean; removal?: boolean; signal?: AbortSignal },
   ): Promise<CartApplication> {
     if (applying) return { status: 'review_required', cart: null, reason: 'busy' };
     // Validate the captured vector before dispatch.
@@ -401,6 +416,10 @@ export function createAjaxCartAdapter({
       throw new Error('Accepted cart payload too large');
     if (repair && desired.length) throw new Error('Repair removes observed customization only');
     applying = true;
+    // Retries of every cart read in this application share one budget; aborting `signal` ends their waits only,
+    // never a request in flight, so the cross-tab lock is not held for long by a throttled cart.
+    const deadline = now() + READ_RETRY_BUDGET_MS;
+    const readNow = () => read(undefined, deadline, signal);
     let current: CartSnapshot | null = null;
     let dispatched = false;
     let pending: CartMutationIntent | null = null;
@@ -411,7 +430,7 @@ export function createAjaxCartAdapter({
     const succeeded = async (value: CartMutationIntent, cart: CartSnapshot) =>
       explicit ? { ...value, abandoned: await prune(value.abandoned, cart, inherited) } : value;
     try {
-      current = await read();
+      current = await readNow();
       let prior = loadIntent();
       if (prior) {
         const kept = await prune(prior.abandoned, current);
@@ -534,8 +553,13 @@ export function createAjaxCartAdapter({
       // unresolved for explicit repair.
       const failed = async (reason: 'rejected' | 'vector_mismatch', refused?: Refusal): Promise<CartApplication> => {
         let restored = false;
+        /** Only the compensation's first read failed: none of its own writes was sent. */
+        let unread = false;
         try {
-          let now = await read();
+          let now = await readNow().catch((error) => {
+            unread = true;
+            throw error;
+          });
           let lost = false;
           for (const { line, bucket } of swapped.reverse()) {
             const replaced = now.customized.find((candidate) => sameLine(candidate, bucket));
@@ -565,16 +589,12 @@ export function createAjaxCartAdapter({
         } catch {
           /* The compensation's own outcome is unknown, or it could not restore every line. */
         }
-        // Shopify refused the only write it was sent and the cart could not be read back: nothing of this
-        // application is pending, so it is a refusal. Its set, none of whose lines the cart held, is tombstoned in
-        // case part of a refused add landed unseen; a line of it in the cart still makes a later Add need review.
-        if (!restored && refused && !written && desired.length > 0 && additions.length === desired.length) {
-          settle({
-            ...own,
-            abandoned: own.abandoned.some((entry) => entry.set === own.quote)
-              ? own.abandoned
-              : [...own.abandoned, { set: own.quote, at: now() }],
-          });
+        // Shopify refused the only write it was sent, an add of one line (which cannot land in part) of a set the cart
+        // did not hold, and the cart could not be read back: nothing of this application is pending, so it is that
+        // refusal. Nothing can have landed, so no tombstone is spent on it. A compensating write that failed or went
+        // unanswered, or a refused add of several lines (some may have landed), stays unresolved (#339).
+        if (!restored && unread && refused && !written && additions.length === 1 && desired.length === 1) {
+          settle(own);
           return {
             status: 'review_required',
             cart: null,
@@ -606,7 +626,7 @@ export function createAjaxCartAdapter({
         }
         if (!refused) {
           try {
-            current = await read();
+            current = await readNow();
           } catch (error) {
             return failed('rejected', refusal(error));
           }
@@ -647,7 +667,7 @@ export function createAjaxCartAdapter({
             }
             if (rest.length) await request('cart/add.js', items(rest));
             written = true;
-            current = await read();
+            current = await readNow();
           } catch (error) {
             const again = refusal(error);
             return failed('rejected', again.detail ? again : { ...again, detail: refused.detail });
@@ -700,7 +720,7 @@ export function createAjaxCartAdapter({
       };
     } catch {
       try {
-        current = await read();
+        current = await readNow();
       } catch {
         current = null;
       }
@@ -723,7 +743,7 @@ export function createAjaxCartAdapter({
   }
   async function apply(
     buckets: CartBucket[],
-    options: { expectedFingerprint: string; repair?: boolean; removal?: boolean },
+    options: { expectedFingerprint: string; repair?: boolean; removal?: boolean; signal?: AbortSignal },
   ): Promise<CartApplication> {
     // Lock acquisition is asynchronous too: capture reviewed input first.
     const captured = buckets.map((bucket) => ({
@@ -735,7 +755,9 @@ export function createAjaxCartAdapter({
     const repair = options.repair === true;
     const removal = options.removal === true;
     return (
-      (await lock.run(() => applyUnlocked(captured, { expectedFingerprint: fingerprint, repair, removal }))) ?? {
+      (await lock.run(() =>
+        applyUnlocked(captured, { expectedFingerprint: fingerprint, repair, removal, signal: options.signal }),
+      )) ?? {
         status: 'review_required',
         cart: null,
         reason: 'busy',

@@ -10,7 +10,7 @@ import {
   withBuyerSessionLock,
   writeBuyerSession,
 } from './buyer-session.ts';
-import { type CartBucket, type CartMutationIntent, parseCartMutationIntent } from './cart.ts';
+import { type CartBucket, type CartMutationIntent, parseCartMutationIntent, waitFor } from './cart.ts';
 export type DesiredGroup = {
   productId: string;
   configRevisionId: string;
@@ -308,20 +308,6 @@ export function createBuyerApi({
       );
     },
   };
-}
-function waitFor(ms: number, signal?: AbortSignal): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (signal?.aborted) return reject(signal.reason);
-    const timer = setTimeout(() => {
-      signal?.removeEventListener('abort', abort);
-      resolve();
-    }, ms);
-    const abort = () => {
-      clearTimeout(timer);
-      reject(signal?.reason);
-    };
-    signal?.addEventListener('abort', abort, { once: true });
-  });
 }
 /**
  * A cart-state refusal because an earlier session, not this one, accepted the cart's customized lines:

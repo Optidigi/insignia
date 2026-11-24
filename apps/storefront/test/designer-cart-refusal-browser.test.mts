@@ -309,15 +309,15 @@ test('a sold-out add followed by two bot-checked cart reads is a stock refusal; 
   });
 });
 
-test('a sold-out add whose cart stays bot-checked is a stock refusal that survives a reload as no review', async () => {
+test('a sold-out single-line add whose cart stays bot-checked is a stock refusal that survives a reload as no review', async () => {
   await withRefusedAdd(-1, async ({ page, ui, addCalls, restock, mount }) => {
     await designTwo(ui);
     await reviewTwo(ui);
     await addToCart(ui).click();
     await assertStockRefusal(page, ui);
     assert.equal(addCalls(), 1);
-    const journal = JSON.parse(required(await page.evaluate(() => sessionStorage.getItem('insignia-cart-intent-v1'))));
-    assert.equal(journal.phase, 'abandoned', 'the refused set is a tombstone, not a pending write');
+    // One refused line cannot have landed in part: no pending write and no tombstone.
+    assert.equal(await page.evaluate(() => sessionStorage.getItem('insignia-cart-intent-v1')), 'null');
     restock();
     await page.reload();
     await mount();
