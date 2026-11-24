@@ -60,6 +60,12 @@ import functionsRenewBinding from '../../deployment/m5-runtime/native-functions-
 };
 import loadingModules from '../../deployment/m5-runtime/native-loading-module-baseline.json' with { type: 'json' };
 import loadingBinding from '../../deployment/m5-runtime/native-loading-release-binding.json' with { type: 'json' };
+import marketDialogModules from '../../deployment/m5-runtime/native-market-dialog-module-baseline.json' with {
+  type: 'json',
+};
+import marketDialogBinding from '../../deployment/m5-runtime/native-market-dialog-release-binding.json' with {
+  type: 'json',
+};
 import merchantBatchModules from '../../deployment/m5-runtime/native-merchant-batch-module-baseline.json' with {
   type: 'json',
 };
@@ -469,6 +475,19 @@ test('functions renew candidate preserves identities and changes only theme and 
       assert.deepEqual(unversioned(config), unversioned(oldConfig));
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
   }
+});
+test('Market dialog candidate changes only the theme asset files', () => {
+  assert.equal(marketDialogBinding.versionId, '1264361504769');
+  assert.deepEqual(marketDialogBinding.versionIds, [...networkAccessBinding.versionIds, '1264361504769']);
+  const withoutAssets = (modules: typeof marketDialogModules | typeof networkAccessModules) =>
+    modules.map((module) => {
+      if (module.type !== 'theme_app_extension') return module;
+      const theme = object(object(module.config).theme_extension);
+      const { assets, ...files } = object(theme.files);
+      return { ...module, config: { ...module.config, theme_extension: { ...theme, files } } };
+    });
+  assert.deepEqual(withoutAssets(marketDialogModules), withoutAssets(networkAccessModules));
+  assert.notDeepEqual(marketDialogModules, networkAccessModules);
 });
 test('network access candidate adds only the declared production R2 origin', () => {
   assert.equal(networkAccessBinding.versionId, '1263405170689');
