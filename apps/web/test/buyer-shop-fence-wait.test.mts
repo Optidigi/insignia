@@ -5,10 +5,11 @@ import { Client } from 'pg';
 import { fixture } from './support/buyer-fixture.mts';
 
 /**
- * Acceptance and renewal reserve their buyer command, and after signing link the quote and fill the
- * cart application, under a shared lock on the shop and installation rows. A key rotation, epoch bump,
- * uninstall or another acceptance's signing fence holds those rows exclusively; spec §8.4 bounds the
- * wait at lock_timeout 2 s and answers 409 BUSY (§8.3). Proposals and drafts keep their current wait.
+ * Every buyer session write locks the shop and installation rows first: session issuance, draft saves,
+ * proposals, the acceptance and renewal steps (command reservation, quote link, cart application) and
+ * cart-application confirmation. A key rotation, epoch bump, uninstall or another acceptance's signing
+ * fence holds those rows exclusively; spec §8.4 bounds the wait at lock_timeout 2 s and answers 409
+ * BUSY (§8.3), writing nothing (owner decision 2, 24 November 2026).
  */
 const connectionString = process.env.DATABASE_URL;
 
@@ -176,3 +177,69 @@ for (const step of ['linkQuote', 'finishApplication'] as const)
     assert.equal(f.signings(), 1);
     assert.deepEqual(await counts(f), { commands: 1, quotes: 1, sets: 1, renewals: 0 });
   });
+
+async function sessionRows(f: Awaited<ReturnType<typeof fixture>>) {
+  const { rows } = await f.pool.query<{ sessions: number; drafts: number; proposals: number; applied: number }>(
+    `SELECT
+       (SELECT count(*)::int FROM buyer_sessions WHERE shop_id=$1) sessions,
+       (SELECT count(*)::int FROM design_drafts WHERE shop_id=$1) drafts,
+       (SELECT count(*)::int FROM quote_proposals WHERE shop_id=$1) proposals,
+       (SELECT count(*)::int FROM cart_applications WHERE shop_id=$1 AND status<>'PENDING') applied`,
+    [f.shopId],
+  );
+  return rows[0];
+}
+
+test('a session, draft save, proposal or cart confirmation while the shop fence is held is 409 BUSY after 2 s', {
+  skip: !connectionString,
+  timeout: 60000,
+}, async (t) => {
+  const f = await fixture(t);
+  const whileHeld = await fence(t, f);
+  const before = await sessionRows(f);
+  assert.deepEqual(before, { sessions: 1, drafts: 0, proposals: 0, applied: 0 });
+
+  // Session issuance locks the rows exclusively; the storefront creates the session again.
+  assert.deepEqual(await whileHeld('sessions', {}), busy);
+  assert.deepEqual(await sessionRows(f), before);
+  const issued = await f.http('sessions', {});
+  assert.equal(issued.status, 200, await issued.clone().text());
+  assert.deepEqual(await sessionRows(f), { ...before, sessions: 2 });
+
+  // Draft saves are CAS-versioned: the refused first save leaves version 0, so the same save succeeds once.
+  const id = randomUUID();
+  const save = { capability: f.session.capability, expectedVersion: 0, group: f.group };
+  assert.deepEqual(await whileHeld(`designs/${id}`, save, 'PUT'), busy);
+  assert.deepEqual(await sessionRows(f), { ...before, sessions: 2 });
+  const saved = await f.http(`designs/${id}`, save, 'PUT');
+  assert.equal(saved.status, 200, await saved.clone().text());
+  const stale = await f.http(`designs/${id}`, save, 'PUT');
+  assert.deepEqual([stale.status, (await stale.json()).code], [409, 'CONFLICT'], 'version 0 is taken exactly once');
+  assert.deepEqual(await sessionRows(f), { ...before, sessions: 2, drafts: 1 });
+
+  // A proposal stores nothing while refused; the identical request then stores one.
+  assert.deepEqual(await whileHeld('quote-proposals', f.body), busy);
+  assert.deepEqual(await sessionRows(f), { ...before, sessions: 2, drafts: 1 });
+  const proposed = await f.http('quote-proposals', f.body);
+  assert.equal(proposed.status, 200, await proposed.clone().text());
+  const proposal = await proposed.json();
+  assert.deepEqual(await sessionRows(f), { ...before, sessions: 2, drafts: 1, proposals: 1 });
+
+  // The cart application stays pending while its confirmation is refused, then is confirmed once.
+  const accepted = await (
+    await f.http(`quote-proposals/${proposal.proposalId}/accept`, {
+      capability: f.session.capability,
+      hash: proposal.hash,
+      idempotencyKey: randomUUID(),
+    })
+  ).json();
+  const confirmation = { capability: f.session.capability, fingerprint: 'observed', vector: accepted.buckets };
+  const confirmRoute = `cart-applications/${accepted.applicationId}/confirm`;
+  assert.deepEqual(await whileHeld(confirmRoute, confirmation), busy);
+  assert.equal((await sessionRows(f))?.applied, 0);
+  const confirmed = await f.http(confirmRoute, confirmation);
+  assert.equal(confirmed.status, 200, await confirmed.clone().text());
+  assert.equal((await confirmed.json()).status, 'APPLIED');
+  assert.equal((await sessionRows(f))?.applied, 1);
+  assert.equal(f.signings(), 1);
+});
