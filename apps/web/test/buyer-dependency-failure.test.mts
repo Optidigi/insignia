@@ -48,6 +48,7 @@ async function failure(response: Response) {
 
 test('an unavailable or timed-out signer signs and stores nothing; the same acceptance and renewal keys then succeed once', {
   skip: !connectionString,
+  timeout: 30000,
 }, async (t) => {
   const f = await fixture(t);
   const proposal = await (await f.http('quote-proposals', f.body)).json();
@@ -97,6 +98,7 @@ test('an unavailable or timed-out signer signs and stores nothing; the same acce
 
 test('a signing fence held past lock_timeout is 409 BUSY with Retry-After; the same keys then succeed once', {
   skip: !connectionString,
+  timeout: 30000,
 }, async (t) => {
   // Readiness is observed after the buyer command is reserved and before the signing fence, so the
   // hold starts exactly where a concurrent rotation, epoch bump or uninstall would take the fence.
@@ -128,7 +130,11 @@ test('a signing fence held past lock_timeout is 409 BUSY with Retry-After; the s
   const route = `quote-proposals/${proposal.proposalId}/accept`;
   beforeFence = hold;
   assert.deepEqual(await failure(await f.http(route, accept)), busy);
-  assert.ok(started && Date.now() - started < 6000, 'the 2 s lock_timeout bounds the wait');
+  {
+    const waited = Date.now() - started;
+    // At least the lock_timeout elapsed (so this BUSY is the fence, not another cause) and no more than its bound.
+    assert.ok(started && waited >= 1900 && waited < 6000, `the 2 s lock_timeout bounds the wait (${waited} ms)`);
+  }
   await release();
   assert.equal(f.signAttempts(), 0);
   assert.deepEqual(await counts(f), { quotes: 0, sets: 0, renewals: 0, declined: 0 });
@@ -144,7 +150,11 @@ test('a signing fence held past lock_timeout is 409 BUSY with Retry-After; the s
   started = 0;
   beforeFence = hold;
   assert.deepEqual(await failure(await f.http(renewRoute, renew)), busy);
-  assert.ok(started && Date.now() - started < 6000, 'the 2 s lock_timeout bounds the wait');
+  {
+    const waited = Date.now() - started;
+    // At least the lock_timeout elapsed (so this BUSY is the fence, not another cause) and no more than its bound.
+    assert.ok(started && waited >= 1900 && waited < 6000, `the 2 s lock_timeout bounds the wait (${waited} ms)`);
+  }
   await release();
   assert.equal(f.signings(), 1);
   assert.deepEqual(await counts(f), { quotes: 1, sets: 1, renewals: 0, declined: 0 });
@@ -162,6 +172,7 @@ test('a signing fence held past lock_timeout is 409 BUSY with Retry-After; the s
 // instead of §8.4's 2 s bound and 409 BUSY.
 test('an acceptance that arrives while the shop fence is held is bounded by lock_timeout too', {
   skip: !connectionString,
+  timeout: 30000,
   todo: 'buyer session writes wait on FOR SHARE OF s,i without lock_timeout (repositories/buyer.ts)',
 }, async (t) => {
   const f = await fixture(t);
@@ -195,6 +206,7 @@ test('an acceptance that arrives while the shop fence is held is bounded by lock
 
 test('a web process restart between proposal and acceptance, or before a lost response, loses nothing', {
   skip: !connectionString,
+  timeout: 30000,
 }, async (t) => {
   const f = await fixture(t);
   const proposal = await (await f.http('quote-proposals', f.body)).json();
