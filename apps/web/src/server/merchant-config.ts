@@ -809,6 +809,8 @@ export function createMerchantConfigService(input: {
         // Two independent provider reads, run together; a changed currency is still reported first.
         // The subscription read is drained before a currency failure is rethrown.
         const checkingEligibility = eligible(snapshot);
+        // Handled now so a rejection while the currency read is pending is never unhandled; awaited below.
+        checkingEligibility.catch(() => undefined);
         const shopCurrency = await publicationStage('shop-currency', () => input.catalog.shopCurrency(actor)).catch(
           async (error) => {
             await checkingEligibility.catch(() => undefined);
