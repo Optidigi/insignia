@@ -1547,35 +1547,103 @@ test('a sold-out add whose witness read meets a transient bot check is still a d
   assert.equal(posts(remote.requests).filter(([url]) => url.endsWith('cart/add.js')).length, 2);
 });
 
-test('a refused single-line add whose cart stays unreadable is that refusal and spends no tombstone', async () => {
+test('a refused add whose cart stays unreadable stays pending until a read finds its start; no tombstone is spent', async () => {
+  for (const lines of [freshDesired, twoLines]) {
+    const journal = memoryJournal();
+    let soldOutNow = true;
+    /** Shopify's bot check answers every cart read after a refused add, until the next page view. */
+    let blocked = false;
+    const remote = provider([ordinary], ({ url }) => {
+      if (url.endsWith('cart/add.js') && soldOutNow) {
+        blocked = true;
+        return soldOut();
+      }
+      if (url.endsWith('cart.js') && blocked) return botCheck();
+      return undefined;
+    });
+    const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal, ...fakeWaits() });
+    // More refusals than the tab's four tombstones: none of them may block a later Add.
+    for (let attempt = 0; attempt < 6; attempt++) {
+      blocked = false;
+      const before = await cart.read();
+      const refused = await cart.apply(lines(), { expectedFingerprint: before.fingerprint });
+      assert.equal(refused.reason, 'mutation_unresolved', 'a refused add can land in part, so it is never "refused"');
+      assert.equal(journal.state?.phase, 'pending');
+      assert.deepEqual(journal.state?.abandoned, [], 'no tombstone');
+      assert.equal(journal.flag, true);
+    }
+    blocked = false;
+    soldOutNow = false;
+    // The cart is readable again and holds no customized line: the pending refusal settles and the Add proceeds.
+    const next = await cart.apply(lines(), { expectedFingerprint: (await cart.read()).fingerprint });
+    assert.equal(next.status, 'applied', 'the next Add proceeds with no repair');
+    assert.equal(posts(remote.requests).filter(([url]) => url.endsWith('cart/add.js')).length, 7);
+    assert.equal(journal.state, null);
+    assert.equal(journal.flag, false);
+  }
+});
+
+test('an explicit repair of a refused add found at its start spends no tombstone; an unanswered one keeps it', async () => {
+  for (const answered of [true, false]) {
+    const journal = memoryJournal();
+    let blocked = false;
+    const remote = provider([ordinary], ({ url }) => {
+      if (url.endsWith('cart/add.js') && !blocked) {
+        blocked = true;
+        if (answered) return soldOut();
+        throw new TypeError('Failed to fetch');
+      }
+      if (url.endsWith('cart.js') && blocked && answered) return botCheck();
+      return undefined;
+    });
+    const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal, ...fakeWaits() });
+    const result = await cart.apply(freshDesired(), { expectedFingerprint: (await cart.read()).fingerprint });
+    assert.equal(result.reason, 'mutation_unresolved');
+    blocked = false;
+    const repaired = await cart.apply([], { expectedFingerprint: (await cart.read()).fingerprint, repair: true });
+    assert.equal(repaired.status, 'applied');
+    assert.equal(journal.state === null, answered, answered ? 'nothing was in flight' : 'a late add stays refused');
+  }
+});
+
+test('a refused single-line add that landed in part and meets an unreadable cart stays pending for repair', async () => {
   const journal = memoryJournal();
-  let soldOutNow = true;
-  /** Shopify's bot check answers every cart read after a refused add, until the next page view. */
   let blocked = false;
-  const remote = provider([ordinary], ({ url }) => {
-    if (url.endsWith('cart/add.js') && soldOutNow) {
+  const remote = provider([ordinary], ({ url, body, items }) => {
+    if (url.endsWith('cart/add.js') && !blocked) {
+      // Observed natively (24 Nov 2026): a 422 for 100,000 units, of which 50 were added.
+      const [line] = required(body.items);
+      items.push({ key: '42:landed', variant_id: 42, quantity: 50, properties: required(line).properties });
       blocked = true;
-      return soldOut();
+      return Response.json(
+        {
+          status: 422,
+          message: 'Cart Error',
+          description: 'Only 50 items were added to your cart due to availability.',
+        },
+        { status: 422 },
+      );
     }
     if (url.endsWith('cart.js') && blocked) return botCheck();
     return undefined;
   });
   const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal, ...fakeWaits() });
-  // More refusals than the tab's four tombstones: none of them may block a later Add.
-  for (let attempt = 0; attempt < 6; attempt++) {
-    blocked = false;
-    const before = await cart.read();
-    const refused = await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint });
-    assert.equal(refused.reason, 'rejected', 'Shopify refused one line, which cannot land in part');
-    assert.equal(refused.refusal, 422);
-    assert.equal(refused.cart, null);
-    assert.equal(journal.state, null, 'nothing pending and no tombstone');
-    assert.equal(journal.flag, false);
-  }
+  const before = await cart.read();
+  const result = await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint });
+  assert.equal(result.reason, 'mutation_unresolved', 'never reported as a refusal while a signed line may be there');
+  assert.equal(journal.state?.phase, 'pending');
+  assert.equal(journal.flag, true);
   blocked = false;
-  soldOutNow = false;
-  const next = await cart.apply(freshDesired(), { expectedFingerprint: (await cart.read()).fingerprint });
-  assert.equal(next.status, 'applied', 'the next Add proceeds with no repair');
+  // Readable again: the landed line keeps the intent pending, so no Add is sent and repair is offered.
+  const seen = await cart.read();
+  assert.equal(required(seen.customized[0]).quantity, 50);
+  const again = await cart.apply(freshDesired(), { expectedFingerprint: seen.fingerprint });
+  assert.equal(again.reason, 'mutation_unresolved');
+  assert.equal(required(again.cart).customized.length, 1, 'the review sees the landed line');
+  assert.equal(posts(remote.requests).filter(([url]) => url.endsWith('cart/add.js')).length, 1);
+  const repaired = await cart.apply([], { expectedFingerprint: seen.fingerprint, repair: true });
+  assert.equal(repaired.status, 'applied');
+  assert.deepEqual(remote.items, [ordinary]);
 });
 
 test('a refused add of several lines whose cart stays unreadable stays unresolved (#339)', async () => {
