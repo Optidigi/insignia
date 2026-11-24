@@ -985,3 +985,113 @@ test('a committed publish that never prepared is abandoned after its bound and n
     await core.close();
   }
 });
+
+test('publish reports a changed shop currency before a denied plan and drains the plan read before a currency failure', {
+  skip: !database,
+  timeout: 30000,
+}, async () => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  try {
+    const shopId = randomUUID();
+    const shop = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
+    const shopifyShopId = String(BigInt(`0x${randomUUID().replaceAll('-', '').slice(0, 12)}`) + 1n);
+    const staff = actor(shopId, shop, shopifyShopId);
+    await core.transactions.run((tx) =>
+      core.tenants.createShop(tx, {
+        shopId,
+        shopDomain: shop,
+        shopifyShopId,
+        externalInstallationId: staff.installationId,
+      }),
+    );
+    let currency: () => Promise<string> = async () => 'USD';
+    let eligibility: () => Promise<{ allowed: boolean; reason: string | null }> = async () => ({
+      allowed: true,
+      reason: null,
+    });
+    const service = createMerchantConfigService({
+      core,
+      catalog: { get: async (_actor, id) => (id === productA ? item(id) : null), shopCurrency: () => currency() },
+      eligibility: () => eligibility(),
+      publication: () => ({
+        prepare: async () => {
+          throw new Error('a rejected publish must not prepare');
+        },
+        advance: async () => {
+          throw new Error('a rejected publish must not advance');
+        },
+      }),
+    });
+    const created = await service.create(staff, productA, 'create-ordering');
+    assert.equal(created.kind, 'created');
+    const draft = {
+      ...baseDraft(),
+      shopCurrency: 'USD',
+      pricingRules: [
+        {
+          id: 'lean-unit',
+          role: 'unit' as const,
+          scope: { kind: 'step' as const, placementId: sharedId, methodId: sharedId, stepId: sharedId },
+          rate: { kind: 'fixed' as const, amount: { shopDecimal: '1.23', presentmentOverrides: [] } },
+        },
+      ],
+    };
+    const saved = await service.save(staff, productA, {
+      configId: created.configId,
+      draftVersion: '1',
+      draft,
+      idempotencyKey: 'ordering-draft',
+    });
+    assert.deepEqual(saved, { kind: 'saved', draftVersion: '2' });
+
+    // Both checks fail: the changed currency wins, as it did before the reads overlapped.
+    currency = async () => 'EUR';
+    eligibility = async () => ({ allowed: false, reason: 'Synthetic' });
+    const changed = await service.publish(staff, productA, {
+      configId: created.configId,
+      draftVersion: '2',
+      idempotencyKey: 'ordering-changed',
+    });
+    assert.equal(changed.kind, 'invalid');
+    assert.equal((changed as { code?: string }).code, 'SHOP_CURRENCY_CHANGED');
+
+    // The currency read fails while the plan read is still pending: the plan read settles first, then the
+    // currency failure surfaces unchanged and nothing is left rejecting unhandled.
+    let releasePlan: (() => void) | undefined;
+    let planSettled = false;
+    eligibility = () =>
+      new Promise((resolve, reject) => {
+        releasePlan = () => {
+          planSettled = true;
+          reject(new Error('plan read failed after the currency read'));
+        };
+        void resolve;
+      });
+    const currencyFailure = new Error('currency read unavailable');
+    currency = async () => {
+      setTimeout(() => required(releasePlan)(), 50);
+      throw currencyFailure;
+    };
+    const unhandled: unknown[] = [];
+    const onUnhandled = (reason: unknown) => unhandled.push(reason);
+    process.on('unhandledRejection', onUnhandled);
+    try {
+      await assert.rejects(
+        service.publish(staff, productA, {
+          configId: created.configId,
+          draftVersion: '2',
+          idempotencyKey: 'ordering-failed',
+        }),
+        (error) => error === currencyFailure,
+      );
+      assert.equal(planSettled, true, 'the plan read is drained before the currency failure is reported');
+      await new Promise((resolve) => setImmediate(resolve));
+      assert.deepEqual(unhandled, []);
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+    }
+    assert.equal(await core.configs.getCurrentPublication(shopId, created.configId), null);
+  } finally {
+    await core.close();
+  }
+});

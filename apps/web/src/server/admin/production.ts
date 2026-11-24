@@ -61,6 +61,7 @@ import { createMerchantPublicationCapture } from './merchant-previews.js';
 import { createMethodLibrary } from './methods.js';
 import { createMerchantPreferences } from './preferences.js';
 import { productSummary } from './product-summary.js';
+import { publicationStage } from './publication-timing.js';
 import {
   createBoundProductionActivationReadiness,
   createDemandDrivenReleaseReader,
@@ -220,7 +221,10 @@ export function createProductionAdminServices(
       reader = createDemandDrivenReleaseReader({
         releaseProfile: releaseProfile.name,
         records: core.trustedReleaseRecords,
-        collector: releaseCollector,
+        // A collection on a publish request is its own timing span.
+        collector: {
+          collect: (request) => publicationStage('release-collect', () => releaseCollector.collect(request)),
+        },
         binding: {
           shopId: actor.tenantShopId,
           installationGeneration: actor.installationGeneration,
@@ -553,12 +557,18 @@ export function createProductionAdminServices(
         config?.effectiveOperationId === identity.operationId
       );
     }
+    /** A settled publication needs no release; otherwise its record is read (collected if stale). */
+    const releaseChecked = (identity: Parameters<typeof coordinator.advance>[0]) =>
+      publicationStage(
+        'release-check',
+        async () => (await settled(identity)) || (await verifyPublicationRelease(actor)),
+      );
     const coordinated = {
       ...coordinator,
       publications: {
         ...coordinator.publications,
         async advance(shopId: string, configId: string, operationId: string) {
-          if (!(await settled({ shopId, configId, operationId })) && !(await verifyPublicationRelease(actor)))
+          if (!(await releaseChecked({ shopId, configId, operationId })))
             throw new Error('Publication verification unavailable');
           return coordinator.publications.advance(shopId, configId, operationId);
         },
@@ -566,8 +576,7 @@ export function createProductionAdminServices(
       async advance(identity: Parameters<typeof coordinator.advance>[0]) {
         // Independent collection completes before PgActivationStore takes locks.
         // The coordinator still consumes passive evidence and checks each write.
-        if (!(await settled(identity)) && !(await verifyPublicationRelease(actor)))
-          throw new Error('Publication verification unavailable');
+        if (!(await releaseChecked(identity))) throw new Error('Publication verification unavailable');
         return coordinator.advance(identity);
       },
     };
@@ -649,11 +658,11 @@ export function createProductionAdminServices(
       // A private startup allocation allows initial setup; no browser plan or
       // status GET can select or dispatch it. Tokens live only with this actor.
       // A store's first publish deploys its checkout Functions, which verification then observes.
-      if (!(await storeFunctionsReady(actor))) {
+      if (!(await publicationStage('functions-setup', () => storeFunctionsReady(actor)))) {
         preparationStopped('FUNCTIONS_SETUP');
         return { ready: false, reason: 'Publication setup is unavailable. Contact support.' };
       }
-      if (!(await verifyPublicationRelease(actor))) {
+      if (!(await publicationStage('release-verification', () => verifyPublicationRelease(actor)))) {
         preparationStopped('RELEASE_VERIFICATION');
         return { ready: false, reason: 'Publication verification is unavailable. Contact support.' };
       }
@@ -665,7 +674,7 @@ export function createProductionAdminServices(
         const token = requestTokens.get(actor);
         const timezone = merchantTimezones.get(actor);
         if (!token || !timezone) throw new Error('Publication authorization unavailable');
-        const state = await automaticSigning.ensure(actor, token, timezone);
+        const state = await publicationStage('signing', () => automaticSigning.ensure(actor, token, timezone));
         await active(actor);
         return state === 'READY' || state === 'PROVISIONED'
           ? { ready: true, reason: null }
@@ -675,7 +684,7 @@ export function createProductionAdminServices(
       grant(actor);
       const token = requestTokens.get(actor);
       if (!token) throw new Error('Publication authorization unavailable');
-      const result = await signingOwner.prepare(actor, token);
+      const result = await publicationStage('signing', () => signingOwner.prepare(actor, token));
       await active(actor);
       return {
         ready: result.state === 'PROVISIONED',
@@ -781,6 +790,9 @@ export function createProductionAdminServices(
     },
     recordAdminFailure(adminFailure) {
       authenticationLogger.error('admin_request_failed', { adminFailure });
+    },
+    recordPublicationTiming(publicationTiming) {
+      authenticationLogger.info('publication_request_timing', { publicationTiming });
     },
     async authenticate(request, options = {}) {
       const correlationId = randomUUID();

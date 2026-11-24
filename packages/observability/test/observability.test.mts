@@ -773,3 +773,66 @@ test('an unexpected error is reduced to its class, short code and first own-code
   assert.deepEqual(describeUnexpectedError('SECRET'), { errorClass: 'Error' });
   assert.deepEqual(describeUnexpectedError(null), { errorClass: 'Error' });
 });
+
+test('publication timing lines whitelist a bounded stage vocabulary and integer milliseconds', () => {
+  let output = '';
+  const { logger } = createObservability({
+    stream: new Writable({
+      write(chunk, _encoding, callback) {
+        output += chunk;
+        callback();
+      },
+    }),
+  });
+  const span = {
+    id: 1,
+    parentId: null,
+    stage: 'preparation' as const,
+    offsetMs: 120,
+    durationMs: 5400,
+    outcome: 'success' as const,
+    secret: 'SECRET',
+  };
+  const publicationTiming = {
+    correlationId: '01234567-89ab-4cde-8123-456789abcdef',
+    outcome: 'accepted' as const,
+    state: 'ACTIVE',
+    totalMs: 31000,
+    truncated: false,
+    spans: [span, { ...span, id: 2, parentId: 1, stage: 'release-collect' as const, offsetMs: 300 }],
+    shop: 'SECRET.myshopify.com',
+  };
+  logger.info('publication_request_timing', { publicationTiming });
+  const line = parseRecord(lastLine(output));
+  assert.equal(line.event, 'publication_request_timing');
+  assert.equal(line.totalMs, 31000);
+  assert.equal(line.outcome, 'accepted');
+  assert.equal(line.state, 'ACTIVE');
+  assert.deepEqual(
+    (line.spans as Record<string, unknown>[]).map((item) => [item.id, item.parentId, item.stage]),
+    [
+      [1, null, 'preparation'],
+      [2, 1, 'release-collect'],
+    ],
+  );
+  assert.doesNotMatch(output, /SECRET|secret/);
+  output = '';
+  logger.info('publication_request_timing', {
+    publicationTiming: { ...publicationTiming, outcome: 'failure', state: undefined },
+  });
+  assert.doesNotMatch(lastLine(output), /"state"/);
+  for (const invalid of [
+    { ...publicationTiming, totalMs: 1.5 },
+    { ...publicationTiming, outcome: 'SECRET' },
+    { ...publicationTiming, state: 'shop.myshopify.com' },
+    { ...publicationTiming, correlationId: 'SECRET' },
+    { ...publicationTiming, spans: Array.from({ length: 65 }, (_, index) => ({ ...span, id: index + 1 })) },
+    { ...publicationTiming, spans: [{ ...span, stage: 'SECRET' }] },
+    { ...publicationTiming, spans: [{ ...span, parentId: 7 }] },
+    { ...publicationTiming, spans: [{ ...span, durationMs: -1 }] },
+  ])
+    assert.throws(
+      () => logger.info('publication_request_timing', { publicationTiming: invalid as never }),
+      /publication timing/,
+    );
+});

@@ -100,6 +100,9 @@ export interface AdminServices {
   /** Unexpected-failure (503) observation: route, method and the reduced error only, never its
    * message, the request, the actor or any identifier. Must not throw into the response path. */
   recordAdminFailure?(failure: import('@insignia/observability').AdminFailureDiagnostic): void;
+  /** One finite-stage timing summary per publish request; never request, actor or merchant data.
+   * Must not throw into the response path. */
+  recordPublicationTiming?(timing: import('@insignia/observability').PublicationTimingDiagnostic): void;
   /** Read-only technical observations; presence alone is never activation admission. */
   inspectReadiness?(actor: AdminActor): Promise<{
     version: 'm5-admin-technical-readiness-v1';

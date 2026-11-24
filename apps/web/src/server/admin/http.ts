@@ -9,6 +9,7 @@ import { AdminAuthenticationBusyError } from './auth.ts';
 import { CatalogQueryError } from './catalog-query.ts';
 import type { AdminActor, AdminServices, CommandOutcome, ConfigRejectionAction } from './contracts.js';
 import { MethodAuthorizationError, MethodCurrencyConflictError } from './methods.ts';
+import { publicationStage, timePublication } from './publication-timing.ts';
 
 export type AdminRoute =
   | { kind: 'list' }
@@ -232,7 +233,7 @@ export async function handleAdminRequest(
     route.kind === 'billing' || route.kind === 'signing',
   );
   if (authenticated instanceof Response) return authenticated;
-  let actor = authenticated;
+  const actor = authenticated;
   if (url.searchParams.has('shop') && url.searchParams.get('shop') !== actor.shop)
     return adminJson(403, { error: 'Shop mismatch' });
   if (!actor.canRead) return adminJson(403, { error: 'Read permission required' });
@@ -423,25 +424,44 @@ export async function handleAdminRequest(
       VERSION.test(body.draftVersion) &&
       Object.keys(body).length === 3
     ) {
-      // Publishing is staff-sensitive: confirm the same staff with a fresh online exchange.
-      const fresh = await authenticateAdmin(request, services, true);
-      if (fresh instanceof Response) return fresh;
-      if (fresh.shop !== actor.shop || fresh.staffId !== actor.staffId || fresh.tenantShopId !== actor.tenantShopId)
-        return adminJson(401, { error: 'Authentication required' });
-      if (!fresh.canEdit) return adminJson(403, { error: 'Edit permission required' });
-      actor = fresh;
-      return outcome(
-        services,
-        'publish',
-        await services.configs.publish(actor, route.productId, {
-          configId: body.configId,
-          draftVersion: body.draftVersion,
+      const configId = body.configId;
+      const draftVersion = body.draftVersion;
+      const publish = async (): Promise<Response | CommandOutcome> => {
+        // Publishing is staff-sensitive: confirm the same staff with a fresh online exchange.
+        const fresh = await publicationStage('authentication', () => authenticateAdmin(request, services, true));
+        if (fresh instanceof Response) return fresh;
+        if (fresh.shop !== actor.shop || fresh.staffId !== actor.staffId || fresh.tenantShopId !== actor.tenantShopId)
+          return adminJson(401, { error: 'Authentication required' });
+        if (!fresh.canEdit) return adminJson(403, { error: 'Edit permission required' });
+        return services.configs.publish(fresh, route.productId, {
+          configId,
+          draftVersion,
           idempotencyKey: key,
           ...(request.headers.has('X-Insignia-Setup-Authority')
             ? { authority: request.headers.get('X-Insignia-Setup-Authority')! }
             : {}),
-        }),
+        });
+      };
+      const result = await timePublication(
+        publish,
+        (settled) =>
+          'error' in settled
+            ? { outcome: 'failure' }
+            : settled.value instanceof Response
+              ? { outcome: 'refused' }
+              : settled.value.kind === 'accepted'
+                ? { outcome: 'accepted', state: settled.value.state }
+                : {
+                    outcome:
+                      settled.value.kind === 'resend' ||
+                      settled.value.kind === 'conflict' ||
+                      settled.value.kind === 'invalid'
+                        ? settled.value.kind
+                        : 'failure',
+                  },
+        services.recordPublicationTiming,
       );
+      return result instanceof Response ? result : outcome(services, 'publish', result);
     }
     if (
       request.method === 'PUT' &&
