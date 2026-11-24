@@ -54,7 +54,8 @@ assets matched the qualified build.
 The independent Canada run returned 422 with the correct explanation in the DOM. A theme rule
 that hides empty elements hid the shadow-DOM wrapper, including the explanation and Close button.
 The regression applies that rule in a browser and requires the visible message and functional
-Close button. The active Shopify theme still needs the fix released and this flow repeated.
+Close button. The fix was activated in Shopify version `1264361504769` on 24 November.
+Repeat the flow against that version and verify that the explanation and Close button are visible.
 All five snowboard variants were unavailable in Canada, so the same-stock check remains open.
 
 The independent reviewer pass reached $30.00 in Designer Review. Shopify's connection verification
