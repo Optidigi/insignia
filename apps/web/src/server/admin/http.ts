@@ -1,7 +1,7 @@
 import { CommandDigestConflictError } from '@insignia/application';
 import { MethodConfigurationSchema } from '@insignia/contracts';
 import { type AdminFailureDiagnostic, describeUnexpectedError } from '@insignia/observability';
-import { AdminOnlineIdentityError, ShopifyAdminUnavailableError } from '@insignia/shopify';
+import { AdminOnlineIdentityError, PartnerSubscriptionError, ShopifyAdminUnavailableError } from '@insignia/shopify';
 import type { ConfigRejectionCode } from '../../shared/config-rejection.ts';
 import { SelectedSetupAuthorityError } from '../selected-product.ts';
 import { selectedMediaUrlsValid } from '../selected-product-media-urls.ts';
@@ -42,12 +42,17 @@ export function adminJson(status: number, value: unknown): Response {
   });
 }
 
-/** Shopify answered with throttling or an outage; nothing about the request was wrong. */
+/**
+ * Shopify answered with throttling or an outage; nothing about the request was wrong. Partner
+ * subscription errors state transience for the buyer API (spec §8.3) only: admin routes keep their 503.
+ */
 export function shopifyBusy(error: unknown): boolean {
   return (
     error instanceof AdminAuthenticationBusyError ||
     error instanceof ShopifyAdminUnavailableError ||
-    (error instanceof Error && (error as { transient?: unknown }).transient === true)
+    (error instanceof Error &&
+      !(error instanceof PartnerSubscriptionError) &&
+      (error as { transient?: unknown }).transient === true)
   );
 }
 /** Transient provider conditions are 409 BUSY with Retry-After, never a 5xx (spec §13.1). */

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createActiveSubscriptionClient, createPartnerGraphqlTransport } from '../src/active-subscription.js';
 import { resolveVariantContext } from '../src/contextual-pricing.js';
 import { readPrimaryMarketContext } from '../src/primary-market.js';
 import { readShopContext } from '../src/shop-context.js';
@@ -120,5 +121,55 @@ describe('contextual pricing read', () => {
     ['MAX_COST_EXCEEDED', errors('MAX_COST_EXCEEDED')],
   ] as const)('%s is not transient', async (_case, response) => {
     expect((await read(response)).transient).toBe(false);
+  });
+});
+
+// Config, proposal, acceptance and renewal read the Partner subscription for entitlement.
+describe('Partner subscription read', () => {
+  const read = (fetchImpl: typeof fetch) =>
+    failure(
+      createActiveSubscriptionClient({
+        transport: createPartnerGraphqlTransport({ organizationId: '1', accessToken: 'synthetic-token', fetchImpl }),
+        now,
+      }).read({ appId: 'gid://shopify/App/1', shopId: 'gid://shopify/Shop/2' }),
+    );
+  it.each(Object.entries(transient))('%s is transient', async (_case, fetchImpl) => {
+    expect((await read(fetchImpl)).transient).toBe(true);
+  });
+  it.each([
+    ['GraphQL 429', graphqlError('429')],
+    ['THROTTLED', graphqlError('THROTTLED')],
+    ['GraphQL INTERNAL_SERVER_ERROR', graphqlError('INTERNAL_SERVER_ERROR')],
+    [
+      'THROTTLED after another error',
+      async () =>
+        Response.json(
+          { errors: [{ message: 'synthetic' }, { message: 'Throttled', extensions: { code: 'THROTTLED' } }] },
+          { headers: version },
+        ),
+    ],
+  ] as const)('a %s error is transient', async (_case, fetchImpl) => {
+    expect((await read(fetchImpl)).transient).toBe(true);
+  });
+  // Spec §8.3: a retired API version, a changed schema or another 4xx fails the same way on every retry (503).
+  it.each([
+    ['401', status(401)],
+    ['403', status(403)],
+    ['400', status(400)],
+    ['404', status(404)],
+    [
+      'retired schema field',
+      async () =>
+        Response.json({ errors: [{ message: "Field 'activeSubscription' doesn't exist on type 'QueryRoot'" }] }),
+    ],
+    ['unrecognised GraphQL error', graphqlError('SYNTHETIC_UNKNOWN')],
+    ['GraphQL 403', graphqlError('403')],
+    [
+      'app not public',
+      async () => Response.json({ errors: [{ message: 'Only public apps can access active subscription' }] }),
+    ],
+    ['malformed', async () => new Response('not json')],
+  ] as const)('%s is not transient', async (_case, fetchImpl) => {
+    expect((await read(fetchImpl)).transient).toBe(false);
   });
 });

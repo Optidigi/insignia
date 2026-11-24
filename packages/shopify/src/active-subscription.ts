@@ -1,5 +1,6 @@
 /** Shopify Partner API 2026-07 activeSubscription read contract; the access token is injected at runtime. */
 import { randomUUID } from 'node:crypto';
+import { transientStatus } from './admin-deadline.js';
 import { PARTNER_HISTORY_QUERY, partnerHistoryVariables } from './partner-history-query.js';
 import { partnerInstant } from './partner-instant.js';
 import { PARTNER_RELATIONSHIP_QUERY } from './partner-relationship-query.js';
@@ -14,12 +15,19 @@ export type PartnerSubscriptionFailureKind =
   | 'feature_unavailable'
   | 'rate_limited'
   | 'network_or_timeout'
+  /** Shopify 5xx: degraded, a later retry can succeed. */
+  | 'provider_unavailable'
+  /** Any other 4xx or an unrecognised GraphQL error (a retired version or changed schema): fails on every retry. */
   | 'provider_error'
   | 'malformed_response';
 export class PartnerSubscriptionError extends Error {
   constructor(readonly kind: PartnerSubscriptionFailureKind) {
     super(`Partner active subscription read failed: ${kind}`);
     this.name = 'PartnerSubscriptionError';
+  }
+  /** Throttling, a Shopify 5xx or an unreachable API: a later retry can succeed (spec §8.3), as for Admin reads. */
+  get transient(): boolean {
+    return this.kind === 'rate_limited' || this.kind === 'provider_unavailable' || this.kind === 'network_or_timeout';
   }
 }
 export type SubscriptionPrice =
@@ -330,7 +338,13 @@ function classifyGraphql(errors: unknown): PartnerSubscriptionFailureKind {
   if (message === 'Shop not found') return 'shop_not_found';
   if (/feature.*not enabled/i.test(message)) return 'feature_unavailable';
   if (code === '401' || code === '403') return 'auth_or_permission';
-  if (code === '429') return 'rate_limited';
+  // Throttling or a Shopify-side failure in any reported error is transient, like the Admin readers.
+  const codes = errors.map((error) => {
+    const extensions = record(error).extensions;
+    return extensions && typeof extensions === 'object' ? (extensions as Record<string, unknown>).code : null;
+  });
+  if (codes.some((value) => value === '429' || value === 'THROTTLED')) return 'rate_limited';
+  if (codes.some((value) => value === 'INTERNAL_SERVER_ERROR')) return 'provider_unavailable';
   if (/access denied|forbidden|permission|unauthorized/i.test(message)) return 'auth_or_permission';
   return 'provider_error';
 }
@@ -475,7 +489,10 @@ export function createPartnerGraphqlTransport(config: {
         if (response.status === 401 || response.status === 403)
           throw new PartnerSubscriptionError('auth_or_permission');
         if (response.status === 429) throw new PartnerSubscriptionError('rate_limited');
-        if (!response.ok) throw new PartnerSubscriptionError('provider_error');
+        if (!response.ok)
+          throw new PartnerSubscriptionError(
+            transientStatus(response.status) ? 'provider_unavailable' : 'provider_error',
+          );
         return await readBoundedBody(response);
       } catch (error) {
         if (error instanceof PartnerSubscriptionError) throw error;

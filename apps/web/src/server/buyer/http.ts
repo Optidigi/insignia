@@ -26,6 +26,7 @@ import { BuyerStateError } from '@insignia/database';
 import { type BuyerFailureDiagnostic, type BuyerTimingDiagnostic, createObservability } from '@insignia/observability';
 import {
   ContextualPricingError,
+  PartnerSubscriptionError,
   PrimaryMarketError,
   ShopContextError,
   ShopifyAdminUnavailableError,
@@ -109,6 +110,7 @@ const FAILED = 'Customization request could not be completed.';
 function providerReadTransient(error: unknown): boolean | undefined {
   return error instanceof ShopifyAdminUnavailableError ||
     error instanceof ContextualPricingError ||
+    error instanceof PartnerSubscriptionError ||
     error instanceof PrimaryMarketError ||
     error instanceof VariantAvailabilityError ||
     error instanceof ShopContextError ||

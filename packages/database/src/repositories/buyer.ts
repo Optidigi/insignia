@@ -93,8 +93,13 @@ export function createBuyerRepository(db: Kysely<Database>) {
     now: Date,
     run: (tx: Transaction<Database>, row: NonNullable<Awaited<ReturnType<typeof session>>>) => Promise<T>,
     charge = true,
+    boundedLockWait = false,
   ) {
     return db.transaction().execute(async (tx) => {
+      // Acceptance and renewal bound waiting behind a held shop fence like the fence itself (spec §8.4):
+      // 55P03 is a retryable 409 BUSY and rolls back everything this transaction wrote. The bound covers
+      // every lock below too: the session row and a concurrent write of the same idempotency key.
+      if (boundedLockWait) await sql`SET LOCAL lock_timeout = '2s'`.execute(tx);
       // Installation lock prevents a concurrent uninstall crossing a successful command.
       const tenant =
         await sql`SELECT i.generation FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation
@@ -192,7 +197,8 @@ export function createBuyerRepository(db: Kysely<Database>) {
     /**
      * Commit admission before authoritative provider work, including failures in later commands.
      * One atomic per-session counter update: no shop or installation row lock, so admission never
-     * waits behind an acceptance holding the shop.
+     * waits behind the shop fence itself. It can wait on the session row while another write of the
+     * same session holds it; such a write takes the row only after it has the shop lock.
      */
     async admitRequest(scope: BuyerScope, now: Date) {
       validScope(scope);
@@ -232,6 +238,8 @@ export function createBuyerRepository(db: Kysely<Database>) {
           return { applicationId: null };
         },
         false,
+        // Only acceptance and renewal reserve commands; their lock wait is bounded (spec §8.4).
+        true,
       );
     },
     async completeCommand(
@@ -298,6 +306,8 @@ export function createBuyerRepository(db: Kysely<Database>) {
           return { applicationId: input.id };
         },
         false,
+        // The last step of acceptance and renewal: bounded; a retry of the same key replays the signed set.
+        true,
       );
     },
     async issueSession(input: {
@@ -536,6 +546,8 @@ export function createBuyerRepository(db: Kysely<Database>) {
           );
         },
         false,
+        // After signing: bounded so the acceptance's automatic retry replays the signed set.
+        true,
       );
     },
     async getOwnedQuote(scope: BuyerScope, id: string, ownerBinding: string, now: Date) {
