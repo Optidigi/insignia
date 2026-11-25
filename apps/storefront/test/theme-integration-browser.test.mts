@@ -234,12 +234,17 @@ test('manual placement wins without duplication and section, variant, quick-add 
   assert.equal(await page.locator('insignia-buyer[data-insignia-auto]').count(), 0);
 });
 
-test('ordinary recommended products are a quiet not-eligible answer: no console output, no re-read, native controls kept', async (t) => {
+test("ordinary recommended products are a quiet not-eligible answer (an old server's 404 too): no console output, no re-read, native controls kept", async (t) => {
   const page = await fixture(t);
   const consoleMessages: string[] = [];
   // The local dev server's own `[vite] connected.` debug line is not storefront output.
+  // Product 444 is answered by an older server (404 before this contract): the browser's own resource error
+  // for that request is expected and excluded; nothing else may log.
   page.on('console', (message) => {
-    if (message.type() === 'error' || message.type() === 'warning')
+    if (
+      (message.type() === 'error' || message.type() === 'warning') &&
+      !message.location().url.includes('productId=444')
+    )
       consoleMessages.push(`${message.type()}: ${message.text()}`);
   });
   page.on('pageerror', (error) => consoleMessages.push(`pageerror: ${error.message}`));
@@ -247,7 +252,9 @@ test('ordinary recommended products are a quiet not-eligible answer: no console 
   await page.route('**/apps/insignia/v1/eligibility?*', (route) => {
     const id = new URL(route.request().url()).searchParams.get('productId') ?? 'missing';
     reads.push(id);
-    return route.fulfill({ json: { productId: id, configured: false } });
+    return id === '444'
+      ? route.fulfill({ status: 404, json: { code: 'NOT_FOUND' } })
+      : route.fulfill({ json: { productId: id, configured: false } });
   });
   const answered = Promise.all(
     ['333', '444'].map((id) =>

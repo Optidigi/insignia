@@ -190,6 +190,8 @@ test('the pre-paint rule never hides controls the embed script keeps, and yields
   for (const body of [
     productPage(manualOnly).replace('data-product-id="111"', 'data-product-id="222"'),
     productPage(manualOnly, 'action="//other.example/cart/add"'),
+    // The URL parser reads a backslash as a slash: this is //other.example as well.
+    productPage(manualOnly, 'action="/\\other.example/cart/add"'),
     productPage(manualOnly)
       .replace('<form action="/cart/add">', '<section class="nested"><form action="/cart/add">')
       .replace('</form></product-form-component>', '</form></section></product-form-component>'),
