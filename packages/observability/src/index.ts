@@ -1,6 +1,6 @@
 import type { Writable } from 'node:stream';
+import { Counter, Gauge, Registry } from '@prometheus-io/client';
 import pino from 'pino';
-import { Counter, Gauge, Registry } from 'prom-client';
 
 const EVENTS = new Set([
   'admin_authentication',

@@ -109,7 +109,7 @@ packages/
   storage/                     # Private R2 storage adapter
   visualizer/                  # Renderer-neutral API, direct Konva implementation
   cart-authorization/          # TS binary codec, server signer, fixtures helpers
-  observability/               # Pino config, prom-client registry, correlation
+  observability/               # Pino config, @prometheus-io/client registry, correlation
 extensions/
   insignia-theme/              # Product app block + lightweight cart-repair app embed
   insignia-cart-transform/     # TOML, input GraphQL, schema, build path
@@ -789,7 +789,7 @@ For a missing Function configuration, a cart with any per-line Insignia marker o
 
 Pino uses structured events, request/attempt IDs, internal shop IDs and coarse error classes. Redact credentials, signatures/tokens, raw webhook bodies, artwork, buyer names/emails and presigned query strings. Do not use arbitrary user text as event names or metric labels.
 
-prom-client metrics include quote latency/result, acceptance conflicts, expired/rejected set categories observed by application/test telemetry, active Function projection age/status, webhook backlog/oldest age, worker retry/rejection rates, inspection duration/resource rejection, recurring subscription freshness/state, abandoned-hold outcomes and the count of flagged publication holds (§6.2), and deletion deadline/backlog; retain historical usage metrics only where they still serve recovery. Avoid per-order/cart/quote labels and uncontrolled shop cardinality. Rust Function observability uses supported Shopify logs/fixtures; it does not call the application's metrics endpoint offline.
+@prometheus-io/client (formerly prom-client) metrics include quote latency/result, acceptance conflicts, expired/rejected set categories observed by application/test telemetry, active Function projection age/status, webhook backlog/oldest age, worker retry/rejection rates, inspection duration/resource rejection, recurring subscription freshness/state, abandoned-hold outcomes and the count of flagged publication holds (§6.2), and deletion deadline/backlog; retain historical usage metrics only where they still serve recovery. Avoid per-order/cart/quote labels and uncontrolled shop cardinality. Rust Function observability uses supported Shopify logs/fixtures; it does not call the application's metrics endpoint offline.
 
 Health endpoints separate process liveness, DB readiness, worker freshness and integration readiness. A globally healthy process does not mean each merchant's Functions/plan are healthy. Application SLO indicators, bounded tracing and actionable operational alerts are required. The current alert/heartbeat implementation is documented in [deployment/alerts](../../deployment/alerts/README.md); source and local qualification do not establish actual provider mail delivery or outage/recovery behavior.
 
