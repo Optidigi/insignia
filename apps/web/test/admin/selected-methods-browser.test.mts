@@ -92,6 +92,32 @@ test('selected Method delete confirmation cancels without a mutation and explici
   assert.equal(f.records().length, 0);
 });
 
+test('a Method dialog stays operable while its deletion is pending, and Cancel never loses the confirmed delete', {
+  timeout: 20000,
+}, async (t) => {
+  const f = await methodsFixture(t, { holdWrite: true });
+  await f.open(`/admin/methods/${methodId}`);
+  await f.page
+    .locator('s-menu#method-detail-actions s-button[tone="critical"]')
+    .evaluate((button: HTMLElementTagNameMap['s-button']) => button.click());
+  const modal = f.page.locator('s-modal').filter({ hasText: 'Delete Printing?' });
+  await modal.getByRole('button', { name: 'Delete method', exact: true }).click();
+  await f.writeStarted;
+  // The page behind the dialog is inert while the write is pending; the dialog itself must not be.
+  assert.equal(
+    await f.page.locator('s-button[icon="duplicate"]').evaluate((button) => button.closest('[inert]') !== null),
+    true,
+  );
+  // Playwright refuses to click inside an inert subtree, so this click proves the dialog sits outside it.
+  await modal.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await modal.waitFor({ state: 'hidden' });
+  f.release();
+  await f.page.getByText('Method deleted.', { exact: true }).waitFor();
+  assert.equal(f.writes.length, 1, 'Cancel after confirmation sends no second command');
+  assert.equal(f.records().length, 0);
+  assert.equal(await f.page.getByText('Printing', { exact: true }).count(), 0);
+});
+
 test('lost selected Method create reply resumes its original exact command on reload without duplicate catalogue rows', {
   timeout: 20000,
 }, async (t) => {

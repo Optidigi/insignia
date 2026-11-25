@@ -439,478 +439,481 @@ export default function SelectedMethods({
       (method) => method.id !== editor.id && method.name.toLocaleLowerCase() === editor.name.trim().toLocaleLowerCase(),
     );
   return (
-    <div
-      class="method-workflow"
-      ref={main}
-      tabIndex={-1}
-      inert={pending || (readOnly && !!editor) || undefined}
-      aria-busy={pending}
-    >
-      {production && editor && (
-        <AdminSaveBar
-          id={saveBarId}
-          dirty={dirty}
-          saving={pending}
-          canSave={dirty && !pending && !readOnly}
-          canDiscard={dirty && !pending && !readOnly}
-          onSave={() => void save()}
-          onDiscard={discardEditor}
-          showFallback={false}
-          manageNavigation={false}
-        />
-      )}
-      <s-page
-        heading={editor ? current?.name || t('methods:workflow.createTitle') : t('methods:workflow.title')}
-        inlineSize="large"
-      >
-        {!editor && methods.length > 0 && (
-          <s-button
-            slot="secondary-actions"
-            variant="secondary"
-            onClick={() => downloadMethodSummary(methods, products, currency, methodCurrencies)}
-          >
-            {t('methods:workflow.actions.exportAll')}
-          </s-button>
-        )}
-        {editor ? (
-          <s-link slot="breadcrumb-actions" href={indexPath}>
-            {t('methods:workflow.actions.methodsBreadcrumb')}
-          </s-link>
-        ) : (
-          methods.length > 0 && (
-            <s-button
-              slot="primary-action"
-              variant="primary"
-              disabled={readOnly || pending || methods.length >= methodPreviewLimit}
-              onClick={() => navigate(`${indexPath}/new`)}
-            >
-              {t('methods:workflow.actions.create')}
-            </s-button>
-          )
-        )}
-        {editor && current && (
-          <s-button
-            slot="secondary-actions"
-            variant="secondary"
-            icon="duplicate"
-            disabled={readOnly || pending || dirty || methods.length >= methodPreviewLimit}
-            onClick={() => startDuplicate(current)}
-          >
-            {t('methods:workflow.actions.duplicate')}
-          </s-button>
-        )}
-        {editor && current && (
-          <>
-            <s-button slot="secondary-actions" variant="secondary" commandFor="method-detail-actions">
-              {t('methods:workflow.actions.more')}
-            </s-button>
-            <s-menu id="method-detail-actions" accessibilityLabel={t('methods:workflow.actions.methodActions')}>
-              <s-button
-                disabled={dirty}
-                onClick={() => downloadMethodSummary([current], products, currency, methodCurrencies)}
-              >
-                {t('methods:workflow.actions.exportSummary')}
-              </s-button>
-              <s-button tone="critical" disabled={readOnly || pending} onClick={() => requestRemoval([current])}>
-                {t('methods:workflow.actions.delete')}
-              </s-button>
-            </s-menu>
-          </>
-        )}
-        {notice && (
-          <div class="method-editor-notice">
-            <s-box paddingBlockEnd="base">
-              <div role="status">
-                <s-banner
-                  tone={
-                    notice.kind === 'storage-failure' || notice.kind === 'busy'
-                      ? 'critical'
-                      : notice.kind === 'method-unavailable'
-                        ? 'info'
-                        : 'success'
-                  }
-                  dismissible
-                  onDismiss={() => setNotice(null)}
-                >
-                  {formatMethodNotice(notice, t, formatLocale)}
-                </s-banner>
-              </div>
-            </s-box>
-          </div>
-        )}
-        {editor ? (
-          <>
-            {!current && methods.length >= methodPreviewLimit && (
-              <s-banner tone="info">
-                {t('methods:workflow.copy.setupLimitReached', {
-                  formattedCount: new Intl.NumberFormat(formatLocale).format(methodPreviewLimit),
-                })}
-              </s-banner>
-            )}
-            {dirty && (
-              <section hidden data-preview-save-bar aria-label={t('methods:workflow.copy.unsavedChanges')}>
-                <s-button onClick={discardEditor}>{t('admin-shell:shared.actions.discard')}</s-button>
-                <s-button
-                  variant="primary"
-                  disabled={!editor.id && methods.length >= methodPreviewLimit}
-                  onClick={save}
-                >
-                  {t('common:actions.save')}
-                </s-button>
-              </section>
-            )}
-            <div class="method-detail-layout">
-              <div class="method-main-column">
-                <s-section heading={t('methods:workflow.fields.details')}>
-                  <s-stack gap="base">
-                    {translationsEnabled && (
-                      <s-select
-                        label={t('methods:workflow.fields.translationLanguage')}
-                        value={translationLocale || 'default'}
-                        onChange={(event) =>
-                          setTranslationLocale(event.currentTarget.value === 'default' ? '' : event.currentTarget.value)
-                        }
-                      >
-                        <s-option value="default">{t('methods:workflow.fields.defaultText')}</s-option>
-                        {LANGUAGE_OPTIONS.map((language) => (
-                          <s-option key={language.value} value={language.value}>
-                            {language.label}
-                          </s-option>
-                        ))}
-                      </s-select>
-                    )}
-                    <s-text-field
-                      data-invalid={!!errors.name}
-                      label={t('methods:workflow.fields.name')}
-                      name="method-name"
-                      value={translationLocale ? (editor.translations?.[translationLocale]?.name ?? '') : editor.name}
-                      placeholder={translationLocale ? editor.name : undefined}
-                      maxLength={80}
-                      required={!translationLocale}
-                      error={errors.name ? t('methods:workflow.copy.nameRequired') : ''}
-                      details={t('methods:workflow.fields.nameHelp')}
-                      onInput={(event) =>
-                        sendWorkflow(
-                          translationLocale
-                            ? {
-                                type: 'method-translation-edited',
-                                sessionId: workflow.editorSessionId,
-                                locale: translationLocale,
-                                field: 'name',
-                                value: event.currentTarget.value,
-                              }
-                            : {
-                                type: 'method-name-edited',
-                                sessionId: workflow.editorSessionId,
-                                value: event.currentTarget.value,
-                              },
-                        )
-                      }
-                    />
-                    <s-text-area
-                      label={t(
-                        production ? 'methods:workflow.fields.realExplanation' : 'methods:workflow.fields.explanation',
-                      )}
-                      details={t(
-                        production
-                          ? 'methods:workflow.fields.realExplanationHelp'
-                          : 'methods:workflow.fields.explanationHelp',
-                      )}
-                      name="method-description"
-                      value={
-                        translationLocale
-                          ? (editor.translations?.[translationLocale]?.explanation ?? '')
-                          : editor.explanation
-                      }
-                      placeholder={translationLocale ? editor.explanation : undefined}
-                      maxLength={240}
-                      rows={2}
-                      onInput={(event) =>
-                        sendWorkflow(
-                          translationLocale
-                            ? {
-                                type: 'method-translation-edited',
-                                sessionId: workflow.editorSessionId,
-                                locale: translationLocale,
-                                field: 'explanation',
-                                value: event.currentTarget.value,
-                              }
-                            : {
-                                type: 'method-explanation-edited',
-                                sessionId: workflow.editorSessionId,
-                                value: event.currentTarget.value,
-                              },
-                        )
-                      }
-                    />
-                    {translationsEnabled && translationLocale && (
-                      <s-paragraph color="subdued">{t('methods:workflow.copy.translationFallback')}</s-paragraph>
-                    )}
-                    {duplicate && <s-banner tone="warning">{t('methods:workflow.copy.duplicateWarning')}</s-banner>}
-                  </s-stack>
-                </s-section>
-                <s-section heading={t('methods:workflow.fields.defaultPricing')}>
-                  <s-stack gap="base">
-                    <s-paragraph color="subdued">
-                      {t(
-                        production
-                          ? 'methods:workflow.copy.realDefaultsDescription'
-                          : 'methods:workflow.copy.defaultsDescription',
-                      )}
-                    </s-paragraph>
-                    <s-choice-list
-                      label={t('methods:workflow.fields.pricing')}
-                      labelAccessibilityVisibility="exclusive"
-                      name="method-pricing"
-                      values={[editor.pricing]}
-                      onChange={(event) =>
-                        sendWorkflow({
-                          type: 'pricing-kind-changed',
-                          sessionId: workflow.editorSessionId,
-                          value: event.currentTarget.values[0] === 'product' ? 'product' : 'fixed',
-                        })
-                      }
-                    >
-                      <s-choice value="fixed">
-                        {t('methods:workflow.pricing.fixed')}
-                        <s-text slot="details">
-                          {t(
-                            production
-                              ? 'methods:workflow.copy.realFixedPriceDescription'
-                              : 'methods:workflow.copy.fixedPriceDescription',
-                          )}
-                        </s-text>
-                      </s-choice>
-                      <s-choice value="product">
-                        {t('methods:workflow.pricing.productSpecific')}
-                        <s-text slot="details">{t('methods:workflow.copy.productPricingDescription')}</s-text>
-                      </s-choice>
-                    </s-choice-list>
-                    {currencyMismatch && !priceCurrencyReviewed && (
-                      <s-banner tone="warning">
-                        {t('methods:workflow.copy.currencyReview', {
-                          amount: `${storedCurrency} ${editor.amount}`,
-                          currency,
-                        })}
-                      </s-banner>
-                    )}
-                    {editor.pricing === 'fixed' ? (
-                      <div class="method-price-field">
-                        <DecimalField
-                          kind="price"
-                          data-invalid={!!errors.amount}
-                          label={t('methods:workflow.fields.pricePerLocation')}
-                          name="method-amount"
-                          prefix={currencyPrefix(currency)}
-                          value={currencyMismatch && !priceCurrencyReviewed ? '' : editor.amount}
-                          error={errors.amount ? t('methods:workflow.copy.priceRequired') : ''}
-                          details={t('methods:workflow.fields.priceHelp')}
-                          onValue={(value) => {
-                            if (readOnly || writing.current) return;
-                            setPriceReviewSessions((sessions) =>
-                              sessions.includes(workflow.editorSessionId)
-                                ? sessions
-                                : [...sessions, workflow.editorSessionId],
-                            );
-                            sendWorkflow({
-                              type: 'default-price-edited',
-                              sessionId: workflow.editorSessionId,
-                              value,
-                            });
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      <s-paragraph color="subdued">{t('methods:workflow.copy.productSpecificDescription')}</s-paragraph>
-                    )}
-                  </s-stack>
-                </s-section>
-                <s-section heading={t('methods:workflow.fields.productAvailability')}>
-                  <s-stack gap="base">
-                    <s-paragraph color="subdued">{t('methods:workflow.copy.availableOnAllProducts')}</s-paragraph>
-                    <s-divider />
-                    <div id="method-products" class="method-product-heading" ref={productList} tabIndex={-1}>
-                      <s-heading>
-                        {t('methods:index.counts.products', {
-                          count: matched.length,
-                          formattedCount: new Intl.NumberFormat(formatLocale).format(matched.length),
-                        })}
-                      </s-heading>
-                      {needingSetup > 0 && (
-                        <s-badge tone="warning">
-                          {t('methods:workflow.copy.needsSetupCount', {
-                            count: needingSetup,
-                            formattedCount: new Intl.NumberFormat(formatLocale).format(needingSetup),
-                          })}
-                        </s-badge>
-                      )}
-                    </div>
-                    {!matched.length ? (
-                      <s-paragraph color="subdued">{t('methods:workflow.empty.notUsed')}</s-paragraph>
-                    ) : (
-                      <>
-                        {needingSetup > 0 && (
-                          <s-paragraph color="subdued">
-                            {editor.pricing === 'fixed'
-                              ? t('methods:workflow.copy.setupFixedPrice')
-                              : t('methods:workflow.copy.setupProductPrice')}
-                          </s-paragraph>
-                        )}
-                        {(matched.length > 8 || needingSetup > 0 || productQuery || productSetup !== 'all') && (
-                          <AdminIndexToolbar
-                            id="method-assigned-products"
-                            label={t('methods:workflow.fields.searchProductsUsing')}
-                            value={productQuery}
-                            maxLength={100}
-                            onInput={(value) => {
-                              setProductQuery(value);
-                              setProductPage(0);
-                            }}
-                            resultStatus={t('methods:index.counts.products', {
-                              count: filteredProducts.length,
-                              formattedCount: new Intl.NumberFormat(formatLocale).format(filteredProducts.length),
-                            })}
-                            filter={{
-                              label: t('methods:workflow.filter.filterProducts'),
-                              text:
-                                productSetup === 'all'
-                                  ? t('methods:workflow.fields.productSetup')
-                                  : productSetup === 'needs'
-                                    ? t('methods:workflow.filter.needsSetup')
-                                    : t('methods:workflow.filter.configured'),
-                              count: productSetup === 'all' ? 0 : 1,
-                              content: (
-                                <s-choice-list
-                                  label={t('methods:workflow.fields.productSetup')}
-                                  values={[productSetup]}
-                                  onChange={(event) => {
-                                    setProductSetup(event.currentTarget.values[0] ?? 'all');
-                                    setProductPage(0);
-                                  }}
-                                >
-                                  <s-choice value="all">{t('methods:workflow.filter.allProducts')}</s-choice>
-                                  <s-choice value="needs">{t('methods:workflow.filter.needsSetup')}</s-choice>
-                                  <s-choice value="ready">{t('methods:workflow.filter.configured')}</s-choice>
-                                </s-choice-list>
-                              ),
-                            }}
-                          />
-                        )}
-
-                        <div class="method-products">
-                          {visibleProducts.map((product) => {
-                            const setup = productReadiness(editor, product);
-                            return (
-                              <div key={product.id} class="method-product-row">
-                                <s-thumbnail src={product.image} alt="" size="small" />
-                                <div class="method-product-copy">
-                                  <s-stack gap="none">
-                                    <s-link
-                                      tone="neutral"
-                                      href={`/admin/products/${product.configurationProductId ?? product.id}/config`}
-                                    >
-                                      <s-text type="strong">{product.title}</s-text>
-                                    </s-link>
-                                    {setup.ready ? (
-                                      <s-paragraph color="subdued">
-                                        {t('methods:workflow.readiness.locations', {
-                                          count: setup.locations,
-                                          formattedCount: new Intl.NumberFormat(formatLocale).format(setup.locations),
-                                        })}
-                                      </s-paragraph>
-                                    ) : (
-                                      <s-link
-                                        href={`/admin/products/${product.configurationProductId ?? product.id}/config`}
-                                      >
-                                        {t(
-                                          setup.reason === 'configure-locations'
-                                            ? 'methods:workflow.readiness.configureLocations'
-                                            : 'methods:workflow.readiness.addProductPrices',
-                                        )}
-                                      </s-link>
-                                    )}
-                                  </s-stack>
-                                </div>
-                              </div>
-                            );
-                          })}
-                          {!visibleProducts.length && (
-                            <s-stack gap="small">
-                              <s-paragraph>{t('methods:workflow.filter.noProductMatch')}</s-paragraph>
-                              <s-button
-                                variant="tertiary"
-                                onClick={() => {
-                                  setProductQuery('');
-                                  setProductSetup('all');
-                                  setProductPage(0);
-                                  requestAnimationFrame(() => productList.current?.focus());
-                                }}
-                              >
-                                {t('methods:workflow.filter.clearProductFilters')}
-                              </s-button>
-                            </s-stack>
-                          )}
-                        </div>
-                        {pageCount > 1 && (
-                          <s-stack direction="inline" gap="small" justifyContent="center" alignItems="center">
-                            <s-button
-                              icon="chevron-left"
-                              accessibilityLabel={t('methods:picker.previousProducts')}
-                              disabled={!safePage}
-                              onClick={() => setProductPage(safePage - 1)}
-                            />
-                            <s-text>
-                              {t('methods:workflow.copy.productPageRange', {
-                                first: new Intl.NumberFormat(formatLocale).format(safePage * 8 + 1),
-                                last: new Intl.NumberFormat(formatLocale).format(
-                                  Math.min((safePage + 1) * 8, filteredProducts.length),
-                                ),
-                                formattedCount: new Intl.NumberFormat(formatLocale).format(filteredProducts.length),
-                              })}
-                            </s-text>
-                            <s-button
-                              icon="chevron-right"
-                              accessibilityLabel={t('methods:picker.nextProducts')}
-                              disabled={safePage + 1 >= pageCount}
-                              onClick={() => setProductPage(safePage + 1)}
-                            />
-                          </s-stack>
-                        )}
-                      </>
-                    )}
-                  </s-stack>
-                </s-section>
-              </div>
-              <MethodSummary
-                method={editor}
-                currency={currencyMismatch && !priceCurrencyReviewed ? storedCurrency : currency}
-                count={matched.length}
-                needsSetup={needingSetup}
-                onReview={(needsOnly) => {
-                  setProductSetup(needsOnly ? 'needs' : 'all');
-                  setProductPage(0);
-                  setProductQuery('');
-                  requestAnimationFrame(() => {
-                    productList.current?.scrollIntoView({ block: 'start', behavior: 'instant' });
-                    productList.current?.focus({ preventScroll: true });
-                  });
-                }}
-              />
-            </div>
-          </>
-        ) : (
-          <MethodIndex
-            readOnly={readOnly || pending}
-            methods={methods}
-            currency={currency}
-            methodCurrencies={methodCurrencies}
-            products={products}
-            onCreate={() => navigate(`${indexPath}/new`)}
-            onDuplicate={startDuplicate}
-            onDelete={requestRemoval}
+    <div class="method-workflow" ref={main} tabIndex={-1} aria-busy={pending}>
+      {/* Dialogs stay outside this inert region: a modal must not have an inert ancestor. */}
+      <div class="method-workflow-content" inert={pending || (readOnly && !!editor) || undefined}>
+        {production && editor && (
+          <AdminSaveBar
+            id={saveBarId}
+            dirty={dirty}
+            saving={pending}
+            canSave={dirty && !pending && !readOnly}
+            canDiscard={dirty && !pending && !readOnly}
+            onSave={() => void save()}
+            onDiscard={discardEditor}
+            showFallback={false}
+            manageNavigation={false}
           />
         )}
-      </s-page>
+        <s-page
+          heading={editor ? current?.name || t('methods:workflow.createTitle') : t('methods:workflow.title')}
+          inlineSize="large"
+        >
+          {!editor && methods.length > 0 && (
+            <s-button
+              slot="secondary-actions"
+              variant="secondary"
+              onClick={() => downloadMethodSummary(methods, products, currency, methodCurrencies)}
+            >
+              {t('methods:workflow.actions.exportAll')}
+            </s-button>
+          )}
+          {editor ? (
+            <s-link slot="breadcrumb-actions" href={indexPath}>
+              {t('methods:workflow.actions.methodsBreadcrumb')}
+            </s-link>
+          ) : (
+            methods.length > 0 && (
+              <s-button
+                slot="primary-action"
+                variant="primary"
+                disabled={readOnly || pending || methods.length >= methodPreviewLimit}
+                onClick={() => navigate(`${indexPath}/new`)}
+              >
+                {t('methods:workflow.actions.create')}
+              </s-button>
+            )
+          )}
+          {editor && current && (
+            <s-button
+              slot="secondary-actions"
+              variant="secondary"
+              icon="duplicate"
+              disabled={readOnly || pending || dirty || methods.length >= methodPreviewLimit}
+              onClick={() => startDuplicate(current)}
+            >
+              {t('methods:workflow.actions.duplicate')}
+            </s-button>
+          )}
+          {editor && current && (
+            <>
+              <s-button slot="secondary-actions" variant="secondary" commandFor="method-detail-actions">
+                {t('methods:workflow.actions.more')}
+              </s-button>
+              <s-menu id="method-detail-actions" accessibilityLabel={t('methods:workflow.actions.methodActions')}>
+                <s-button
+                  disabled={dirty}
+                  onClick={() => downloadMethodSummary([current], products, currency, methodCurrencies)}
+                >
+                  {t('methods:workflow.actions.exportSummary')}
+                </s-button>
+                <s-button tone="critical" disabled={readOnly || pending} onClick={() => requestRemoval([current])}>
+                  {t('methods:workflow.actions.delete')}
+                </s-button>
+              </s-menu>
+            </>
+          )}
+          {notice && (
+            <div class="method-editor-notice">
+              <s-box paddingBlockEnd="base">
+                <div role="status">
+                  <s-banner
+                    tone={
+                      notice.kind === 'storage-failure' || notice.kind === 'busy'
+                        ? 'critical'
+                        : notice.kind === 'method-unavailable'
+                          ? 'info'
+                          : 'success'
+                    }
+                    dismissible
+                    onDismiss={() => setNotice(null)}
+                  >
+                    {formatMethodNotice(notice, t, formatLocale)}
+                  </s-banner>
+                </div>
+              </s-box>
+            </div>
+          )}
+          {editor ? (
+            <>
+              {!current && methods.length >= methodPreviewLimit && (
+                <s-banner tone="info">
+                  {t('methods:workflow.copy.setupLimitReached', {
+                    formattedCount: new Intl.NumberFormat(formatLocale).format(methodPreviewLimit),
+                  })}
+                </s-banner>
+              )}
+              {dirty && (
+                <section hidden data-preview-save-bar aria-label={t('methods:workflow.copy.unsavedChanges')}>
+                  <s-button onClick={discardEditor}>{t('admin-shell:shared.actions.discard')}</s-button>
+                  <s-button
+                    variant="primary"
+                    disabled={!editor.id && methods.length >= methodPreviewLimit}
+                    onClick={save}
+                  >
+                    {t('common:actions.save')}
+                  </s-button>
+                </section>
+              )}
+              <div class="method-detail-layout">
+                <div class="method-main-column">
+                  <s-section heading={t('methods:workflow.fields.details')}>
+                    <s-stack gap="base">
+                      {translationsEnabled && (
+                        <s-select
+                          label={t('methods:workflow.fields.translationLanguage')}
+                          value={translationLocale || 'default'}
+                          onChange={(event) =>
+                            setTranslationLocale(
+                              event.currentTarget.value === 'default' ? '' : event.currentTarget.value,
+                            )
+                          }
+                        >
+                          <s-option value="default">{t('methods:workflow.fields.defaultText')}</s-option>
+                          {LANGUAGE_OPTIONS.map((language) => (
+                            <s-option key={language.value} value={language.value}>
+                              {language.label}
+                            </s-option>
+                          ))}
+                        </s-select>
+                      )}
+                      <s-text-field
+                        data-invalid={!!errors.name}
+                        label={t('methods:workflow.fields.name')}
+                        name="method-name"
+                        value={translationLocale ? (editor.translations?.[translationLocale]?.name ?? '') : editor.name}
+                        placeholder={translationLocale ? editor.name : undefined}
+                        maxLength={80}
+                        required={!translationLocale}
+                        error={errors.name ? t('methods:workflow.copy.nameRequired') : ''}
+                        details={t('methods:workflow.fields.nameHelp')}
+                        onInput={(event) =>
+                          sendWorkflow(
+                            translationLocale
+                              ? {
+                                  type: 'method-translation-edited',
+                                  sessionId: workflow.editorSessionId,
+                                  locale: translationLocale,
+                                  field: 'name',
+                                  value: event.currentTarget.value,
+                                }
+                              : {
+                                  type: 'method-name-edited',
+                                  sessionId: workflow.editorSessionId,
+                                  value: event.currentTarget.value,
+                                },
+                          )
+                        }
+                      />
+                      <s-text-area
+                        label={t(
+                          production
+                            ? 'methods:workflow.fields.realExplanation'
+                            : 'methods:workflow.fields.explanation',
+                        )}
+                        details={t(
+                          production
+                            ? 'methods:workflow.fields.realExplanationHelp'
+                            : 'methods:workflow.fields.explanationHelp',
+                        )}
+                        name="method-description"
+                        value={
+                          translationLocale
+                            ? (editor.translations?.[translationLocale]?.explanation ?? '')
+                            : editor.explanation
+                        }
+                        placeholder={translationLocale ? editor.explanation : undefined}
+                        maxLength={240}
+                        rows={2}
+                        onInput={(event) =>
+                          sendWorkflow(
+                            translationLocale
+                              ? {
+                                  type: 'method-translation-edited',
+                                  sessionId: workflow.editorSessionId,
+                                  locale: translationLocale,
+                                  field: 'explanation',
+                                  value: event.currentTarget.value,
+                                }
+                              : {
+                                  type: 'method-explanation-edited',
+                                  sessionId: workflow.editorSessionId,
+                                  value: event.currentTarget.value,
+                                },
+                          )
+                        }
+                      />
+                      {translationsEnabled && translationLocale && (
+                        <s-paragraph color="subdued">{t('methods:workflow.copy.translationFallback')}</s-paragraph>
+                      )}
+                      {duplicate && <s-banner tone="warning">{t('methods:workflow.copy.duplicateWarning')}</s-banner>}
+                    </s-stack>
+                  </s-section>
+                  <s-section heading={t('methods:workflow.fields.defaultPricing')}>
+                    <s-stack gap="base">
+                      <s-paragraph color="subdued">
+                        {t(
+                          production
+                            ? 'methods:workflow.copy.realDefaultsDescription'
+                            : 'methods:workflow.copy.defaultsDescription',
+                        )}
+                      </s-paragraph>
+                      <s-choice-list
+                        label={t('methods:workflow.fields.pricing')}
+                        labelAccessibilityVisibility="exclusive"
+                        name="method-pricing"
+                        values={[editor.pricing]}
+                        onChange={(event) =>
+                          sendWorkflow({
+                            type: 'pricing-kind-changed',
+                            sessionId: workflow.editorSessionId,
+                            value: event.currentTarget.values[0] === 'product' ? 'product' : 'fixed',
+                          })
+                        }
+                      >
+                        <s-choice value="fixed">
+                          {t('methods:workflow.pricing.fixed')}
+                          <s-text slot="details">
+                            {t(
+                              production
+                                ? 'methods:workflow.copy.realFixedPriceDescription'
+                                : 'methods:workflow.copy.fixedPriceDescription',
+                            )}
+                          </s-text>
+                        </s-choice>
+                        <s-choice value="product">
+                          {t('methods:workflow.pricing.productSpecific')}
+                          <s-text slot="details">{t('methods:workflow.copy.productPricingDescription')}</s-text>
+                        </s-choice>
+                      </s-choice-list>
+                      {currencyMismatch && !priceCurrencyReviewed && (
+                        <s-banner tone="warning">
+                          {t('methods:workflow.copy.currencyReview', {
+                            amount: `${storedCurrency} ${editor.amount}`,
+                            currency,
+                          })}
+                        </s-banner>
+                      )}
+                      {editor.pricing === 'fixed' ? (
+                        <div class="method-price-field">
+                          <DecimalField
+                            kind="price"
+                            data-invalid={!!errors.amount}
+                            label={t('methods:workflow.fields.pricePerLocation')}
+                            name="method-amount"
+                            prefix={currencyPrefix(currency)}
+                            value={currencyMismatch && !priceCurrencyReviewed ? '' : editor.amount}
+                            error={errors.amount ? t('methods:workflow.copy.priceRequired') : ''}
+                            details={t('methods:workflow.fields.priceHelp')}
+                            onValue={(value) => {
+                              if (readOnly || writing.current) return;
+                              setPriceReviewSessions((sessions) =>
+                                sessions.includes(workflow.editorSessionId)
+                                  ? sessions
+                                  : [...sessions, workflow.editorSessionId],
+                              );
+                              sendWorkflow({
+                                type: 'default-price-edited',
+                                sessionId: workflow.editorSessionId,
+                                value,
+                              });
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <s-paragraph color="subdued">
+                          {t('methods:workflow.copy.productSpecificDescription')}
+                        </s-paragraph>
+                      )}
+                    </s-stack>
+                  </s-section>
+                  <s-section heading={t('methods:workflow.fields.productAvailability')}>
+                    <s-stack gap="base">
+                      <s-paragraph color="subdued">{t('methods:workflow.copy.availableOnAllProducts')}</s-paragraph>
+                      <s-divider />
+                      <div id="method-products" class="method-product-heading" ref={productList} tabIndex={-1}>
+                        <s-heading>
+                          {t('methods:index.counts.products', {
+                            count: matched.length,
+                            formattedCount: new Intl.NumberFormat(formatLocale).format(matched.length),
+                          })}
+                        </s-heading>
+                        {needingSetup > 0 && (
+                          <s-badge tone="warning">
+                            {t('methods:workflow.copy.needsSetupCount', {
+                              count: needingSetup,
+                              formattedCount: new Intl.NumberFormat(formatLocale).format(needingSetup),
+                            })}
+                          </s-badge>
+                        )}
+                      </div>
+                      {!matched.length ? (
+                        <s-paragraph color="subdued">{t('methods:workflow.empty.notUsed')}</s-paragraph>
+                      ) : (
+                        <>
+                          {needingSetup > 0 && (
+                            <s-paragraph color="subdued">
+                              {editor.pricing === 'fixed'
+                                ? t('methods:workflow.copy.setupFixedPrice')
+                                : t('methods:workflow.copy.setupProductPrice')}
+                            </s-paragraph>
+                          )}
+                          {(matched.length > 8 || needingSetup > 0 || productQuery || productSetup !== 'all') && (
+                            <AdminIndexToolbar
+                              id="method-assigned-products"
+                              label={t('methods:workflow.fields.searchProductsUsing')}
+                              value={productQuery}
+                              maxLength={100}
+                              onInput={(value) => {
+                                setProductQuery(value);
+                                setProductPage(0);
+                              }}
+                              resultStatus={t('methods:index.counts.products', {
+                                count: filteredProducts.length,
+                                formattedCount: new Intl.NumberFormat(formatLocale).format(filteredProducts.length),
+                              })}
+                              filter={{
+                                label: t('methods:workflow.filter.filterProducts'),
+                                text:
+                                  productSetup === 'all'
+                                    ? t('methods:workflow.fields.productSetup')
+                                    : productSetup === 'needs'
+                                      ? t('methods:workflow.filter.needsSetup')
+                                      : t('methods:workflow.filter.configured'),
+                                count: productSetup === 'all' ? 0 : 1,
+                                content: (
+                                  <s-choice-list
+                                    label={t('methods:workflow.fields.productSetup')}
+                                    values={[productSetup]}
+                                    onChange={(event) => {
+                                      setProductSetup(event.currentTarget.values[0] ?? 'all');
+                                      setProductPage(0);
+                                    }}
+                                  >
+                                    <s-choice value="all">{t('methods:workflow.filter.allProducts')}</s-choice>
+                                    <s-choice value="needs">{t('methods:workflow.filter.needsSetup')}</s-choice>
+                                    <s-choice value="ready">{t('methods:workflow.filter.configured')}</s-choice>
+                                  </s-choice-list>
+                                ),
+                              }}
+                            />
+                          )}
+
+                          <div class="method-products">
+                            {visibleProducts.map((product) => {
+                              const setup = productReadiness(editor, product);
+                              return (
+                                <div key={product.id} class="method-product-row">
+                                  <s-thumbnail src={product.image} alt="" size="small" />
+                                  <div class="method-product-copy">
+                                    <s-stack gap="none">
+                                      <s-link
+                                        tone="neutral"
+                                        href={`/admin/products/${product.configurationProductId ?? product.id}/config`}
+                                      >
+                                        <s-text type="strong">{product.title}</s-text>
+                                      </s-link>
+                                      {setup.ready ? (
+                                        <s-paragraph color="subdued">
+                                          {t('methods:workflow.readiness.locations', {
+                                            count: setup.locations,
+                                            formattedCount: new Intl.NumberFormat(formatLocale).format(setup.locations),
+                                          })}
+                                        </s-paragraph>
+                                      ) : (
+                                        <s-link
+                                          href={`/admin/products/${product.configurationProductId ?? product.id}/config`}
+                                        >
+                                          {t(
+                                            setup.reason === 'configure-locations'
+                                              ? 'methods:workflow.readiness.configureLocations'
+                                              : 'methods:workflow.readiness.addProductPrices',
+                                          )}
+                                        </s-link>
+                                      )}
+                                    </s-stack>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            {!visibleProducts.length && (
+                              <s-stack gap="small">
+                                <s-paragraph>{t('methods:workflow.filter.noProductMatch')}</s-paragraph>
+                                <s-button
+                                  variant="tertiary"
+                                  onClick={() => {
+                                    setProductQuery('');
+                                    setProductSetup('all');
+                                    setProductPage(0);
+                                    requestAnimationFrame(() => productList.current?.focus());
+                                  }}
+                                >
+                                  {t('methods:workflow.filter.clearProductFilters')}
+                                </s-button>
+                              </s-stack>
+                            )}
+                          </div>
+                          {pageCount > 1 && (
+                            <s-stack direction="inline" gap="small" justifyContent="center" alignItems="center">
+                              <s-button
+                                icon="chevron-left"
+                                accessibilityLabel={t('methods:picker.previousProducts')}
+                                disabled={!safePage}
+                                onClick={() => setProductPage(safePage - 1)}
+                              />
+                              <s-text>
+                                {t('methods:workflow.copy.productPageRange', {
+                                  first: new Intl.NumberFormat(formatLocale).format(safePage * 8 + 1),
+                                  last: new Intl.NumberFormat(formatLocale).format(
+                                    Math.min((safePage + 1) * 8, filteredProducts.length),
+                                  ),
+                                  formattedCount: new Intl.NumberFormat(formatLocale).format(filteredProducts.length),
+                                })}
+                              </s-text>
+                              <s-button
+                                icon="chevron-right"
+                                accessibilityLabel={t('methods:picker.nextProducts')}
+                                disabled={safePage + 1 >= pageCount}
+                                onClick={() => setProductPage(safePage + 1)}
+                              />
+                            </s-stack>
+                          )}
+                        </>
+                      )}
+                    </s-stack>
+                  </s-section>
+                </div>
+                <MethodSummary
+                  method={editor}
+                  currency={currencyMismatch && !priceCurrencyReviewed ? storedCurrency : currency}
+                  count={matched.length}
+                  needsSetup={needingSetup}
+                  onReview={(needsOnly) => {
+                    setProductSetup(needsOnly ? 'needs' : 'all');
+                    setProductPage(0);
+                    setProductQuery('');
+                    requestAnimationFrame(() => {
+                      productList.current?.scrollIntoView({ block: 'start', behavior: 'instant' });
+                      productList.current?.focus({ preventScroll: true });
+                    });
+                  }}
+                />
+              </div>
+            </>
+          ) : (
+            <MethodIndex
+              readOnly={readOnly || pending}
+              methods={methods}
+              currency={currency}
+              methodCurrencies={methodCurrencies}
+              products={products}
+              onCreate={() => navigate(`${indexPath}/new`)}
+              onDuplicate={startDuplicate}
+              onDelete={requestRemoval}
+            />
+          )}
+        </s-page>
+      </div>
       {workflow.dialog.kind === 'leave' && (
         <Dialog
           heading={t('methods:workflow.copy.leaveHeading')}
