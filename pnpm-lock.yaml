@@ -231,8 +231,8 @@ importers:
         specifier: 10.30.1
         version: 10.30.1
       playwright:
-        specifier: 1.63.0
-        version: 1.63.0
+        specifier: 1.65.1
+        version: 1.65.1
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -316,8 +316,8 @@ importers:
         specifier: 8.23.1
         version: 8.23.1
       playwright:
-        specifier: 1.63.0
-        version: 1.63.0
+        specifier: 1.65.1
+        version: 1.65.1
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -445,8 +445,8 @@ importers:
         specifier: 0.28.2
         version: 0.28.2
       playwright:
-        specifier: 1.63.0
-        version: 1.63.0
+        specifier: 1.65.1
+        version: 1.65.1
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -3059,13 +3059,13 @@ packages:
     resolution: {integrity: sha512-bk1ZMTwG/Vymx+zPoa28MhNzucFvXJWp3csrSuxuHPSMeUettaCoQ5Jvg07mtC4JGNpcfTwz41oVCnNgBK9+vA==}
     hasBin: true
 
-  playwright-core@1.63.0:
-    resolution: {integrity: sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg==}
+  playwright-core@1.65.1:
+    resolution: {integrity: sha512-hqPpz7blSMPxWVdoeE1yiBSzXsKiVOd2k+kjCvmUywD2GPO2Dd9HfcWnq9NN0GHbNZDFgZ9JfBFr+X5/BLo0qw==}
     engines: {node: '>=20'}
     hasBin: true
 
-  playwright@1.63.0:
-    resolution: {integrity: sha512-+7ziBLidS4NaNCdt57SUDT+wYmmd5fmiQejUic/kb+YsYSCPyOOE9sebzMjNmQrsnNpDJqd4WHvV/8lfKfUDUg==}
+  playwright@1.65.1:
+    resolution: {integrity: sha512-vJ1FuoOrNwOKHUIVEvSt3jT1L+wjjDpwhwIstKtfvTh8XIG4FG4bIFuvNdMxi81LGfAhUgUZleVFaOLY4RIUUw==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -6021,11 +6021,11 @@ snapshots:
       sonic-boom: 4.2.1
       thread-stream: 4.2.1
 
-  playwright-core@1.63.0: {}
+  playwright-core@1.65.1: {}
 
-  playwright@1.63.0:
+  playwright@1.65.1:
     dependencies:
-      playwright-core: 1.63.0
+      playwright-core: 1.65.1
 
   postcss@8.5.33:
     dependencies:

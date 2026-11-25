@@ -4,7 +4,7 @@ import {
   BuyerDraftGroupSchema,
   BuyerProposalRequestSchema,
 } from '@insignia/contracts';
-import type { FrameLocator, Locator, Page, Request as PlaywrightRequest } from 'playwright';
+import type { FrameLocator, Locator, Page, Request as PlaywrightRequest, Route } from 'playwright';
 
 type ObservedCartRequest = {
   idempotencyKey: string;
@@ -95,6 +95,11 @@ async function prepareSelectedPage(page: Page, origin: string) {
       ),
     }),
   );
+}
+/** Shopify's native cart is an ordinary 200 storefront document; the test host page stands in for it. */
+async function nativeCartPage(route: Route) {
+  const url = new URL(route.request().url());
+  return { response: await route.fetch({ url: `${url.origin}/` }) };
 }
 async function installDesignBoundary(page: Page) {
   const drafts = new Map<string, { id: string; version: number; value: DesiredGroup }>();
@@ -927,9 +932,13 @@ async function withRetainedBuyer(
       if (!product) buyer.setAttribute('repair', '');
       document.body.append(buyer);
     }, opening === 'product');
-    // These cases isolate retained-state/retry behavior. The native-cart
-    // navigation boundary returns no document so that the same session can be reopened.
-    // The product purchase and real HTTP/PG cases separately verify actual navigation.
+    // These cases isolate retained-state/retry behavior: they inspect the Designer after it has requested the
+    // native cart, then reopen the same session with a reload. The cart therefore answers 204 No Content, which
+    // the browser never commits, so the Designer stays inspectable. A real document would unload it, and a held
+    // response is no alternative because Playwright waits for a pending navigation before every locator call.
+    // (Playwright 1.64 timed out on such clicks; microsoft/playwright#43279, fixed in 1.65.0.) The context-repair
+    // cases below serve a real cart document and verify arrival; the product purchase and real HTTP/PG cases
+    // separately verify actual navigation.
     let cartNavigations = 0;
     await page.route('**/cart', (route) => {
       cartNavigations++;
@@ -1249,7 +1258,7 @@ test('selected full-cart review rejects external signed quantity drift without i
     { clock: true },
   );
 });
-/** The verified apply hands off to the native cart (204 here); reloading during it races that navigation. */
+/** The verified apply hands off to the native cart (204 here, see withRetainedBuyer); a reload replaces it. */
 const nativeCartHandoff = (page: Page) =>
   page.waitForResponse((response) => new URL(response.url()).pathname === '/cart');
 async function reopenOwned(page: Page, trigger: Locator, host: FrameLocator) {
@@ -2682,13 +2691,13 @@ async function withContextRepair(
       return route.fulfill({ status: 409, json: { code: 'REVIEW_REQUIRED', details: { reason: 'NOT_OWNED' } } });
     });
     await page.goto(origin);
-    // The native cart answers no document, so the test page stays inspectable after navigating. Navigations are
-    // counted as they are requested, not as the route answers them.
+    // The native cart is a real 200 document. Navigations are counted as they are requested, not as the route
+    // answers them.
     let cartNavigations = 0;
     page.on('request', (request) => {
       if (request.isNavigationRequest() && new URL(request.url()).pathname === '/cart') cartNavigations++;
     });
-    await page.route('**/cart', (route) => route.fulfill({ status: 204 }));
+    await page.route('**/cart', async (route) => route.fulfill(await nativeCartPage(route)));
     await page.evaluate(
       ({ country, marketId }) => {
         const buyer = document.createElement('insignia-buyer');
@@ -2756,6 +2765,7 @@ test('cart repair in an unsupported country or Market explains it at once and re
     await page.keyboard.press('Enter');
     await navigated;
     await page.locator('dialog[open]').waitFor({ state: 'detached' });
+    await page.waitForURL((url) => url.pathname === '/cart');
     assert.equal(updates(), 1);
     assert.deepEqual(items(), []);
     assert.equal(cartNavigations(), 1, 'the confirmed removal opens the native cart once');
@@ -2774,6 +2784,7 @@ test('confirmed removal in an unsupported country or Market opens the native car
     await ui.getByRole('button', { name: 'Confirm cart update', exact: true }).click();
     await navigated;
     await page.locator('dialog[open]').waitFor({ state: 'detached' });
+    await page.waitForURL((url) => url.pathname === '/cart');
     assert.equal(updates(), 1);
     assert.deepEqual(items(), []);
     // Settle: a later, separate navigation from the same confirmation would be requested well within this.
