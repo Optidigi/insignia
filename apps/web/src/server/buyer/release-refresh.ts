@@ -74,7 +74,9 @@ export function createReleaseRefresher(input: {
       shops.delete(key);
       return;
     }
-    // Just past the age `refresh` reuses: at exactly RELEASE_REFRESH_AFTER_MS it would collect nothing.
+    // Just past the reuse boundary. Production reuses a record only while its age is strictly below
+    // RELEASE_REFRESH_AFTER_MS, so a run at exactly that age collects; the +1 ms (with the early-fire guard)
+    // keeps a timer that fires early from landing inside the reuse window and spending the interval.
     const due =
       observedAt !== null && Number.isFinite(observedAt) ? observedAt + RELEASE_REFRESH_AFTER_MS + 1 : state.lastStart;
     schedule(key, Math.max(state.lastStart + RELEASE_REFRESH_INTERVAL_MS, due));
