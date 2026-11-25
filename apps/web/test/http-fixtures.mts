@@ -141,7 +141,7 @@ export function buyerFixture(
     confirm: deny,
     cartState: deny,
     ...overrides,
-    guest: { resolve: deny, issue: deny, verify: deny, ...overrides.guest },
+    guest: { resolve: deny, resolveShop: deny, issue: deny, verify: deny, ...overrides.guest },
   };
 }
 export function purchaseHttpFixture(overrides: Partial<PurchaseServices>): PurchaseServices {

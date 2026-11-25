@@ -171,3 +171,37 @@ test('stalled body readers have a finite authentication deadline even if cancell
   assert.equal(await authority.verify(request), null);
   assert.ok(Date.now() - started < 4000);
 });
+
+test('resolveShop admits a signed active shop and product without requiring a publication; resolve still does', async () => {
+  let active = true,
+    signedShop: string | null = 'alpha.myshopify.com';
+  const authority = createArtworkGuestAuthority({
+    secret: 'synthetic-guest-session-key',
+    verifyProxy: async () => (signedShop ? { shop: signedShop } : null),
+    core: coreFixture({
+      tenants: {
+        getShopByDomain: async (shop) =>
+          shop === 'alpha.myshopify.com'
+            ? { shopId: 'tenant-1', shopDomain: shop, shopifyShopId: null, currentGeneration: '1' }
+            : null,
+        getCurrentAdminInstallation: async () => ({ active, generation: '1', externalInstallationId: null }),
+      },
+      acceptedQuotes: { getEffective: async (_shop, product) => (product === '123' ? effectiveRevision() : null) },
+    }),
+  });
+  const get = (query: string) => new Request(`https://app.invalid/v1/eligibility?${query}`);
+  const scope = { shopId: 'tenant-1', installationGeneration: '1' };
+  assert.deepEqual(await authority.resolveShop(get('productId=456')), { ...scope, productId: '456' });
+  assert.equal(await authority.resolve(get('productId=456')), null, 'resolve keeps requiring a publication');
+  assert.deepEqual(await authority.resolve(get('productId=123')), { ...scope, productId: '123' });
+  for (const query of ['productId=0', 'productId=abc', 'productId=1&productId=2', ''])
+    assert.equal(await authority.resolveShop(get(query)), null, query);
+  assert.equal(await authority.resolveShop(new Request(get('productId=456').url, { method: 'POST' })), null);
+  active = false;
+  assert.equal(await authority.resolveShop(get('productId=456')), null, 'inactive installation');
+  active = true;
+  signedShop = 'unknown.myshopify.com';
+  assert.equal(await authority.resolveShop(get('productId=456')), null, 'unknown shop');
+  signedShop = null;
+  assert.equal(await authority.resolveShop(get('productId=456')), null, 'unsigned request');
+});

@@ -14,6 +14,27 @@
     assign trigger_label = 'insignia.customise' | t
   endif
 -%}
+{%- if control == 'automatic' and required -%}
+  {%- comment -%}
+    Manual block + app embed: hide the native purchase controls the embed script will hide before first paint, so the
+    manual Customise button does not move when the script arrives. The rule is a strict subset of the script's
+    decision in theme-integration.ts: a known required product (this policy check); a same-origin cart/add form
+    whose product is this one by data-product-id or a product-id input, outside quick-add and dialog surfaces, that
+    holds a purchase button; and a visible manual block for this product inside every section around that form.
+    It applies only while the embed element is not yet defined. The script upgrades it and hides the same controls
+    itself in one task, so from then on the script alone owns them and can still restore any of them.
+  {%- endcomment -%}
+  {%- capture pid -%}[data-product-id="{{ product.id }}"]{%- endcapture -%}
+  {%- capture other_pid -%}[data-product-id]:not({{ pid }}){%- endcapture -%}
+  {%- capture surfaces -%}quick-add-component,sticky-add-to-cart,quick-add-modal,dialog,[role="dialog"]{%- endcapture -%}
+  {%- capture sections -%}:is(.shopify-section,section){%- endcapture -%}
+  {%- capture manual -%}insignia-buyer[product-id="{{ product.id }}"]:not([data-insignia-auto],[repair],[hidden],[inert],[hidden] *,[inert] *,:is({{ surfaces }}) *)>button[slot="trigger"]:not([hidden]){%- endcapture -%}
+  {%- capture controls -%}button[name="add"],button[type="submit"],.sticky-add-to-cart__button,.shopify-payment-button,shopify-accelerated-checkout{%- endcapture -%}
+  {%- capture form -%}form:is([action$="/cart/add"],[action$="/cart/add/"],[action$="/cart/add.js"],[action$="/cart/add.js/"]):is([action^="/"]):not([action^="//"],:is({{ surfaces }}) *,{{ sections }}:not(:has({{ manual }})) *):is({{ pid }},{{ pid }} *,:not([data-product-id],[data-product-id] *):has(input[name="product-id"][value="{{ product.id }}"]):not(:has(input[name="product-id"]:not([value="{{ product.id }}"])))):not({{ other_pid }},{{ other_pid }} *):has(button:is({{ controls }}):not(insignia-buyer *)){%- endcapture -%}
+  <style data-insignia-prepaint>
+    :root:has(insignia-theme-integration[product-id="{{ product.id }}"][known-required]:not(:defined)) {{ sections }}:has({{ manual }}) {{ form }} :is({{ controls }}):not(insignia-buyer *){display:none!important}
+  </style>
+{%- endif -%}
 {%- if control == 'automatic' or required -%}
   <{{ control_tag }}
     product-id="{{ product.id }}"

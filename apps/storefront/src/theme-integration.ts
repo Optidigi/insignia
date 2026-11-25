@@ -265,6 +265,8 @@ export function connectThemeIntegration(host: HTMLElement): () => void {
     })
       .then(async (response) => {
         if (disposed) return;
+        // An ordinary product is a 200 with `configured: false`; 404 is an unknown
+        // shop or proxy route, which no retry fixes either.
         if (response.status === 404) eligibility.set(id, false);
         else if (response.ok) {
           const value: unknown = await response.json();
@@ -274,9 +276,9 @@ export function connectThemeIntegration(host: HTMLElement): () => void {
             'productId' in value &&
             value.productId === id &&
             'configured' in value &&
-            value.configured === true
+            typeof value.configured === 'boolean'
           )
-            eligibility.set(id, true);
+            eligibility.set(id, value.configured);
           else eligibility.set(id, 'failed');
         } else eligibility.set(id, 'failed');
         // Unknown/outage never downgrades a known required product to ordinary.

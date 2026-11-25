@@ -46,6 +46,26 @@ test('eligibility is a no-store public presentation hint with no session or quot
   assert.equal(result.status, 200);
   assert.deepEqual(await result.json(), { productId: '123', configured: true });
   assert.equal(result.headers.get('Cache-Control'), 'private, no-store');
+  // An ordinary product is a successful, equally uncached answer; only an unknown shop is 404.
+  const ordinary = await handleBuyerRequest(
+    new Request('https://app.invalid/v1/eligibility?productId=456'),
+    buyerFixture({ eligibility: async () => ({ productId: '456', configured: false }) }),
+    'eligibility',
+  );
+  assert.equal(ordinary.status, 200);
+  assert.deepEqual(await ordinary.json(), { productId: '456', configured: false });
+  assert.equal(ordinary.headers.get('Cache-Control'), 'private, no-store');
+  const unknown = await handleBuyerRequest(
+    new Request('https://app.invalid/v1/eligibility?productId=456'),
+    buyerFixture({
+      eligibility: async () => {
+        throw new BuyerStateError('NOT_FOUND');
+      },
+    }),
+    'eligibility',
+  );
+  assert.equal(unknown.status, 404);
+  assert.equal(record(await unknown.json()).code, 'NOT_FOUND');
 });
 test('buyer rejects oversized bodies before authentication and never copies an unlimited stream', async () => {
   let verified = 0;
