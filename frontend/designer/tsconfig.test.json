@@ -12,6 +12,7 @@
     "src",
     "scripts/**/*.mts",
     "scripts/fixtures/*.tsx",
-    "vite.library.config.ts"
+    "vite.library.config.ts",
+    "vite.config.ts"
   ]
 }

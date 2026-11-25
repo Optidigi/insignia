@@ -30,7 +30,7 @@ export default function HomeGettingStarted({
   toggleRef,
 }: {
   testReady?: boolean;
-  toggleRef?: RefObject<HTMLElementTagNameMap['s-button']>;
+  toggleRef?: RefObject<HTMLElementTagNameMap['s-button'] | null>;
   guidance: HomeGuidance;
   preferredStep?: HomeGuidanceStepId;
   productStep?: {

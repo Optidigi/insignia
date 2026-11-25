@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
-  "packageManager": "pnpm@12.6.0",
+  "packageManager": "pnpm@12.23.0",
   "engines": {
     "node": "24.22.3"
   },
@@ -22,7 +22,7 @@
     "check:boundaries": "node scripts/boundaries/check.mts && node scripts/boundaries/check-database-api.mts && node scripts/boundaries/check-domain-effects.mts && node --test scripts/boundaries/domain-effects.test.mts && node --test scripts/boundaries/source-contract.test.mts scripts/boundaries/polaris.test.mts && corepack pnpm check:source",
     "check:secrets": "node --test scripts/boundaries/check-secrets.test.mts && node scripts/boundaries/check-secrets.mts",
     "check:rust": "node scripts/functions/check.mts",
-    "check": "corepack pnpm check:style && corepack pnpm build && corepack pnpm check:types && corepack pnpm check:ui && corepack pnpm test:operations && corepack pnpm test:unit && corepack pnpm test:runtime-inventory && corepack pnpm test:runtime && corepack pnpm test:vectors && corepack pnpm check:boundaries && corepack pnpm check:secrets && corepack pnpm check:rust && INSIGNIA_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 node scripts/functions/production-vectors.mts && INSIGNIA_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 node scripts/functions/public-config.mts && corepack pnpm test:browser && node scripts/functions/artifact-manifest.mts",
+    "check": "corepack pnpm check:style && corepack pnpm build && corepack pnpm check:types && corepack pnpm check:ui && corepack pnpm test:operations && corepack pnpm test:unit && corepack pnpm test:runtime-inventory && corepack pnpm test:runtime && corepack pnpm test:vectors && corepack pnpm check:boundaries && corepack pnpm check:secrets && corepack pnpm check:rust && INSIGNIA_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.3 node scripts/functions/production-vectors.mts && INSIGNIA_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.3 node scripts/functions/public-config.mts && corepack pnpm test:browser && node scripts/functions/artifact-manifest.mts",
     "test:renderer-control": "node scripts/runtime/missing-renderer-control.mts",
     "test:operations": "node --test deployment/alerts/worker.test.mts scripts/operations/*.test.mts scripts/privacy/*.test.mts",
     "check:types": "node scripts/boundaries/source-contract.mts --check-types",
@@ -36,19 +36,19 @@
     "check:ui": "corepack pnpm -r --filter './frontend/**' test"
   },
   "devDependencies": {
-    "@astrojs/compiler-rs": "0.5.1",
-    "@biomejs/biome": "2.5.14",
-    "@types/node": "24.10.0",
+    "@astrojs/compiler-rs": "0.5.3",
+    "@biomejs/biome": "2.6.9",
+    "@types/node": "24.19.2",
     "@types/pg": "8.23.1",
     "@types/tar-stream": "3.1.5",
     "aws4fetch": "1.0.20",
-    "dbmate": "2.36.0",
-    "dependency-cruiser": "18.4.0",
-    "esbuild": "0.25.12",
-    "graphql": "17.0.2",
-    "pg": "8.23.0",
-    "pg-boss": "12.35.0",
-    "tar-stream": "3.2.2",
-    "typescript": "5.9.3"
+    "dbmate": "2.38.2",
+    "dependency-cruiser": "18.9.0",
+    "esbuild": "0.28.2",
+    "graphql": "17.1.0",
+    "pg": "8.23.1",
+    "pg-boss": "12.39.0",
+    "tar-stream": "3.3.0",
+    "typescript": "6.0.3"
   }
 }

@@ -9,6 +9,7 @@
       "DOM.Iterable"
     ],
     "types": [
+      "astro/client",
       "node",
       "@shopify/polaris-types"
     ],

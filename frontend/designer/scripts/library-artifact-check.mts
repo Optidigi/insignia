@@ -93,9 +93,9 @@ test('ordinary build produces a source-free embeddable Designer with closed asse
     assert.equal(checked.status, 0, checked.stdout + checked.stderr);
     const importMap = {
       imports: {
-        preact: '/node_modules/preact/dist/preact.module.js',
-        'preact/hooks': '/node_modules/preact/hooks/dist/hooks.module.js',
-        'preact/jsx-runtime': '/node_modules/preact/jsx-runtime/dist/jsxRuntime.module.js',
+        preact: '/node_modules/preact/dist/preact.mjs',
+        'preact/hooks': '/node_modules/preact/hooks/dist/hooks.mjs',
+        'preact/jsx-runtime': '/node_modules/preact/jsx-runtime/dist/jsxRuntime.mjs',
       },
     };
     const server = createServer((request, response) => {
@@ -112,7 +112,7 @@ test('ordinary build produces a source-free embeddable Designer with closed asse
       }
       response.setHeader(
         'Content-Type',
-        file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'application/octet-stream',
+        /\.m?js$/.test(file) ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'application/octet-stream',
       );
       response.end(readFileSync(file));
     });

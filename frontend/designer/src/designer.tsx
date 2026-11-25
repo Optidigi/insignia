@@ -452,7 +452,7 @@ function DesignerSession({
     // A pointer open must not pop the skip link over the header; Tab from the Designer still reaches it first.
     (entryFocusSignal.keyboard ? skipLinkRef.current : appRef.current)?.focus({ preventScroll: true });
   }, [entryFocusSignal]);
-  const hintedVariant = useRef<string>();
+  const hintedVariant = useRef<string | undefined>(undefined);
   useEffect(() => {
     // Only a new product-page choice: a colour picked in the Designer survives closing and reopening.
     if (!productVariantSignal || productVariantSignal.variantId === hintedVariant.current) return;
@@ -1050,7 +1050,7 @@ function DesignerSession({
     opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     void runtime.commit();
   }
-  const sentCompletion = useRef<string>();
+  const sentCompletion = useRef<string | undefined>(undefined);
   const cartCompletion = workflow.completion?.authority === 'shopify' ? workflow.completion : null;
   // Only the reducer's matching applied receipt can close the host session.
   useLayoutEffect(() => {

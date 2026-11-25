@@ -4,6 +4,6 @@ export default defineConfig({
   build: {
     outDir: 'dist-library',
     lib: { entry: 'src/index.ts', formats: ['es'], fileName: 'designer', cssFileName: 'designer' },
-    rollupOptions: { external: ['preact', 'preact/hooks', 'preact/jsx-runtime'] },
+    rolldownOptions: { external: ['preact', 'preact/hooks', 'preact/jsx-runtime'] },
   },
 });

@@ -12,8 +12,8 @@
     "start": "node dist/server/entry.mjs"
   },
   "dependencies": {
-    "@astrojs/node": "11.1.13",
-    "@astrojs/preact": "6.0.5",
+    "@astrojs/node": "11.1.14",
+    "@astrojs/preact": "6.1.6",
     "@insignia/application": "workspace:*",
     "@insignia/cart-authorization": "workspace:*",
     "@insignia/contracts": "workspace:*",
@@ -24,21 +24,21 @@
     "@insignia/storage": "workspace:*",
     "@insignia/visualizer": "workspace:*",
     "@insignia/worker": "workspace:*",
-    "astro": "7.4.12",
+    "astro": "7.4.13",
     "aws4fetch": "1.0.20",
-    "pg": "8.23.0",
-    "pg-boss": "12.35.0",
-    "preact": "10.29.8",
+    "pg": "8.23.1",
+    "pg-boss": "12.39.0",
+    "preact": "11.2.0",
     "@insignia/ui-localization": "workspace:*",
     "@insignia/ui-visualizer": "workspace:*"
   },
   "devDependencies": {
-    "@astrojs/check": "0.9.6",
+    "@astrojs/check": "0.9.12",
     "@shopify/polaris-types": "2.0.0-rc.3",
-    "@shopify/shopify-api": "15.0.0",
-    "@types/node": "24.10.0",
+    "@shopify/shopify-api": "15.1.2",
+    "@types/node": "24.19.2",
     "@types/pg": "8.23.1",
     "playwright": "1.63.0",
-    "typescript": "5.9.3"
+    "typescript": "6.0.3"
   }
 }

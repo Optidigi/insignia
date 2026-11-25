@@ -137,8 +137,8 @@ export function withAdminLocale<Props extends object>(
   options: { neutralWithoutLocale?: boolean } = {},
 ) {
   return function LocalizedAdminIsland(props: Props & { locale?: string | null }) {
-    const retained = useRef<AdminLocaleController>();
-    const initial = useRef<AdminLocaleSnapshot>();
+    const retained = useRef<AdminLocaleController | undefined>(undefined);
+    const initial = useRef<AdminLocaleSnapshot | undefined>(undefined);
     if (!initial.current) {
       const serverSnapshot = createAdminTranslator(props.locale);
       initial.current =

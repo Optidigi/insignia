@@ -210,9 +210,11 @@ export function normalizeCurrentCycleUsageHistory(
   )
     return unresolved('UNRECOGNIZED_POLICY');
   const startsAt = [created.occurredAt, installation.activatedAt, range.from].reduce(
+    // biome-ignore lint/complexity/useMathMinMax: compares ISO-8601 instant strings; Math.max would return NaN.
     (a, b) => (a > b ? a : b),
     cycle.startTime,
   );
+  // biome-ignore lint/complexity/useMathMinMax: compares ISO-8601 instant strings; Math.min would return NaN.
   const endsAt = [current.observedAt, range.through].reduce((a, b) => (a < b ? a : b), cycle.endTime);
   if (startsAt >= endsAt) return unresolved('NO_COVERAGE');
   return {

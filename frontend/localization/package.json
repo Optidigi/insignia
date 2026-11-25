@@ -42,17 +42,17 @@
     "typecheck:test": "tsc -p tsconfig.test.json"
   },
   "dependencies": {
-    "i18next": "26.7.1"
+    "i18next": "27.2.7"
   },
   "peerDependencies": {
-    "preact": "10.29.8"
+    "preact": "11.2.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.14",
-    "@types/node": "24.10.0",
-    "preact": "10.29.8",
-    "typescript": "5.9.3",
-    "vitest": "5.0.2",
-    "i18next-cli": "1.82.1"
+    "@biomejs/biome": "2.6.9",
+    "@types/node": "24.19.2",
+    "preact": "11.2.0",
+    "typescript": "6.0.3",
+    "vitest": "5.1.1",
+    "i18next-cli": "1.95.1"
   }
 }
