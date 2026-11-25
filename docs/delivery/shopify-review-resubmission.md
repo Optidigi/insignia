@@ -1,6 +1,6 @@
 # Shopify review resubmission
 
-Shopify paused review until 25 November 2026. The release running during the reported failure was
+Shopify paused review until 25 November 2026; the pause has ended and the owner resubmits. The release running during the reported failure was
 Shopify version `1257303638017` with web deploy AL and worker/verifier deploy AK. See
 [deployed identities](state.md#deployed-identities) for live release status.
 
@@ -83,11 +83,65 @@ Canada dialog retest are recorded above against their respective earlier release
 
 ### Remaining hardening
 
-Keep the USD and qualified EUR primary-Market scope in the [pricing specification](../architecture/implementation-plan.md#4-pricing-engine).
-Refresh performance measurements on the deployed release. Run fresh merchant setup through publish,
-artwork, test checkout and order readback on USD and EUR fixtures. Repeat no-charge billing switches
-and test the same stocked variant across two Markets. See the [delivery state](state.md#active-assignment)
-for the next planning pass.
+Hardening pass on 24–25 November: done. Keep the USD and qualified EUR primary-Market scope in the
+[pricing specification](../architecture/implementation-plan.md#4-pricing-engine). Released in deploys
+AS (version `1265206460417`, 24 Nov `23:05Z`), AT (version `1265289363457`, 25 Nov `00:50Z`) and AU
+(web `91bc61b5`, 25 Nov `02:31Z`); see [deployed identities](state.md#deployed-identities). Evidence
+folders are under `~/insignia-qa/runs/` on the dev host.
+
+**Merged PRs.** #631 fault-injection tests; #632 publish timing log `publication_request_timing`;
+#633 Vite optimizer cache flake; #634 `UNSUPPORTED_MARKET` refusal reasons and Market IDs in logs;
+#635 and #642 cart adapter recovery after a refused add (#642 removed an unsafe single-line exception
+after a native add.js 422 "Only 50 items were added…" landed 50 units); #636 Partner transient → 409
+BUSY and a bounded acceptance/renewal lock; #638 unsupported-country cart repair (removal-first, a new
+string in six languages, Escape closes repair views); #639 all buyer shop-lock waits bounded at 2 s →
+409; #640 hourly held-row worker errors; #641 and #650 background release-record refresh during
+publish (#650 fixed early timers that could skip it, also on the buyer path); #644 test; #647 provider
+failure kind in buyer logs, GraphQL INTERNAL_SERVER_ERROR as BUSY, theme translations escaped once;
+#645, #646, #648, #649 and #652 bindings and records.
+
+**Final version `1265289363457` (25 Nov).** On reviewer fixture product `10645326954779` the storefront
+loaded assets from `…/native-escape-once-bcb6cd16/`. Tab skipped the off-screen sticky **Customise**
+and reached it when visible; Enter opened the Designer and Escape closed it with focus restored.
+Review showed $15.00 per item and $30.00 total (proposal 200). The cart held one signed
+`_insignia_line_v3` line, 2 × $15. Checkout showed $30 + $8 shipping = $38. Bogus test order #1015
+(`K0ZFDZVTR`) read back in Insignia as Paid, Artwork complete, 2 × USD 15.00
+(`2026-11-25-final-fixture.u5XSci`). The Canada cart notice rendered "Customization isn't
+available…" with a literal apostrophe.
+
+**Post-release run on `1265206460417` (deploy AS, 24 Nov `23:24–23:37Z`).** Fixture order #1014
+(`P0IZPHZKP`). Canada product page: the Designer's 422 explanation before any buyer session.
+An NL-signed line viewed from Canada blocked checkout; repair opened straight into removal, Escape
+closed the confirmation and then the view, and removal emptied the cart. NL→DE repair re-signed at
+€25 and checkout was clean. An over-stock add left no stuck state. USD flow passed. Billing showed
+**Manage plan in Shopify**. Publishing an existing product took 9.3–10.1 s
+(`2026-11-25-postrelease.Pw7aVc`).
+
+**Fresh stores (24 Nov).**
+- USD: on rewrite-dev, new product `qa-hardening-usd-2026-11-25` from setup to order #1013, $58.00
+  (`XGJUAQ7PC`; `2026-11-25-usd.j83fWP`).
+- EUR: fresh dev store `insignia-hardening-eu-1125` (Shopify test data; primary Market Netherlands
+  including Germany; second Market Canada in EUR with a −5% catalog, shipping from
+  "My Custom Location"). Insignia installed via OAuth with the €0 test plan; product
+  `qa-hardening-eur-2026-11-25` set up and published; order #1001, €56.95 (`UE70GTJ5M`;
+  `2026-11-25-eur.yMKsYe`). The owner keeps this store as the EUR/two-Market fixture.
+
+**Market switch (24 Nov).** NL→DE (same primary Market): the cart kept the line, the surcharge
+dropped, checkout was blocked and repair re-signed for DE. NL→CA: checkout was blocked and nothing
+was signed in Canada (`2026-11-25-market-switch.Gr43af`). A fresh-context reviewer re-ran it
+independently (`2026-11-25-independent-market.4tNmc8`). A Market-aware stock check is deferred (#637).
+
+**Recovery R1–R7 (24 Nov, `2026-11-25-recovery.*`).** A dropped acceptance retried with the same key;
+409 BUSY retried automatically; a dropped proposal offered Retry; an offline upload offered Try again;
+a pre-cutover cart line was removed via repair; a tab closed mid-publish ended Published; a billing
+API outage showed its message and Try again. The 13 Nov seeded expired-quote cart predated the
+production cutover and was removed via repair, so native renewal of an owned expired quote remains
+unverified.
+
+**Performance.** Lighthouse on 25 Nov (`2026-11-25-lighthouse.eVpaqZ`): USD −7.0 points (above the
+6-point pass, within Shopify's 10-point limit), EUR −1.5. Causes and fixes are tracked in #653.
+Production first publish took 25–38 s before #641; republish 9.3–10.1 s after. Production logs only
+reach back to container restarts, so a 48 h latency baseline needs persisted logs.
 
 ## Other review items
 
@@ -95,6 +149,7 @@ for the next planning pass.
 | --- | --- |
 | 1.2.3 Plan changes | **Settings → Billing → Manage plan** opens Shopify's selector for Standard at $49.99 every 30 days or $449.99 per year with identical features. Both no-charge switches passed on 23 November. On 24 November, Shopify admin **Settings → Apps → Insignia** showed **Insignia Standard · $0/month** on rewrite-dev. The owner confirmed there is no eligible billed installation for paid invoice evidence. Shopify's acceptance of switching billing periods under this requirement is open. |
 | 3.2.1 Older order scope | The active scope baseline excludes `read_all_orders`. The 19 November fresh installation verified the required grant and recent orders. The old EUR review installation may still show a historical grant. |
+| 2.1.1 Customized product | Fixed and released; the final version `1265289363457` passed the reviewer fixture through Bogus order #1015 and the Canada explanation on 25 November (above). |
 | 4.5.4 and 4.5.5 Access | On 24 November the listing form showed the app-account exemption selected. The saved private instructions direct reviewers through Shopify admin and give the test storefront, access instructions, expected cart total and both prices. The storefront path passed earlier in a signed-out session. Access to the merchant admin using the reviewer's own Shopify account remains unverified. |
 
 ## Release record
