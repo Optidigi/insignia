@@ -27,7 +27,7 @@ jobs:
         with:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          pattern: '{m5-web-image,m5-024-worker-image,release-verifier,operations-runtime}-${{ github.event.workflow_run.id }}-*'
+          pattern: '{m5-web-image,m5-024-worker-image,release-verifier,operations-runtime}-${{ github.event.workflow_run.id }}-${{ github.event.workflow_run.run_attempt }}'
           path: ${{ runner.temp }}/images
       - name: Push archives to GHCR with preserved digests
         env:
