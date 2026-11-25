@@ -43,6 +43,12 @@ import cartRepairBinding from '../../deployment/m5-runtime/native-cart-repair-re
 };
 import cartFixModules from '../../deployment/m5-runtime/native-cartfix-module-baseline.json' with { type: 'json' };
 import cartFixBinding from '../../deployment/m5-runtime/native-cartfix-release-binding.json' with { type: 'json' };
+import designerIntentModules from '../../deployment/m5-runtime/native-designer-intent-module-baseline.json' with {
+  type: 'json',
+};
+import designerIntentBinding from '../../deployment/m5-runtime/native-designer-intent-release-binding.json' with {
+  type: 'json',
+};
 import designerModules from '../../deployment/m5-runtime/native-designer-module-baseline.json' with { type: 'json' };
 import designerBinding from '../../deployment/m5-runtime/native-designer-release-binding.json' with { type: 'json' };
 import escapeOnceModules from '../../deployment/m5-runtime/native-escape-once-module-baseline.json' with {
@@ -238,6 +244,15 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  'native-designer-intent-8e69c5ef': {
+    versionId: designerIntentBinding.versionId,
+    versionTag: designerIntentBinding.versionTag,
+    versionIds: designerIntentBinding.versionIds,
+    moduleHash: designerIntentBinding.moduleHash,
+    modules: designerIntentModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   'native-escape-once-bcb6cd16': {
     versionId: escapeOnceBinding.versionId,
     versionTag: escapeOnceBinding.versionTag,

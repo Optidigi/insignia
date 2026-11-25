@@ -1,6 +1,7 @@
 /** Deployment selects a closed reviewed target, never release authority.
  * Every consumer still independently reads and qualifies trusted release evidence. */
 export type RuntimeReleaseProfileName =
+  | 'native-designer-intent-8e69c5ef'
   | 'native-escape-once-bcb6cd16'
   | 'native-cart-repair-2ed66ade'
   | 'native-sticky-keyboard-1127c3e2'
@@ -51,6 +52,11 @@ export type RuntimeReleaseProfileName =
   | 'lean-markets-7b17cd9'
   | 'lean-privacy-theme-23fd116';
 const profiles = Object.freeze({
+  'native-designer-intent-8e69c5ef': Object.freeze({
+    name: 'native-designer-intent-8e69c5ef' as const,
+    activeVersionRef: '1266368151553',
+    functionsSourceCommit: 'aa3b6166eb2b4679f27e1b7f128d914137ba8412',
+  }),
   'native-escape-once-bcb6cd16': Object.freeze({
     name: 'native-escape-once-bcb6cd16' as const,
     activeVersionRef: '1265289363457',
