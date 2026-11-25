@@ -62,7 +62,7 @@ import { createMerchantPublicationCapture } from './merchant-previews.js';
 import { createMethodLibrary } from './methods.js';
 import { createMerchantPreferences } from './preferences.js';
 import { productSummary } from './product-summary.js';
-import { createPublicationReleaseRefresh } from './publication-release.ts';
+import { createPublicationReleaseRefresh, lastingReleaseRecords } from './publication-release.ts';
 import { publicationStage } from './publication-timing.js';
 import {
   createBoundProductionActivationReadiness,
@@ -212,8 +212,9 @@ export function createProductionAdminServices(
     return online;
   }
   /** The actor's demand-driven release reader. `refreshAhead` (the background refresh) treats a
-   * record older than RELEASE_REFRESH_AFTER_MS as missing, so it collects ahead of expiry; it shares
-   * `collecting` with the publish's own reads, so one shop has one collection in flight. */
+   * record older than RELEASE_REFRESH_AFTER_MS as missing, so it collects ahead of expiry; a step's
+   * reader treats one that lapses within PUBLICATION_STEP_RELEASE_LEAD_MS as missing. Both share
+   * `collecting`, so one shop has one collection in flight. */
   async function releaseReader(actor: AdminActor, refreshAhead: boolean): Promise<DurableCoreReleaseReader | null> {
     const readers = refreshAhead ? refreshReaders : verifications;
     const cached = readers.get(actor);
@@ -237,7 +238,8 @@ export function createProductionAdminServices(
                 now: new Date(+request.now + RELEASE_FRESHNESS_MS - RELEASE_REFRESH_AFTER_MS),
               }),
           }
-        : core.trustedReleaseRecords,
+        : // A step reuses a record only while it outlasts the step's writes; else it collects or joins.
+          lastingReleaseRecords(core.trustedReleaseRecords),
       // A collection on a publish request is its own timing span; a background refresh has none.
       collector: refreshAhead
         ? collector

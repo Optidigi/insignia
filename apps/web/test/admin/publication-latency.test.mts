@@ -14,7 +14,11 @@ import {
 import { Pool } from 'pg';
 import type { AdminActor } from '../../src/server/admin/contracts.ts';
 import { handleAdminRequest } from '../../src/server/admin/http.ts';
-import { createPublicationReleaseRefresh } from '../../src/server/admin/publication-release.ts';
+import {
+  createPublicationReleaseRefresh,
+  lastingReleaseRecords,
+  PUBLICATION_STEP_RELEASE_LEAD_MS,
+} from '../../src/server/admin/publication-release.ts';
 import {
   createDemandDrivenReleaseReader,
   createServerActivationReadiness,
@@ -91,6 +95,9 @@ function releaseModel(config: ReleaseModel) {
     checks: 0,
     /** Writes the release write gate refused because the step's own evidence lapsed mid-step. */
     refusedWrites: 0,
+    /** Of those, writes refused within PUBLICATION_STEP_RELEASE_LEAD_MS of their step's release check:
+     * the step rule makes this impossible, however slow the runner. */
+    refusedWithinLead: 0,
   };
   let running = 0;
   const collector = (kind: 'synchronous' | 'background') => ({
@@ -124,10 +131,10 @@ function releaseModel(config: ReleaseModel) {
   const collecting = new Map<string, Promise<string | null>>();
   const reader = (refreshAhead: boolean) =>
     createDemandDrivenReleaseReader({
-      records: {
-        read: async (request) =>
-          evidenceAt(+request.now + (refreshAhead ? RELEASE_FRESHNESS_MS - RELEASE_REFRESH_AFTER_MS : 0)),
-      },
+      // As production.ts: the refresh reads 8 s ahead; a step reuses only a record that outlasts its writes.
+      records: refreshAhead
+        ? { read: async (request) => evidenceAt(+request.now + RELEASE_FRESHNESS_MS - RELEASE_REFRESH_AFTER_MS) }
+        : lastingReleaseRecords({ read: async (request) => evidenceAt(+request.now) }),
       binding,
       collector: collector(refreshAhead ? 'background' : 'synchronous'),
       isCurrent: async () => {},
@@ -142,6 +149,7 @@ function releaseModel(config: ReleaseModel) {
     target.read({ scope: binding, expectedActiveAppVersionRef: activeVersionRef, now: new Date(clock()) });
   const publishing = reader(false);
   let verified: ReturnType<typeof evidenceAt> = null;
+  let checkedAt = Number.NEGATIVE_INFINITY;
   const refreshing = reader(true);
   const refresh = createPublicationReleaseRefresh<AdminActor>({
     async refresh() {
@@ -165,6 +173,7 @@ function releaseModel(config: ReleaseModel) {
       const started = clock();
       stats.checks++;
       try {
+        checkedAt = started;
         verified = await read(publishing);
         return verified !== null;
       } finally {
@@ -177,6 +186,7 @@ function releaseModel(config: ReleaseModel) {
       const observed = Date.parse(verified?.record.attestation.observedAt ?? '');
       const fresh = Number.isFinite(observed) && observed <= at && at - observed <= RELEASE_FRESHNESS_MS;
       if (!fresh) stats.refusedWrites++;
+      if (!fresh && verified && at - checkedAt <= PUBLICATION_STEP_RELEASE_LEAD_MS) stats.refusedWithinLead++;
       return fresh;
     },
     begin: (actor: AdminActor) => (config.background ? refresh.begin(actor) : () => {}),
@@ -948,6 +958,7 @@ async function measuredPublication(core: DurableCore, config: ReleaseModel) {
         releaseWaitMs: Math.round(release.stats.waitMs - before.waitMs),
         checks: release.stats.checks - before.checks,
         refusedWrites: release.stats.refusedWrites - before.refusedWrites,
+        refusedWithinLead: release.stats.refusedWithinLead - before.refusedWithinLead,
         steps: f.steps.length - steps,
         timing: f.timings.at(-1),
       };
@@ -994,10 +1005,14 @@ test('decision 3: a publish keeps its release record fresh in the background ins
         assert.ok(value.synchronousCollections <= 1, JSON.stringify(value));
         // Timing spans are still emitted for every request.
         assert.ok(value.timing && value.timing.spans.length > 0, JSON.stringify(value));
-        // Not asserted: the outcome. A step that starts on a 25-30 s old record can still have its
-        // write refused once that evidence lapses mid-step (`refusedWrites`), before and after this
-        // change; the refresh only narrows that window, which the measured 30 s publish can reach
-        // under load. Preparation and every advance still check their own record.
+        // A step reuses a record only while it stays fresh for PUBLICATION_STEP_RELEASE_LEAD_MS, so no
+        // write is refused within that long of its step's release check, however slow the runner.
+        assert.equal(value.refusedWithinLead, 0, JSON.stringify(value));
+        // Not asserted: the outcome. This harness runs its virtual clock 3.5x faster than real time at
+        // the default latency, so on a loaded runner a step's database work can stretch it past the
+        // lead (production's largest step is 4.6 s) and see its write refused (`refusedWrites`), then
+        // either recover on a fresh record (ACTIVE) or fail without effect (503).
+        // Preparation and every advance still check their own record.
         if (value.state === 'ACTIVE') {
           assert.equal(value.checks, value.steps + 1);
           assert.ok(value.timing?.spans.some((span) => span.stage === 'preparation'));
@@ -1036,10 +1051,12 @@ test('decision 3: a background refresh that fails leaves the publish to collect 
     });
     assert.equal(maxConcurrent, 1);
     assert.ok(first.backgroundCollections <= 1, JSON.stringify(first));
+    // A step never starts on a record that lapses within the step lead (see the measurement test).
+    assert.equal(first.refusedWithinLead, 0, JSON.stringify(first));
     if (first.refusedWrites > 0) {
-      // Under load a step can still start on a record about to lapse and see its write refused mid-step: the
-      // existing hazard this change narrows but does not remove (owner decision pending). As today, the step
-      // either recovers on a fresh record and the publish reaches ACTIVE, or it fails without effect (503).
+      // Only a step the loaded runner stretched past the lead (virtual clock 3.5x real time) can see its
+      // write refused; it either recovers on a fresh record and the publish reaches ACTIVE, or it fails
+      // without effect (503).
       assert.ok((first.status === 202 && first.state === 'ACTIVE') || first.status === 503, JSON.stringify(first));
       return;
     }
@@ -1064,7 +1081,10 @@ test('decision 3: a cold publish whose background collection fails collects once
     });
     assert.deepEqual([first.status, first.state], [202, 'ACTIVE'], JSON.stringify(first));
     assert.equal(first.backgroundCollections, 1);
-    assert.equal(first.synchronousCollections, 1, 'preparation collected once after the joined collection failed');
+    // Preparation collected once after the joined collection failed. That record is ~4 s old when it lands;
+    // the refresh's next start (25 s after its failed one) still finds it fresh, so a later step that finds
+    // it within the step lead of lapsing may collect once more instead of reusing it.
+    assert.ok([1, 2].includes(first.synchronousCollections), JSON.stringify(first));
     assert.equal(maxConcurrent, 1);
   } finally {
     await core.close();

@@ -105,4 +105,5 @@ export {
   createDemandDrivenReleaseReader,
   type ReleaseVerificationBinding,
   type ReleaseVerificationCollector,
+  type TrustedReleaseEvidenceRecordsPort,
 } from '@insignia/shopify';

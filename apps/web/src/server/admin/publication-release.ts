@@ -1,9 +1,53 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { createReleaseRefresher, RELEASE_REFRESH_AFTER_MS } from '../buyer/release-refresh.ts';
+import { createReleaseRefresher, RELEASE_FRESHNESS_MS, RELEASE_REFRESH_AFTER_MS } from '../buyer/release-refresh.ts';
 import { outsidePublicationTiming } from './publication-timing.ts';
+import type { TrustedReleaseEvidenceRecordsPort } from './release-evidence.ts';
 
 type Publisher = { tenantShopId: string; installationGeneration: string; expiresAtMs: number };
 type Timer = object;
+
+/**
+ * A publication step (preparation, or one publication or activation advance) reuses a stored release
+ * record only while it stays fresh for this much longer, so the record cannot lapse between the step's
+ * release check and its last provider write (which the release write gate checks on that same record).
+ * Otherwise the step joins an in-flight collection or collects first.
+ *
+ * Sized from the measured step write budget: the largest advance is 13 serial Admin calls, 4.6 s at
+ * production's measured 350 ms a call (publication-latency test, `PUBLICATION_LATENCY_MS=350`), and
+ * that test bounds it at 15 calls (5.25 s); the rest is headroom for database work and slower calls.
+ * It stays below the collector's reuse lead (RELEASE_REFRESH_LEAD_MS, 8 s): a record the collector
+ * answers with instead of collecting still lasts 8 s, so it also satisfies this lead when the step
+ * reads it back. The background refresh asks for a new record from 22 s of age (8 s left), so a step
+ * that needs one usually joins that collection.
+ */
+export const PUBLICATION_STEP_RELEASE_LEAD_MS = 7_000;
+
+/**
+ * The records a publication step may reuse: the source's own answer (unchanged 30 s bound, read at the
+ * real time) and, in addition, only a record that is still fresh PUBLICATION_STEP_RELEASE_LEAD_MS from
+ * now under the same bound and its attested expiry. Strictly narrower than `records`; a record that
+ * would lapse within the lead reads as missing, so the demand-driven reader collects (or joins).
+ */
+export function lastingReleaseRecords(
+  records: TrustedReleaseEvidenceRecordsPort,
+  leadMs: number = PUBLICATION_STEP_RELEASE_LEAD_MS,
+): TrustedReleaseEvidenceRecordsPort {
+  return {
+    async read(request) {
+      const evidence = await records.read(request);
+      if (!evidence) return null;
+      const until = request.now.getTime() + leadMs;
+      const observed = Date.parse(evidence.record.attestation.observedAt);
+      const expires = Date.parse(evidence.record.attestation.expiresAt);
+      return Number.isFinite(observed) &&
+        Number.isFinite(expires) &&
+        until - observed <= RELEASE_FRESHNESS_MS &&
+        until < expires
+        ? evidence
+        : null;
+    },
+  };
+}
 
 /** A publish request's longest client budget (§7.1); its background refresh never outlives it. */
 export const PUBLICATION_RELEASE_ACTIVE_MS = 60_000;
