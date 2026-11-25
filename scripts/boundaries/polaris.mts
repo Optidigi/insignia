@@ -564,8 +564,8 @@ export async function inspectPolarisPresentation(options: PolarisInspectionOptio
   if (options.versionManifest && options.runtimeLayout) {
     const manifest: unknown = JSON.parse(readFileSync(resolve(root, options.versionManifest), 'utf8'));
     const dev = record(manifest) && record(manifest.devDependencies) ? manifest.devDependencies : {};
-    if (dev['@shopify/polaris-types'] !== '2.0.0-rc.3')
-      report(options.versionManifest, 'Polaris checked types must match selected 2.0.0-rc.3');
+    if (dev['@shopify/polaris-types'] !== '2.0.0')
+      report(options.versionManifest, 'Polaris checked types must match selected 2.0.0');
     const layout = readFileSync(resolve(root, options.runtimeLayout), 'utf8');
     const runtimeSources: string[] = [];
     function scriptSources(value: unknown) {
@@ -594,8 +594,8 @@ export async function inspectPolarisPresentation(options: PolarisInspectionOptio
       for (const child of Object.values(value)) scriptSources(child);
     }
     scriptSources(parse(layout).ast);
-    if (runtimeSources.length !== 1 || runtimeSources[0] !== 'https://cdn.shopify.com/shopifycloud/polaris-2.0-rc.js')
-      report(options.runtimeLayout, 'Polaris runtime must match selected 2.0-rc.js');
+    if (runtimeSources.length !== 1 || runtimeSources[0] !== 'https://cdn.shopify.com/shopifycloud/polaris-2.0.js')
+      report(options.runtimeLayout, 'Polaris runtime must match selected 2.0.js');
   }
   for (const [file, entries] of Object.entries(remaining))
     for (const count of Object.values(entries))

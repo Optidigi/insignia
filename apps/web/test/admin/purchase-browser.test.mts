@@ -147,13 +147,13 @@ async function fixture(t: TestContext) {
     );
   await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (r) => r.fulfill({ body: '' }));
   const polaris = await readFile(
-    new URL('../../../../frontend/admin/examples/fixtures/polaris-2.0-rc.snapshot', import.meta.url),
+    new URL('../../../../frontend/admin/examples/fixtures/polaris-2.0.snapshot', import.meta.url),
   );
   assert.equal(
     createHash('sha256').update(polaris).digest('hex'),
-    '89dd2052b7b8cc6b042900f5c044e1f5754e31bf769d205b6e2399992bdb0c7b',
+    'af6e068300a7ec498092ecd2c4feb90bd93c43a2d8f75d27f65f86ae1f93d9f2',
   );
-  await page.route('https://cdn.shopify.com/shopifycloud/polaris-2.0-rc.js', (r) =>
+  await page.route('https://cdn.shopify.com/shopifycloud/polaris-2.0.js', (r) =>
     r.fulfill({ body: polaris, contentType: 'text/javascript' }),
   );
   await page.route('https://cdn.shopify.com/static/fonts/**', (r) => r.fulfill({ body: '' }));

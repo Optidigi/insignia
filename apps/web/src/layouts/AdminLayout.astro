@@ -42,7 +42,7 @@ const { t } = localization;
       installAdminLocalization(document);
       if (document.documentElement.dataset.adminReady !== 'true') installAdminNavigation();
     </script>
-    <script is:inline async src="https://cdn.shopify.com/shopifycloud/polaris-2.0-rc.js"></script>
+    <script is:inline async src="https://cdn.shopify.com/shopifycloud/polaris-2.0.js"></script>
   </head>
   <body>
     {apiKey && <AdminNavigation locale={localization.canonicalRequestedLocale} />}

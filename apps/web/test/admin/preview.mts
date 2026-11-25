@@ -79,9 +79,7 @@ const server = createServer(async (request, reply) => {
     if (url.pathname === '/__preview/polaris.js') {
       reply.setHeader('content-type', 'text/javascript');
       reply.end(
-        await readFile(
-          new URL('../../../../frontend/admin/examples/fixtures/polaris-2.0-rc.snapshot', import.meta.url),
-        ),
+        await readFile(new URL('../../../../frontend/admin/examples/fixtures/polaris-2.0.snapshot', import.meta.url)),
       );
       return;
     }
@@ -148,7 +146,7 @@ const server = createServer(async (request, reply) => {
     if (type.includes('text/html')) {
       const html = (await result.text())
         .replace('https://cdn.shopify.com/shopifycloud/app-bridge.js', '/__preview/bridge.js')
-        .replace('https://cdn.shopify.com/shopifycloud/polaris-2.0-rc.js', '/__preview/polaris.js');
+        .replace('https://cdn.shopify.com/shopifycloud/polaris-2.0.js', '/__preview/polaris.js');
       reply.end(html);
     } else reply.end(Buffer.from(await result.arrayBuffer()));
   } catch {
