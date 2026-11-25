@@ -73,6 +73,8 @@ export async function mountUnavailableDesigner(input: {
       // Designer tears itself down, so its own teardown cannot cancel the navigation.
       const navigate = current();
       destroy();
+      // Focus returns to the cart entry, as on any close, in case the navigation is cancelled.
+      input.onClose();
       if (navigate) window.location.assign(`${input.cartRoot}cart`);
       return;
     },
