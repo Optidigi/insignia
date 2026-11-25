@@ -1,5 +1,5 @@
 import { createCustomerTranslator } from '@insignia/ui-localization/customer';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { portFailure } from '../../../../frontend/designer/src/port-failure';
 import type { DesignerQuoteReview } from '../../../../frontend/designer/src/quote-review';
 import { quoteReviewMoney } from '../../../../frontend/designer/src/quote-review';
@@ -24,6 +24,10 @@ export function DesignerRepair({
   const [busy, setBusy] = useState(false),
     [failure, setFailure] = useState<ReturnType<typeof repairFailureView>>(),
     [review, setReview] = useState<DesignerQuoteReview>();
+  // Escape reads the latest state through a ref: effects flush after paint, so a listener that closed over
+  // `busy`/`review` would act on stale state for a tick after a re-render and drop or misroute a quick key.
+  const latest = useRef({ busy, review, onClose });
+  latest.current = { busy, review, onClose };
   async function action(kind: RepairAction) {
     if (busy) return;
     setBusy(true);
@@ -45,13 +49,14 @@ export function DesignerRepair({
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
       event.preventDefault();
-      if (busy) return;
-      if (review) setReview(undefined);
-      else onClose();
+      const { busy: pending, review: open, onClose: close } = latest.current;
+      if (pending) return;
+      if (open) setReview(undefined);
+      else close();
     };
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-  }, [busy, review, onClose]);
+  }, []);
   const view = repairView(repair);
   // Fixed slots, so the buttons keep their places (and focus) when a removal review replaces them.
   function offer(kind: RepairOffer['action']) {
