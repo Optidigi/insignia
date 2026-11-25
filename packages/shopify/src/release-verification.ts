@@ -10,8 +10,11 @@ export const RELEASE_VERIFICATION_SOCKET = '/run/insignia/release-verification/c
  * this lead, so a ~5 s collection lands before it expires. The receiver therefore reuses a stored
  * record only while it stays fresh for this long; otherwise it would answer the refresh with the
  * record that is about to lapse and nothing would be collected ahead of expiry (#345).
+ * It covers every refresher: the buyer path asks at 22 s of age (8 s left), a publish at 17 s (13 s
+ * left). Every other caller asks only once its record has under 7 s left (a publish step) or has
+ * lapsed, so a longer lead never makes it wait for a record it would have reused.
  */
-export const RELEASE_REFRESH_LEAD_MS = 8_000;
+export const RELEASE_REFRESH_LEAD_MS = 13_000;
 
 /** Closed metadata-only protocol. Staff credentials, provider observations,
  * executable paths and append credentials cannot be selected by this request. */

@@ -16,9 +16,13 @@ export const RELEASE_REFRESH_INTERVAL_MS = 25_000;
  * its own record and collects synchronously when that record is stale.
  */
 export function createReleaseRefresher(input: {
-  /** Refresh if the current record is older than RELEASE_REFRESH_AFTER_MS; resolve to the current
-   * record's observation time (ms), or null when none is available. */
+  /** Refresh if the current record is older than `refreshAfterMs`; resolve to the current record's
+   * observation time (ms), or null when none is available. */
   refresh(scope: Scope): Promise<number | null>;
+  /** Age at which a record is refreshed (default RELEASE_REFRESH_AFTER_MS, the buyer path's). */
+  refreshAfterMs?: number;
+  /** At most one refresh start per shop per this long (default RELEASE_REFRESH_INTERVAL_MS). */
+  intervalMs?: number;
   /** Whether the shop still needs a refresh when one is due (default: always). A due run that is no
    * longer wanted starts nothing and leaves the shop's last start, so it uses up no interval. */
   wanted?(scope: Scope): boolean;
@@ -27,6 +31,8 @@ export function createReleaseRefresher(input: {
   clearTimer?: (timer: Timer) => void;
 }) {
   const clock = input.clock ?? Date.now;
+  const refreshAfterMs = input.refreshAfterMs ?? RELEASE_REFRESH_AFTER_MS;
+  const intervalMs = input.intervalMs ?? RELEASE_REFRESH_INTERVAL_MS;
   const setTimer = input.setTimer ?? ((run, delayMs) => setTimeout(run, delayMs));
   const clearTimer = input.clearTimer ?? ((timer) => clearTimeout(timer as ReturnType<typeof setTimeout>));
   const shops = new Map<
@@ -57,7 +63,7 @@ export function createReleaseRefresher(input: {
     }
     if (input.wanted && !input.wanted(state.scope)) {
       // Idle until the next touch; forget the shop once its last start no longer limits one.
-      if (clock() >= state.lastStart + RELEASE_REFRESH_INTERVAL_MS) shops.delete(key);
+      if (clock() >= state.lastStart + intervalMs) shops.delete(key);
       return;
     }
     state.running = true;
@@ -75,11 +81,10 @@ export function createReleaseRefresher(input: {
       return;
     }
     // Just past the reuse boundary. Production reuses a record only while its age is strictly below
-    // RELEASE_REFRESH_AFTER_MS, so a run at exactly that age collects; the +1 ms (with the early-fire guard)
+    // `refreshAfterMs`, so a run at exactly that age collects; the +1 ms (with the early-fire guard)
     // keeps a timer that fires early from landing inside the reuse window and spending the interval.
-    const due =
-      observedAt !== null && Number.isFinite(observedAt) ? observedAt + RELEASE_REFRESH_AFTER_MS + 1 : state.lastStart;
-    schedule(key, Math.max(state.lastStart + RELEASE_REFRESH_INTERVAL_MS, due));
+    const due = observedAt !== null && Number.isFinite(observedAt) ? observedAt + refreshAfterMs + 1 : state.lastStart;
+    schedule(key, Math.max(state.lastStart + intervalMs, due));
   }
   return {
     touch(scope: Scope, activeUntil: Date) {
@@ -97,7 +102,7 @@ export function createReleaseRefresher(input: {
           lastStart: Number.NEGATIVE_INFINITY,
           running: false,
         });
-      schedule(key, Math.max(clock(), (shops.get(key)?.lastStart ?? 0) + RELEASE_REFRESH_INTERVAL_MS));
+      schedule(key, Math.max(clock(), (shops.get(key)?.lastStart ?? 0) + intervalMs));
     },
     /** Active shops, for tests and diagnostics. */
     activeShops: () => shops.size,

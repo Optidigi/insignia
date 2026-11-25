@@ -14,12 +14,19 @@ import {
 import { Pool } from 'pg';
 import type { AdminActor } from '../../src/server/admin/contracts.ts';
 import { handleAdminRequest } from '../../src/server/admin/http.ts';
-import { createPublicationReleaseRefresh } from '../../src/server/admin/publication-release.ts';
+import {
+  createPublicationReleaseRefresh,
+  lastingReleaseRecords,
+  PUBLICATION_RELEASE_REFRESH_AFTER_MS,
+  PUBLICATION_RELEASE_REFRESH_INTERVAL_MS,
+  PUBLICATION_STEP_RELEASE_LEAD_MS,
+} from '../../src/server/admin/publication-release.ts';
 import {
   createDemandDrivenReleaseReader,
   createServerActivationReadiness,
 } from '../../src/server/admin/release-evidence.ts';
-import { RELEASE_FRESHNESS_MS, RELEASE_REFRESH_AFTER_MS } from '../../src/server/buyer/release-refresh.ts';
+import { RELEASE_REFRESH_LEAD_MS } from '../../src/server/admin/release-verification.ts';
+import { RELEASE_FRESHNESS_MS } from '../../src/server/buyer/release-refresh.ts';
 import {
   createMerchantConfigService,
   PUBLICATION_RESEND_VALIDITY_MS,
@@ -56,7 +63,7 @@ type ReleaseModel = {
  * Release verification as production.ts composes it for a publish, on a clock that runs
  * VIRTUAL_CALL_MS / latencyMs faster than real time, so a synthetic provider call takes production
  * time: the real demand-driven reader under the unchanged 30 s freshness, a collector that takes
- * COLLECTION_MS (and, like the collector process, reuses a record fresh for another 8 s), the write
+ * COLLECTION_MS (and, like the collector process, reuses a record fresh for another RELEASE_REFRESH_LEAD_MS), the write
  * gate on the step's own evidence and, when enabled, the publish-scoped background refresh sharing
  * the reader's single-flight map.
  */
@@ -88,17 +95,27 @@ function releaseModel(config: ReleaseModel) {
     maxConcurrent: 0,
     /** Virtual time the publish spent in its release checks (critical path). */
     waitMs: 0,
+    /** Each release check's virtual wait, in order (a request's first check is its preparation). */
+    waits: [] as number[],
+    /** Synchronous collections each release check started, in the same order. */
+    collectedBy: [] as number[],
+    /** Virtual start time of each background collection. */
+    backgroundStarts: [] as number[],
     checks: 0,
     /** Writes the release write gate refused because the step's own evidence lapsed mid-step. */
     refusedWrites: 0,
+    /** Of those, writes refused within PUBLICATION_STEP_RELEASE_LEAD_MS of their step's release check:
+     * the step rule makes this impossible, however slow the runner. */
+    refusedWithinLead: 0,
   };
   let running = 0;
   const collector = (kind: 'synchronous' | 'background') => ({
     async collect(request: { requestId: string }) {
-      const reusable = evidenceAt(clock() + 8_000);
+      const reusable = evidenceAt(clock() + RELEASE_REFRESH_LEAD_MS);
       if (reusable)
         return { requestId: request.requestId, recordId: reusable.record.recordId, state: 'COMPLETE' as const };
       stats[kind]++;
+      if (kind === 'background') stats.backgroundStarts.push(clock());
       stats.maxConcurrent = Math.max(stats.maxConcurrent, ++running);
       const begun = clock();
       try {
@@ -124,10 +141,13 @@ function releaseModel(config: ReleaseModel) {
   const collecting = new Map<string, Promise<string | null>>();
   const reader = (refreshAhead: boolean) =>
     createDemandDrivenReleaseReader({
-      records: {
-        read: async (request) =>
-          evidenceAt(+request.now + (refreshAhead ? RELEASE_FRESHNESS_MS - RELEASE_REFRESH_AFTER_MS : 0)),
-      },
+      // As production.ts: the refresh reads 13 s ahead (asks at 17 s of age); a step reuses only a record that outlasts its writes.
+      records: refreshAhead
+        ? {
+            read: async (request) =>
+              evidenceAt(+request.now + RELEASE_FRESHNESS_MS - PUBLICATION_RELEASE_REFRESH_AFTER_MS),
+          }
+        : lastingReleaseRecords({ read: async (request) => evidenceAt(+request.now) }),
       binding,
       collector: collector(refreshAhead ? 'background' : 'synchronous'),
       isCurrent: async () => {},
@@ -142,6 +162,7 @@ function releaseModel(config: ReleaseModel) {
     target.read({ scope: binding, expectedActiveAppVersionRef: activeVersionRef, now: new Date(clock()) });
   const publishing = reader(false);
   let verified: ReturnType<typeof evidenceAt> = null;
+  let checkedAt = Number.NEGATIVE_INFINITY;
   const refreshing = reader(true);
   const refresh = createPublicationReleaseRefresh<AdminActor>({
     async refresh() {
@@ -163,12 +184,17 @@ function releaseModel(config: ReleaseModel) {
     /** A publication step's release check, as production.ts `verifyPublicationRelease`. */
     async verify() {
       const started = clock();
+      const collected = stats.synchronous;
       stats.checks++;
       try {
+        checkedAt = started;
         verified = await read(publishing);
         return verified !== null;
       } finally {
         stats.waitMs += clock() - started;
+        stats.waits.push(Math.round(clock() - started));
+        // Checks run one at a time, so a synchronous collection belongs to the check in progress.
+        stats.collectedBy.push(stats.synchronous - collected);
       }
     },
     /** The release part of production.ts `publicationAuthorityFresh`, on the step's own evidence. */
@@ -177,6 +203,7 @@ function releaseModel(config: ReleaseModel) {
       const observed = Date.parse(verified?.record.attestation.observedAt ?? '');
       const fresh = Number.isFinite(observed) && observed <= at && at - observed <= RELEASE_FRESHNESS_MS;
       if (!fresh) stats.refusedWrites++;
+      if (!fresh && verified && at - checkedAt <= PUBLICATION_STEP_RELEASE_LEAD_MS) stats.refusedWithinLead++;
       return fresh;
     },
     begin: (actor: AdminActor) => (config.background ? refresh.begin(actor) : () => {}),
@@ -932,7 +959,12 @@ async function measuredPublication(core: DurableCore, config: ReleaseModel) {
     const f = await firstPublication(core, { release });
     const run = async (key: string) => {
       const started = release.clock();
-      const before = { ...release.stats };
+      const before = {
+        ...release.stats,
+        waits: [...release.stats.waits],
+        collectedBy: [...release.stats.collectedBy],
+        backgroundStarts: [...release.stats.backgroundStarts],
+      };
       const rounds = f.rounds();
       const steps = f.steps.length;
       const response = await f.publish(key);
@@ -946,8 +978,14 @@ async function measuredPublication(core: DurableCore, config: ReleaseModel) {
         synchronousCollections: release.stats.synchronous - before.synchronous,
         backgroundCollections: release.stats.background - before.background,
         releaseWaitMs: Math.round(release.stats.waitMs - before.waitMs),
+        stepWaitsMs: release.stats.waits.slice(before.waits.length),
+        collectedBy: release.stats.collectedBy.slice(before.collectedBy.length),
+        backgroundStartsMs: release.stats.backgroundStarts
+          .slice(before.backgroundStarts.length)
+          .map((at) => Math.round(at - started)),
         checks: release.stats.checks - before.checks,
         refusedWrites: release.stats.refusedWrites - before.refusedWrites,
+        refusedWithinLead: release.stats.refusedWithinLead - before.refusedWithinLead,
         steps: f.steps.length - steps,
         timing: f.timings.at(-1),
       };
@@ -994,10 +1032,14 @@ test('decision 3: a publish keeps its release record fresh in the background ins
         assert.ok(value.synchronousCollections <= 1, JSON.stringify(value));
         // Timing spans are still emitted for every request.
         assert.ok(value.timing && value.timing.spans.length > 0, JSON.stringify(value));
-        // Not asserted: the outcome. A step that starts on a 25-30 s old record can still have its
-        // write refused once that evidence lapses mid-step (`refusedWrites`), before and after this
-        // change; the refresh only narrows that window, which the measured 30 s publish can reach
-        // under load. Preparation and every advance still check their own record.
+        // A step reuses a record only while it stays fresh for PUBLICATION_STEP_RELEASE_LEAD_MS, so no
+        // write is refused within that long of its step's release check, however slow the runner.
+        assert.equal(value.refusedWithinLead, 0, JSON.stringify(value));
+        // Not asserted: the outcome. This harness runs its virtual clock 3.5x faster than real time at
+        // the default latency, so on a loaded runner a step's database work can stretch it past the
+        // lead (production's largest step is 4.6 s) and see its write refused (`refusedWrites`), then
+        // either recover on a fresh record (ACTIVE) or fail without effect (503).
+        // Preparation and every advance still check their own record.
         if (value.state === 'ACTIVE') {
           assert.equal(value.checks, value.steps + 1);
           assert.ok(value.timing?.spans.some((span) => span.stage === 'preparation'));
@@ -1028,23 +1070,40 @@ test('decision 3: a background refresh that fails leaves the publish to collect 
 }, async () => {
   const core = createDurableCore(new Pool({ connectionString: database }));
   try {
-    // The record lapses 10 s in; the background refresh 2 s in stops without one.
+    // Steps stop reusing the record 3 s in; the background refresh, started at begin, stops without one.
     const { first, maxConcurrent } = await measuredPublication(core, {
       background: true,
       recordAgeMs: 20_000,
       failing: (collection) => collection === 1,
     });
     assert.equal(maxConcurrent, 1);
-    assert.ok(first.backgroundCollections <= 1, JSON.stringify(first));
+    // The failed refresh started near begin (within 5 s virtual, allowing a loaded runner). Any later
+    // one (the routine refresh of the record a step collected) started no sooner than the 15 s publish
+    // interval after it, on the same virtual clock (less 1 s for the async steps between the refresh's
+    // start and its collector call on a loaded runner).
+    assert.ok((first.backgroundStartsMs[0] ?? Number.POSITIVE_INFINITY) < 5_000, JSON.stringify(first));
+    for (let i = 1; i < first.backgroundStartsMs.length; i++)
+      assert.ok(
+        (first.backgroundStartsMs[i] ?? 0) - (first.backgroundStartsMs[i - 1] ?? 0) >=
+          PUBLICATION_RELEASE_REFRESH_INTERVAL_MS - 1_000,
+        JSON.stringify(first.backgroundStartsMs),
+      );
+    // A step never starts on a record that lapses within the step lead (see the measurement test).
+    assert.equal(first.refusedWithinLead, 0, JSON.stringify(first));
     if (first.refusedWrites > 0) {
-      // Under load a step can still start on a record about to lapse and see its write refused mid-step: the
-      // existing hazard this change narrows but does not remove (owner decision pending). As today, the step
-      // either recovers on a fresh record and the publish reaches ACTIVE, or it fails without effect (503).
+      // Only a step the loaded runner stretched past the lead (virtual clock 3.5x real time) can see its
+      // write refused; it either recovers on a fresh record and the publish reaches ACTIVE, or it fails
+      // without effect (503).
       assert.ok((first.status === 202 && first.state === 'ACTIVE') || first.status === 503, JSON.stringify(first));
       return;
     }
     assert.deepEqual([first.status, first.state], [202, 'ACTIVE'], JSON.stringify(first));
-    assert.equal(first.synchronousCollections, 1, 'the step that found the record stale collected it');
+    // Exactly one check collected, once: the first step that found the record within its lead of lapsing.
+    assert.deepEqual(
+      first.collectedBy.filter((count) => count > 0),
+      [1],
+      JSON.stringify(first.collectedBy),
+    );
   } finally {
     await core.close();
   }
@@ -1063,8 +1122,26 @@ test('decision 3: a cold publish whose background collection fails collects once
       failing: (collection) => collection === 1,
     });
     assert.deepEqual([first.status, first.state], [202, 'ACTIVE'], JSON.stringify(first));
-    assert.equal(first.backgroundCollections, 1);
-    assert.equal(first.synchronousCollections, 1, 'preparation collected once after the joined collection failed');
+    // The failed collection started near begin; the routine refresh of the record preparation collected
+    // starts once that record is 17 s old, at least the 15 s interval later, on the same virtual clock.
+    assert.ok(
+      (first.backgroundStartsMs[0] ?? Number.POSITIVE_INFINITY) < 5_000,
+      JSON.stringify(first.backgroundStartsMs),
+    );
+    for (let i = 1; i < first.backgroundStartsMs.length; i++)
+      assert.ok(
+        (first.backgroundStartsMs[i] ?? 0) - (first.backgroundStartsMs[i - 1] ?? 0) >=
+          PUBLICATION_RELEASE_REFRESH_INTERVAL_MS - 1_000,
+        JSON.stringify(first.backgroundStartsMs),
+      );
+    // Preparation collected exactly once, after the collection it joined failed.
+    assert.equal(first.collectedBy[0], 1, JSON.stringify(first.collectedBy));
+    // A later step collects (once) only if a loaded runner delays that routine refresh past the 23 s at
+    // which steps stop reusing the record; preparation's never runs twice.
+    assert.ok(
+      first.collectedBy.slice(1).reduce((sum, count) => sum + count, 0) <= 1,
+      JSON.stringify(first.collectedBy),
+    );
     assert.equal(maxConcurrent, 1);
   } finally {
     await core.close();

@@ -68,8 +68,9 @@ Added 25 Nov 2026 from the 24–25 Nov hardening pass ([evidence](../delivery/sh
 - #653 Storefront performance: idle Designer prewarm (~200 KB JS + 234 KB CSS), USD TBT +238 ms, USD footer
   CLS 0.15. Lighthouse 25 Nov: USD −7.0 points (pass is 6, Shopify's limit 10), EUR −1.5.
 
-**Waiting for an owner decision.** A publish step that starts on a 25–30 s-old release record can still be
-refused mid-step. #641 and #650 narrowed the window; closing it changes a freshness rule.
+**Fixed (owner approval 25 Nov 2026).** A publish step that started on a 25–30 s-old release record could be
+refused mid-step; #641 and #650 narrowed the window. PR #658 closes it: a step reuses a record only while it
+stays fresh for another 7 s (its measured write budget), otherwise it joins or runs a collection first.
 
 **Deferred.**
 - Relax the publish hold-safety steps to reach ≤10 s first publish (options A/B in #632's analysis); owner

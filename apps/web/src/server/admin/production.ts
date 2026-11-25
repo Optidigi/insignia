@@ -43,7 +43,7 @@ import { loadArtworkStorageProfile } from '@insignia/storage';
 import { createAutomaticUninstallEnrollment, inspectArtworkPrivately } from '@insignia/worker';
 import { Pool } from 'pg';
 import { loadCredentialKeys } from '../../../../worker/src/config.ts';
-import { RELEASE_FRESHNESS_MS, RELEASE_REFRESH_AFTER_MS } from '../buyer/release-refresh.ts';
+import { RELEASE_FRESHNESS_MS } from '../buyer/release-refresh.ts';
 import { createMerchantConfigService } from '../merchant-config.js';
 import { createSignerClient, type SignerClient } from '../signer-client.ts';
 import {
@@ -62,7 +62,12 @@ import { createMerchantPublicationCapture } from './merchant-previews.js';
 import { createMethodLibrary } from './methods.js';
 import { createMerchantPreferences } from './preferences.js';
 import { productSummary } from './product-summary.js';
-import { createPublicationReleaseRefresh } from './publication-release.ts';
+import {
+  createPublicationReleaseRefresh,
+  lastingReleaseRecords,
+  PUBLICATION_RELEASE_REFRESH_AFTER_MS,
+  releaseLifeStartedAt,
+} from './publication-release.ts';
 import { publicationStage } from './publication-timing.js';
 import {
   createBoundProductionActivationReadiness,
@@ -211,9 +216,10 @@ export function createProductionAdminServices(
       throw new Error('Online staff grant unavailable');
     return online;
   }
-  /** The actor's demand-driven release reader. `refreshAhead` (the background refresh) treats a
-   * record older than RELEASE_REFRESH_AFTER_MS as missing, so it collects ahead of expiry; it shares
-   * `collecting` with the publish's own reads, so one shop has one collection in flight. */
+  /** The actor's demand-driven release reader. `refreshAhead` (the publish's background refresh) treats a
+   * record older than PUBLICATION_RELEASE_REFRESH_AFTER_MS as missing, so it collects ahead of expiry; a step's
+   * reader treats one that lapses within PUBLICATION_STEP_RELEASE_LEAD_MS as missing. Both share
+   * `collecting`, so one shop has one collection in flight. */
   async function releaseReader(actor: AdminActor, refreshAhead: boolean): Promise<DurableCoreReleaseReader | null> {
     const readers = refreshAhead ? refreshReaders : verifications;
     const cached = readers.get(actor);
@@ -234,10 +240,11 @@ export function createProductionAdminServices(
             read: (request) =>
               core.trustedReleaseRecords.read({
                 ...request,
-                now: new Date(+request.now + RELEASE_FRESHNESS_MS - RELEASE_REFRESH_AFTER_MS),
+                now: new Date(+request.now + RELEASE_FRESHNESS_MS - PUBLICATION_RELEASE_REFRESH_AFTER_MS),
               }),
           }
-        : core.trustedReleaseRecords,
+        : // A step reuses a record only while it outlasts the step's writes; else it collects or joins.
+          lastingReleaseRecords(core.trustedReleaseRecords),
       // A collection on a publish request is its own timing span; a background refresh has none.
       collector: refreshAhead
         ? collector
@@ -313,8 +320,8 @@ export function createProductionAdminServices(
             now: new Date(),
           })
         : null;
-      const observedAt = evidence ? Date.parse(evidence.record.attestation.observedAt) : Number.NaN;
-      return Number.isFinite(observedAt) ? observedAt : null;
+      // Timed from the record's attested life, which can be shorter than 30 s from its observation.
+      return evidence ? releaseLifeStartedAt(evidence.record.attestation) : null;
     },
     async observedAt(actor) {
       const evidence = await core.trustedReleaseRecords.read({
@@ -326,8 +333,7 @@ export function createProductionAdminServices(
         expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
         now: new Date(),
       });
-      const observedAt = evidence ? Date.parse(evidence.record.attestation.observedAt) : Number.NaN;
-      return Number.isFinite(observedAt) ? observedAt : null;
+      return evidence ? releaseLifeStartedAt(evidence.record.attestation) : null;
     },
   });
   /** True when the store's cart transform and validation are deployed, deploying both if it has
