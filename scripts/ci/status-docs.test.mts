@@ -241,6 +241,7 @@ test('foundation includes frontend and workspace inputs and executes the fronten
   for (const path of ['frontend/**', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.node-version'])
     assert.ok(workflow.includes(`      - '${path}'`), `Missing push trigger: ${path}`);
   assert.match(workflow, /--filter @insignia\/designer exec playwright install --with-deps chromium/);
+  assert.match(workflow, /theme check --path extensions\/insignia-theme --config theme-check:theme-app-extension/);
   const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
   assert.ok(manifest.scripts.check.includes('corepack pnpm check:ui'));
   assert.ok(manifest.scripts['check:ui'].includes("--filter './frontend/**' test"));
