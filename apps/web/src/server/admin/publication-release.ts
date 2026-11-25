@@ -80,11 +80,14 @@ export function createPublicationReleaseRefresh<A extends Publisher>(input: {
     const touch = () => {
       if (inProgress(shop, actor)) refresher.touch(scope, new Date(until));
     };
-    if (at <= clock()) touch();
-    else {
-      const timer = setTimer(() => detached(touch), at - clock());
+    // A timer can fire up to a millisecond before its delay by `clock`; touching before `at` would
+    // start a refresh that finds nothing to collect yet uses up the 25-second interval.
+    const arm = () => {
+      if (at <= clock()) return touch();
+      const timer = setTimer(() => detached(arm), at - clock());
       (timer as { unref?: () => unknown }).unref?.();
-    }
+    };
+    arm();
   }
   return {
     /** A publish request for this actor is in progress until the returned `end` runs. Never awaits or throws. */

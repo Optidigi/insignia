@@ -41,6 +41,8 @@ const LARGEST_STEP_ROUNDS = 15;
 const VIRTUAL_CALL_MS = 350;
 /** A trusted release collection (spec: ~4.5–6 s). */
 const COLLECTION_MS = 5_000;
+/** How much earlier than its delay (real ms) the model's refresh timers fire; see releaseModel. */
+const TIMER_EARLY_MS = 2;
 type ReleaseModel = {
   /** Keep the record fresh in the background while the publish runs (production.ts). */
   background: boolean;
@@ -151,7 +153,9 @@ function releaseModel(config: ReleaseModel) {
       return evidence ? Date.parse(evidence.record.attestation.observedAt) : null;
     },
     clock,
-    setTimer: (run, delayMs) => setTimeout(run, delayMs / scale),
+    // Node runs a timer up to ~2 ms before its delay as performance.now() measures it (and 1 ms by
+    // Date.now()); always firing that early keeps the refresh's due-time guard exercised on any runner.
+    setTimer: (run, delayMs) => setTimeout(run, Math.max(0, delayMs / scale - TIMER_EARLY_MS)),
   });
   return {
     stats,
@@ -1000,8 +1004,11 @@ test('decision 3: a publish keeps its release record fresh in the background ins
         }
       }
       assert.equal(after.maxConcurrent, 1, 'never more than one collection per shop');
+      // The first publish's collection always runs in the background: at begin without a record, and
+      // just past 22 s of age for the aging one, so before it lapses (a refresh run any earlier would
+      // find nothing to collect yet use up the shop's 25 s interval: the CI flake of 24-25 Nov).
+      assert.ok(after.first.backgroundCollections >= 1, JSON.stringify(after.first));
       // The refresh moves collection off the request path in aggregate; exact counts depend on runner timing.
-      assert.ok(after.first.backgroundCollections + after.again.backgroundCollections >= 1, JSON.stringify(after));
       assert.ok(
         after.first.synchronousCollections + after.again.synchronousCollections <
           before.first.synchronousCollections + before.again.synchronousCollections ||
