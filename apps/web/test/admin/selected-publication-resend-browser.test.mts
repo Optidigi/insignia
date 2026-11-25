@@ -107,6 +107,28 @@ test('#468: publish is sent at once; a session ending mid-publish is resent as t
   t.diagnostic(`remaining 20 s, work 12 s: sent after ${first.at - f.clicked} ms, Published after ${total} ms`);
 });
 
+test('#468: a publish whose token could not start a step waits for the next token and is sent once', {
+  timeout: 120_000,
+}, async (t) => {
+  // 10 s left is under the server's 15 s step margin: sending it would only earn a `resend`.
+  const f = await timedPublication(t, 10_000, 3_000);
+  for (let waited = 0; f.publishes.length === 0 && waited < 20_000; waited += 100) {
+    if (waited % 1_000 === 0) assert.equal(await f.modal.getByText(progress, { exact: true }).count(), 1);
+    await sleep(100);
+  }
+  const total = await published(f);
+  assert.equal(f.publishes.length, 1, 'no publish the server had to refuse');
+  const [first] = f.publishes;
+  assert.ok(first);
+  assert.ok(
+    first.expiresAt - first.at >= PUBLICATION_STEP_MARGIN_MS + 1_750,
+    'sent with a token that can start a step',
+  );
+  assert.ok(first.at - f.clicked < 13_000, `sent once the next token was issued (${first.at - f.clicked} ms)`);
+  assert.equal(await f.page.getByText(/could not be published/).count(), 0);
+  t.diagnostic(`remaining 10 s, work 3 s: sent after ${first.at - f.clicked} ms, Published after ${total} ms`);
+});
+
 test('#468 measurement: click to publish sent and to Published by session-token age', {
   skip: process.env.INSIGNIA_PUBLISH_MEASURE !== '1',
   timeout: 600_000,

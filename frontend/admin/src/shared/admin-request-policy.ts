@@ -1,7 +1,13 @@
 const ordinary = Object.freeze({ timeoutMs: 10000, minimumValidityMs: 2000 });
-// #468: a publish is sent with the ordinary token window. When the staff session ends between
-// publication steps the server answers `resend` with the validity its next request needs.
-const publication = Object.freeze({ timeoutMs: 60000, minimumValidityMs: 2000 });
+/** #468: the server starts a publication step only while the request's session token has at least
+ * PUBLICATION_STEP_MARGIN_MS (15 s) left, and a publish POST spends up to ~1.75 s (online token exchange
+ * included) before its first step. A token with less than this left would only be answered `resend`, so
+ * the publish waits for the next one instead. App Bridge cannot issue a token on demand: `idToken()`
+ * returns its cached token until it expires (measured natively 25 Nov 2026, App Bridge 0.41.6), so the
+ * wait is the existing poll. When the session ends between steps the server answers `resend` with the
+ * validity its next request needs. */
+export const PUBLICATION_SEND_VALIDITY_MS = 17000;
+const publication = Object.freeze({ timeoutMs: 60000, minimumValidityMs: PUBLICATION_SEND_VALIDITY_MS });
 // App Bridge session tokens live 60 s; a larger requirement could never be met.
 const longestValidityMs = 50000;
 

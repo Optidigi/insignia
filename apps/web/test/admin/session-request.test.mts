@@ -4,9 +4,16 @@ import {
   isUnansweredRequest,
   authenticatedJson as selectedJson,
 } from '../../../../frontend/admin/src/shared/admin-request.ts';
+import { PUBLICATION_SEND_VALIDITY_MS } from '../../../../frontend/admin/src/shared/admin-request-policy.ts';
+import { PUBLICATION_STEP_MARGIN_MS } from '../../src/server/merchant-config.ts';
 import { authenticatedJson } from '../../src/shared/admin-request.ts';
 import { replaceWindow } from './support/browser-node.mts';
 import { required } from './support/fixtures.mts';
+
+test('#468: the client publish token floor covers the server step margin plus a publish round trip', () => {
+  // A measured publish POST spends up to ~1.75 s (online token exchange included) before its first step.
+  assert.ok(PUBLICATION_SEND_VALIDITY_MS >= PUBLICATION_STEP_MARGIN_MS + 1_750);
+});
 
 for (const [name, request] of [
   ['retained', authenticatedJson],
@@ -38,6 +45,72 @@ for (const [name, request] of [
       t.mock.timers.tick(60000);
       await rejected;
       await new Promise((resolve) => setImmediate(resolve));
+      assert.equal(sent, 1);
+    } finally {
+      restore();
+      globalThis.fetch = originalFetch;
+    }
+  });
+  test(`${name}: #468 a publish never carries a token the server would refuse straight away; it polls for the next one`, async (t) => {
+    t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: new Date('2026-11-07T12:00:00Z') });
+    const originalFetch = globalThis.fetch;
+    const token = (seconds: number) =>
+      `synthetic.${Buffer.from(JSON.stringify({ exp: Date.now() / 1000 + seconds })).toString('base64url')}.synthetic`;
+    // A fake App Bridge with the natively measured behaviour: idToken() returns the cached token until it
+    // expires and only then issues a new 60 s one; nothing refreshes it earlier.
+    let current = token(16);
+    let calls = 0;
+    const restore = replaceWindow({
+      shopify: {
+        idToken: async () => {
+          calls++;
+          const exp = JSON.parse(Buffer.from(current.split('.')[1] ?? '', 'base64url').toString()).exp;
+          if (exp * 1000 <= Date.now()) current = token(60);
+          return current;
+        },
+      },
+    });
+    const sent: string[] = [];
+    globalThis.fetch = async (_path, init) => {
+      sent.push(new Headers(init?.headers).get('Authorization') ?? '');
+      return Response.json({ kind: 'accepted', state: 'ACTIVE' });
+    };
+    try {
+      const nearExpiry = current;
+      const result = request('/api/admin/products/111/config', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'publish' }),
+      });
+      // 16 s left: under the server's 15 s step margin plus the request's own round trip.
+      for (let tick = 0; tick < 64; tick++) {
+        await new Promise((resolve) => setImmediate(resolve));
+        assert.deepEqual(sent, [], 'nothing is sent while only the near-expiry token is available');
+        t.mock.timers.tick(250);
+      }
+      await new Promise((resolve) => setImmediate(resolve));
+      t.mock.timers.tick(250);
+      assert.deepEqual(await result, { kind: 'accepted', state: 'ACTIVE' });
+      assert.equal(sent.length, 1, 'one publish, no request the server must answer `resend`');
+      assert.notEqual(sent[0], `Bearer ${nearExpiry}`);
+      assert.equal(sent[0], `Bearer ${current}`, 'sent with the newly issued token');
+      assert.ok(calls > 2, `the fallback polls the host (${calls} idToken calls)`);
+    } finally {
+      restore();
+      globalThis.fetch = originalFetch;
+    }
+  });
+  test(`${name}: #468 a publish with ${PUBLICATION_SEND_VALIDITY_MS / 1000} s or more left is sent at once`, async (t) => {
+    t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: new Date('2026-11-07T12:00:00Z') });
+    const originalFetch = globalThis.fetch;
+    const token = `synthetic.${Buffer.from(JSON.stringify({ exp: Date.now() / 1000 + PUBLICATION_SEND_VALIDITY_MS / 1000 + 0.5 })).toString('base64url')}.synthetic`;
+    const restore = replaceWindow({ shopify: { idToken: async () => token } });
+    let sent = 0;
+    globalThis.fetch = async () => {
+      sent++;
+      return Response.json({ ok: true });
+    };
+    try {
+      await request('/api/admin/products/111/config', { method: 'POST', body: JSON.stringify({ action: 'publish' }) });
       assert.equal(sent, 1);
     } finally {
       restore();
