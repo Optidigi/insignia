@@ -34,16 +34,22 @@ function designerAssets() {
   base.pathname = base.pathname.slice(0, base.pathname.lastIndexOf('/') + 1);
   base.search = '';
   base.hash = '';
-  return { entry: new URL('insignia-designer-frame.js', base), css: new URL('insignia-designer.css', base) };
+  return {
+    entry: new URL('insignia-designer-frame.js', base),
+    css: new URL('insignia-designer.css', base),
+    // The Latin face covers every Designer UI language; other scripts load from the stylesheet only when used.
+    font: new URL('insignia-font-inter-latin-wght-normal.woff2', base),
+  };
 }
 
-/** Fetch immutable frame assets without executing a frame or touching theme focus/styles. */
+/** Fetch immutable frame assets (script, stylesheet, Latin UI font) without executing a frame or touching theme focus/styles. */
 export function prewarmDesignerAssets(): () => void {
   const assets = designerAssets();
   const links: HTMLLinkElement[] = [];
-  for (const [rel, url] of [
-    ['modulepreload', assets.entry],
-    ['preload', assets.css],
+  for (const [rel, url, as] of [
+    ['modulepreload', assets.entry, undefined],
+    ['preload', assets.css, 'style'],
+    ['preload', assets.font, 'font'],
   ] as const) {
     if (
       [...document.head.querySelectorAll<HTMLLinkElement>('link')].some(
@@ -54,7 +60,12 @@ export function prewarmDesignerAssets(): () => void {
     const link = document.createElement('link');
     link.rel = rel;
     link.href = url.href;
-    if (rel === 'preload') link.as = 'style';
+    if (as) link.as = as;
+    // Fonts are fetched in CORS mode; a matching preload is reused by the Designer's same-origin frame.
+    if (as === 'font') {
+      link.type = 'font/woff2';
+      link.crossOrigin = 'anonymous';
+    }
     document.head.append(link);
     links.push(link);
   }
@@ -110,12 +121,12 @@ export function createDesignerFrame(input: {
   frame.referrerPolicy = 'origin';
   frame.style.cssText =
     'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483000;background:transparent;';
-  const { entry, css } = designerAssets();
+  const { entry, css, font } = designerAssets();
   // Baseline document language (e.g. a repair-only frame); a mounted Designer then mirrors its active language.
   const language = createCustomerTranslator(
     readCustomerLanguagePreference() ?? resolveCustomerHostLocale(input.locale, customerBrowserLanguages()),
   );
-  frame.srcdoc = `<!doctype html><html lang="${escapeAttribute(language.lang)}" dir="${escapeAttribute(language.dir)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="origin"><link rel="stylesheet" href="${escapeAttribute(css.href)}"></head><body><script type="module" src="${escapeAttribute(entry.href)}"></script></body></html>`;
+  frame.srcdoc = `<!doctype html><html lang="${escapeAttribute(language.lang)}" dir="${escapeAttribute(language.dir)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="origin"><link rel="preload" as="font" type="font/woff2" crossorigin href="${escapeAttribute(font.href)}"><link rel="stylesheet" href="${escapeAttribute(css.href)}"></head><body><script type="module" src="${escapeAttribute(entry.href)}"></script></body></html>`;
   const controllers = new Map<string, AbortController>();
   let committing: AbortController | undefined;
   let pendingRepair:

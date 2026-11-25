@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import { build } from 'esbuild';
 import { chromium } from 'playwright';
 import type { BuyerConfig } from '../src/buyer.ts';
-import { lineCarriers, serverPort } from './support.mts';
+import { contentType, lineCarriers, serverPort } from './support.mts';
 
 /** One-line v3 carrier for a variant; the storefront decodes but never verifies it. */
 const v3Carrier = (variantId: string, set = 1) =>
@@ -91,12 +91,12 @@ test('failed target-product lookup never displays another product frozen config 
         response.end(script.text);
         return;
       }
-      if (!/^\/insignia-[A-Za-z0-9_.-]+\.(?:js|css)$/.test(path)) {
+      if (!/^\/insignia-[A-Za-z0-9_.-]+\.(?:js|css|woff2)$/.test(path)) {
         response.statusCode = 404;
         response.end();
         return;
       }
-      response.setHeader('Content-Type', path.endsWith('.css') ? 'text/css' : 'text/javascript');
+      response.setHeader('Content-Type', contentType(path));
       response.end(await readFile(new URL(`../dist${path}`, import.meta.url)));
     })().catch(() => {
       response.statusCode = 500;

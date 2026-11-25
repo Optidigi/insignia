@@ -4,7 +4,7 @@ import { createServer } from 'node:http';
 import { test } from 'node:test';
 import { build } from 'esbuild';
 import { chromium } from 'playwright';
-import { serverPort } from './support.mts';
+import { contentType, serverPort } from './support.mts';
 
 test('selected repair keeps cart unchanged until actual remaining-cart review is explicitly confirmed', async (t) => {
   const built = await build({
@@ -69,12 +69,12 @@ test('selected repair keeps cart unchanged until actual remaining-cart review is
         res.end(script.text);
         return;
       }
-      if (!/^\/insignia-[A-Za-z0-9_.-]+\.(js|css)$/.test(path)) {
+      if (!/^\/insignia-[A-Za-z0-9_.-]+\.(js|css|woff2)$/.test(path)) {
         res.statusCode = 404;
         res.end();
         return;
       }
-      res.setHeader('Content-Type', path.endsWith('.css') ? 'text/css' : 'text/javascript');
+      res.setHeader('Content-Type', contentType(path));
       res.end(await readFile(new URL(`../dist${path}`, import.meta.url)));
     })().catch(() => {
       res.statusCode = 500;

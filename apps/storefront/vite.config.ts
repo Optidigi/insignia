@@ -8,12 +8,27 @@ const bootstrap = `(()=>{const script=document.currentScript||Array.from(documen
 export default defineConfig({
   plugins: [
     {
+      // Library builds inline every asset. The Designer's Inter faces (≈290 KB as base64) would block its
+      // stylesheet: emit them as theme assets instead, fetched per unicode-range only when text needs them (#653).
+      name: 'insignia-external-fonts',
+      enforce: 'pre',
+      transform(code, id) {
+        if (!/\.css(?:\?.*)?$/.test(id) || !code.includes('.woff2')) return null;
+        return { code: code.replace(/(url\(\s*['"]?[^'")?]+\.woff2)(?=['"]?\s*\))/g, '$1?no-inline'), map: null };
+      },
+    },
+    {
       name: 'insignia-theme-bootstrap',
       generateBundle() {
         this.emitFile({ type: 'asset', fileName: 'insignia-storefront.js', source: bootstrap });
       },
     },
   ],
+  // Stylesheet asset URLs (the fonts) resolve beside insignia-designer.css on the extension CDN, never against the
+  // shop origin or the Designer's about:srcdoc document.
+  experimental: {
+    renderBuiltUrl: (_filename, { hostType }) => (hostType === 'css' ? { relative: true } : undefined),
+  },
   build: {
     lib: {
       entry: {
@@ -30,7 +45,10 @@ export default defineConfig({
         assetFileNames: (asset) =>
           asset.names.some((name) => name.endsWith('.css'))
             ? 'insignia-designer.css'
-            : 'insignia-[name]-[hash][extname]',
+            : // Stable names: the frame host preloads the Latin face by name; extension asset URLs are versioned.
+              asset.names.some((name) => name.endsWith('.woff2'))
+              ? 'insignia-font-[name][extname]'
+              : 'insignia-[name]-[hash][extname]',
       },
     },
     minify: true,

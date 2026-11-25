@@ -4,7 +4,7 @@ import { createServer } from 'node:http';
 import { test } from 'node:test';
 import { build } from 'esbuild';
 import { chromium, firefox } from 'playwright';
-import { serverPort } from './support.mts';
+import { contentType, serverPort } from './support.mts';
 
 for (const engine of [chromium, firefox]) {
   test(`${engine.name()}: isolated selected Designer preserves edits, renders real review before consent and retries one cart identity`, async (t) => {
@@ -110,12 +110,12 @@ for (const engine of [chromium, firefox]) {
           response.end(source.text);
           return;
         }
-        if (!/^\/insignia-[A-Za-z0-9_.-]+\.(?:js|css)$/.test(path)) {
+        if (!/^\/insignia-[A-Za-z0-9_.-]+\.(?:js|css|woff2)$/.test(path)) {
           response.statusCode = 404;
           response.end();
           return;
         }
-        response.setHeader('Content-Type', path.endsWith('.css') ? 'text/css' : 'text/javascript');
+        response.setHeader('Content-Type', contentType(path));
         response.end(await readFile(new URL(`../dist${path}`, import.meta.url)));
       })().catch(() => {
         response.statusCode = 500;

@@ -7,7 +7,7 @@ export function collectThemeArtifacts(root: string): string[] {
     (directory) => {
       const files = new Map<string, string>();
       for (const name of readdirSync(directory)) {
-        if (!/^insignia-[A-Za-z0-9_.-]+\.(?:js|css)$/.test(name)) continue;
+        if (!/^insignia-[A-Za-z0-9_.-]+\.(?:js|css|woff2)$/.test(name)) continue;
         const path = join(directory, name),
           info = lstatSync(path);
         assert(

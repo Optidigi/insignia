@@ -336,4 +336,14 @@ window.addEventListener('message', (event) => {
     render(<Frame initial={event.data.initial} />, document.body);
   }
 });
-send('insignia:designer:ready');
+/**
+ * Inter ships as separate per-script files beside the stylesheet (#653), not inlined in it. The frame announces
+ * itself only once the Latin face (every Designer UI language) is loaded, so the revealed chrome never flashes a
+ * fallback font; other scripts' faces load by unicode-range when such text appears. A face that cannot load holds
+ * the Designer back only briefly, well inside the host's 10 s initialization limit. Artwork uses no web font.
+ */
+const UI_FONT_WAIT_LIMIT_MS = 3000;
+void Promise.race([
+  document.fonts.load('16px "Inter Variable"', 'Customize').catch(() => undefined),
+  new Promise<void>((resolve) => setTimeout(resolve, UI_FONT_WAIT_LIMIT_MS)),
+]).then(() => send('insignia:designer:ready'));

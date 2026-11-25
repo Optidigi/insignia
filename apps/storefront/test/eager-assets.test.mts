@@ -68,3 +68,32 @@ test('the theme embed entry statically loads no Designer modal, theme preference
   );
   assert.ok(gzip <= 15 * 1024, `eager Insignia JavaScript is ${gzip} gzip bytes, over the 15 KB budget`);
 });
+
+test('the Designer stylesheet references its Inter faces as separate files beside it instead of inlining them', async () => {
+  const result = await build({
+    ...config,
+    root: new URL('..', import.meta.url).pathname,
+    logLevel: 'silent',
+    build: { ...config.build, write: false },
+  });
+  const assets = new Map(
+    (Array.isArray(result) ? result : [result])
+      .flatMap((output) => (output as Rollup.RollupOutput).output)
+      .filter((item): item is Rollup.OutputAsset => item.type === 'asset')
+      .map((asset) => [asset.fileName, asset.source] as const),
+  );
+  const css = String(assets.get('insignia-designer.css') ?? '');
+  assert.ok(css.length > 0, 'the stylesheet is built');
+  assert.doesNotMatch(css, /url\(\s*['"]?data:/, 'no asset is inlined into the stylesheet');
+  const fonts = [...css.matchAll(/url\(\s*['"]?([^'")]+\.woff2)/g)].map((match) => match[1] ?? '');
+  assert.equal(fonts.length, 7, 'every Inter subset face is referenced');
+  for (const url of fonts) {
+    // Relative to the stylesheet on the extension CDN: never the shop origin or the Designer's about:srcdoc.
+    assert.match(url, /^\.\/insignia-font-inter-[a-z-]+-wght-normal\.woff2$/);
+    assert.ok(assets.has(url.slice(2)), `${url} is emitted`);
+  }
+  assert.ok(assets.has('insignia-font-inter-latin-wght-normal.woff2'), 'the preloaded Latin face keeps its name');
+  const gzip = gzipSync(css, { level: 9 }).length;
+  console.log(`insignia-designer.css: ${css.length} raw / ${gzip} gzip bytes`);
+  assert.ok(gzip <= 20 * 1024, `the Designer stylesheet is ${gzip} gzip bytes`);
+});
