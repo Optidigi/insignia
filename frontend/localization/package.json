@@ -48,11 +48,11 @@
     "preact": "10.29.8"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.14",
+    "@biomejs/biome": "2.6.8",
     "@types/node": "24.10.0",
     "preact": "10.29.8",
     "typescript": "5.9.3",
-    "vitest": "5.0.2",
-    "i18next-cli": "1.82.1"
+    "vitest": "5.1.0",
+    "i18next-cli": "1.91.0"
   }
 }

@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@astrojs/node": "11.1.13",
-    "@astrojs/preact": "6.0.5",
+    "@astrojs/preact": "6.1.6",
     "@insignia/application": "workspace:*",
     "@insignia/cart-authorization": "workspace:*",
     "@insignia/contracts": "workspace:*",
@@ -26,19 +26,19 @@
     "@insignia/worker": "workspace:*",
     "astro": "7.4.12",
     "aws4fetch": "1.0.20",
-    "pg": "8.23.0",
-    "pg-boss": "12.35.0",
+    "pg": "8.23.1",
+    "pg-boss": "12.38.2",
     "preact": "10.29.8",
     "@insignia/ui-localization": "workspace:*",
     "@insignia/ui-visualizer": "workspace:*"
   },
   "devDependencies": {
-    "@astrojs/check": "0.9.6",
+    "@astrojs/check": "0.9.12",
     "@shopify/polaris-types": "2.0.0-rc.3",
-    "@shopify/shopify-api": "15.0.0",
+    "@shopify/shopify-api": "15.1.1",
     "@types/node": "24.10.0",
     "@types/pg": "8.23.1",
-    "playwright": "1.63.0",
+    "playwright": "1.65.1",
     "typescript": "5.9.3"
   }
 }
