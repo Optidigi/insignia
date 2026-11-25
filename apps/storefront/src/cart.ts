@@ -25,6 +25,13 @@ export type CartApplication = {
   reason?: 'cart_changed' | 'mutation_unresolved' | 'vector_mismatch' | 'cart_unavailable' | 'busy' | 'rejected';
   /** The HTTP status of the refusal behind `rejected` (422 is Shopify's stock/limit refusal). */
   refusal?: number;
+  /**
+   * Set when `rejected` came with compensation that removed lines this application had added, so Shopify's own
+   * words would misdescribe the cart. `stock`: a 422 add that landed in part ("Only 50 items were added") and was
+   * undone; `unconfirmed`: the add was accepted but the witness read failed, so the lines were undone. `detail` is
+   * then withheld.
+   */
+  undone?: 'stock' | 'unconfirmed';
   detail?: string;
 };
 /** Per-line v3 authorization (layout owner: packages/cart-authorization/src/line-v3.ts). */
@@ -564,8 +571,18 @@ export function createAjaxCartAdapter({
       // (B3). Only a cart whose customized lines are back at the start settles the intent here. Anything else stays
       // unresolved: if every write was answered, a later application's first clean read that finds the start
       // lines settles it (§8.4); otherwise it waits for its goal or explicit repair.
-      const failed = async (reason: 'rejected' | 'vector_mismatch', refused?: Refusal): Promise<CartApplication> => {
+      /** An earlier compensation undid a partial add; a later refusal in the stock fallback must not revive Shopify's words. */
+      let earlierUndone: CartApplication['undone'];
+      const failed = async (
+        reason: 'rejected' | 'vector_mismatch',
+        refused?: Refusal,
+        unconfirmed = false,
+      ): Promise<CartApplication> => {
         let restored = false;
+        /** Compensation removed lines this application had added. */
+        let removedAdded = false;
+        /** Compensation gave swapped lines their old carrier back. */
+        let restoredSwaps = false;
         /** A compensating write went unanswered (no 4xx): its effect may still land. */
         let unanswered = false;
         const write = (path: string, body: unknown) =>
@@ -591,6 +608,7 @@ export function createAjaxCartAdapter({
               }),
             );
           }
+          restoredSwaps = swapped.length > 0 && !lost;
           swapped.length = 0;
           if (lost) throw new Error('A swapped line could not be restored');
           const added = now.customized.filter(
@@ -600,6 +618,7 @@ export function createAjaxCartAdapter({
             now = snapshot(
               await write('cart/update.js', { updates: Object.fromEntries(added.map((line) => [line.key, 0])) }),
             );
+          removedAdded = added.length > 0;
           current = now;
           restored = normalized(now.customized) === normalized(start.customized);
         } catch {
@@ -613,12 +632,26 @@ export function createAjaxCartAdapter({
           return { status: 'review_required', cart: current, reason: 'mutation_unresolved' };
         }
         settle(own);
+        const fresh: CartApplication['undone'] =
+          reason !== 'rejected'
+            ? undefined
+            : unconfirmed
+              ? removedAdded || restoredSwaps
+                ? 'unconfirmed'
+                : undefined
+              : removedAdded && refused?.status === 422
+                ? 'stock'
+                : undefined;
+        const undone = fresh ?? (reason === 'rejected' ? earlierUndone : undefined);
+        earlierUndone = undone;
         return {
           status: 'review_required',
           cart: current,
           reason,
           ...(refused ? { refusal: refused.status } : {}),
-          ...(refused?.detail ? { detail: refused.detail } : {}),
+          ...(undone ? { undone } : {}),
+          // Shopify's explanation describes its refusal, not the cart after our undo.
+          ...(refused?.detail && !undone ? { detail: refused.detail } : {}),
         };
       };
       let removals = start.customized.filter((line) => !kept.has(line.key));
@@ -634,7 +667,7 @@ export function createAjaxCartAdapter({
           try {
             current = await readNow();
           } catch (error) {
-            return failed('rejected', refusal(error));
+            return failed('rejected', refusal(error), true);
           }
           // Remove nothing unless the witness shows exactly the added lines beside the untouched old ones.
           if (normalized(current.customized) !== normalized([...start.customized, ...additions]))
@@ -671,10 +704,15 @@ export function createAjaxCartAdapter({
               swapped.push(pair);
             }
             if (rest.length) await request('cart/add.js', items(rest));
-            current = await readNow();
           } catch (error) {
             const again = refusal(error);
             return failed('rejected', again.detail ? again : { ...again, detail: refused.detail });
+          }
+          try {
+            current = await readNow();
+          } catch (error) {
+            // Shopify accepted the fallback but its witness read stayed refused: undone as unconfirmed, not refused.
+            return failed('rejected', refusal(error), true);
           }
           const expected = [
             ...start.customized.map((line) => pairs.find((pair) => pair.line === line)?.bucket ?? line),

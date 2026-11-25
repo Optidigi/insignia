@@ -529,6 +529,8 @@
       "customer_recovery_cartCommitFailed": "Winkelwagen bijwerken mislukt",
       "customer_recovery_cartRejected": "Winkelwagen geweigerd",
       "customer_recovery_cartRejectedStock": "Winkelwagen geweigerd (voorraad)",
+      "customer_recovery_cartUndoneStock": "Winkelwagenupdate ongedaan gemaakt (voorraad)",
+      "customer_recovery_cartUnconfirmed": "Winkelwagenupdate ongedaan gemaakt (niet bevestigd)",
       "customer_recovery_cartLimit": "Winkelwagenlimiet bereikt",
       "customer_recovery_cartLineLimit": "Limiet winkelwagenregels bereikt",
       "customer_recovery_reviewRequired": "Melding product gewijzigd",

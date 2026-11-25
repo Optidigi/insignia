@@ -37,7 +37,11 @@ export type CommitFailure =
   /** Another tab or the repair view holds the cart lock, which only applying an accepted set takes. */
   | { cause: 'cart-busy'; preparation: false }
   /** Shopify definitely refused the cart write (only Add to cart reaches it); `detail` is its own explanation. */
-  | { cause: 'cart-rejected' | 'cart-rejected-stock'; preparation: false; detail?: string };
+  | { cause: 'cart-rejected' | 'cart-rejected-stock'; preparation: false; detail?: string }
+  /** Shopify kept part of the add, which was then undone: the cart is unchanged and Shopify's words would mislead. */
+  | { cause: 'cart-undone-stock'; preparation: false }
+  /** Shopify accepted the add but it could not be confirmed, so it was undone. */
+  | { cause: 'cart-unconfirmed'; preparation: false };
 export type CommitFailureCause = CommitFailure['cause'];
 
 /**
@@ -55,7 +59,7 @@ export type CommitFailureAction =
 
 /** A failed port call's cause. A code outside the whitelist, or none, is `unknown`. */
 export function commitFailure(
-  { code, reason, retryAfter, stock, detail }: PortFailure,
+  { code, reason, retryAfter, stock, detail, undone }: PortFailure,
   preparation: boolean,
 ): CommitFailure {
   const wait = retryAfter ? { retryAfterSeconds: retryAfter } : {};
@@ -64,7 +68,11 @@ export function commitFailure(
     case 'CART_REJECTED':
       return preparation
         ? { cause: 'unknown', preparation }
-        : { cause: stock ? 'cart-rejected-stock' : 'cart-rejected', preparation, ...(detail ? { detail } : {}) };
+        : undone === 'stock'
+          ? { cause: 'cart-undone-stock', preparation }
+          : undone === 'unconfirmed'
+            ? { cause: 'cart-unconfirmed', preparation }
+            : { cause: stock ? 'cart-rejected-stock' : 'cart-rejected', preparation, ...(detail ? { detail } : {}) };
     case 'CART_BUSY': return preparation ? { cause: 'unknown', preparation } : { cause: 'cart-busy', preparation };
     case 'CAPACITY_EXCEEDED': return { cause: reason === 'CART_LINES' ? 'cart-lines' : 'capacity', preparation };
     case 'SESSION_RATE_LIMITED': return { cause: 'session-limited', preparation, ...wait };
@@ -118,6 +126,8 @@ export function commitFailureView(
       };
     case 'cart-busy': return view(customerMessage('customer:recovery.cartBusy'));
     case 'review-required': return view(customerMessage('customer:recovery.reviewRequired'));
+    case 'cart-undone-stock': return view(customerMessage('customer:recovery.cartUndoneStock'));
+    case 'cart-unconfirmed': return view(customerMessage('customer:recovery.cartUnconfirmed'));
     case 'cart-rejected':
     case 'cart-rejected-stock':
       // Review and Add to cart prepare afresh after a refusal.

@@ -46,6 +46,8 @@ describe('audience-scoped translators', () => {
       t('customer:recovery.cartCommitFailed'),
       t('customer:recovery.cartRejected'),
       t('customer:recovery.cartRejectedStock'),
+      t('customer:recovery.cartUndoneStock'),
+      t('customer:recovery.cartUnconfirmed'),
       t('customer:recovery.busy'),
       t('customer:recovery.unavailable'),
       t('customer:host.discardHelp'),

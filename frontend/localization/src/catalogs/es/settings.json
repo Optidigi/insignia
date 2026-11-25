@@ -502,6 +502,8 @@
       "customer_recovery_cartCommitFailed": "No se pudo actualizar el carrito",
       "customer_recovery_cartRejected": "Carrito rechazado",
       "customer_recovery_cartRejectedStock": "Carrito rechazado (stock)",
+      "customer_recovery_cartUndoneStock": "Actualización del carrito deshecha (stock)",
+      "customer_recovery_cartUnconfirmed": "Actualización del carrito deshecha (sin confirmar)",
       "customer_recovery_cartLimit": "Límite del carrito alcanzado",
       "customer_recovery_cartLineLimit": "Límite de líneas del carrito alcanzado",
       "customer_recovery_reviewRequired": "Mensaje de producto modificado",

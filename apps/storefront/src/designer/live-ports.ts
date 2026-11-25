@@ -715,6 +715,7 @@ export function createLiveDesignerPorts(input: {
               cartRejected: true,
               // Only Shopify's 422 is a stock or limit refusal; other 4xx get neutral wording.
               stock: applied.refusal === 422,
+              ...(applied.undone ? { undone: applied.undone } : {}),
               ...(applied.detail ? { detail: applied.detail } : {}),
             });
           }

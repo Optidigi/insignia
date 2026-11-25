@@ -1063,6 +1063,13 @@ test('a definite cart refusal shows its own message and lets Review prepare agai
   refusal = {cartRejected:true,stock:false};
   await h.runtime.commit();
   assert.deepEqual(h.state.commit, { kind: 'failed', cause: 'cart-rejected', preparation: false });
+  // An undone add never shows Shopify's words, even if a detail travels with it.
+  refusal = {cartRejected:true,stock:true,undone:'stock',detail:'Only 50 items were added to your cart due to availability.'};
+  await h.runtime.commit();
+  assert.deepEqual(h.state.commit, { kind: 'failed', cause: 'cart-undone-stock', preparation: false });
+  refusal = {cartRejected:true,stock:false,undone:'unconfirmed'};
+  await h.runtime.commit();
+  assert.deepEqual(h.state.commit, { kind: 'failed', cause: 'cart-unconfirmed', preparation: false });
   await h.runtime.commit(true);
   assert.equal(preparations.length, 2, 'Review is not a no-op after a refusal');
 });

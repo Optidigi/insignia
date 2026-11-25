@@ -1128,7 +1128,8 @@ test('a partially refused add removes the lines it did add and settles only back
   const result = await cart.apply(setB(3, 1), { expectedFingerprint: before.fingerprint });
   assert.equal(result.status, 'review_required');
   assert.equal(result.reason, 'rejected');
-  assert.equal(result.detail, 'Only 0 of variant 43 in stock.', "Shopify's own explanation is kept");
+  assert.equal(result.undone, 'stock', 'the lines Shopify kept were removed again');
+  assert.equal(result.detail, undefined, "Shopify's explanation no longer describes the cart");
   assert.deepEqual(customizedOf(remote.items), customizedOf([line42]), 'one signed set, as before the Add');
   assert.equal(journal.state, null);
   assert.equal(journal.flag, false);
@@ -1757,3 +1758,87 @@ declare global {
     testCart: ReturnType<typeof createAjaxCartAdapter>;
   }
 }
+
+test("a refused add that landed in part and was undone never shows Shopify's wording (#643)", async () => {
+  const journal = memoryJournal();
+  const remote = provider([ordinary], ({ url, body, items }) => {
+    if (!url.endsWith('cart/add.js')) return undefined;
+    // Observed natively (24 Nov 2026): a 422 for 100,000 units, of which 50 were added.
+    const [line] = required(body.items);
+    items.push({ key: '42:landed', variant_id: 42, quantity: 50, properties: required(line).properties });
+    return Response.json(
+      { status: 422, message: 'Cart Error', description: 'Only 50 items were added to your cart due to availability.' },
+      { status: 422 },
+    );
+  });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal, ...fakeWaits() });
+  const before = await cart.read();
+  const result = await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint });
+  assert.equal(result.reason, 'rejected');
+  assert.equal(result.refusal, 422);
+  assert.equal(result.undone, 'stock');
+  assert.equal(result.detail, undefined);
+  assert.deepEqual(remote.items, [ordinary], 'the cart ends as it started');
+  assert.equal(journal.state, null);
+});
+
+test('an accepted add whose witness read stays rate-limited is undone and reported as unconfirmed (#643)', async () => {
+  const journal = memoryJournal();
+  let added = false;
+  let checks = 0;
+  const remote = provider([ordinary], ({ url }) => {
+    if (url.endsWith('cart/add.js')) {
+      added = true;
+      return undefined;
+    }
+    // Shopify's bot check answers the witness read and both of its retries; the compensation read gets through.
+    if (url.endsWith('cart.js') && added && checks < 3) {
+      checks++;
+      return botCheck();
+    }
+    return undefined;
+  });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal, ...fakeWaits() });
+  const before = await cart.read();
+  const result = await cart.apply(freshDesired(), { expectedFingerprint: before.fingerprint });
+  assert.equal(checks, 3);
+  assert.equal(result.reason, 'rejected');
+  assert.equal(result.undone, 'unconfirmed');
+  assert.equal(result.detail, undefined);
+  assert.deepEqual(remote.items, [ordinary], 'the accepted lines were removed again');
+  assert.equal(journal.state, null);
+});
+
+test('an accepted in-place fallback whose witness read stays rate-limited is undone and reported as unconfirmed (#643)', async () => {
+  const journal = memoryJournal();
+  let swaps = 0;
+  let checks = 0;
+  const remote = provider([ordinary, line42, line43], ({ url }) => {
+    // Add-first needs more of variant 42 than is in stock; the in-place swaps need none.
+    if (url.endsWith('cart/add.js'))
+      return Response.json(
+        { status: 422, message: 'Cart Error', description: 'Only 8 of variant 42 in stock.' },
+        { status: 422 },
+      );
+    if (url.endsWith('cart/change.js')) swaps++;
+    // After both swaps, Shopify's bot check answers the witness read and both of its retries.
+    if (url.endsWith('cart.js') && swaps === 2 && checks < 3) {
+      checks++;
+      return botCheck();
+    }
+    return undefined;
+  });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal, ...fakeWaits() });
+  const before = await cart.read();
+  const result = await cart.apply(setB(3, 3), { expectedFingerprint: before.fingerprint });
+  assert.equal(checks, 3);
+  assert.equal(result.reason, 'rejected');
+  assert.equal(result.undone, 'unconfirmed');
+  assert.equal(result.detail, undefined, "Shopify's original refusal no longer describes what happened");
+  assert.deepEqual(
+    customizedOf(remote.items),
+    customizedOf([line42, line43]),
+    'the swapped lines got their old carriers back',
+  );
+  assert.equal(journal.state, null);
+});

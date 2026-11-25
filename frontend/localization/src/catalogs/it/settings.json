@@ -503,6 +503,8 @@
       "customer_recovery_cartCommitFailed": "Impossibile aggiornare il carrello",
       "customer_recovery_cartRejected": "Carrello rifiutato",
       "customer_recovery_cartRejectedStock": "Carrello rifiutato (disponibilità)",
+      "customer_recovery_cartUndoneStock": "Aggiornamento del carrello annullato (disponibilità)",
+      "customer_recovery_cartUnconfirmed": "Aggiornamento del carrello annullato (non confermato)",
       "customer_recovery_cartLimit": "Limite del carrello raggiunto",
       "customer_recovery_cartLineLimit": "Limite di righe del carrello raggiunto",
       "customer_recovery_reviewRequired": "Messaggio di prodotto modificato",

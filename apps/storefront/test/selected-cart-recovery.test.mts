@@ -455,6 +455,24 @@ test('a refusal that is not about stock is never presented as stock (NB3)', asyn
   );
 });
 
+test("an undone partial add is passed on without Shopify's detail, so its copy is ours (#643)", async () => {
+  const app = fixture({
+    onAjaxWrite: (path, items, body) => {
+      if (!path.endsWith('/cart/add.js')) return undefined;
+      for (const item of body.items ?? [])
+        items.push({ key: `landed-${items.length}`, variant_id: item.id, quantity: 50, properties: item.properties });
+      return refusal('Only 50 items were added to your cart due to availability.');
+    },
+  });
+  await app.live.ports.review!.prepare(app.request);
+  await assert.rejects(
+    withWindow(() => app.live.ports.cart.commit(app.request)),
+    (error: { cartRejected?: boolean; undone?: string; detail?: string }) =>
+      error.cartRejected === true && error.undone === 'stock' && error.detail === undefined,
+  );
+  assert.deepEqual(app.customized(), [], 'the cart ends with nothing from the refused set');
+});
+
 test('a cart lock held by another tab is CART_BUSY, and the retry applies the same accepted set (#337)', async () => {
   const app = fixture();
   await app.live.ports.review!.prepare(app.request);

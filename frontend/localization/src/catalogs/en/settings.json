@@ -500,6 +500,8 @@
       "customer_recovery_cartCommitFailed": "Cart commit failed",
       "customer_recovery_cartRejected": "Cart refused",
       "customer_recovery_cartRejectedStock": "Cart refused (stock)",
+      "customer_recovery_cartUndoneStock": "Cart update undone (stock)",
+      "customer_recovery_cartUnconfirmed": "Cart update undone (unconfirmed)",
       "customer_recovery_cartLimit": "Cart limit reached",
       "customer_recovery_cartLineLimit": "Cart line limit reached",
       "customer_recovery_reviewRequired": "Product changed message",

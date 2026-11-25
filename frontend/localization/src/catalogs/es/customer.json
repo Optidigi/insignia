@@ -242,6 +242,8 @@
     "cartCommitFailed": "No se pudo actualizar tu carrito. Tu personalización sigue aquí. Vuelve a intentarlo.",
     "cartRejected": "Shopify no pudo actualizar tu carrito. Tu carrito no ha cambiado y tu personalización sigue aquí. Vuelve a intentarlo más tarde.",
     "cartRejectedStock": "No hay suficiente stock para añadir esto a tu carrito. Tu carrito no ha cambiado y tu personalización sigue aquí. Reduce la cantidad o vuelve a intentarlo más tarde.",
+    "cartUndoneStock": "No hay suficiente stock para esta cantidad. No se ha añadido nada a tu carrito y tu personalización sigue aquí. Reduce la cantidad o vuelve a intentarlo más tarde.",
+    "cartUnconfirmed": "No pudimos confirmar la actualización de tu carrito, así que la deshicimos. Tu carrito no ha cambiado y tu personalización sigue aquí. Vuelve a intentarlo.",
     "cartLimit": "Tu carrito ha alcanzado el límite de {{formattedMaxLines}} líneas personalizadas y {{formattedMaxItems}} artículos personalizados. Elimina artículos de tu carrito o reduce las cantidades para continuar.",
     "cartLineLimit": "Tu carrito tiene demasiados artículos para añadir esta personalización. Elimina artículos de tu carrito para continuar.",
     "reviewRequired": "Este producto ha cambiado desde que lo abriste, por ejemplo su precio o su stock. Revisa tus opciones y vuelve a intentarlo.",

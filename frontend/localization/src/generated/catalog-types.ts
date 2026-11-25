@@ -2453,6 +2453,8 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_recovery_cartLineLimit': object;
   'settings:translations.fields.customer_recovery_cartRejected': object;
   'settings:translations.fields.customer_recovery_cartRejectedStock': object;
+  'settings:translations.fields.customer_recovery_cartUnconfirmed': object;
+  'settings:translations.fields.customer_recovery_cartUndoneStock': object;
   'settings:translations.fields.customer_recovery_colorItemsRemoved': object;
   'settings:translations.fields.customer_recovery_confirmRemoval': object;
   'settings:translations.fields.customer_recovery_countryRequired': object;
@@ -2832,6 +2834,8 @@ export interface CustomerMessageTable {
   'customer:recovery.cartLineLimit': object;
   'customer:recovery.cartRejected': object;
   'customer:recovery.cartRejectedStock': object;
+  'customer:recovery.cartUnconfirmed': object;
+  'customer:recovery.cartUndoneStock': object;
   'customer:recovery.colorItemsRemoved': { colorName: string };
   'customer:recovery.confirmRemoval': object;
   'customer:recovery.countryRequired': object;
