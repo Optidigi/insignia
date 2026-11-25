@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createActiveSubscriptionClient, createPartnerGraphqlTransport } from '../src/active-subscription.js';
+import { ShopifyAdminUnavailableError } from '../src/admin-deadline.js';
+import { CatalogReadError, createCatalogReader, createCatalogTransport } from '../src/catalog.js';
 import { resolveVariantContext } from '../src/contextual-pricing.js';
 import { readPrimaryMarketContext } from '../src/primary-market.js';
 import { readShopContext } from '../src/shop-context.js';
@@ -72,8 +74,56 @@ describe.each(Object.entries(readers))('%s read', (_name, read) => {
   it.each(Object.entries(permanent))('%s is not transient', async (_case, fetchImpl) => {
     expect((await failure(read(fetchImpl))).transient).toBe(false);
   });
+  // Shopify reports a failure on its side as HTTP 200 with INTERNAL_SERVER_ERROR; a retry seconds later succeeds.
+  it('an INTERNAL_SERVER_ERROR GraphQL error is transient', async () => {
+    expect((await failure(read(graphqlError('INTERNAL_SERVER_ERROR')))).transient).toBe(true);
+  });
+  it('INTERNAL_SERVER_ERROR after another error is transient', async () => {
+    const response = async () =>
+      Response.json(
+        {
+          errors: [
+            { message: 'synthetic' },
+            { message: 'Internal error', extensions: { code: 'INTERNAL_SERVER_ERROR' } },
+          ],
+        },
+        { headers: version },
+      );
+    expect((await failure(read(response))).transient).toBe(true);
+  });
   it('ACCESS_DENIED (missing scope) is not transient', async () => {
     expect((await failure(read(graphqlError('ACCESS_DENIED')))).transient).toBe(false);
+  });
+});
+
+// The buyer availability stage reads the product through the catalog transport before stock.
+describe('catalog availability read', () => {
+  const read = (fetchImpl: typeof fetch) =>
+    createCatalogReader(
+      createCatalogTransport({ shop: 'synthetic.myshopify.com', accessToken: 'synthetic-token', fetchImpl }),
+    ).availabilityProduct('gid://shopify/Product/111');
+  it.each([
+    ['429', status(429), 'throttled'],
+    ['503', status(503), 'http_5xx'],
+    ['THROTTLED', graphqlError('THROTTLED'), 'throttled'],
+    ['INTERNAL_SERVER_ERROR', graphqlError('INTERNAL_SERVER_ERROR'), 'internal_server_error'],
+  ] as const)('%s is transient with its reason', async (_case, fetchImpl, reason) => {
+    const error = await failure(read(fetchImpl));
+    expect(error).toBeInstanceOf(ShopifyAdminUnavailableError);
+    expect({ transient: error.transient, reason: (error as ShopifyAdminUnavailableError).reason }).toEqual({
+      transient: true,
+      reason,
+    });
+  });
+  it.each([
+    ['401', status(401), 'http_error'],
+    ['ACCESS_DENIED', graphqlError('ACCESS_DENIED'), 'graphql_error'],
+    ['malformed', async () => new Response('not json'), 'invalid_json'],
+    ['missing product', async () => Response.json({ data: {} }), 'invalid_shape'],
+  ] as const)('%s is a typed, non-transient catalog failure', async (_case, fetchImpl, kind) => {
+    const error = await failure(read(fetchImpl));
+    expect(error).toBeInstanceOf(CatalogReadError);
+    expect({ transient: error.transient, kind: (error as CatalogReadError).kind }).toEqual({ transient: false, kind });
   });
 });
 
@@ -109,6 +159,7 @@ describe('contextual pricing read', () => {
     ['429', { status: 429, body: null }],
     ['500', { status: 500, body: null }],
     ['THROTTLED', errors('THROTTLED')],
+    ['INTERNAL_SERVER_ERROR', errors('INTERNAL_SERVER_ERROR')],
     ['network', new TypeError('fetch failed')],
   ] as const)('%s is transient', async (_case, response) => {
     expect((await read(response)).transient).toBe(true);

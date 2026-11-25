@@ -1,4 +1,4 @@
-import { graphqlThrottled, transientStatus, withAdminDeadline } from '../admin-deadline.js';
+import { graphqlTransient, transientStatus, withAdminDeadline } from '../admin-deadline.js';
 import type { AdminCredentialSource } from '../contextual-pricing.js';
 
 export type VariantAvailabilityTarget = {
@@ -20,7 +20,7 @@ export class VariantAvailabilityError extends Error {
     readonly kind:
       | 'invalid_request'
       | 'credential_unavailable'
-      /** Shopify 429/5xx, a THROTTLED GraphQL error, network failure or deadline: a later retry can succeed. */
+      /** Shopify 429/5xx, a THROTTLED or INTERNAL_SERVER_ERROR GraphQL error, network failure or deadline: a later retry can succeed. */
       | 'provider_unavailable'
       | 'provider_error'
       | 'invalid_provider_shape'
@@ -134,7 +134,7 @@ export async function readVariantAvailability(
         } catch {
           throw new VariantAvailabilityError('invalid_provider_shape');
         }
-        if (graphqlThrottled(payload?.errors)) throw new VariantAvailabilityError('provider_unavailable');
+        if (graphqlTransient(payload?.errors)) throw new VariantAvailabilityError('provider_unavailable');
         if (payload?.errors !== undefined) throw new VariantAvailabilityError('provider_error');
         const nodes = record(payload?.data)?.nodes;
         if (

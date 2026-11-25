@@ -348,6 +348,94 @@ export const MARKET_REFUSAL_REASONS = [
   'EUR_COUNTRY_NOT_QUALIFIED',
   'EUR_PROFILE_UNAVAILABLE',
 ] as const;
+function providerKinds<Reader extends string, Kind extends string>(
+  reader: Reader,
+  kinds: readonly Kind[],
+): `${Reader}.${Kind}`[] {
+  return kinds.map((kind): `${Reader}.${Kind}` => `${reader}.${kind}`);
+}
+/**
+ * Which buyer-path Shopify read failed, and how: `<reader>.<kind>` from each reader's own fixed
+ * error kinds. Never a provider message, URL, token or shop data.
+ */
+export const BUYER_PROVIDER_KINDS = [
+  ...providerKinds('variant_availability', [
+    'invalid_request',
+    'credential_unavailable',
+    'provider_unavailable',
+    'provider_error',
+    'invalid_provider_shape',
+    'wrong_identity',
+  ] as const),
+  ...providerKinds('contextual_pricing', [
+    'invalid_request',
+    'credential_missing',
+    'credential_inactive',
+    'reauth_required',
+    'unauthorized',
+    'forbidden',
+    'throttled',
+    'network_or_timeout',
+    'provider_unavailable',
+    'graphql_error',
+    'missing_variant',
+    'product_mismatch',
+    'invalid_provider_shape',
+    'invalid_money',
+    'stale_snapshot',
+  ] as const),
+  ...providerKinds('primary_market', [
+    'invalid_request',
+    'credential_unavailable',
+    'network',
+    'provider_unavailable',
+    'provider_error',
+    'invalid_shape',
+    'wrong_shop',
+    'inactive_market',
+    'incomplete_membership',
+  ] as const),
+  ...providerKinds('shop_context', [
+    'invalid_request',
+    'credential_unavailable',
+    'network',
+    'provider_unavailable',
+    'provider_error',
+    'invalid_shape',
+    'wrong_shop',
+  ] as const),
+  ...providerKinds('partner_subscription', [
+    'invalid_request',
+    'auth_or_permission',
+    'app_not_public',
+    'shop_not_found',
+    'feature_unavailable',
+    'rate_limited',
+    'network_or_timeout',
+    'provider_unavailable',
+    'provider_error',
+    'malformed_response',
+  ] as const),
+  ...providerKinds('catalog_context', ['missing', 'stale', 'wrong_identity', 'invalid'] as const),
+  ...providerKinds('catalog', [
+    'credential_unavailable',
+    'http_error',
+    'missing_body',
+    'too_large',
+    'invalid_json',
+    'graphql_error',
+    'invalid_shape',
+  ] as const),
+  ...providerKinds('shopify_admin', [
+    'timeout',
+    'throttled',
+    'http_5xx',
+    'internal_server_error',
+    'unavailable',
+  ] as const),
+];
+export type BuyerProviderKind = (typeof BUYER_PROVIDER_KINDS)[number];
+const BUYER_PROVIDER_KIND_SET: ReadonlySet<string> = new Set(BUYER_PROVIDER_KINDS);
 export type BuyerFailureDiagnostic = {
   proposalStage?: (typeof BUYER_PROPOSAL_FAILURE_STAGES)[number];
   correlationId: string;
@@ -358,6 +446,8 @@ export type BuyerFailureDiagnostic = {
   /** Numeric Market IDs (digits only), present only when the check knew them. */
   storefrontMarketId?: string;
   primaryMarketId?: string;
+  /** A provider read failure only: which reader failed and its fixed failure kind. */
+  providerKind?: BuyerProviderKind;
 };
 
 // One summary per proposal/acceptance; at most 64 spans, each with finite vocabulary.
@@ -515,6 +605,7 @@ export interface RuntimeLogDetails {
   buyerStage?: BuyerFailureDiagnostic['buyerStage'];
   proposalStage?: BuyerFailureDiagnostic['proposalStage'];
   refusalReason?: BuyerFailureDiagnostic['refusalReason'];
+  providerKind?: BuyerFailureDiagnostic['providerKind'];
   storefrontMarketId?: string;
   primaryMarketId?: string;
   authStage?: AdminAuthenticationStage;
@@ -711,6 +802,10 @@ function eventDetails(event: RuntimeEvent, input: RuntimeLogDetails) {
       ...(input.refusalReason === undefined ? {} : { refusalReason: input.refusalReason }),
       ...(marketId(input.storefrontMarketId) ? { storefrontMarketId: input.storefrontMarketId } : {}),
       ...(marketId(input.primaryMarketId) ? { primaryMarketId: input.primaryMarketId } : {}),
+      // An unlisted kind is omitted rather than failing the whole diagnostic.
+      ...(typeof input.providerKind === 'string' && BUYER_PROVIDER_KIND_SET.has(input.providerKind)
+        ? { providerKind: input.providerKind }
+        : {}),
     };
   }
   if (event === 'admin_config_rejected') {

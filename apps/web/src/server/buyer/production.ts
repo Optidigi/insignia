@@ -15,6 +15,7 @@ import { parseMinor } from '@insignia/domain';
 import {
   type ActiveSubscriptionSnapshot,
   type AdminCredentialSource,
+  CatalogReadError,
   createAppProxyVerifier,
   createCatalogReader,
   createCatalogTransport,
@@ -460,7 +461,8 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
         throw new Error('Buyer availability selection invalid');
       const credentialSource = credentials(scope, () => phase === 'final');
       const source = await credentialSource.acquire(scope);
-      if (source.kind !== 'usable') throw new Error('Buyer catalog credential unavailable');
+      if (source.kind !== 'usable')
+        throw new CatalogReadError('credential_unavailable', 'Buyer catalog credential unavailable');
       const gid = `gid://shopify/Product/${productId}`;
       const product = await createCatalogReader(
         createCatalogTransport({ shop: source.shopDomain, accessToken: source.accessToken, fetchImpl }),
@@ -490,7 +492,8 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
     async catalog(scope, productId, phase, context) {
       const credentialSource = credentials(scope, () => phase === 'final');
       const source = await credentialSource.acquire(scope);
-      if (source.kind !== 'usable') throw new Error('Buyer catalog credential unavailable');
+      if (source.kind !== 'usable')
+        throw new CatalogReadError('credential_unavailable', 'Buyer catalog credential unavailable');
       const catalog = createCatalogReader(
         createCatalogTransport({ shop: source.shopDomain, accessToken: source.accessToken, fetchImpl }),
       );

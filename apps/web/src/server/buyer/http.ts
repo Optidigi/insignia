@@ -25,6 +25,7 @@ import {
 import { BuyerStateError } from '@insignia/database';
 import { type BuyerFailureDiagnostic, type BuyerTimingDiagnostic, createObservability } from '@insignia/observability';
 import {
+  CatalogReadError,
   ContextualPricingError,
   PartnerSubscriptionError,
   PrimaryMarketError,
@@ -114,9 +115,22 @@ function providerReadTransient(error: unknown): boolean | undefined {
     error instanceof PrimaryMarketError ||
     error instanceof VariantAvailabilityError ||
     error instanceof ShopContextError ||
-    error instanceof CatalogContextUnavailable
+    error instanceof CatalogContextUnavailable ||
+    error instanceof CatalogReadError
     ? error.transient
     : undefined;
+}
+/** Which provider read failed and its fixed kind, for diagnostics only; never in the response. */
+function providerKind(error: unknown): BuyerFailureDiagnostic['providerKind'] {
+  if (error instanceof VariantAvailabilityError) return `variant_availability.${error.kind}`;
+  if (error instanceof ContextualPricingError) return `contextual_pricing.${error.kind}`;
+  if (error instanceof PrimaryMarketError) return `primary_market.${error.kind}`;
+  if (error instanceof ShopContextError) return `shop_context.${error.kind}`;
+  if (error instanceof PartnerSubscriptionError) return `partner_subscription.${error.kind}`;
+  if (error instanceof CatalogContextUnavailable) return `catalog_context.${error.reason}`;
+  if (error instanceof CatalogReadError) return `catalog.${error.kind}`;
+  if (error instanceof ShopifyAdminUnavailableError) return `shopify_admin.${error.reason ?? 'unavailable'}`;
+  return undefined;
 }
 /** Release evidence failures by their fixed message; each keeps its own diagnostic class (#345). */
 const RELEASE_FAILURES: Readonly<Record<string, BuyerFailureDiagnostic['errorClass']>> = {
@@ -349,12 +363,14 @@ async function handleRequest(
         const proposalStage =
           proposalFailureStage(error) ??
           (route === 'quote-proposals' && request.method === 'POST' ? 'request-setup' : undefined);
+        const kind = providerKind(error);
         diagnostic(
           {
             correlationId: requestId,
             buyerStage,
             errorClass: failure.errorClass,
             ...(proposalStage === undefined ? {} : { proposalStage }),
+            ...(kind === undefined ? {} : { providerKind: kind }),
             ...(error instanceof BuyerRejectedError && error.market
               ? {
                   refusalReason: error.market.reason,
