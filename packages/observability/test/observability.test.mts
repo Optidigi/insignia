@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { Writable } from 'node:stream';
 import { test } from 'node:test';
 import { createObservability, describeUnexpectedError } from '../dist/index.js';
@@ -86,6 +87,30 @@ test('metric labels are fixed outcomes and never contain tenant or delivery IDs'
   assert.match(text, /insignia_unresolved_inbox_backlog 3/);
   assert.match(text, /insignia_artwork_cleanup_review_rows 2/);
   assert.doesNotMatch(text, /105501393179|shop_id|domain|delivery_id/);
+});
+
+// deployment/alerts and the Prometheus scrape depend on these exact names, labels, types and text format.
+// The fixtures were captured from prom-client 15.1.3 before the move to @prometheus-io/client.
+test('metrics exposition stays byte-compatible with the recorded snapshot', async () => {
+  const fixture = (name: string) => readFile(new URL(`./fixtures/${name}`, import.meta.url), 'utf8');
+  const fresh = createObservability();
+  assert.equal(fresh.registry.contentType, 'text/plain; version=0.0.4; charset=utf-8');
+  assert.equal(await fresh.registry.metrics(), await fixture('exposition-initial.prom'));
+
+  const { metrics, registry } = createObservability();
+  metrics.webhook('received');
+  metrics.webhook('received');
+  metrics.inbox('deferred');
+  metrics.queue('retry');
+  metrics.refresh('reauth_required');
+  metrics.refreshContention();
+  metrics.resolution('failed');
+  metrics.usageQualification('success');
+  metrics.publicationAbandonment('flagged');
+  metrics.publicationHoldsFlagged(4);
+  metrics.artworkCleanupReview(2);
+  metrics.unresolvedBacklog(3);
+  assert.equal(await registry.metrics(), await fixture('exposition-recorded.prom'));
 });
 
 test('retention alerts carry only fixed categories and bounded counts', () => {
