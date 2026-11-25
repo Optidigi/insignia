@@ -610,7 +610,7 @@ async function launch(
     assert.ok(verificationRequest.deadlineMs > Date.now() && verificationRequest.deadlineMs <= Date.now() + 300000);
   }
   assert.equal(process.execPath, EXECUTABLE, 'fixed_runtime_required');
-  assert.equal(process.version, 'v24.21.0', 'fixed_runtime_required');
+  assert.equal(process.version, 'v24.22.3', 'fixed_runtime_required');
   await privateDirectory(ROOT);
   const packet = parseOwnerPrivatePacket(new TextDecoder('utf-8', { fatal: true }).decode(packetBytes));
   const recordId = packet.recordId;
