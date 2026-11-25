@@ -27,7 +27,7 @@
     "astro": "7.4.13",
     "aws4fetch": "1.0.20",
     "pg": "8.23.1",
-    "pg-boss": "12.39.0",
+    "pg-boss": "12.35.1",
     "preact": "11.2.0",
     "@insignia/ui-localization": "workspace:*",
     "@insignia/ui-visualizer": "workspace:*"
