@@ -2493,6 +2493,8 @@ export const adminParameterContracts = {
   'settings:translations.fields.customer_recovery_cartLineLimit': {},
   'settings:translations.fields.customer_recovery_cartRejected': {},
   'settings:translations.fields.customer_recovery_cartRejectedStock': {},
+  'settings:translations.fields.customer_recovery_cartUnconfirmed': {},
+  'settings:translations.fields.customer_recovery_cartUndoneStock': {},
   'settings:translations.fields.customer_recovery_colorItemsRemoved': {},
   'settings:translations.fields.customer_recovery_confirmRemoval': {},
   'settings:translations.fields.customer_recovery_countryRequired': {},

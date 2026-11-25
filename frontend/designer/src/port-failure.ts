@@ -42,6 +42,8 @@ export interface PortFailure {
   reason?: 'CART_LINES' | 'SESSION_QUOTA' | 'DIMENSIONS_TOO_LARGE';
   /** `CART_REJECTED`: Shopify's 422 (stock or limit), and its own explanation as plain text. */
   stock?: true;
+  /** `CART_REJECTED` after compensation removed the added lines: the cart is unchanged and Shopify's `detail` is withheld. */
+  undone?: 'stock' | 'unconfirmed';
   detail?: string;
   /** The port re-proposed; the buyer reviews the refreshed quote before applying it. */
   reviewRequired?: true;
@@ -77,6 +79,9 @@ export function portFailure(error: unknown): PortFailure {
     ...(known === 'RATE_LIMITED' && reason('SESSION_QUOTA') ? { reason: 'SESSION_QUOTA' as const } : {}),
     ...(status === 422 && reason('DIMENSIONS_TOO_LARGE') ? { reason: 'DIMENSIONS_TOO_LARGE' as const } : {}),
     ...(rejected && field(error, 'stock') === true ? { stock: true as const } : {}),
+    ...(rejected && (field(error, 'undone') === 'stock' || field(error, 'undone') === 'unconfirmed')
+      ? { undone: field(error, 'undone') as 'stock' | 'unconfirmed' }
+      : {}),
     ...(rejected && typeof detail === 'string' && detail ? { detail: detail.slice(0, 300) } : {}),
     ...(field(error, 'reviewRequired') === true
       ? {

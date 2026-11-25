@@ -236,6 +236,8 @@
     "cartCommitFailed": "Ihr Warenkorb konnte nicht aktualisiert werden. Ihre Gestaltung ist weiterhin vorhanden. Versuchen Sie es erneut.",
     "cartRejected": "Shopify konnte Ihren Warenkorb nicht aktualisieren. Ihr Warenkorb ist unverändert und Ihre Gestaltung ist weiterhin vorhanden. Versuchen Sie es später erneut.",
     "cartRejectedStock": "Für diesen Artikel ist nicht genug Bestand vorhanden. Ihr Warenkorb ist unverändert und Ihre Gestaltung ist weiterhin vorhanden. Verringern Sie die Menge oder versuchen Sie es später erneut.",
+    "cartUndoneStock": "Für diese Menge ist nicht genug Bestand vorhanden. Es wurde nichts in Ihren Warenkorb gelegt und Ihre Gestaltung ist weiterhin vorhanden. Verringern Sie die Menge oder versuchen Sie es später erneut.",
+    "cartUnconfirmed": "Wir konnten die Aktualisierung Ihres Warenkorbs nicht bestätigen und haben sie rückgängig gemacht. Ihr Warenkorb ist unverändert und Ihre Gestaltung ist weiterhin vorhanden. Bitte versuchen Sie es erneut.",
     "cartLimit": "Ihr Warenkorb hat die Höchstgrenze von {{formattedMaxLines}} personalisierten Warenkorbpositionen und {{formattedMaxItems}} personalisierten Artikeln erreicht. Entfernen Sie Artikel aus Ihrem Warenkorb oder verringern Sie die Mengen, um fortzufahren.",
     "cartLineLimit": "Ihr Warenkorb enthält zu viele Artikel, um diese Gestaltung hinzuzufügen. Entfernen Sie Artikel aus Ihrem Warenkorb, um fortzufahren.",
     "reviewRequired": "Dieses Produkt hat sich seit dem Öffnen geändert, zum Beispiel beim Preis oder Bestand. Prüfen Sie Ihre Auswahl und versuchen Sie es erneut.",

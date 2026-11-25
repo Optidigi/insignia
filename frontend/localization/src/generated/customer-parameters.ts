@@ -200,6 +200,8 @@ export const customerParameterContracts = {
   'customer:recovery.cartLineLimit': {},
   'customer:recovery.cartRejected': {},
   'customer:recovery.cartRejectedStock': {},
+  'customer:recovery.cartUnconfirmed': {},
+  'customer:recovery.cartUndoneStock': {},
   'customer:recovery.colorItemsRemoved': { colorName: 'string' },
   'customer:recovery.confirmRemoval': {},
   'customer:recovery.countryRequired': {},

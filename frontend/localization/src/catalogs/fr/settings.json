@@ -502,6 +502,8 @@
       "customer_recovery_cartCommitFailed": "Impossible de mettre à jour le panier. Votre personnalisation est toujours disponible. Réessayez.",
       "customer_recovery_cartRejected": "Panier refusé",
       "customer_recovery_cartRejectedStock": "Panier refusé (stock)",
+      "customer_recovery_cartUndoneStock": "Mise à jour du panier annulée (stock)",
+      "customer_recovery_cartUnconfirmed": "Mise à jour du panier annulée (non confirmée)",
       "customer_recovery_cartLimit": "Limite du panier atteinte",
       "customer_recovery_cartLineLimit": "Limite de lignes du panier atteinte",
       "customer_recovery_reviewRequired": "Message de produit modifié",

@@ -563,6 +563,7 @@ The storefront sends every retained cart group with the edited one, so it checks
 | `REVIEW_REQUIRED` outside the repair view | The product changed (price or stock); check your choices | Retry, which prepares the quote again. At Add to cart a plain 409 commits nothing: the storefront retires that proposal and shows the current terms at once (a changed publication goes to repair), so the same acceptance is never resent |
 | Cart lock held by another tab or the repair view (`CART_BUSY`, local) | The cart is being updated elsewhere; wait, then try again. The accepted set is kept, so Retry applies it without signing again, unless the cart changed meanwhile: then it is reviewed again | Retry |
 | Shopify refused the cart write (local) | Shopify's explanation, else stock or neutral refusal copy (#353) | Retry (prepares afresh) |
+| Shopify kept part of a refused add, or accepted it but the witness read failed, and the compensation removed the added lines (local) | Our own copy, never Shopify's explanation: "not enough stock for this quantity, nothing was added", or "we couldn't confirm your cart update, so it was undone" (#643) | Retry (prepares afresh) |
 | `CAPACITY_EXCEEDED` | 32 lines / 10,000 items, or the 200-line copy (#335) | Edit quantities |
 | `ARTWORK_EXPIRED` | The artwork has expired; replace it | Replace artwork: the Design step, with the artwork dialog of the one uploaded (or one known-expired) placement when there is exactly one |
 | `POSITION_INVALID` | The artwork position is no longer allowed | Edit design (Design step) |
