@@ -156,7 +156,7 @@ function workflowSafety(source: string, job: 'foundation' | 'durable-core' | 'ru
   assert.match(source, /^ {2}pull_request:\s*\n {2}push:/m);
   assert.match(source, /^ {6}- 'scripts\/ci\/\*\*'$/m);
   assert.match(source, /runs-on: ubuntu-24\.04/);
-  assert.match(source, /node-version: '24\.21\.0'/);
+  assert.match(source, /node-version: '24\.22\.3'/);
   const steps = source
     .slice(source.indexOf('    steps:\n'))
     .split(/(?=^ {6}- )/m)

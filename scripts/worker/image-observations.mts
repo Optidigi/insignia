@@ -229,7 +229,7 @@ export function qualifyImageRuntime({
   assert.match(imageId, /^sha256:[a-f0-9]{64}$/);
   assert.equal(container.Image, imageId, 'built image identity');
   assert.deepEqual(inventory, expectedInventory, 'frozen package and Node inventory');
-  assert.equal(inventory.node, 'v24.21.0');
+  assert.equal(inventory.node, 'v24.22.3');
   assert.equal(process.nodeExecutableSha256, inventory.nodeExecutableSha256, 'PID1 executable identity');
   assert.equal(object(container.Config).User, 'node');
   assert.equal(container.Path, command[0]);

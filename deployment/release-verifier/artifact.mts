@@ -75,7 +75,7 @@ export async function qualifyVerifierArtifact(root: string, expectedDigest: stri
   const manifest = manifestFrom(JSON.parse(raw.toString()) as unknown);
   assert.deepEqual(Object.keys(manifest).sort(), ['files', 'nodeVersion', 'sourceHead', 'sourceTree', 'version']);
   assert.equal(manifest.version, 'insignia-release-verifier-artifact-v1');
-  assert.equal(manifest.nodeVersion, 'v24.21.0');
+  assert.equal(manifest.nodeVersion, 'v24.22.3');
   assert.match(manifest.sourceHead, /^[a-f0-9]{40}$/);
   assert.match(manifest.sourceTree, /^[a-f0-9]{40}$/);
   assert.ok(manifest.files && Object.keys(manifest.files).length > 0 && Object.keys(manifest.files).length <= 20000);

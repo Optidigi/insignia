@@ -8,8 +8,8 @@ import { copyThemeAssets } from '../scripts/copy-theme-asset.mts';
 import config from '../vite.config.ts';
 
 /**
- * Shopify CLI's pre-deploy validation of a theme app extension, as it stands in @shopify/cli 4.9.4
- * (`dist/chunk-UNHT4ZFP.js`: the `theme` extension specification's `preDeployValidation`; identical in 4.8.2).
+ * Shopify CLI's pre-deploy validation of a theme app extension, as it stands in @shopify/cli 5.1.0
+ * (`dist/chunk-HMPRWNGG.js`: the `theme` extension specification's `preDeployValidation`; identical in 4.8.2 and 4.9.4).
  * `app deploy` refuses the whole release on any violation ("Invalid filename in your theme app extension"), and
  * Theme Check does not catch it, so the built extension is checked here. Directory → allowed file endings:
  */

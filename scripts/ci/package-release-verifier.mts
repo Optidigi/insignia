@@ -36,7 +36,7 @@ export async function packageVerifier({
   sourceHead: string;
   sourceTree: string;
 }) {
-  assert.equal(process.version, 'v24.21.0');
+  assert.equal(process.version, 'v24.22.3');
   assert.equal(process.platform, 'linux');
   assert.equal(process.arch, 'x64');
   assert.match(sourceHead, /^[a-f0-9]{40}$/);

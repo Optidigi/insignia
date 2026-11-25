@@ -169,7 +169,7 @@ test('rendered draft-only and retained optional products keep ordinary purchase 
     const html = await renderTheme(t, mode, true);
     const page = await browserFixture(t);
     await page.route('**/apps/insignia/v1/eligibility?*', (route) =>
-      route.fulfill({ status: 404, json: { code: 'NOT_FOUND' } }),
+      route.fulfill({ json: { productId: '111', configured: false } }),
     );
     const checked = page.waitForResponse((response) => response.url().includes('/eligibility?'));
     await page.evaluate(

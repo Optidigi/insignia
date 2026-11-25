@@ -25,7 +25,7 @@ test('automatic Customise replaces only the published product purchase controls 
     reads.push(id ?? 'missing');
     return id === '111'
       ? route.fulfill({ json: { productId: id, configured: true } })
-      : route.fulfill({ status: 404, json: { code: 'NOT_FOUND' } });
+      : route.fulfill({ json: { productId: id, configured: false } });
   });
   await page.evaluate(() => {
     document.body.insertAdjacentHTML(
@@ -232,6 +232,58 @@ test('manual placement wins without duplication and section, variant, quick-add 
   assert.equal(await page.locator('quick-add-component button[name=add]').isVisible(), true);
   assert.equal(await page.getByRole('button', { name: 'Sticky Buy', exact: true }).isVisible(), true);
   assert.equal(await page.locator('insignia-buyer[data-insignia-auto]').count(), 0);
+});
+
+test("ordinary recommended products are a quiet not-eligible answer (an old server's 404 too): no console output, no re-read, native controls kept", async (t) => {
+  const page = await fixture(t);
+  const consoleMessages: string[] = [];
+  // The local dev server's own `[vite] connected.` debug line is not storefront output.
+  // Product 444 is answered by an older server (404 before this contract): the browser's own resource error
+  // for that request is expected and excluded; nothing else may log.
+  page.on('console', (message) => {
+    if (
+      (message.type() === 'error' || message.type() === 'warning') &&
+      !message.location().url.includes('productId=444')
+    )
+      consoleMessages.push(`${message.type()}: ${message.text()}`);
+  });
+  page.on('pageerror', (error) => consoleMessages.push(`pageerror: ${error.message}`));
+  const reads: string[] = [];
+  await page.route('**/apps/insignia/v1/eligibility?*', (route) => {
+    const id = new URL(route.request().url()).searchParams.get('productId') ?? 'missing';
+    reads.push(id);
+    return id === '444'
+      ? route.fulfill({ status: 404, json: { code: 'NOT_FOUND' } })
+      : route.fulfill({ json: { productId: id, configured: false } });
+  });
+  const answered = Promise.all(
+    ['333', '444'].map((id) =>
+      page.waitForResponse((response) => response.url().includes(`/eligibility?productId=${id}`)),
+    ),
+  );
+  await page.evaluate(() =>
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      `
+    <quick-add-component data-product-id="333"><button name="add">Choose options</button></quick-add-component>
+    <quick-add-component data-product-id="444"><button name="add">Add recommended</button></quick-add-component>
+    <insignia-theme-integration proxy-base="/apps/insignia" trigger-label="Customise"></insignia-theme-integration>
+  `,
+    ),
+  );
+  await answered;
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert.equal(await page.getByRole('button', { name: 'Choose options', exact: true }).isVisible(), true);
+  assert.equal(await page.getByRole('button', { name: 'Add recommended', exact: true }).isVisible(), true);
+  assert.equal(await page.locator('insignia-buyer').count(), 0);
+  // Not a failure: a section reload or reconnect does not ask again.
+  await page.evaluate(() => {
+    document.dispatchEvent(new CustomEvent('shopify:section:load'));
+    window.dispatchEvent(new Event('online'));
+  });
+  await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 100)));
+  assert.deepEqual(reads.sort(), ['333', '444']);
+  assert.deepEqual(consoleMessages, []);
 });
 
 test('a transient eligibility failure is retried on section reload without polling or downgrading a known required product', async (t) => {

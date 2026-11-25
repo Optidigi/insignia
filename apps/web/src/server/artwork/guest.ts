@@ -28,7 +28,8 @@ export function createArtworkGuestAuthority(input: {
     throw new Error('Guest session duration invalid');
   const digest = (body: string) =>
     createHmac('sha256', input.secret).update('insignia-artwork-guest-v1\0').update(body).digest();
-  async function resource(request: Request, expected?: Guest) {
+  /** A signed proxy shop with an active installation and one well-formed product ID; publication is not checked. */
+  async function shopResource(request: Request, expected?: Guest) {
     const url = new URL(request.url);
     const proxy = await input.verifyProxy(url);
     if (!proxy || (expected && expected.shop !== proxy.shop)) return null;
@@ -48,20 +49,31 @@ export function createArtworkGuestAuthority(input: {
       (!expected && url.searchParams.getAll('productId').length !== 1)
     )
       return null;
-    if (!(await input.core.acceptedQuotes.getEffective(shop.shopId, productId))) return null;
     return { shop, productId };
   }
+  async function resource(request: Request, expected?: Guest) {
+    const authorized = await shopResource(request, expected);
+    if (!authorized || !(await input.core.acceptedQuotes.getEffective(authorized.shop.shopId, authorized.productId)))
+      return null;
+    return authorized;
+  }
+  const scopeOf = (authorized: Awaited<ReturnType<typeof shopResource>>) =>
+    authorized
+      ? {
+          shopId: authorized.shop.shopId,
+          installationGeneration: authorized.shop.currentGeneration,
+          productId: authorized.productId,
+        }
+      : null;
   return {
     async resolve(request: Request) {
       if (request.method !== 'GET') return null;
-      const authorized = await resource(request);
-      return authorized
-        ? {
-            shopId: authorized.shop.shopId,
-            installationGeneration: authorized.shop.currentGeneration,
-            productId: authorized.productId,
-          }
-        : null;
+      return scopeOf(await resource(request));
+    },
+    /** The signed shop and product of a GET, whether or not the product has an effective publication. */
+    async resolveShop(request: Request) {
+      if (request.method !== 'GET') return null;
+      return scopeOf(await shopResource(request));
     },
     async issue(request: Request) {
       if (request.method !== 'GET') return null;

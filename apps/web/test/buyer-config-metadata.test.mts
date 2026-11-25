@@ -121,7 +121,7 @@ function fixture(
   });
   const service = createBuyerServices({
     core,
-    guest: buyerFixture({ guest: { resolve: async () => scope } }).guest,
+    guest: buyerFixture({ guest: { resolve: async () => scope, resolveShop: async () => scope } }).guest,
     ports: () => {
       throw new Error('Config metadata cannot authorize a quote');
     },
@@ -226,8 +226,18 @@ test('storefront eligibility reads only effective publication authority without 
   f.core.configs.getRevisionGeometry = async (_shop, revisionId) =>
     revisionId === 'optional-revision' ? { ...geometry, mode: 'optional' } : geometry;
   f.config.revisionId = 'optional-revision';
-  await assert.rejects(f.service.eligibility(new Request('https://app.example/eligibility')), /NOT_FOUND/);
-  f.service.guest.resolve = async () => null;
+  // An ordinary product is an expected answer, not a 404 the browser logs.
+  assert.deepEqual(await f.service.eligibility(new Request('https://app.example/eligibility')), {
+    productId: '123',
+    configured: false,
+  });
+  f.core.acceptedQuotes.getEffective = async () => null;
+  assert.deepEqual(await f.service.eligibility(new Request('https://app.example/eligibility')), {
+    productId: '123',
+    configured: false,
+  });
+  // An unsigned request or an unknown or inactive shop stays NOT_FOUND.
+  f.service.guest.resolveShop = async () => null;
   await assert.rejects(f.service.eligibility(new Request('https://app.example/eligibility')), /NOT_FOUND/);
 });
 

@@ -107,7 +107,7 @@ test('actual built worker image qualifies OS isolation, frozen inventory, readin
     await docker(['version']);
     dockerReady = true;
     receipt.status = 'FAIL';
-    assert.equal(process.version, 'v24.21.0');
+    assert.equal(process.version, 'v24.22.3');
     assert.equal(process.platform, 'linux', 'native host-to-owned bridge routing qualification is Linux only');
     assert.ok(
       process.env.M5_WORKER_PACKAGE_ENTRY,

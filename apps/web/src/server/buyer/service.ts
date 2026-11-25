@@ -317,15 +317,19 @@ export function createBuyerServices(input: {
     store,
     clock,
     async eligibility(request: Request) {
-      // resolve admits only a signed, active installation and its effective
-      // published revision. Presentation hints never grant purchase authority.
-      const scope = await input.guest.resolve(request);
+      // Only a signed proxy request for an active installation gets an answer; an
+      // unknown shop stays 404. A product without an effective required
+      // publication is an ordinary product, an expected answer rather than an
+      // error, so storefront pages that list such products log nothing.
+      // Presentation hints never grant purchase authority.
+      const scope = await input.guest.resolveShop(request);
       if (!scope) return notFound();
+      const ordinary = { productId: scope.productId, configured: false };
       const revision = await input.core.acceptedQuotes.getEffective(scope.shopId, scope.productId);
-      if (!revision) return notFound();
+      if (!revision) return ordinary;
       const geometry = await revisions.getRevisionGeometry(scope.shopId, revision.config.revisionId);
-      if (!geometry || geometry.mode !== 'required') return notFound();
-      return { productId: scope.productId, configured: true as const };
+      if (!geometry || geometry.mode !== 'required') return ordinary;
+      return { productId: scope.productId, configured: true };
     },
     async config(request: Request) {
       const scope = await proposalStage('tenant', () => input.guest.resolve(request));
