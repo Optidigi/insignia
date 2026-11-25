@@ -34,16 +34,27 @@ function designerAssets() {
   base.pathname = base.pathname.slice(0, base.pathname.lastIndexOf('/') + 1);
   base.search = '';
   base.hash = '';
-  return { entry: new URL('insignia-designer-frame.js', base), css: new URL('insignia-designer.css', base) };
+  return {
+    entry: new URL('insignia-designer-frame.js', base),
+    css: new URL('insignia-designer.css', base),
+    // The Inter Latin face (every Designer UI language), base64. Preloaded here on intent; the frame itself adds it
+    // (frame.tsx) and adds insignia-designer-font-other.css (other scripts) once it is first opened.
+    fonts: new URL('insignia-designer-font-latin.css', base),
+  };
 }
 
-/** Fetch immutable frame assets without executing a frame or touching theme focus/styles. */
+/**
+ * Fetch immutable frame assets (script, stylesheets) without executing a frame or touching theme focus/styles.
+ * The Designer's about:srcdoc document has its own module map and preload cache: it reuses these responses only
+ * through the HTTP cache (the extension CDN serves them cacheable for a year).
+ */
 export function prewarmDesignerAssets(): () => void {
   const assets = designerAssets();
   const links: HTMLLinkElement[] = [];
-  for (const [rel, url] of [
-    ['modulepreload', assets.entry],
-    ['preload', assets.css],
+  for (const [rel, url, as] of [
+    ['modulepreload', assets.entry, undefined],
+    ['preload', assets.css, 'style'],
+    ['preload', assets.fonts, 'style'],
   ] as const) {
     if (
       [...document.head.querySelectorAll<HTMLLinkElement>('link')].some(
@@ -54,7 +65,7 @@ export function prewarmDesignerAssets(): () => void {
     const link = document.createElement('link');
     link.rel = rel;
     link.href = url.href;
-    if (rel === 'preload') link.as = 'style';
+    if (as) link.as = as;
     document.head.append(link);
     links.push(link);
   }

@@ -10,7 +10,7 @@ import { copyThemeAssets } from '../scripts/copy-theme-asset.mts';
 import config from '../vite.config.ts';
 import { serverPort } from './support.mts';
 
-test('unlocked storefront loads buyer controls through its cookie-gated proxy and public-only idle CDN preparation', async () => {
+test('unlocked storefront loads buyer controls through its cookie-gated proxy and public-only CDN preparation on intent', async () => {
   const temporary = await mkdtemp(join(tmpdir(), 'insignia-theme-build-'));
   try {
     await build({
@@ -27,6 +27,10 @@ test('unlocked storefront loads buyer controls through its cookie-gated proxy an
     );
     assert.ok(files.includes('insignia-designer-frame.js'), 'the selected Designer has a separate iframe entry');
     assert.ok(files.includes('insignia-designer.css'), 'the selected Designer stylesheet ships with its frame');
+    assert.ok(
+      files.includes('insignia-designer-font-latin.css') && files.includes('insignia-designer-font-other.css'),
+      'the Designer UI font faces ship as their own stylesheets',
+    );
     assert.equal(
       files.some((file) => file.startsWith('insignia-customizer-')),
       false,
@@ -178,13 +182,23 @@ test('unlocked storefront loads buyer controls through its cookie-gated proxy an
       await page.goto(`http://127.0.0.1:${serverPort(server)}/nl/products/example`);
       const host = page.locator('insignia-buyer');
       await host.getByRole('button', { name: 'Customize this product' }).waitFor();
+      await page.waitForLoadState('networkidle');
+      assert.deepEqual(
+        requested.filter(
+          (path) => !/^\/cdn-assets\/insignia-(?:storefront|element|buyer-session-[^/]+)\.js$/.test(path),
+        ),
+        [],
+        'Before buyer intent the page loads only the small theme entry (#653)',
+      );
+      assert.equal(unlockedRequests + lockedRequests, 0, 'No configuration is read before intent');
+      await host.getByRole('button', { name: 'Customize this product' }).hover();
       await page.waitForFunction(
         () =>
           document.querySelector<HTMLIFrameElement>('dialog:not([open]) > iframe[srcdoc]')?.style.visibility ===
           'visible',
       );
       const preparedFrame = page.locator('dialog:not([open]) > iframe[srcdoc]');
-      assert.equal(await preparedFrame.count(), 1, 'The built CDN entry prepares the selected frame on idle');
+      assert.equal(await preparedFrame.count(), 1, 'The built CDN entry prepares the selected frame on intent');
       await preparedFrame.evaluate((element) => {
         element.id = 'synthetic-prepared-frame';
       });
@@ -192,8 +206,8 @@ test('unlocked storefront loads buyer controls through its cookie-gated proxy an
       assert.equal(await page.locator('dialog').evaluate((element: HTMLDialogElement) => element.inert), true);
       assert.equal(await page.evaluate(() => document.activeElement?.tagName), 'BODY');
       assert.equal(await page.evaluate(() => document.documentElement.style.overflow), '');
-      assert.deepEqual(privateProxyReads, [], 'Idle preparation never reads private commerce authority');
-      assert.deepEqual(proxyMutations, [], 'Idle preparation never establishes a buyer session or writes a draft');
+      assert.deepEqual(privateProxyReads, [], 'Preparation never reads private commerce authority');
+      assert.deepEqual(proxyMutations, [], 'Preparation never establishes a buyer session or writes a draft');
       assert.equal(cartReads, 0);
       assert.deepEqual(cartWrites, []);
       assert.equal(
@@ -233,6 +247,16 @@ test('unlocked storefront loads buyer controls through its cookie-gated proxy an
       assert.ok(requested.some((path) => path.startsWith('/cdn-assets/insignia-controller-')));
       assert.ok(requested.includes('/cdn-assets/insignia-designer-frame.js'));
       assert.ok(requested.includes('/cdn-assets/insignia-designer.css'));
+      assert.ok(
+        requested.includes('/cdn-assets/insignia-designer-font-latin.css') &&
+          requested.includes('/cdn-assets/insignia-designer-font-other.css'),
+        'Both font stylesheets load from beside the main stylesheet on the CDN',
+      );
+      assert.equal(
+        await frame.locator('.app').evaluate(() => document.fonts.check('16px "Inter Variable"', 'Customize')),
+        true,
+        'The about:srcdoc Designer has its UI font loaded when shown',
+      );
       assert.ok(
         requested.every((path) => path.startsWith('/cdn-assets/')),
         'All runtime assets resolve beside the trusted classic CDN entry, not the locale/product URL',

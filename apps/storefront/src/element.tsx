@@ -8,10 +8,34 @@ import type { createDesignerModal } from './designer/modal';
 import { connectThemeIntegration, styleThemeTrigger } from './theme-integration';
 
 // The modal brings Preact, localization and theme preference; product pages load it
-// only on idle preparation, trigger intent or click, never with this entry.
+// only on buyer intent (hover, focus, first touch/press) or click, never with this entry (#653).
 const loadDesignerModal = () => import('./designer/modal');
+// Touch devices have no hover: the first press is the earliest intent, ahead of its click.
+const intentEvents = ['pointerenter', 'focus', 'pointerdown', 'touchstart'] as const;
+// Every chunk the open path needs (modal, buyer, controller, frame host, frame entry and their imports), written
+// here by the build. Fetching them together replaces a chain of round trips; a source host has none.
+const openPathChunks: string = '__INSIGNIA_OPEN_PATH_CHUNKS__';
+let openPathPreloaded = false;
+function preloadOpenPath() {
+  if (openPathPreloaded || !openPathChunks.startsWith('[')) return;
+  openPathPreloaded = true;
+  for (const file of JSON.parse(openPathChunks) as string[]) {
+    const href = new URL(file, import.meta.url).href;
+    if (
+      [...document.head.querySelectorAll<HTMLLinkElement>('link[rel=modulepreload]')].some((link) => link.href === href)
+    )
+      continue;
+    const link = document.createElement('link');
+    link.rel = 'modulepreload';
+    link.href = href;
+    document.head.append(link);
+  }
+}
 
-/** Ordinary product presentation is prepared on idle/intent; cart custody remains click-only. */
+/**
+ * Nothing of the Designer loads with the page: presentation is prepared on buyer intent (pointer enter, focus,
+ * first pointer/touch press on the trigger) and a cold click opens without it. Cart custody remains click-only.
+ */
 export class InsigniaBuyer extends HTMLElement {
   private static preparationOwner?: InsigniaBuyer;
   private readonly root = this.attachShadow({ mode: 'open' });
@@ -22,10 +46,10 @@ export class InsigniaBuyer extends HTMLElement {
   private stopBusy?: () => void;
   private readonly triggerClick = () => void this.mount();
   private readonly triggerIntent = () => {
+    preloadOpenPath();
     void loadDesignerModal().catch(() => {});
-    this.prewarm(true);
+    this.prepare();
   };
-  private cancelIdle?: () => void;
   private preparation?: {
     context: string;
     controller: AbortController;
@@ -52,32 +76,12 @@ export class InsigniaBuyer extends HTMLElement {
     this.preparation?.removeAssets?.();
     this.preparation = undefined;
   }
-  private prewarm(intent = false) {
+  /** Buyer intent: fetch public presentation and the Designer's immutable assets ahead of a likely click. */
+  private prepare() {
     if (!this.isConnected || this.hasAttribute('repair') || this.mounting || this.liveFrame) return;
-    if (!intent) {
-      // The cart page is not a product page: a product control there (e.g. a recommendation
-      // quick-add) loads its configuration on hover/focus or click, not on every cart view.
-      const cartRoot = this.getAttribute('cart-root') ?? '/';
-      if (location.pathname.replace(/\/+$/, '') === `${cartRoot}cart`) return;
-      const button = this.querySelector<HTMLButtonElement>('button[slot="trigger"]');
-      const rect = button?.getBoundingClientRect();
-      if (
-        !button ||
-        !rect ||
-        rect.width <= 0 ||
-        rect.height <= 0 ||
-        rect.bottom <= 0 ||
-        rect.right <= 0 ||
-        rect.top >= window.innerHeight ||
-        rect.left >= window.innerWidth ||
-        getComputedStyle(button).visibility !== 'visible' ||
-        document.querySelector('dialog[open]')
-      )
-        return;
-    }
     const owner = InsigniaBuyer.preparationOwner;
     if (owner && owner !== this) {
-      if (!intent || owner.mounting || owner.liveFrame) return;
+      if (owner.mounting || owner.liveFrame) return;
       owner.clearPreparation();
     }
     const context = this.context();
@@ -181,15 +185,7 @@ export class InsigniaBuyer extends HTMLElement {
     slot.name = 'trigger';
     this.root.replaceChildren(slot);
     button.addEventListener('click', this.triggerClick);
-    button.addEventListener('pointerenter', this.triggerIntent);
-    button.addEventListener('focus', this.triggerIntent);
-    if ('requestIdleCallback' in window) {
-      const idle = window.requestIdleCallback(() => this.prewarm(), { timeout: 1500 });
-      this.cancelIdle = () => window.cancelIdleCallback(idle);
-    } else {
-      const idle = setTimeout(() => this.prewarm(), 150);
-      this.cancelIdle = () => clearTimeout(idle);
-    }
+    for (const event of intentEvents) button.addEventListener(event, this.triggerIntent, { passive: true });
   }
   private async createController(
     source: BuyerConfig,
@@ -302,9 +298,8 @@ export class InsigniaBuyer extends HTMLElement {
     return false;
   }
   private async mount() {
-    this.cancelIdle?.();
-    this.cancelIdle = undefined;
     if (this.mounting) return;
+    preloadOpenPath();
     const generation = this.generation;
     if (this.liveFrame && (await this.reopen(this.liveFrame, generation))) return;
     const productId = this.getAttribute('product-id') ?? '';
@@ -460,8 +455,6 @@ export class InsigniaBuyer extends HTMLElement {
   }
   disconnectedCallback() {
     this.generation++;
-    this.cancelIdle?.();
-    this.cancelIdle = undefined;
     this.clearPreparation();
     this.cancelOpening?.();
     this.cancelOpening = undefined;
@@ -469,8 +462,7 @@ export class InsigniaBuyer extends HTMLElement {
     this.stopBusy?.();
     const trigger = this.querySelector<HTMLButtonElement>('button[slot="trigger"]');
     trigger?.removeEventListener('click', this.triggerClick);
-    trigger?.removeEventListener('pointerenter', this.triggerIntent);
-    trigger?.removeEventListener('focus', this.triggerIntent);
+    for (const event of intentEvents) trigger?.removeEventListener(event, this.triggerIntent);
     this.liveFrame?.destroy();
     this.liveFrame = undefined;
     this.root.replaceChildren();
