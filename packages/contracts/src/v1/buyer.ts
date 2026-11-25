@@ -155,7 +155,8 @@ const minor = z
   .regex(/^(0|[1-9][0-9]*)$/);
 export const BuyerEligibilitySchema = z.strictObject({
   productId: z.string().regex(/^[1-9][0-9]{0,19}$/),
-  configured: z.literal(true),
+  /** False: the product has no effective required publication and keeps its theme purchase controls. */
+  configured: z.boolean(),
 });
 export const BuyerConfigSchema = z.strictObject({
   version: z.literal('m7-config-v1'),
