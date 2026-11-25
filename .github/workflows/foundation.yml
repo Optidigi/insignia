@@ -64,6 +64,11 @@ jobs:
       - name: Build and check actual workspace
         if: steps.changes.outputs.route == 'full'
         run: corepack pnpm check
+      - name: Shopify theme check (theme app extension)
+        if: steps.changes.outputs.route == 'full'
+        env:
+          SHOPIFY_CLI_NO_ANALYTICS: '1'
+        run: npx --yes @shopify/cli@4.8.2 theme check --path extensions/insignia-theme --config theme-check:theme-app-extension --fail-level suggestion
       - name: Qualify Ajax carriers against actual production Functions
         if: steps.changes.outputs.route == 'full'
         run: INSIGNIA_FUNCTION_RUNNER="$PWD/.m1-artifacts/tools/function-runner-9.2.2" node --test apps/storefront/test/cart-function-contract.test.mts
