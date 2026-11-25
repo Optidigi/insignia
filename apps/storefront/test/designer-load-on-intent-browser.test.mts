@@ -113,15 +113,15 @@ async function fixture(t: TestContext, engine: BrowserType, options: { hasTouch?
   return { page, requests, sessions: () => sessions };
 }
 
-/** Longer than the removed idle prewarm's 1.5 s timeout, then settled network. */
+/** Longer than the removed idle prewarm's 1.5 s timeout, ending in an idle period. */
 async function quietPeriod(page: Page) {
+  // Not the network-idle lifecycle: Firefox can lose that timer; every request is recorded either way.
   await page.evaluate(
     () =>
       new Promise<void>((resolve) => {
-        setTimeout(() => requestIdleCallback?.(() => resolve()) ?? resolve(), 2000);
+        setTimeout(() => requestIdleCallback(() => resolve(), { timeout: 1000 }), 2000);
       }),
   );
-  await page.waitForLoadState('networkidle');
 }
 
 async function assertNothingLoaded(page: Page, requests: string[], message: string) {
@@ -191,11 +191,14 @@ for (const engine of [chromium, firefox]) {
       const { page, requests } = await fixture(t, engine, { hasTouch: engine === chromium });
       await quietPeriod(page);
       await assertNothingLoaded(page, requests, 'nothing before the press');
+      const configRead = page.waitForRequest(
+        (request) => new URL(request.url()).pathname === '/apps/insignia/v1/config',
+      );
       await page
         .locator('insignia-buyer button')
         .dispatchEvent(type, type === 'pointerdown' ? { pointerType: 'touch', isPrimary: true } : {});
+      await configRead;
       await waitForPrepared(page);
-      assert.ok(requests.includes('/apps/insignia/v1/config'), `${type} reads the public configuration`);
       assert.equal(await page.locator('dialog:modal').count(), 0);
     }
   });

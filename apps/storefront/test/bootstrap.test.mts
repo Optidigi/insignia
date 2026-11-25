@@ -10,7 +10,7 @@ import { copyThemeAssets } from '../scripts/copy-theme-asset.mts';
 import config from '../vite.config.ts';
 import { serverPort } from './support.mts';
 
-test('unlocked storefront loads buyer controls through its cookie-gated proxy and public-only idle CDN preparation', async () => {
+test('unlocked storefront loads buyer controls through its cookie-gated proxy and public-only CDN preparation on intent', async () => {
   const temporary = await mkdtemp(join(tmpdir(), 'insignia-theme-build-'));
   try {
     await build({
@@ -178,13 +178,23 @@ test('unlocked storefront loads buyer controls through its cookie-gated proxy an
       await page.goto(`http://127.0.0.1:${serverPort(server)}/nl/products/example`);
       const host = page.locator('insignia-buyer');
       await host.getByRole('button', { name: 'Customize this product' }).waitFor();
+      await page.waitForLoadState('networkidle');
+      assert.deepEqual(
+        requested.filter(
+          (path) => !/^\/cdn-assets\/insignia-(?:storefront|element|buyer-session-[^/]+)\.js$/.test(path),
+        ),
+        [],
+        'Before buyer intent the page loads only the small theme entry (#653)',
+      );
+      assert.equal(unlockedRequests + lockedRequests, 0, 'No configuration is read before intent');
+      await host.getByRole('button', { name: 'Customize this product' }).hover();
       await page.waitForFunction(
         () =>
           document.querySelector<HTMLIFrameElement>('dialog:not([open]) > iframe[srcdoc]')?.style.visibility ===
           'visible',
       );
       const preparedFrame = page.locator('dialog:not([open]) > iframe[srcdoc]');
-      assert.equal(await preparedFrame.count(), 1, 'The built CDN entry prepares the selected frame on idle');
+      assert.equal(await preparedFrame.count(), 1, 'The built CDN entry prepares the selected frame on intent');
       await preparedFrame.evaluate((element) => {
         element.id = 'synthetic-prepared-frame';
       });
@@ -192,8 +202,8 @@ test('unlocked storefront loads buyer controls through its cookie-gated proxy an
       assert.equal(await page.locator('dialog').evaluate((element: HTMLDialogElement) => element.inert), true);
       assert.equal(await page.evaluate(() => document.activeElement?.tagName), 'BODY');
       assert.equal(await page.evaluate(() => document.documentElement.style.overflow), '');
-      assert.deepEqual(privateProxyReads, [], 'Idle preparation never reads private commerce authority');
-      assert.deepEqual(proxyMutations, [], 'Idle preparation never establishes a buyer session or writes a draft');
+      assert.deepEqual(privateProxyReads, [], 'Preparation never reads private commerce authority');
+      assert.deepEqual(proxyMutations, [], 'Preparation never establishes a buyer session or writes a draft');
       assert.equal(cartReads, 0);
       assert.deepEqual(cartWrites, []);
       assert.equal(
