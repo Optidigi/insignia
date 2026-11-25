@@ -45,6 +45,12 @@ import cartFixModules from '../../deployment/m5-runtime/native-cartfix-module-ba
 import cartFixBinding from '../../deployment/m5-runtime/native-cartfix-release-binding.json' with { type: 'json' };
 import designerModules from '../../deployment/m5-runtime/native-designer-module-baseline.json' with { type: 'json' };
 import designerBinding from '../../deployment/m5-runtime/native-designer-release-binding.json' with { type: 'json' };
+import escapeOnceModules from '../../deployment/m5-runtime/native-escape-once-module-baseline.json' with {
+  type: 'json',
+};
+import escapeOnceBinding from '../../deployment/m5-runtime/native-escape-once-release-binding.json' with {
+  type: 'json',
+};
 import fixedModules from '../../deployment/m5-runtime/native-fixed-module-baseline.json' with { type: 'json' };
 import fixedCandidate from '../../deployment/m5-runtime/native-fixed-release-binding.json' with { type: 'json' };
 import historicalModules from '../../deployment/m5-runtime/native-function-module-baseline.json' with { type: 'json' };
@@ -232,6 +238,15 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  'native-escape-once-bcb6cd16': {
+    versionId: escapeOnceBinding.versionId,
+    versionTag: escapeOnceBinding.versionTag,
+    versionIds: escapeOnceBinding.versionIds,
+    moduleHash: escapeOnceBinding.moduleHash,
+    modules: escapeOnceModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: cartLineV3Functions,
+  },
   'native-cart-repair-2ed66ade': {
     versionId: unsupportedRepairBinding.versionId,
     versionTag: unsupportedRepairBinding.versionTag,
