@@ -65,6 +65,20 @@ export function lastingReleaseRecords(
   };
 }
 
+/**
+ * When a record's 30-second life began, for timing its refresh: its Active observation, or earlier
+ * when its attested expiry comes sooner. The collector attests expiry from its earliest observation
+ * (Functions, then the closing Active observation; `append.mts` takes the minimum), so a record lives
+ * 30 s less the gap between them, and steps stop reusing it 7 s before that expiry. Null when the
+ * attestation has neither time.
+ */
+export function releaseLifeStartedAt(attestation: { observedAt: string; expiresAt: string }): number | null {
+  const starts = [Date.parse(attestation.observedAt), Date.parse(attestation.expiresAt) - RELEASE_FRESHNESS_MS].filter(
+    Number.isFinite,
+  );
+  return starts.length ? Math.min(...starts) : null;
+}
+
 /** A publish request's longest client budget (§7.1); its background refresh never outlives it. */
 export const PUBLICATION_RELEASE_ACTIVE_MS = 60_000;
 
@@ -84,9 +98,11 @@ export const PUBLICATION_RELEASE_ACTIVE_MS = 60_000;
  */
 export function createPublicationReleaseRefresh<A extends Publisher>(input: {
   /** Collect when the actor's stored record is older than PUBLICATION_RELEASE_REFRESH_AFTER_MS;
-   * resolve to the current record's observation time (ms), or null when none is available. */
+   * resolve to the current record's life start (`releaseLifeStartedAt`, ms), or null when none is
+   * available. */
   refresh(actor: A): Promise<number | null>;
-  /** The stored record's observation time (ms) while it is fresh, without collecting; else null. */
+  /** The stored record's life start (`releaseLifeStartedAt`, ms) while it is fresh, without
+   * collecting; else null. */
   observedAt(actor: A): Promise<number | null>;
   clock?: () => number;
   setTimer?: (run: () => void, delayMs: number) => Timer;

@@ -16,11 +16,12 @@ Lighthouse baseline passed or are recorded with their limits in the
 [review checklist](shopify-review-resubmission.md#remaining-hardening). Open items are in the
 [backlog](../backlog/README.md#after-the-hardening-pass-25-nov-2026).
 
-**Next for the owner:** resubmit in the Partner Dashboard (not done by engineering); decide whether
-a publish that starts on a 25–30 s-old release record may be refused mid-step (closing it changes a
-freshness rule); after approval, decide on relaxing the publish hold-safety steps (≤10 s first
-publish) and #637. Backups, secret rotation and the shop-erasure purge still come before the first
-real merchant.
+**Next for the owner:** resubmit in the Partner Dashboard (not done by engineering); after approval,
+decide on relaxing the publish hold-safety steps (≤10 s first publish) and #637. Backups, secret
+rotation and the shop-erasure purge still come before the first real merchant. The mid-step release
+lapse (a publish step starting on a 25–30 s-old record) is decided (owner approval 25 Nov) and fixed in
+PR #658, not yet deployed. **Deploy order:** the release verifier (13 s reuse lead) before or with web;
+a web build against the 8 s verifier is still safe, but its publish steps collect on their own again.
 
 ### Picking this up
 

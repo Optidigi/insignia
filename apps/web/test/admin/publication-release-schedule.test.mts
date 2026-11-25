@@ -8,6 +8,7 @@ import {
   lastingReleaseRecords,
   PUBLICATION_RELEASE_REFRESH_AFTER_MS,
   PUBLICATION_STEP_RELEASE_LEAD_MS,
+  releaseLifeStartedAt,
 } from '../../src/server/admin/publication-release.ts';
 import {
   createDemandDrivenReleaseReader,
@@ -18,9 +19,14 @@ import { RELEASE_FRESHNESS_MS } from '../../src/server/buyer/release-refresh.ts'
 
 type Evidence = NonNullable<Awaited<ReturnType<TrustedReleaseEvidenceRecordsPort['read']>>>;
 
-/** The upper end of measured collection time (3.6–6 s). The new record is observed as the collection
- * starts, the oldest it can be when it lands. */
+/** The upper end of measured collection time (3.6–6 s), from the refresh's start to the new record. */
 const COLLECTION_MS = 6_000;
+/** Within a collection, as `scripts/release/collector.mts`: Functions are observed first, the closing
+ * Active observation (the record's `observedAt`) last. The attested expiry is the earlier one + 30 s
+ * (`append.mts`), so the record lives 30 s less this gap (DELTA_MS) from its `observedAt`. */
+const FUNCTION_OBSERVED_MS = 500;
+const ACTIVE_OBSERVED_MS = 5_500;
+const DELTA_MS = ACTIVE_OBSERVED_MS - FUNCTION_OBSERVED_MS;
 /** Step durations of a first publication at production latency (publication-latency test,
  * `PUBLICATION_LATENCY_MS=350`), repeated to fill the publish. */
 const MEASURED_STEPS_MS = [27, 1455, 8, 3574, 2198, 2122, 2127, 2129, 1445, 3258, 377, 4637];
@@ -29,12 +35,19 @@ const LARGEST_STEP_MS = 15 * 350;
 
 /**
  * A publish over `spanMs` on an injected clock, composed as production.ts does: the publish refresh
- * (real `createPublicationReleaseRefresh`) reading 13 s ahead, each step reading through
+ * (real `createPublicationReleaseRefresh`, timed from `releaseLifeStartedAt` unless `timing` is
+ * 'observedAt', the rule before review) reading 13 s ahead, each step reading through
  * `lastingReleaseRecords`, both sharing one single-flight map; a collector that reuses a record still
  * fresh RELEASE_REFRESH_LEAD_MS ahead and otherwise collects for COLLECTION_MS; and the write gate on
  * each step's own evidence every 350 ms of the step.
  */
-async function publish(input: { recordAgeMs: number; steps: readonly number[]; spanMs: number }) {
+async function publish(input: {
+  /** Age of the stored record's attested life (30 s before its expiry) when the publish begins. */
+  recordAgeMs: number;
+  steps: readonly number[];
+  spanMs: number;
+  timing?: 'life' | 'observedAt';
+}) {
   let now = 1_800_000_000_000;
   const start = now;
   const queue: { at: number; run: () => void }[] = [];
@@ -59,22 +72,31 @@ async function publish(input: { recordAgeMs: number; steps: readonly number[]; s
     now = Math.max(now, end);
   }
 
-  let stored = { recordId: randomUUID(), observedAt: now - input.recordAgeMs };
+  const record = (lifeStart: number) => ({
+    recordId: randomUUID(),
+    observedAt: lifeStart + DELTA_MS,
+    expiresAt: lifeStart + RELEASE_FRESHNESS_MS,
+  });
+  let stored = record(now - input.recordAgeMs);
+  if (stored.observedAt > now) stored.observedAt = now;
+  // As the trusted-release repository: fresh while its age is at most 30 s and before its attested expiry.
   const source: TrustedReleaseEvidenceRecordsPort = {
     async read(request) {
       const at = request.now.getTime();
-      if (stored.observedAt > at || at - stored.observedAt > RELEASE_FRESHNESS_MS) return null;
+      if (stored.observedAt > at || at - stored.observedAt > RELEASE_FRESHNESS_MS || at >= stored.expiresAt)
+        return null;
       return {
         record: {
           recordId: stored.recordId,
           attestation: {
             observedAt: new Date(stored.observedAt).toISOString(),
-            expiresAt: new Date(stored.observedAt + RELEASE_FRESHNESS_MS).toISOString(),
+            expiresAt: new Date(stored.expiresAt).toISOString(),
           },
         },
       } as never as Evidence;
     },
   };
+  const lifeAge = () => now - (stored.expiresAt - RELEASE_FRESHNESS_MS);
   const collections: { at: number; ageOfOld: number }[] = [];
   let running = 0;
   let maxConcurrent = 0;
@@ -87,12 +109,12 @@ async function publish(input: { recordAgeMs: number; steps: readonly number[]; s
       });
       if (reusable)
         return { requestId: request.requestId, recordId: reusable.record.recordId, state: 'COMPLETE' as const };
-      collections.push({ at: now - start, ageOfOld: now - stored.observedAt });
+      collections.push({ at: now - start, ageOfOld: lifeAge() });
       maxConcurrent = Math.max(maxConcurrent, ++running);
       const begun = now;
       await new Promise<void>((resolve) => setTimer(resolve, COLLECTION_MS));
       running--;
-      stored = { recordId: randomUUID(), observedAt: begun };
+      stored = record(begun + FUNCTION_OBSERVED_MS);
       return { requestId: request.requestId, recordId: stored.recordId, state: 'COMPLETE' as const };
     },
   };
@@ -129,14 +151,19 @@ async function publish(input: { recordAgeMs: number; steps: readonly number[]; s
       }),
   });
   const step = reader(lastingReleaseRecords(source));
+  // As production.ts's hooks.
+  const started = (evidence: Evidence | null) =>
+    !evidence
+      ? null
+      : input.timing === 'observedAt'
+        ? Date.parse(evidence.record.attestation.observedAt)
+        : releaseLifeStartedAt(evidence.record.attestation);
   const refresh = createPublicationReleaseRefresh<AdminActor>({
     async refresh() {
-      const evidence = await ahead.read({ scope, expectedActiveAppVersionRef, now: new Date(now) });
-      return evidence ? Date.parse(evidence.record.attestation.observedAt) : null;
+      return started(await ahead.read({ scope, expectedActiveAppVersionRef, now: new Date(now) }));
     },
     async observedAt() {
-      const evidence = await source.read({ scope, expectedActiveAppVersionRef, now: new Date(now) });
-      return evidence ? Date.parse(evidence.record.attestation.observedAt) : null;
+      return started(await source.read({ scope, expectedActiveAppVersionRef, now: new Date(now) }));
     },
     clock: () => now,
     setTimer,
@@ -151,7 +178,7 @@ async function publish(input: { recordAgeMs: number; steps: readonly number[]; s
   for (let index = 0; now - start < input.spanMs; index++) {
     const duration = input.steps[index % input.steps.length] ?? 0;
     const at = now;
-    const ageAtStart = now - stored.observedAt;
+    const ageAtStart = lifeAge();
     let evidence: Evidence | null | undefined;
     void step.read({ scope, expectedActiveAppVersionRef, now: new Date(now) }).then((value) => {
       evidence = value;
@@ -190,7 +217,7 @@ for (const [label, steps] of [
       for (const entry of result.steps) {
         assert.equal(entry.waitedMs, 0, JSON.stringify(entry));
         assert.equal(entry.refusedWrites, 0, JSON.stringify(entry));
-        // Every step reused a record that lasts for its lead.
+        // Every step reused a record that lasts for its lead (its attested life, 30 s before expiry).
         assert.ok(entry.ageAtStart <= RELEASE_FRESHNESS_MS - PUBLICATION_STEP_RELEASE_LEAD_MS, JSON.stringify(entry));
       }
       // The refresh, not a step, collected; the second refresh of a long publish also landed in time.
@@ -223,3 +250,15 @@ for (const [label, steps] of [
     assert.ok(result.collections.length >= 2);
     assert.equal(result.maxConcurrent, 1);
   });
+
+test(`timed by observedAt alone, a record whose observations are ${DELTA_MS / 1000} s apart makes a step wait`, async () => {
+  // The rule before review: the refresh counted 17 s from the closing Active observation, which is
+  // DELTA_MS after the attested life began, so the new record landed DELTA_MS late.
+  const before = await publish({ recordAgeMs: 10_000, steps: MEASURED_STEPS_MS, spanMs: 40_000, timing: 'observedAt' });
+  assert.ok(
+    before.steps.some((entry) => entry.waitedMs > 0),
+    JSON.stringify(before.steps.filter((entry) => entry.waitedMs > 0)),
+  );
+  const after = await publish({ recordAgeMs: 10_000, steps: MEASURED_STEPS_MS, spanMs: 40_000 });
+  assert.ok(after.steps.every((entry) => entry.waitedMs === 0 && entry.refusedWrites === 0));
+});

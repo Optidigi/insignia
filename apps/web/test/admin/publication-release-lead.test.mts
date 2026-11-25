@@ -7,6 +7,7 @@ import {
   PUBLICATION_RELEASE_REFRESH_AFTER_MS,
   PUBLICATION_RELEASE_REFRESH_INTERVAL_MS,
   PUBLICATION_STEP_RELEASE_LEAD_MS,
+  releaseLifeStartedAt,
 } from '../../src/server/admin/publication-release.ts';
 import {
   createDemandDrivenReleaseReader,
@@ -197,4 +198,16 @@ test('the step rule only narrows the source: it never returns a record the sourc
   assert.equal(await lasting(evidence(t - 1_000, t + PUBLICATION_STEP_RELEASE_LEAD_MS)), null);
   // Unparseable attestation.
   assert.equal(await lasting(evidence(Number.NaN, t + 20_000)), null);
+});
+
+test('the attested life of a record starts at the earlier of its observation and its expiry less 30 s', () => {
+  const iso = (ms: number) => new Date(ms).toISOString();
+  const t = 1_800_000_000_000;
+  // Functions observed 5 s before the closing Active observation: expiry 25 s after observedAt.
+  assert.equal(releaseLifeStartedAt({ observedAt: iso(t), expiresAt: iso(t + 25_000) }), t - 5_000);
+  assert.equal(releaseLifeStartedAt({ observedAt: iso(t), expiresAt: iso(t + RELEASE_FRESHNESS_MS) }), t);
+  // Never later than the observation, even if an expiry were attested beyond 30 s.
+  assert.equal(releaseLifeStartedAt({ observedAt: iso(t), expiresAt: iso(t + 40_000) }), t);
+  assert.equal(releaseLifeStartedAt({ observedAt: 'unknown', expiresAt: iso(t + 25_000) }), t - 5_000);
+  assert.equal(releaseLifeStartedAt({ observedAt: 'unknown', expiresAt: 'unknown' }), null);
 });

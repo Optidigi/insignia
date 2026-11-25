@@ -66,6 +66,7 @@ import {
   createPublicationReleaseRefresh,
   lastingReleaseRecords,
   PUBLICATION_RELEASE_REFRESH_AFTER_MS,
+  releaseLifeStartedAt,
 } from './publication-release.ts';
 import { publicationStage } from './publication-timing.js';
 import {
@@ -319,8 +320,8 @@ export function createProductionAdminServices(
             now: new Date(),
           })
         : null;
-      const observedAt = evidence ? Date.parse(evidence.record.attestation.observedAt) : Number.NaN;
-      return Number.isFinite(observedAt) ? observedAt : null;
+      // Timed from the record's attested life, which can be shorter than 30 s from its observation.
+      return evidence ? releaseLifeStartedAt(evidence.record.attestation) : null;
     },
     async observedAt(actor) {
       const evidence = await core.trustedReleaseRecords.read({
@@ -332,8 +333,7 @@ export function createProductionAdminServices(
         expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
         now: new Date(),
       });
-      const observedAt = evidence ? Date.parse(evidence.record.attestation.observedAt) : Number.NaN;
-      return Number.isFinite(observedAt) ? observedAt : null;
+      return evidence ? releaseLifeStartedAt(evidence.record.attestation) : null;
     },
   });
   /** True when the store's cart transform and validation are deployed, deploying both if it has
