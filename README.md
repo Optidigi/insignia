@@ -8,7 +8,7 @@ The UI and its optional demos are in [frontend](frontend/README.md). The selecte
 
 ## Start locally
 
-Use Node **24.22.3**, Corepack with **pnpm12.23.0** (`package.json`) and Rust **1.100.0** (`rust-toolchain.toml`). Rustfmt, Clippy and the `wasm32-unknown-unknown` target are declared by that file. The `.node-version` file supports version-manager selection. Confirm `node --version` before checks; Node also has exact runtime/Docker qualification pins, so upgrade those together rather than changing only `engines`. Git, the platform linker toolchain (`cc` on Linux) and network access to the pinned package/tool registries are installation prerequisites; a normal local check needs no Shopify or production credentials.
+Use Node **24.22.3**, Corepack with **pnpm12.16.1** (`package.json`) and Rust **1.100.0** (`rust-toolchain.toml`). Rustfmt, Clippy and the `wasm32-unknown-unknown` target are declared by that file. The `.node-version` file supports version-manager selection. Confirm `node --version` before checks; Node also has exact runtime/Docker qualification pins, so upgrade those together rather than changing only `engines`. Git, the platform linker toolchain (`cc` on Linux) and network access to the pinned package/tool registries are installation prerequisites; a normal local check needs no Shopify or production credentials.
 
 ```sh
 corepack pnpm install --frozen-lockfile
