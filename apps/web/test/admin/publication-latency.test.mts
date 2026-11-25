@@ -22,6 +22,7 @@ import {
   PUBLICATION_RELEASE_REFRESH_INTERVAL_MS,
   PUBLICATION_STEP_RELEASE_LEAD_MS,
 } from '../../src/server/admin/publication-release.ts';
+import { prepareSigningForPublication } from '../../src/server/admin/publication-signing.ts';
 import {
   createDemandDrivenReleaseReader,
   createServerActivationReadiness,
@@ -34,6 +35,7 @@ import {
   PUBLICATION_RESEND_VALIDITY_MS,
   PUBLICATION_STEP_MARGIN_MS,
 } from '../../src/server/merchant-config.ts';
+import { activeSigningKey, automaticSigning, type SigningKeyRow } from './support/automatic-signing.mts';
 import { adminServices } from './support/fixtures.mts';
 import { captureSyntheticPublicationPreviews } from './support/publication-previews.mts';
 
@@ -222,7 +224,7 @@ function releaseModel(config: ReleaseModel) {
  * (`Bearer synthetic-identity.<ms>`), an expired one is rejected, and the actor's authority is derived
  * as auth.ts derives it (`legacy`: the rule before the owner decision of 25 Nov 2026, ending with the token).
  */
-type Preparation = (actor: AdminActor) => Promise<{ ready: boolean; reason: string | null }>;
+type Preparation = (actor: AdminActor) => Promise<{ ready: boolean; reason: string | null; resend?: true }>;
 async function firstPublication(
   core: DurableCore,
   options: { preparePublication?: Preparation; release?: ReturnType<typeof releaseModel> } = {},
@@ -1082,12 +1084,10 @@ test('owner decision 25 Nov 2026: an online staff grant that becomes invalid mid
     const response = await revoked.publish('m5-deadline-revoked', bearer(Date.now() + 3_000));
     const body = await response.json();
     assert.equal(writesSoFar(revoked), 1, 'no write after the grant was revoked');
-    // As today for a refused write: the publication never reaches ACTIVE; the held product is left to
-    // operator reconciliation (or the request fails), never published on a revoked grant.
-    assert.ok(
-      response.status === 503 || (body.kind === 'accepted' && body.state === 'OPERATOR_HOLD'),
-      JSON.stringify(body),
-    );
+    // As today for a refused write: the coordinator classifies Shopify's refusal and leaves the held
+    // product to operator reconciliation; it is never published on a revoked grant.
+    assert.equal(response.status, 202, JSON.stringify(body));
+    assert.deepEqual([body.kind, body.state], ['accepted', 'OPERATOR_HOLD']);
     assert.equal(revoked.status(), 'DRAFT', 'the product stays held');
 
     // A grant that expires soon bounds the publish too: no step starts near its end; the request is resent.
@@ -1096,6 +1096,51 @@ test('owner decision 25 Nov 2026: an online staff grant that becomes invalid mid
     const stopped = await (await expiring.publish('m5-deadline-grant', bearer(Date.now() + 60_000))).json();
     assert.equal(stopped.kind, 'resend', JSON.stringify(stopped));
     assert.deepEqual(Object.fromEntries(expiring.calls), { 'product read': 1 });
+  } finally {
+    await core.close();
+  }
+});
+
+test('owner decision 25 Nov 2026: a store that still needs its signing key is resent, not failed, once the token is too short', {
+  skip: !database,
+  timeout: 120000,
+}, async () => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  try {
+    const signingFor = (rows: SigningKeyRow[]) => {
+      const fake = automaticSigning(rows);
+      const preparePublication: Preparation = (actor) =>
+        prepareSigningForPublication(actor, {
+          kind: 'automatic',
+          automatic: fake.signing,
+          token: 'synthetic-identity',
+          timezone: 'Europe/Amsterdam',
+        });
+      return { ...fake, preparePublication };
+    };
+    // The token has 10 s left: enough to authenticate, too short to provision a key with.
+    const needsKey = signingFor([]);
+    const f = await firstPublication(core, { preparePublication: needsKey.preparePublication });
+    f.tokens();
+    const response = await f.publish('m5-deadline-signing', bearer(Date.now() + 10_000));
+    const body = await response.json();
+    assert.equal(response.status, 202, JSON.stringify(body));
+    assert.equal(body.kind, 'resend', JSON.stringify(body));
+    assert.equal(body.minimumValidityMs, PUBLICATION_RESEND_VALIDITY_MS);
+    assert.equal(body.revisionId, undefined, 'the durable command was not committed');
+    assert.equal(await core.configs.getCurrentPublication(f.shopId, f.configId), null);
+    assert.equal(writesSoFar(f), 0, 'no provider write');
+    assert.deepEqual(needsKey.identityCalls, [], 'the short token was never used to provision');
+    assert.equal(f.timings.at(-1)?.outcome, 'resend');
+
+    // A store that already has its key publishes on the same short token, in one request.
+    const hasKey = signingFor([activeSigningKey]);
+    const g = await firstPublication(core, { preparePublication: hasKey.preparePublication });
+    g.tokens();
+    const published = await (await g.publish('m5-deadline-signing-ready', bearer(Date.now() + 10_000))).json();
+    assert.deepEqual([published.kind, published.state], ['accepted', 'ACTIVE']);
+    assert.equal(g.timings.length, 1);
+    assert.deepEqual(hasKey.identityCalls, []);
   } finally {
     await core.close();
   }

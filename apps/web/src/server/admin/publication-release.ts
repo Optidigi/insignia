@@ -79,7 +79,8 @@ export function releaseLifeStartedAt(attestation: { observedAt: string; expiresA
   return starts.length ? Math.min(...starts) : null;
 }
 
-/** A publish request's longest client budget (§7.1); its background refresh never outlives it. */
+/** The server's publish deadline (PUBLICATION_REQUEST_DEADLINE_MS, 60 s after the request was accepted;
+ * owner decision, 25 Nov 2026); a publish's background refresh never outlives it. */
 export const PUBLICATION_RELEASE_ACTIVE_MS = 60_000;
 
 /**
