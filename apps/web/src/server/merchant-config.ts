@@ -48,25 +48,33 @@ type Publication = Pick<ReturnType<DurableCore['productionPublications']['create
 /** Within one publish request, an allowed subscription check for the same draft is reused for this
  * long instead of being read again before every publication step (#436). */
 export const PUBLICATION_ELIGIBILITY_REUSE_MS = 30_000;
-/** #468: a publish starts a step (preview capture, preparation plus the durable command, or one
- * publication or activation advance) only while the request's staff session has at least this long
- * left; otherwise it stops between persisted steps and answers `resend`. The largest advance is 13
- * serial Admin calls (publication-latency test; bounded there at 15), about 7.5 s at 0.5 s a call,
- * and a stale release record adds a ~6 s collection before it. */
+/** #468, as changed by the owner decision of 25 Nov 2026: a publish starts a step (preview capture,
+ * preparation plus the durable command, or one publication or activation advance) only while the
+ * request's authority has at least this long left; otherwise it stops between persisted steps and
+ * answers `resend`. That authority is no longer the App Bridge session token (60 s, not refreshable
+ * early): a request that authenticated with a valid token and a fresh online staff exchange runs to
+ * PUBLICATION_REQUEST_DEADLINE_MS after it was accepted, bounded by that online grant (auth.ts). The
+ * largest advance is 13 serial Admin calls (publication-latency test; bounded there at 15), about
+ * 7.5 s at 0.5 s a call, and a stale release record adds a ~6 s collection before it. */
 export const PUBLICATION_STEP_MARGIN_MS = 15_000;
+/** Owner decision (25 Nov 2026): a publish's steps run at most this long after its request was
+ * accepted, whatever its session token's remaining life; no step starts within
+ * PUBLICATION_STEP_MARGIN_MS of it. */
+export const PUBLICATION_REQUEST_DEADLINE_MS = 60_000;
 /** Session-token validity the client waits for before it re-sends: more than the margin, so the
  * next request has room for at least one step (App Bridge then hands out a new 60 s token). */
 export const PUBLICATION_RESEND_VALIDITY_MS = 30_000;
-/** `resend` when the request's staff session is too short for another publication step. */
+/** `resend` when the request's authority is too short for another publication step. */
 function resendWhenSessionEnds(actor: Actor, revisionId?: string): Extract<Outcome, { kind: 'resend' }> | null {
-  return actor.expiresAtMs - Date.now() < PUBLICATION_STEP_MARGIN_MS
-    ? {
-        kind: 'resend',
-        ...(revisionId ? { revisionId } : {}),
-        minimumValidityMs: PUBLICATION_RESEND_VALIDITY_MS,
-        message: 'Publication is still in progress. Send it again with a new session.',
-      }
-    : null;
+  return actor.expiresAtMs - Date.now() < PUBLICATION_STEP_MARGIN_MS ? resendOutcome(revisionId) : null;
+}
+function resendOutcome(revisionId?: string): Extract<Outcome, { kind: 'resend' }> {
+  return {
+    kind: 'resend',
+    ...(revisionId ? { revisionId } : {}),
+    minimumValidityMs: PUBLICATION_RESEND_VALIDITY_MS,
+    message: 'Publication is still in progress. Send it again with a new session.',
+  };
 }
 const targetOccupied = (error: unknown) =>
   !!error &&
@@ -259,8 +267,10 @@ export function createMerchantConfigService(input: {
   };
   eligibility(actor: Actor, draft: MerchantDraft): Promise<{ allowed: boolean; reason: string | null }>;
   /** Internal preparation on an eligible new publish command only. Reads, saves
-   * and durable-request replay must never initialize technical resources. */
-  preparePublication?(actor: Actor): Promise<{ ready: boolean; reason: string | null }>;
+   * and durable-request replay must never initialize technical resources.
+   * `resend`: preparation needs the session token itself (first signing key) and the request's token
+   * is too short for it; nothing was dispatched, and the request is resent with a new token. */
+  preparePublication?(actor: Actor): Promise<{ ready: boolean; reason: string | null; resend?: true }>;
   /** Capture outside command/tenant locks, then bind only to this exact draft.
    * Completed durable intents bypass capture, including provider recovery. */
   capturePublicationPreviews?(
@@ -870,6 +880,7 @@ export function createMerchantConfigService(input: {
           const prepare = input.preparePublication;
           if (prepare) {
             const preparation = await publicationStage('preparation', () => prepare(actor));
+            if (!preparation.ready && preparation.resend) return resendOutcome();
             // Release collection is bounded by the session: one cut short by it is resent, not denied.
             if (!preparation.ready)
               return (

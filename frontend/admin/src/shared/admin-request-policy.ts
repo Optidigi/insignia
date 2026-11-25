@@ -1,7 +1,9 @@
 const ordinary = Object.freeze({ timeoutMs: 10000, minimumValidityMs: 2000 });
-// #468: a publish is sent with the ordinary token window. When the staff session ends between
-// publication steps the server answers `resend` with the validity its next request needs.
-const publication = Object.freeze({ timeoutMs: 60000, minimumValidityMs: 2000 });
+// #468: a publish is sent with the ordinary token window. Its steps may run on the server for up to
+// 60 s after it accepts the request, past the token's expiry (owner decision, 25 Nov 2026); near that
+// limit the server answers `resend` with the validity its next request needs. The deadline covers that
+// 60 s plus the longest token wait (a resend waits up to ~31 s for a new 60 s token) and the network.
+const publication = Object.freeze({ timeoutMs: 95000, minimumValidityMs: 2000 });
 // App Bridge session tokens live 60 s; a larger requirement could never be met.
 const longestValidityMs = 50000;
 

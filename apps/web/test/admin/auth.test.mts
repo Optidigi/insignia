@@ -9,6 +9,7 @@ import {
   AdminInstallationReconciliationError,
   createAdminAuthenticationCache,
   createAdminAuthenticator,
+  PUBLICATION_GRANT_MARGIN_MS,
 } from '../../src/server/admin/auth.ts';
 import { required } from './support/fixtures.mts';
 
@@ -83,6 +84,34 @@ test('expired or cross-shop identity and stale installation fail closed', async 
     null,
   );
   assert.equal(await setup({ readInstallation: async () => ({ ...installation, active: false }) }).auth(request), null);
+});
+
+test('owner decision 25 Nov 2026: a fresh publish runs to its own deadline, past its session token, on the online grant', async () => {
+  const token = { ...identity, expiresAtMs: now + 5_000 };
+  const online = { ...grant, expiresAtMs: now + 86_399_000 };
+  const h = setup({ verifySessionToken: async () => token, exchangeOnlineGrant: async () => online });
+  const until = now + 60_000;
+  const publisher = required(await h.auth(request, { fresh: true, authorityUntilMs: until }));
+  assert.equal(publisher.expiresAtMs, until, 'the authority outlives the 5 s token');
+  assert.equal(publisher.sessionTokenExpiresAtMs, token.expiresAtMs, "the token's own expiry stays known");
+  // Any other request, and a publish deadline without a fresh exchange, still ends with the token.
+  assert.equal(required(await h.auth(request)).expiresAtMs, token.expiresAtMs);
+  assert.equal(required(await h.auth(request, { authorityUntilMs: until })).expiresAtMs, token.expiresAtMs);
+  assert.equal(required(await h.auth(request, { fresh: true })).expiresAtMs, token.expiresAtMs);
+});
+
+test('owner decision 25 Nov 2026: a publish never outlasts its online staff grant', async () => {
+  const online = { ...grant, expiresAtMs: now + 50_000 };
+  const h = setup({ exchangeOnlineGrant: async () => online });
+  const publisher = required(await h.auth(request, { fresh: true, authorityUntilMs: now + 60_000 }));
+  assert.equal(publisher.expiresAtMs, online.expiresAtMs - PUBLICATION_GRANT_MARGIN_MS);
+});
+
+test('owner decision 25 Nov 2026: a publish whose session token is already expired is rejected as before', async () => {
+  for (const expiresAtMs of [now, now - 1]) {
+    const h = setup({ verifySessionToken: async () => ({ ...identity, expiresAtMs }) });
+    assert.equal(await h.auth(request, { fresh: true, authorityUntilMs: now + 60_000 }), null);
+  }
 });
 
 test('authentication stages distinguish grant and installation mismatches without identity data', async () => {

@@ -52,6 +52,7 @@ import {
   AdminInstallationReconciliationError,
   createAdminAuthenticationCache,
   createAdminGrantAuthenticator,
+  PUBLICATION_GRANT_MARGIN_MS,
 } from './auth.js';
 import { createMerchantBillingReader } from './billing.js';
 import { type CatalogListInput, filteredCatalogPage } from './catalog-query.js';
@@ -68,6 +69,7 @@ import {
   PUBLICATION_RELEASE_REFRESH_AFTER_MS,
   releaseLifeStartedAt,
 } from './publication-release.ts';
+import { prepareSigningForPublication } from './publication-signing.ts';
 import { publicationStage } from './publication-timing.js';
 import {
   createBoundProductionActivationReadiness,
@@ -212,7 +214,12 @@ export function createProductionAdminServices(
   }
   function grant(actor: AdminActor): OnlineStaffGrant {
     const online = grants.get(actor);
-    if (!online || online.expiresAtMs <= Date.now() + 30_000 || online.shop !== actor.shop || !actor.canRead)
+    if (
+      !online ||
+      online.expiresAtMs <= Date.now() + PUBLICATION_GRANT_MARGIN_MS ||
+      online.shop !== actor.shop ||
+      !actor.canRead
+    )
       throw new Error('Online staff grant unavailable');
     return online;
   }
@@ -735,29 +742,25 @@ export function createProductionAdminServices(
         return { ready: false, reason: 'Publication verification is unavailable. Contact support.' };
       }
       // The owner's armed plan applies to its own store; every other store uses automatic provisioning.
-      if (!signingOwner || signingOwnerConfiguration?.binding.tenantShopId !== actor.tenantShopId) {
-        if (!automaticSigning) return { ready: true, reason: null };
-        await active(actor);
-        grant(actor);
-        const token = requestTokens.get(actor);
-        const timezone = merchantTimezones.get(actor);
-        if (!token || !timezone) throw new Error('Publication authorization unavailable');
-        const state = await publicationStage('signing', () => automaticSigning.ensure(actor, token, timezone));
-        await active(actor);
-        return state === 'READY' || state === 'PROVISIONED'
-          ? { ready: true, reason: null }
-          : { ready: false, reason: 'Publication preparation is unavailable. Contact support.' };
-      }
+      const owner =
+        signingOwner && signingOwnerConfiguration?.binding.tenantShopId === actor.tenantShopId ? signingOwner : null;
+      if (!owner && !automaticSigning) return { ready: true, reason: null };
       await active(actor);
       grant(actor);
       const token = requestTokens.get(actor);
-      if (!token) throw new Error('Publication authorization unavailable');
-      const result = await publicationStage('signing', () => signingOwner.prepare(actor, token));
+      const timezone = merchantTimezones.get(actor);
+      const signing = !token
+        ? null
+        : owner
+          ? ({ kind: 'owner', owner, token } as const)
+          : automaticSigning && timezone
+            ? ({ kind: 'automatic', automatic: automaticSigning, token, timezone } as const)
+            : null;
+      if (!signing) throw new Error('Publication authorization unavailable');
+      // Provisioning re-uses the session token, which a publish may outlive (owner decision, 25 Nov 2026).
+      const result = await publicationStage('signing', () => prepareSigningForPublication(actor, signing));
       await active(actor);
-      return {
-        ready: result.state === 'PROVISIONED',
-        reason: result.state === 'PROVISIONED' ? null : 'Publication preparation is unavailable. Contact support.',
-      };
+      return result;
     },
   });
   if (signingOwnerConfiguration && !appId) throw new Error('Signing configuration unavailable');

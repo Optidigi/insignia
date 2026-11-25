@@ -3,6 +3,7 @@ import { MethodConfigurationSchema } from '@insignia/contracts';
 import { type AdminFailureDiagnostic, describeUnexpectedError } from '@insignia/observability';
 import { AdminOnlineIdentityError, PartnerSubscriptionError, ShopifyAdminUnavailableError } from '@insignia/shopify';
 import type { ConfigRejectionCode } from '../../shared/config-rejection.ts';
+import { PUBLICATION_REQUEST_DEADLINE_MS } from '../merchant-config.ts';
 import { SelectedSetupAuthorityError } from '../selected-product.ts';
 import { selectedMediaUrlsValid } from '../selected-product-media-urls.ts';
 import { AdminAuthenticationBusyError } from './auth.ts';
@@ -155,10 +156,14 @@ async function authenticateAdmin(
   request: Request,
   services: AdminServices,
   fresh: boolean,
+  authorityUntilMs?: number,
 ): Promise<AdminActor | Response> {
   let actor: AdminActor | null;
   try {
-    actor = await services.authenticate(request, fresh ? { fresh: true } : undefined);
+    actor = await services.authenticate(
+      request,
+      fresh ? { fresh: true, ...(authorityUntilMs === undefined ? {} : { authorityUntilMs }) } : undefined,
+    );
   } catch (error) {
     if (error instanceof AdminOnlineIdentityError && error.stage === 'ONLINE_EXCHANGE_REFRESH_REQUIRED') {
       const response = adminJson(401, { error: 'Authentication required' });
@@ -223,6 +228,8 @@ export async function handleAdminRequest(
   route: AdminRoute,
 ): Promise<Response> {
   if (!services) return adminJson(503, { error: 'Admin service unavailable' });
+  // A publish's steps may run until PUBLICATION_REQUEST_DEADLINE_MS after this moment (owner, 25 Nov 2026).
+  const acceptedAtMs = Date.now();
   const url = new URL(request.url);
   const bearer = request.headers.get('Authorization') ?? '';
   if (!/^Bearer [^\s]{1,8192}$/.test(bearer)) {
@@ -432,8 +439,12 @@ export async function handleAdminRequest(
       const configId = body.configId;
       const draftVersion = body.draftVersion;
       const publish = async (): Promise<Response | CommandOutcome> => {
-        // Publishing is staff-sensitive: confirm the same staff with a fresh online exchange.
-        const fresh = await publicationStage('authentication', () => authenticateAdmin(request, services, true));
+        // Publishing is staff-sensitive: confirm the same staff with a fresh online exchange. A request
+        // that starts with a valid session token may then finish its steps on that online grant after
+        // the token expires, until PUBLICATION_REQUEST_DEADLINE_MS after it was accepted (owner, 25 Nov 2026).
+        const fresh = await publicationStage('authentication', () =>
+          authenticateAdmin(request, services, true, acceptedAtMs + PUBLICATION_REQUEST_DEADLINE_MS),
+        );
         if (fresh instanceof Response) return fresh;
         if (fresh.shop !== actor.shop || fresh.staffId !== actor.staffId || fresh.tenantShopId !== actor.tenantShopId)
           return adminJson(401, { error: 'Authentication required' });
