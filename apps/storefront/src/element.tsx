@@ -12,6 +12,25 @@ import { connectThemeIntegration, styleThemeTrigger } from './theme-integration'
 const loadDesignerModal = () => import('./designer/modal');
 // Touch devices have no hover: the first press is the earliest intent, ahead of its click.
 const intentEvents = ['pointerenter', 'focus', 'pointerdown', 'touchstart'] as const;
+// Every chunk the open path needs (modal, buyer, controller, frame host, frame entry and their imports), written
+// here by the build. Fetching them together replaces a chain of round trips; a source host has none.
+const openPathChunks: string = '__INSIGNIA_OPEN_PATH_CHUNKS__';
+let openPathPreloaded = false;
+function preloadOpenPath() {
+  if (openPathPreloaded || !openPathChunks.startsWith('[')) return;
+  openPathPreloaded = true;
+  for (const file of JSON.parse(openPathChunks) as string[]) {
+    const href = new URL(file, import.meta.url).href;
+    if (
+      [...document.head.querySelectorAll<HTMLLinkElement>('link[rel=modulepreload]')].some((link) => link.href === href)
+    )
+      continue;
+    const link = document.createElement('link');
+    link.rel = 'modulepreload';
+    link.href = href;
+    document.head.append(link);
+  }
+}
 
 /**
  * Nothing of the Designer loads with the page: presentation is prepared on buyer intent (pointer enter, focus,
@@ -27,6 +46,7 @@ export class InsigniaBuyer extends HTMLElement {
   private stopBusy?: () => void;
   private readonly triggerClick = () => void this.mount();
   private readonly triggerIntent = () => {
+    preloadOpenPath();
     void loadDesignerModal().catch(() => {});
     this.prepare();
   };
@@ -279,6 +299,7 @@ export class InsigniaBuyer extends HTMLElement {
   }
   private async mount() {
     if (this.mounting) return;
+    preloadOpenPath();
     const generation = this.generation;
     if (this.liveFrame && (await this.reopen(this.liveFrame, generation))) return;
     const productId = this.getAttribute('product-id') ?? '';

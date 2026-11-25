@@ -46,7 +46,11 @@ test('the theme embed entry statically loads no Designer modal, theme preference
   for (const fileName of eager) {
     const chunk = chunks.get(fileName);
     assert.deepEqual([...(chunk?.viteMetadata?.importedCss ?? [])], [], `${fileName} must not import a stylesheet`);
-    assert.ok(!/insignia-designer(?:-frame\.js|\.css)/.test(chunk?.code ?? ''), `${fileName} names no Designer asset`);
+    // The open-path preload list (file names only, fetched on intent or click) is the one permitted mention.
+    const lists = (chunk?.code ?? '').match(/"\[(?:\\"insignia-[^\\"]+\\",?)+\]"/g) ?? [];
+    assert.ok(lists.length <= 1 && (lists[0]?.length ?? 0) <= 1024, `${fileName} carries at most one small chunk list`);
+    const code = lists.reduce((rest, list) => rest.replace(list, ''), chunk?.code ?? '');
+    assert.ok(!/insignia-designer(?:-frame\.js|\.css)/.test(code), `${fileName} imports no Designer asset`);
   }
   // #653 budget: at most 15 KB of Insignia JavaScript transferred before any buyer interaction. The theme loads
   // the classic bootstrap, which imports insignia-element.js and its static imports.
