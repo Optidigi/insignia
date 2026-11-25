@@ -36,7 +36,32 @@
     {% if block.settings.override_border %}button-border-width="{{ block.settings.button_border_width }}px"{% endif %}
     {% if block.settings.button_border_color != blank %}button-border-color="{{ block.settings.button_border_color | escape }}"{% endif %}
     {% if block.settings.button_spacing > 0 %}button-spacing="{{ block.settings.button_spacing }}px"{% endif %}
-  ></{{ control_tag }}>
+    {% unless control == 'automatic' %}style="display:contents"{% endunless %}
+  >
+    {%- comment -%}
+      The manual trigger is server-rendered with its final classes and overrides (the same ones styleThemeTrigger
+      applies), so it has its size and position from first paint and nothing shifts when the script arrives (#653).
+    {%- endcomment -%}
+    {%- unless control == 'automatic' -%}
+      {%- capture trigger_style -%}
+        {%- if block.settings.button_background != blank -%}background-color:{{ block.settings.button_background }};background-image:none;{%- endif -%}
+        {%- if block.settings.button_color != blank -%}color:{{ block.settings.button_color }};{%- endif -%}
+        {%- if block.settings.override_radius -%}border-radius:{{ block.settings.button_radius }}px;{%- endif -%}
+        {%- if block.settings.override_border -%}border-width:{{ block.settings.button_border_width }}px;border-style:solid;{%- endif -%}
+        {%- if block.settings.button_border_color != blank -%}border-color:{{ block.settings.button_border_color }};{%- endif -%}
+        {%- if block.settings.button_spacing > 0 -%}margin-block:{{ block.settings.button_spacing }}px;{%- endif -%}
+        {%- if block.settings.button_width == 'full' -%}width:100%;{%- elsif block.settings.button_width == 'content' -%}width:auto;{%- endif -%}
+      {%- endcapture -%}
+      <button
+        type="button"
+        slot="trigger"
+        class="button insignia-customise{% if block.settings.button_style == 'primary' %} button--primary{% elsif block.settings.button_style == 'secondary' %} button--secondary button-secondary{% endif %}"
+        {% if trigger_style != blank %}style="{{ trigger_style | escape }}"{% endif %}
+      >
+        {{- trigger_label -}}
+      </button>
+    {%- endunless -%}
+  </{{ control_tag }}>
 {%- elsif request.design_mode -%}
   <p {{ block.shopify_attributes }}>Publish required customization for this product to show Customise.</p>
 {%- endif -%}

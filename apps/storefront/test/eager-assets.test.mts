@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { gzipSync } from 'node:zlib';
 import { build, type Rollup } from 'vite';
 import config from '../vite.config.ts';
 
@@ -42,6 +43,28 @@ test('the theme embed entry statically loads no Designer modal, theme preference
       [],
       `${forbidden} must load only when the Designer is opened or prepared`,
     );
-  const eagerBytes = [...eager].reduce((sum, fileName) => sum + (chunks.get(fileName)?.code.length ?? 0), 0);
-  console.log(`eager theme embed chunks: ${[...eager].sort().join(', ')} (${eagerBytes} bytes)`);
+  for (const fileName of eager) {
+    const chunk = chunks.get(fileName);
+    assert.deepEqual([...(chunk?.viteMetadata?.importedCss ?? [])], [], `${fileName} must not import a stylesheet`);
+    assert.ok(!/insignia-designer(?:-frame\.js|\.css)/.test(chunk?.code ?? ''), `${fileName} names no Designer asset`);
+  }
+  // #653 budget: at most 15 KB of Insignia JavaScript transferred before any buyer interaction. The theme loads
+  // the classic bootstrap, which imports insignia-element.js and its static imports.
+  const bootstrap = outputs
+    .flatMap((output) => output.output)
+    .find((item): item is Rollup.OutputAsset => item.type === 'asset' && item.fileName === 'insignia-storefront.js');
+  const files = [
+    ['insignia-storefront.js', String(bootstrap?.source ?? '')] as const,
+    ...[...eager].sort().map((fileName) => [fileName, chunks.get(fileName)?.code ?? ''] as const),
+  ];
+  const sizes = files.map(([fileName, code]) => ({
+    fileName,
+    raw: code.length,
+    gzip: gzipSync(code, { level: 9 }).length,
+  }));
+  const gzip = sizes.reduce((sum, size) => sum + size.gzip, 0);
+  console.log(
+    `eager theme embed files (raw/gzip bytes): ${sizes.map((s) => `${s.fileName} ${s.raw}/${s.gzip}`).join(', ')}; total gzip ${gzip}`,
+  );
+  assert.ok(gzip <= 15 * 1024, `eager Insignia JavaScript is ${gzip} gzip bytes, over the 15 KB budget`);
 });

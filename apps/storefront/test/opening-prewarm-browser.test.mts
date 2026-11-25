@@ -68,7 +68,7 @@ const sessionGrant = () => ({
   },
 });
 for (const engine of [chromium, firefox]) {
-  test(`${engine.name()}: idle preparation fetches only public presentation and immutable assets without opening the modal`, async (t) => {
+  test(`${engine.name()}: hover preparation fetches only public presentation and immutable assets without opening the modal`, async (t) => {
     const server = await createStorefrontTestServer({
       plugins: [selectedFrameAssets()],
       server: { host: '127.0.0.1', port: 0, hmr: false },
@@ -115,7 +115,11 @@ for (const engine of [chromium, firefox]) {
         '<button id="theme-focus">Theme</button><insignia-buyer product-id="111" country="US"></insignia-buyer>';
       document.getElementById('theme-focus')?.focus();
     });
-    await page.waitForResponse((response) => new URL(response.url()).pathname === '/apps/insignia/v1/config');
+    const configRead = page.waitForResponse(
+      (response) => new URL(response.url()).pathname === '/apps/insignia/v1/config',
+    );
+    await page.locator('insignia-buyer button').hover();
+    await configRead;
     await page.waitForFunction(
       () =>
         document.querySelector('link[rel=modulepreload][href$="insignia-designer-frame.js"]') &&
@@ -218,7 +222,11 @@ for (const engine of [chromium, firefox]) {
       await customElements.whenDefined('insignia-buyer');
       document.body.innerHTML = '<insignia-buyer product-id="111" country="US"></insignia-buyer>';
     });
-    await page.waitForResponse((response) => response.status() === 503 && response.url().includes('/v1/config'));
+    const failedRead = page.waitForResponse(
+      (response) => response.status() === 503 && response.url().includes('/v1/config'),
+    );
+    await page.locator('insignia-buyer button').hover();
+    await failedRead;
     await page.evaluate(() => document.querySelector('insignia-buyer')?.setAttribute('country', 'NL'));
     await page.locator('insignia-buyer button').click();
     await page.frameLocator('dialog:modal > iframe[srcdoc]').locator('.app').waitFor();
@@ -241,13 +249,6 @@ for (const engine of [chromium, firefox])
       await server.close();
     });
     const page = await browser.newPage();
-    await page.addInitScript(() => {
-      window.requestIdleCallback = (callback) => {
-        Reflect.set(window, '__idle', callback);
-        return 1;
-      };
-      window.cancelIdleCallback = () => Reflect.deleteProperty(window, '__idle');
-    });
     const paths: string[] = [];
     await page.route('**/apps/insignia/**', (route) => {
       paths.push(new URL(route.request().url()).pathname);
@@ -262,7 +263,6 @@ for (const engine of [chromium, firefox])
       // A visible product control on the cart page, e.g. an auto-placed recommendation quick-add.
       document.body.innerHTML =
         '<insignia-cart-repair cart-root="/nl/"></insignia-cart-repair><insignia-buyer product-id="111" cart-root="/nl/" data-insignia-auto></insignia-buyer>';
-      Reflect.get(window, '__idle')?.();
     });
     await page.waitForLoadState('networkidle');
     assert.deepEqual(paths, [], 'an ordinary cart view reads no Insignia configuration');
@@ -286,18 +286,6 @@ for (const engine of [chromium, firefox])
       await server.close();
     });
     const page = await browser.newPage();
-    await page.addInitScript(() => {
-      let next = 0;
-      window.requestIdleCallback = (callback) => {
-        const id = ++next;
-        Reflect.set(window, '__idle', callback);
-        Reflect.set(window, '__idleId', id);
-        return id;
-      };
-      window.cancelIdleCallback = (id) => {
-        if (Reflect.get(window, '__idleId') === id) Reflect.deleteProperty(window, '__idle');
-      };
-    });
     let requests = 0;
     const first = deferred();
     await page.route('**/apps/insignia/v1/config*', async (route) => {
@@ -319,13 +307,14 @@ for (const engine of [chromium, firefox])
     await page.evaluate(async () => {
       await customElements.whenDefined('insignia-buyer');
       document.body.innerHTML = '<insignia-buyer product-id="111" repair></insignia-buyer>';
-      Reflect.get(window, '__idle')?.();
     });
-    assert.equal(requests, 0);
+    await page.locator('insignia-buyer button').hover();
+    await page.locator('insignia-buyer button').focus();
+    assert.equal(requests, 0, 'cart repair intent prepares nothing');
     await page.evaluate(() => {
       document.body.innerHTML = '<insignia-buyer product-id="111"></insignia-buyer>';
-      Reflect.get(window, '__idle')?.();
     });
+    await page.locator('insignia-buyer button').focus();
     await first.promise;
     await page.waitForFunction(
       () => !!document.querySelector('link[rel=modulepreload][href$="insignia-designer-frame.js"]'),
@@ -353,8 +342,8 @@ for (const engine of [chromium, firefox])
     });
     await page.evaluate(() => {
       document.body.innerHTML = '<insignia-buyer product-id="111"></insignia-buyer>';
-      Reflect.get(window, '__idle')?.();
     });
+    await page.locator('insignia-buyer button').focus();
     await queued.promise;
     const failed = page.waitForEvent('requestfailed', (request) => request.url().includes('/v1/config'));
     await page.evaluate(() => document.querySelector('insignia-buyer')?.remove());
@@ -408,6 +397,7 @@ for (const engine of [chromium, firefox])
         '<button id="theme-focus">Theme</button><insignia-buyer product-id="111"></insignia-buyer>';
       document.getElementById('theme-focus')?.focus();
     });
+    await page.locator('insignia-buyer button').hover();
     await page.waitForFunction(
       () => !!document.querySelector('dialog > div')?.shadowRoot?.querySelector('[role=alert]'),
     );
@@ -474,9 +464,10 @@ for (const engine of [chromium, firefox])
         '<button id="theme-focus">Theme</button><insignia-buyer product-id="111"></insignia-buyer>';
       document.getElementById('theme-focus')?.focus();
     });
+    await page.locator('insignia-buyer button').hover();
     await failed;
     await page.waitForLoadState('networkidle', { timeout: 3000 });
-    assert.equal(reads, 1, 'new signed URLs must not turn an idle failed photo into a refresh loop');
+    assert.equal(reads, 1, 'new signed URLs must not turn a prepared failed photo into a refresh loop');
     assert.equal(await page.locator('dialog:modal').count(), 0);
     assert.equal(await page.evaluate(() => document.activeElement?.id), 'theme-focus');
     assert.equal(await page.evaluate(() => document.documentElement.style.overflow), '');
@@ -493,7 +484,7 @@ for (const engine of [chromium, firefox])
   });
 
 for (const engine of [chromium, firefox])
-  test(`${engine.name()}: one visible idle owner yields to explicit intent without retiring an opened Designer`, {
+  test(`${engine.name()}: one prepared owner yields to intent on another control without retiring an opened Designer`, {
     timeout: BROWSER_TEST_TIMEOUT_MS,
   }, async (t) => {
     const server = await createStorefrontTestServer({
@@ -507,23 +498,6 @@ for (const engine of [chromium, firefox])
       await server.close();
     });
     const page = await browser.newPage();
-    await page.addInitScript(() => {
-      let next = 0;
-      const idle = new Map<number, IdleRequestCallback>();
-      Reflect.set(window, '__runIdle', () => {
-        const callbacks = [...idle.values()];
-        idle.clear();
-        for (const callback of callbacks) callback({ didTimeout: false, timeRemaining: () => 10 });
-      });
-      window.requestIdleCallback = (callback) => {
-        const id = ++next;
-        idle.set(id, callback);
-        return id;
-      };
-      window.cancelIdleCallback = (id) => {
-        idle.delete(id);
-      };
-    });
     const reads: string[] = [];
     let sessions = 0;
     await page.route('**/apps/insignia/**', (route) => {
@@ -553,27 +527,11 @@ for (const engine of [chromium, firefox])
     await page.evaluate(async () => {
       await customElements.whenDefined('insignia-buyer');
       document.body.innerHTML =
-        '<button id="theme-focus">Theme</button><insignia-buyer product-id="113"><button slot="trigger" style="position:fixed;left:-4000px">Offscreen</button></insignia-buyer><insignia-buyer product-id="111"></insignia-buyer><insignia-buyer product-id="112"></insignia-buyer>';
+        '<button id="theme-focus">Theme</button><insignia-buyer product-id="111"></insignia-buyer><insignia-buyer product-id="112"></insignia-buyer>';
       document.getElementById('theme-focus')?.focus();
-      const modal = document.createElement('dialog');
-      modal.id = 'existing-theme-modal';
-      document.body.append(modal);
-      modal.showModal();
-      Reflect.get(window, '__runIdle')();
     });
-    assert.deepEqual(reads, [], 'an existing modal suppresses automatic preparation');
-    assert.equal(await page.locator('iframe').count(), 0);
-    await page.evaluate(() => {
-      const modal = document.getElementById('existing-theme-modal') as HTMLDialogElement;
-      modal.close();
-      modal.remove();
-      for (const buyer of document.querySelectorAll('insignia-buyer')) {
-        buyer.remove();
-        document.body.append(buyer);
-      }
-      document.getElementById('theme-focus')?.focus();
-      Reflect.get(window, '__runIdle')();
-    });
+    assert.deepEqual(reads, [], 'visible controls prepare nothing before intent');
+    await page.locator('insignia-buyer[product-id="111"] button').hover();
     await page.waitForFunction(
       () =>
         document.querySelector<HTMLIFrameElement>('dialog[aria-label="First shirt"] > iframe')?.style.visibility ===
