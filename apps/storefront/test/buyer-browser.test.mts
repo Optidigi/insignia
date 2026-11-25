@@ -2621,6 +2621,10 @@ test('unavailable-state removal succeeds in a tab whose earlier unknown write wa
   }
 });
 
+/** The next main-frame navigation request to Shopify's cart page. */
+function cartNavigation(page: Page) {
+  return page.waitForRequest((request) => request.isNavigationRequest() && new URL(request.url()).pathname === '/cart');
+}
 /**
  * Cart repair for a line signed elsewhere (NL), opened in another storefront context. `unsupported`: the shop's
  * Insignia cannot serve this country or Market (a Canada-like Market), so the config read answers 422.
@@ -2635,6 +2639,7 @@ async function withContextRepair(
     updates: () => number;
     configReads: () => URLSearchParams[];
     otherRequests: () => string[];
+    cartNavigations: () => number;
   }) => Promise<void>,
 ) {
   const server = await createServer({
@@ -2677,6 +2682,13 @@ async function withContextRepair(
       return route.fulfill({ status: 409, json: { code: 'REVIEW_REQUIRED', details: { reason: 'NOT_OWNED' } } });
     });
     await page.goto(origin);
+    // The native cart answers no document, so the test page stays inspectable after navigating. Navigations are
+    // counted as they are requested, not as the route answers them.
+    let cartNavigations = 0;
+    page.on('request', (request) => {
+      if (request.isNavigationRequest() && new URL(request.url()).pathname === '/cart') cartNavigations++;
+    });
+    await page.route('**/cart', (route) => route.fulfill({ status: 204 }));
     await page.evaluate(
       ({ country, marketId }) => {
         const buyer = document.createElement('insignia-buyer');
@@ -2698,6 +2710,7 @@ async function withContextRepair(
       updates: () => updates,
       configReads: () => configReads,
       otherRequests: () => otherRequests,
+      cartNavigations: () => cartNavigations,
     });
   } finally {
     await browser?.close();
@@ -2706,7 +2719,8 @@ async function withContextRepair(
 }
 
 test('cart repair in an unsupported country or Market explains it at once and removes by keyboard without signing', async () => {
-  await withContextRepair('unsupported', async ({ page, ui, trigger, items, updates, configReads, otherRequests }) => {
+  await withContextRepair('unsupported', async (context) => {
+    const { page, ui, trigger, items, updates, configReads, otherRequests, cartNavigations } = context;
     await ui.getByRole('heading', { name: 'Unavailable', exact: true }).waitFor(firstLoad);
     await ui
       .getByText("Customization isn't available for your country or currency. Your cart is unchanged.", {
@@ -2728,6 +2742,7 @@ test('cart repair in an unsupported country or Market explains it at once and re
     await page.locator('dialog[open]').waitFor({ state: 'detached' });
     assert.equal(await trigger.evaluate((element) => element === document.activeElement), true);
     assert.equal(updates(), 0);
+    assert.equal(cartNavigations(), 0, 'closing never opens the native cart');
 
     // Reopened from the keyboard, removal is reviewed and confirmed with Enter.
     await page.keyboard.press('Enter');
@@ -2737,11 +2752,85 @@ test('cart repair in an unsupported country or Market explains it at once and re
     const confirm = ui.getByRole('button', { name: 'Confirm cart update', exact: true });
     await confirm.waitFor();
     await confirm.focus();
+    const navigated = cartNavigation(page);
     await page.keyboard.press('Enter');
+    await navigated;
     await page.locator('dialog[open]').waitFor({ state: 'detached' });
     assert.equal(updates(), 1);
     assert.deepEqual(items(), []);
+    assert.equal(cartNavigations(), 1, 'the confirmed removal opens the native cart once');
     assert.deepEqual(otherRequests(), [], 'no session, cart-state, proposal or acceptance request');
+  });
+});
+
+// D1 (25 Nov 2026): an NL-signed line reviewed from Canada was removed, but the cart page kept showing it.
+test('confirmed removal in an unsupported country or Market opens the native cart exactly once', async () => {
+  await withContextRepair('unsupported', async ({ page, ui, items, updates, cartNavigations }) => {
+    await ui.getByRole('heading', { name: 'Unavailable', exact: true }).waitFor(firstLoad);
+    await ui.getByRole('button', { name: 'Review removing all customized items', exact: true }).click();
+    assert.equal(updates(), 0, 'reviewing removal does not change the cart');
+    assert.equal(cartNavigations(), 0);
+    const navigated = cartNavigation(page);
+    await ui.getByRole('button', { name: 'Confirm cart update', exact: true }).click();
+    await navigated;
+    await page.locator('dialog[open]').waitFor({ state: 'detached' });
+    assert.equal(updates(), 1);
+    assert.deepEqual(items(), []);
+    // Settle: a later, separate navigation from the same confirmation would be requested well within this.
+    await page.waitForTimeout(300);
+    assert.equal(cartNavigations(), 1);
+  });
+});
+
+test('a refused removal in an unsupported country or Market keeps the review open and never opens the native cart', async () => {
+  await withContextRepair('unsupported', async ({ page, ui, items, cartNavigations }) => {
+    await ui.getByRole('heading', { name: 'Unavailable', exact: true }).waitFor(firstLoad);
+    await page.route('**/cart/update.js', (route) =>
+      route.fulfill({ status: 422, json: { status: 422, description: 'Cannot update the cart' } }),
+    );
+    await ui.getByRole('button', { name: 'Review removing all customized items', exact: true }).click();
+    await ui.getByRole('button', { name: 'Confirm cart update', exact: true }).click();
+    await ui.locator('.cart-submit-error').waitFor();
+    assert.equal(await page.locator('dialog[open]').count(), 1, 'the dialog stays open');
+    assert.equal(await ui.getByRole('button', { name: 'Confirm cart update', exact: true }).isVisible(), true);
+    assert.equal(items().length, 1, 'the cart is unchanged');
+    assert.equal(cartNavigations(), 0);
+  });
+});
+
+test('a removal that lands after the cart entry moved on never opens the native cart', async () => {
+  await withContextRepair('unsupported', async ({ page, ui, items, cartNavigations }) => {
+    await ui.getByRole('heading', { name: 'Unavailable', exact: true }).waitFor(firstLoad);
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let held!: () => void;
+    const holding = new Promise<void>((resolve) => {
+      held = resolve;
+    });
+    await page.route('**/cart/update.js', async (route) => {
+      held();
+      await released;
+      return route.fallback();
+    });
+    await ui.getByRole('button', { name: 'Review removing all customized items', exact: true }).click();
+    await ui.getByRole('button', { name: 'Confirm cart update', exact: true }).click();
+    await holding;
+    // The storefront context changes while the update is in flight: this Designer is now stale.
+    await page.locator('insignia-buyer').evaluate((buyer) => buyer.setAttribute('market-id', '78'));
+    // The navigation decision follows this event in the same task.
+    const updated = page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          window.addEventListener('insignia-cart-updated', () => resolve(), { once: true }),
+        ),
+    );
+    release();
+    await updated;
+    await page.waitForTimeout(300);
+    assert.deepEqual(items(), [], 'the confirmed removal still landed');
+    assert.equal(cartNavigations(), 0);
   });
 });
 

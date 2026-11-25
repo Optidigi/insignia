@@ -17,6 +17,8 @@ export async function mountUnavailableDesigner(input: {
   storage: Pick<Storage, 'getItem' | 'setItem'>;
   onClose(): void;
   retry(): Promise<void>;
+  /** False once the owning element has moved on; a late confirmation then never navigates. */
+  isCurrent(): boolean;
 }) {
   const cart = createAjaxCartAdapter({ root: input.cartRoot, journal: cartJournal(input.storage, input.cartRoot) });
   let canRemoveAll = false;
@@ -26,10 +28,16 @@ export async function mountUnavailableDesigner(input: {
     /* Unobserved contents cannot offer removal. */
   }
   let reviewed: Awaited<ReturnType<typeof cart.read>> | undefined;
+  let destroyed = false;
+  const current = () => !destroyed && input.isCurrent();
+  function destroy() {
+    destroyed = true;
+    frame.destroy();
+  }
   const frame = createDesignerFrame({
     modal: input.modal,
     onInitializationRetry: async () => {
-      frame.destroy();
+      destroy();
       await input.retry();
     },
     title: input.title,
@@ -61,7 +69,13 @@ export async function mountUnavailableDesigner(input: {
       if (applied.status !== 'applied' || !applied.cart) throw new Error('Cart removal remains unresolved');
       reviewed = undefined;
       window.dispatchEvent(new CustomEvent('insignia-cart-updated'));
-      frame.close();
+      // Like every confirmed removal: Shopify's cart page shows the result (D1). Decided before this
+      // Designer tears itself down, so its own teardown cannot cancel the navigation.
+      const navigate = current();
+      destroy();
+      // Focus returns to the cart entry, as on any close, in case the navigation is cancelled.
+      input.onClose();
+      if (navigate) window.location.assign(`${input.cartRoot}cart`);
       return;
     },
   });
@@ -69,6 +83,6 @@ export async function mountUnavailableDesigner(input: {
     open() {
       return frame.open();
     },
-    destroy: frame.destroy,
+    destroy,
   };
 }
