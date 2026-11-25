@@ -2,17 +2,25 @@
 
 ## Active assignment
 
-Updated 24 November 2026. **Shopify App Store review is paused until 25 November.** Shopify reported
-that customized products could not be added to the cart (2.1.1) and requested evidence for plan changes,
+Updated 25 November 2026. **Shopify App Store review: the pause ended 25 November; the owner resubmits.**
+Shopify had reported that customized products could not be added to the cart (2.1.1) and requested evidence for plan changes,
 order scopes and reviewer access. Use the [resubmission checklist](shopify-review-resubmission.md)
-for the current findings and release verification. The November 19 resubmission remains historical
-evidence below. Insignia runs only on `app.insigniacustomizer.com` on host alias `prod`: one Compose project `insignia` from `/srv/saas/infra/stacks/insignia` (installed from [deployment/production/compose.yaml](../../deployment/production/compose.yaml)), data on the encrypted volume `/srv/data/saas/insignia`. **Exact running versions live only in [Deployed identities](#deployed-identities)** (as of 25 Nov: Shopify Active `1265289363457`, profile `native-escape-once-bcb6cd16`; web deploy AU, worker and verifier deploy AT; inspector deploy AD; schema 74). Since the production cutover (16 Nov, fresh database) only the owner's dev and review stores are installed in production; no real merchant yet. The first real merchants are the Stitchs/Superfunny pilot, after the owner's backup and secret-rotation items. **A separate agent tests the storefront and merchant UI on rewrite-dev; its new issues wait for the owner's review before engineering picks them up.** Open engineering issues: #573; deferred work: [backlog](../backlog/README.md). The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
+for the findings, the 24–25 November hardening evidence and the remaining review gaps. The November 19 resubmission remains historical
+evidence below. Insignia runs only on `app.insigniacustomizer.com` on host alias `prod`: one Compose project `insignia` from `/srv/saas/infra/stacks/insignia` (installed from [deployment/production/compose.yaml](../../deployment/production/compose.yaml)), data on the encrypted volume `/srv/data/saas/insignia`. **Exact running versions live only in [Deployed identities](#deployed-identities)** (as of 25 Nov: Shopify Active `1265289363457`, profile `native-escape-once-bcb6cd16`; web deploy AU, worker and verifier deploy AT; inspector deploy AD; schema 74). Since the production cutover (16 Nov, fresh database) only the owner's dev and review stores are installed in production; no real merchant yet. The first real merchants are the Stitchs/Superfunny pilot, after the owner's backup and secret-rotation items. **A separate agent tests the storefront and merchant UI on rewrite-dev; its new issues wait for the owner's review before engineering picks them up.** Open engineering issues: #637, #643, #651 (fix PR #654), #653; deferred work: [backlog](../backlog/README.md). The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
 
-The final reviewer fixture passed live keyboard navigation and USD checkout at $30 for two items
-on Shopify version `1264667197441`. A second pass reached the same Designer total and verified the
-owner-session merchant screens. The next hardening pass needs a fresh performance baseline, fresh
-USD and qualified EUR setup-to-order tests, recovery cases and the same-stock Market-switch test.
-The [review checklist](shopify-review-resubmission.md) owns the evidence and remaining review gaps.
+**Hardening pass, 24–25 November 2026: done.** Deploys AS, AT and AU released its code
+(records below; PR list in the checklist). On the final version `1265289363457` the reviewer fixture passed keyboard
+navigation, a $30.00 Designer/cart/checkout total and Bogus test order #1015, read back paid in
+Insignia. Fresh USD and EUR setup-to-order runs, the Market switch, recovery cases R1–R7 and a
+Lighthouse baseline passed or are recorded with their limits in the
+[review checklist](shopify-review-resubmission.md#remaining-hardening). Open items are in the
+[backlog](../backlog/README.md#after-the-hardening-pass-25-nov-2026).
+
+**Next for the owner:** resubmit in the Partner Dashboard (not done by engineering); decide whether
+a publish that starts on a 25–30 s-old release record may be refused mid-step (closing it changes a
+freshness rule); after approval, decide on relaxing the publish hold-safety steps (≤10 s first
+publish) and #637. Backups, secret rotation and the shop-erasure purge still come before the first
+real merchant.
 
 ### Picking this up
 
@@ -53,14 +61,15 @@ The [review checklist](shopify-review-resubmission.md) owns the evidence and rem
 | 8 Rollout | Not approved | First real merchant. | Explicit go. | Owner authorization after the gates above. |
 
 **Small pending checks.**
-- Renewal of an expired quote, natively, from 16–17 Nov (with the key 2 check): a test cart was seeded on 13 Nov `20:15Z` in the dev host's **default** T3 preview browser profile (1 × Zwart / M, $17.45, `_insignia_line_v3`; T-shirt demo). Open the cart page in that profile, renew it, check out or empty it, and record the result. Do not empty that profile's cart before then.
+- Renewal of an owned expired quote, natively: still unverified. The 13 Nov seeded cart predated the production cutover and was removed via repair on 24 Nov.
 - **End-to-end purchase after deploy 4 (13 Nov, about `20:05–20:11Z`):** Designer (upload on Linkerborst, typed quantity 2) → Review $34.90 → cart line 2 × $17.45 with a `_insignia_line_v3` carrier (transform priced it; variant $9.95) → checkout loaded without validation errors → test-gateway order `FXUC9QZLM`, $42.90 with shipping. Insignia recorded the order, paid fact, binding and line. No artwork notification, as expected: notifications are planned only for "artwork later" placements.
 - 16 Nov: key 2's destruction. Confirm that the worker logs `signing_key_destruction` with count 1, a Designer Add to cart still succeeds and no `public_config_drift` line appears. The published config still lists key 2 until the next owner rotation or publication, and quote readiness tolerates that (#333).
 - Per-visitor and shop limits under load: test locally, not by flooding prod.
 - Per-visitor 429 through Shopify's app proxy: run `~/insignia-qa/load/limitprobe.mjs` (raise its cap to about 60) at the end of the 16–17 Nov session. It blocks new buyer sessions from this host's visitor address for up to an hour.
 - Delete the owner-supplied Cloudflare Rules token when the domain work is final; the owner will say when.
 
-**Owner decisions in force (11–14 November 2026).**
+**Owner decisions in force (11–24 November 2026).**
+- Hardening pass (24 Nov), numbered as in the PRs: (1) an unsupported-country cart line is repaired removal-first ([spec §8.3](../architecture/implementation-plan.md#83-http-contracts)); (2) proposal and draft shop-lock waits are bounded (2 s, then 409); (3) publish keeps the shop's release record fresh in the background, while relaxing the publish hold-safety steps waits until after App Store approval; (4) held-row worker errors are summarized hourly; (5) #635's specification wording is accepted; (6) the Market-aware stock check is deferred (#637); (7) `insignia-hardening-eu-1125` stays as the EUR/two-Market fixture. #635 was released before resubmission (deploy AS).
 - Merchant-issue batch (14 Nov): automatic recovery of an interrupted publish (#446 Option A) could not be built within the schema and operator-resolution rules; the owner accepted shipping the throttling fixes and deciding the operator-hold exit (#466) before rollout. Publish keeps the ≥30 s session-token rule; the server-continuation option is #468. Shopify's contextual save bar is the single save path (its Save is Save draft); Publish stays in Insignia's header (#441). An R2 CORS rule for `app.insigniacustomizer.com` on the Insignia artwork bucket is allowed if #434 needs it. Admin authentication reuses a verified online grant per shop, staff member and session until it expires, with a short per-shop installation cache fenced by generation; staff-sensitive actions keep a fresh exchange (#435).
 - Standing grant (13 Nov): deploy, install and change rewrite-dev and the Insignia app without asking, within the limits in the [operating model](operating-model.md#effective-resource-scope).
 - Accepted limits (13 Nov): Review may wait behind an in-flight autosave; two tabs on one cart line, last write wins.

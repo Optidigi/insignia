@@ -56,3 +56,26 @@ leftovers to fold into it (each needs a restart, so they were not done during re
   mount, crypttab and fstab: root), bucket `insignia-production`, and the planned staging stack (working name
   `insignia-staging`). The repository folder `deployment/m5-runtime` and the retained `deployment/m5-019*` records are
   historical names only.
+
+## After the hardening pass (25 Nov 2026)
+
+Added 25 Nov 2026 from the 24–25 Nov hardening pass ([evidence](../delivery/shopify-review-resubmission.md#remaining-hardening)).
+
+**Open issues.**
+- #637 Market-aware stock check before quoting (owner decision 6: deferred until after App Store approval).
+- #643 Misleading cart messages after compensated partial adds and throttled witness reads.
+- #651 Flaky selected-repair Escape test (fix in PR #654).
+- #653 Storefront performance: idle Designer prewarm (~200 KB JS + 234 KB CSS), USD TBT +238 ms, USD footer
+  CLS 0.15. Lighthouse 25 Nov: USD −7.0 points (pass is 6, Shopify's limit 10), EUR −1.5.
+
+**Waiting for an owner decision.** A publish step that starts on a 25–30 s-old release record can still be
+refused mid-step. #641 and #650 narrowed the window; closing it changes a freshness rule.
+
+**Deferred.**
+- Relax the publish hold-safety steps to reach ≤10 s first publish (options A/B in #632's analysis); owner
+  decision 3 defers this until after approval. First publish took 25–38 s in production before #641.
+- The guest artwork upload shop-lock wait is unbounded (other buyer waits are bounded at 2 s by #639).
+- Catalog-transport network failures are not typed yet: they return 503 instead of BUSY.
+- A persistent Shopify INTERNAL_SERVER_ERROR now shows as BUSY (warn) rather than unavailable (error) since #647.
+- Persist production logs: on 24 Nov they reached back only to container restarts, so no 48 h latency
+  baseline exists.
