@@ -63,7 +63,7 @@ Added 25 Nov 2026 from the 24–25 Nov hardening pass ([evidence](../delivery/sh
 
 **Open issues.**
 - #637 Market-aware stock check before quoting (owner decision 6: deferred until after App Store approval).
-- #643 Misleading cart messages after compensated partial adds and throttled witness reads (fixed by its PR).
+- #643 Misleading cart messages after compensated partial adds and throttled witness reads (fix in PR #659).
 - #651 Flaky selected-repair Escape test (fix in PR #654).
 - #653 Storefront performance: idle Designer prewarm (~200 KB JS + 234 KB CSS), USD TBT +238 ms, USD footer
   CLS 0.15. Lighthouse 25 Nov: USD −7.0 points (pass is 6, Shopify's limit 10), EUR −1.5.

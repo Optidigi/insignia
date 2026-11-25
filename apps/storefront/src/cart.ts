@@ -581,6 +581,8 @@ export function createAjaxCartAdapter({
         let restored = false;
         /** Compensation removed lines this application had added. */
         let removedAdded = false;
+        /** Compensation gave swapped lines their old carrier back. */
+        let restoredSwaps = false;
         /** A compensating write went unanswered (no 4xx): its effect may still land. */
         let unanswered = false;
         const write = (path: string, body: unknown) =>
@@ -606,6 +608,7 @@ export function createAjaxCartAdapter({
               }),
             );
           }
+          restoredSwaps = swapped.length > 0 && !lost;
           swapped.length = 0;
           if (lost) throw new Error('A swapped line could not be restored');
           const added = now.customized.filter(
@@ -630,11 +633,13 @@ export function createAjaxCartAdapter({
         }
         settle(own);
         const fresh: CartApplication['undone'] =
-          reason !== 'rejected' || !removedAdded
+          reason !== 'rejected'
             ? undefined
             : unconfirmed
-              ? 'unconfirmed'
-              : refused?.status === 422
+              ? removedAdded || restoredSwaps
+                ? 'unconfirmed'
+                : undefined
+              : removedAdded && refused?.status === 422
                 ? 'stock'
                 : undefined;
         const undone = fresh ?? (reason === 'rejected' ? earlierUndone : undefined);
@@ -699,10 +704,15 @@ export function createAjaxCartAdapter({
               swapped.push(pair);
             }
             if (rest.length) await request('cart/add.js', items(rest));
-            current = await readNow();
           } catch (error) {
             const again = refusal(error);
             return failed('rejected', again.detail ? again : { ...again, detail: refused.detail });
+          }
+          try {
+            current = await readNow();
+          } catch (error) {
+            // Shopify accepted the fallback but its witness read stayed refused: undone as unconfirmed, not refused.
+            return failed('rejected', refusal(error), true);
           }
           const expected = [
             ...start.customized.map((line) => pairs.find((pair) => pair.line === line)?.bucket ?? line),

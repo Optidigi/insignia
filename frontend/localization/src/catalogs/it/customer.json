@@ -242,7 +242,7 @@
     "cartCommitFailed": "Non è stato possibile aggiornare il carrello. La personalizzazione è ancora disponibile. Riprova.",
     "cartRejected": "Shopify non è riuscito ad aggiornare il carrello. Il carrello non è cambiato e la personalizzazione è ancora disponibile. Riprova più tardi.",
     "cartRejectedStock": "Non c'è abbastanza disponibilità per aggiungere questo articolo al carrello. Il carrello non è cambiato e la personalizzazione è ancora disponibile. Riduci la quantità o riprova più tardi.",
-    "cartUndoneStock": "La disponibilità non basta per questa quantità. Non è stato aggiunto nulla al carrello e la personalizzazione è ancora disponibile. Riduci la quantità o riprova più tardi.",
+    "cartUndoneStock": "Non c'è abbastanza disponibilità per questa quantità. Non è stato aggiunto nulla al carrello e la personalizzazione è ancora disponibile. Riduci la quantità o riprova più tardi.",
     "cartUnconfirmed": "Non siamo riusciti a confermare l'aggiornamento del carrello, quindi è stato annullato. Il carrello non è cambiato e la personalizzazione è ancora disponibile. Riprova.",
     "cartLimit": "Il carrello ha raggiunto il limite di {{formattedMaxLines}} righe personalizzate e {{formattedMaxItems}} articoli personalizzati. Rimuovi articoli dal carrello o riduci le quantità per continuare.",
     "cartLineLimit": "Il carrello contiene troppi articoli per aggiungere questa personalizzazione. Rimuovi articoli dal carrello per continuare.",

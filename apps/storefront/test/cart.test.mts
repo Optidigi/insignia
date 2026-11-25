@@ -1808,3 +1808,37 @@ test('an accepted add whose witness read stays rate-limited is undone and report
   assert.deepEqual(remote.items, [ordinary], 'the accepted lines were removed again');
   assert.equal(journal.state, null);
 });
+
+test('an accepted in-place fallback whose witness read stays rate-limited is undone and reported as unconfirmed (#643)', async () => {
+  const journal = memoryJournal();
+  let swaps = 0;
+  let checks = 0;
+  const remote = provider([ordinary, line42, line43], ({ url }) => {
+    // Add-first needs more of variant 42 than is in stock; the in-place swaps need none.
+    if (url.endsWith('cart/add.js'))
+      return Response.json(
+        { status: 422, message: 'Cart Error', description: 'Only 8 of variant 42 in stock.' },
+        { status: 422 },
+      );
+    if (url.endsWith('cart/change.js')) swaps++;
+    // After both swaps, Shopify's bot check answers the witness read and both of its retries.
+    if (url.endsWith('cart.js') && swaps === 2 && checks < 3) {
+      checks++;
+      return botCheck();
+    }
+    return undefined;
+  });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal, ...fakeWaits() });
+  const before = await cart.read();
+  const result = await cart.apply(setB(3, 3), { expectedFingerprint: before.fingerprint });
+  assert.equal(checks, 3);
+  assert.equal(result.reason, 'rejected');
+  assert.equal(result.undone, 'unconfirmed');
+  assert.equal(result.detail, undefined, "Shopify's original refusal no longer describes what happened");
+  assert.deepEqual(
+    customizedOf(remote.items),
+    customizedOf([line42, line43]),
+    'the swapped lines got their old carriers back',
+  );
+  assert.equal(journal.state, null);
+});
