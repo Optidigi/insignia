@@ -331,40 +331,70 @@ window.addEventListener('message', (event) => {
     // Only the validated, bounded failure fields reach the Designer; the server's message never does (#337).
     else request.reject(Object.assign(new Error('Live operation unavailable'), portFailure(event.data.failure)));
   }
+  if (event.data.type === 'insignia:designer:open') addOtherFaces();
   if (event.data.type === 'insignia:designer:init' && !mounted) {
     mounted = true;
     render(<Frame initial={event.data.initial} />, document.body);
   }
 });
 /**
- * Inter is not in the main stylesheet (#653). The Latin face comes with the Designer in
- * insignia-designer-font-latin.css; the frame announces itself only once the Latin face is ready, so the revealed
- * chrome never flashes a fallback font. A face that cannot load holds the Designer back at most briefly, well inside
- * the host's 10 s initialization limit. Latin Extended, Greek, Cyrillic and Vietnamese faces follow without blocking: a stylesheet
- * added by script does not hold rendering, and their glyphs swap in if such text appears. Artwork uses no web font.
+ * Inter is not in the main stylesheet (#653). This frame fetches the Latin face (every Designer UI language) itself
+ * and announces itself once that face is ready, so the revealed chrome never flashes a fallback font. The wait is
+ * bounded: after 3 s the fetch is abandoned and the frame announces itself regardless, well inside the host's 10 s
+ * initialization limit. It is a fetch, not a stylesheet link, because a pending link holds the document's load
+ * event (which the host waits for) even after it is removed. An abandoned Latin face, and the Latin Extended, Greek,
+ * Cyrillic and Vietnamese faces, load without blocking on the first open; their glyphs swap in if such text appears.
+ * Artwork uses no web font.
  */
 const UI_FONT_WAIT_LIMIT_MS = 3000;
-function addOtherScriptFaces() {
+function designerStylesheetUrl(name: string) {
   const main = document.querySelector<HTMLLinkElement>('link[rel="stylesheet"][href*="insignia-designer.css"]');
-  if (!main) return;
+  return main ? new URL(name, main.href).href : undefined;
+}
+/** Not for this medium until it has loaded: such a sheet never holds rendering or the Designer's own work. */
+function addWithoutBlocking(name: string) {
+  const href = designerStylesheetUrl(name);
+  if (!href) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  // Not for this medium until it has loaded: the sheet never holds rendering or the Designer's own work.
   link.media = 'print';
   link.addEventListener('load', () => (link.media = 'all'), { once: true });
-  link.href = new URL('insignia-designer-font-other.css', main.href).href;
+  link.href = href;
   document.head.append(link);
 }
+let latinFacesAdded = false;
+const latinFetch = new AbortController();
 let fontWait: ReturnType<typeof setTimeout> | undefined;
+const latinUrl = designerStylesheetUrl('insignia-designer-font-latin.css');
 void Promise.race([
-  document.fonts.load('16px "Inter Variable"', 'Customize').catch(() => undefined),
+  (latinUrl ? fetch(latinUrl, { signal: latinFetch.signal }) : Promise.resolve(undefined))
+    .then((response) => (response?.ok ? response.text() : undefined))
+    .then((css) => {
+      if (css === undefined || latinFetch.signal.aborted) return;
+      const style = document.createElement('style');
+      style.textContent = css;
+      document.head.append(style);
+      latinFacesAdded = true;
+      return document.fonts.load('16px "Inter Variable"', 'Customize');
+    })
+    .catch(() => undefined),
   new Promise<void>((resolve) => {
     fontWait = setTimeout(resolve, UI_FONT_WAIT_LIMIT_MS);
   }),
 ]).then(() => {
   clearTimeout(fontWait);
+  if (!latinFacesAdded) latinFetch.abort();
   send('insignia:designer:ready');
-  // After the frame document's load event, which the host waits for before it reveals the Designer.
-  if (document.readyState === 'complete') addOtherScriptFaces();
-  else window.addEventListener('load', addOtherScriptFaces, { once: true });
 });
+let otherFacesAdded = false;
+/** On the first open, after the document's load event (which the host waits for before it reveals the Designer). */
+function addOtherFaces() {
+  if (otherFacesAdded) return;
+  otherFacesAdded = true;
+  const add = () => {
+    if (!latinFacesAdded) addWithoutBlocking('insignia-designer-font-latin.css');
+    addWithoutBlocking('insignia-designer-font-other.css');
+  };
+  if (document.readyState === 'complete') add();
+  else window.addEventListener('load', add, { once: true });
+}

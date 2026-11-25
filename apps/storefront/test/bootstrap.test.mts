@@ -59,8 +59,6 @@ test('unlocked storefront loads buyer controls through its cookie-gated proxy an
       if (path.startsWith('/cdn-assets/')) {
         try {
           response.setHeader('Content-Type', path.endsWith('.css') ? 'text/css' : 'text/javascript');
-          // As the extension CDN does: the Designer's frame fetches fonts cross-origin in CORS mode.
-          response.setHeader('Access-Control-Allow-Origin', '*');
           response.end(await readFile(join(assets, path.slice('/cdn-assets/'.length))));
         } catch {
           response.writeHead(404).end();

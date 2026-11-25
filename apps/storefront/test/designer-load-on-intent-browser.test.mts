@@ -236,6 +236,44 @@ for (const engine of [chromium, firefox]) {
     t.diagnostic(`hover +300ms click-to-ready: ${Date.now() - started}ms (Vite source host, not a native benchmark)`);
     assert.equal(await page.locator('iframe').count(), 1);
   });
+
+  test(`${engine.name()}: the other-script font faces load only once the Designer is opened`, {
+    timeout: BROWSER_TEST_TIMEOUT_MS,
+  }, async (t) => {
+    const { page, requests } = await fixture(t, engine);
+    const other = () => requests.filter((path) => path.endsWith('/insignia-designer-font-other.css'));
+    await page.locator('insignia-buyer button').hover();
+    await page.waitForFunction(() => {
+      const preparation = Reflect.get(document.querySelector('insignia-buyer') ?? {}, 'preparation');
+      return preparation?.warm?.ready === true;
+    });
+    await quietPeriod(page);
+    assert.ok(
+      requests.some((path) => path.endsWith('/insignia-designer-font-latin.css')),
+      'the prepared frame has its Latin faces',
+    );
+    assert.deepEqual(other(), [], 'a prepared but unopened Designer fetches no other-script faces');
+    const opened = page.waitForRequest((request) => request.url().endsWith('/insignia-designer-font-other.css'));
+    await page.locator('insignia-buyer button').click();
+    await waitForOpenedDesigner(page);
+    await opened;
+  });
+
+  test(`${engine.name()}: a stalled Latin font stylesheet holds the Designer back about 3 s, not until it fails`, {
+    timeout: BROWSER_TEST_TIMEOUT_MS,
+  }, async (t) => {
+    const { page } = await fixture(t, engine);
+    // The font stylesheet never answers, e.g. a stalled CDN edge.
+    await page.route('**/insignia-designer-font-latin.css', () => new Promise(() => {}));
+    const started = Date.now();
+    await page.locator('insignia-buyer button').evaluate((button: HTMLButtonElement) => button.click());
+    await waitForOpenedDesigner(page);
+    const elapsed = Date.now() - started;
+    t.diagnostic(`stalled font stylesheet: click-to-ready ${elapsed}ms`);
+    assert.ok(elapsed >= 2500, `the frame waited for its font (${elapsed}ms)`);
+    assert.ok(elapsed < 8000, `the Designer opened well before the host's 10 s failure (${elapsed}ms)`);
+    assert.equal(await page.locator('dialog:modal').getByRole('alert').count(), 0, 'no failure state');
+  });
 }
 
 async function renderManualBlock(settings: Record<string, unknown>) {

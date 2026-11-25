@@ -37,8 +37,8 @@ function designerAssets() {
   return {
     entry: new URL('insignia-designer-frame.js', base),
     css: new URL('insignia-designer.css', base),
-    // The Inter Latin face (every Designer UI language), base64: loaded with the Designer. Latin Extended, Greek,
-    // Cyrillic and Vietnamese faces are in insignia-designer-font-other.css, which the frame adds after it opens.
+    // The Inter Latin face (every Designer UI language), base64. Preloaded here on intent; the frame itself adds it
+    // (frame.tsx) and adds insignia-designer-font-other.css (other scripts) once it is first opened.
     fonts: new URL('insignia-designer-font-latin.css', base),
   };
 }
@@ -121,12 +121,12 @@ export function createDesignerFrame(input: {
   frame.referrerPolicy = 'origin';
   frame.style.cssText =
     'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483000;background:transparent;';
-  const { entry, css, fonts } = designerAssets();
+  const { entry, css } = designerAssets();
   // Baseline document language (e.g. a repair-only frame); a mounted Designer then mirrors its active language.
   const language = createCustomerTranslator(
     readCustomerLanguagePreference() ?? resolveCustomerHostLocale(input.locale, customerBrowserLanguages()),
   );
-  frame.srcdoc = `<!doctype html><html lang="${escapeAttribute(language.lang)}" dir="${escapeAttribute(language.dir)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="origin"><link rel="stylesheet" href="${escapeAttribute(css.href)}"><link rel="stylesheet" href="${escapeAttribute(fonts.href)}"></head><body><script type="module" src="${escapeAttribute(entry.href)}"></script></body></html>`;
+  frame.srcdoc = `<!doctype html><html lang="${escapeAttribute(language.lang)}" dir="${escapeAttribute(language.dir)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="origin"><link rel="stylesheet" href="${escapeAttribute(css.href)}"></head><body><script type="module" src="${escapeAttribute(entry.href)}"></script></body></html>`;
   const controllers = new Map<string, AbortController>();
   let committing: AbortController | undefined;
   let pendingRepair:
