@@ -6,7 +6,7 @@ Updated 25 November 2026. **Shopify App Store review: the pause ended 25 Novembe
 Shopify had reported that customized products could not be added to the cart (2.1.1) and requested evidence for plan changes,
 order scopes and reviewer access. Use the [resubmission checklist](shopify-review-resubmission.md)
 for the findings, the 24–25 November hardening evidence and the remaining review gaps. The November 19 resubmission remains historical
-evidence below. Insignia runs only on `app.insigniacustomizer.com` on host alias `prod`: one Compose project `insignia` from `/srv/saas/infra/stacks/insignia` (installed from [deployment/production/compose.yaml](../../deployment/production/compose.yaml)), data on the encrypted volume `/srv/data/saas/insignia`. **Exact running versions live only in [Deployed identities](#deployed-identities)** (as of 25 Nov: Shopify Active `1265289363457`, profile `native-escape-once-bcb6cd16`; web deploy AU, worker and verifier deploy AT; inspector deploy AD; schema 74). Since the production cutover (16 Nov, fresh database) only the owner's dev and review stores are installed in production; no real merchant yet. The first real merchants are the Stitchs/Superfunny pilot, after the owner's backup and secret-rotation items. **A separate agent tests the storefront and merchant UI on rewrite-dev; its new issues wait for the owner's review before engineering picks them up.** Open engineering issues: #637, #643, #651 (fix PR #654), #653; deferred work: [backlog](../backlog/README.md). The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
+evidence below. Insignia runs only on `app.insigniacustomizer.com` on host alias `prod`: one Compose project `insignia` from `/srv/saas/infra/stacks/insignia` (installed from [deployment/production/compose.yaml](../../deployment/production/compose.yaml)), data on the encrypted volume `/srv/data/saas/insignia`. **Exact running versions live only in [Deployed identities](#deployed-identities)** (as of 25 Nov: Shopify Active `1266368151553`, profile `native-designer-intent-8e69c5ef`; web, worker and verifier deploy AV; inspector deploy AD; schema 74). Since the production cutover (16 Nov, fresh database) only the owner's dev and review stores are installed in production; no real merchant yet. The first real merchants are the Stitchs/Superfunny pilot, after the owner's backup and secret-rotation items. **A separate agent tests the storefront and merchant UI on rewrite-dev; its new issues wait for the owner's review before engineering picks them up.** Open engineering issues: #637, #656 (#643, #651/#654 and #653 are fixed and deployed in AV); deferred work: [backlog](../backlog/README.md). The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
 
 **Hardening pass, 24–25 November 2026: done.** Deploys AS, AT and AU released its code
 (records below; PR list in the checklist). On the final version `1265289363457` the reviewer fixture passed keyboard
@@ -19,9 +19,8 @@ Lighthouse baseline passed or are recorded with their limits in the
 **Next for the owner:** resubmit in the Partner Dashboard (not done by engineering); after approval,
 decide on relaxing the publish hold-safety steps (≤10 s first publish) and #637. Backups, secret
 rotation and the shop-erasure purge still come before the first real merchant. The mid-step release
-lapse (a publish step starting on a 25–30 s-old record) is decided (owner approval 25 Nov) and fixed in
-PR #658, not yet deployed. **Deploy order:** the release verifier (13 s reuse lead) before or with web;
-a web build against the 8 s verifier is still safe, but its publish steps collect on their own again.
+lapse (a publish step starting on a 25–30 s-old record) is decided (owner approval 25 Nov), fixed in
+PR #658 and deployed in AV, with the release verifier's 13 s reuse lead installed before web.
 
 ### Picking this up
 
@@ -160,15 +159,15 @@ All on production (`app.insigniacustomizer.com`), proven on the review store `in
 
 ### Deployed identities
 
-Production on host alias `prod`, as of 25 November 2026 (deploy AU). One Compose project `insignia`: stack `/srv/saas/infra/stacks/insignia` (`compose.yaml` from [deployment/production/compose.yaml](../../deployment/production/compose.yaml), `.env`, `secrets/`); data on the LUKS2 volume mounted at `/srv/data/saas/insignia` (`srv-data-saas-insignia.mount`; docker drop-in `insignia-volume.conf` `Wants`/`After` it). Images run by local tag `insignia/<service>:<commit>`.
+Production on host alias `prod`, as of 25 November 2026 (deploy AV). One Compose project `insignia`: stack `/srv/saas/infra/stacks/insignia` (`compose.yaml` from [deployment/production/compose.yaml](../../deployment/production/compose.yaml), `.env`, `secrets/`); data on the LUKS2 volume mounted at `/srv/data/saas/insignia` (`srv-data-saas-insignia.mount`; docker drop-in `insignia-volume.conf` `Wants`/`After` it). Images run by local tag `insignia/<service>:<commit>`.
 
 | Component | Identity | Source |
 | --- | --- | --- |
-| Shopify Active version | `1265289363457`, profile `native-escape-once-bcb6cd16` (deploy AT, 25 Nov). Exactly 56 versions and 15 modules. The network access module declares the production R2 origin. Module hash `7e591ca6…`. Required scopes `read_markets,read_orders,read_publications,write_app_proxy,write_cart_transforms,write_products,write_validations` and optional `read_product_listings`. Earlier `read_all_orders` grants may remain on old installations. Version `1248762724353` must never be released. | theme `bcb6cd16`, binding `9cdd3eba` (#648) |
+| Shopify Active version | `1266368151553`, profile `native-designer-intent-8e69c5ef` (deploy AV, 25 Nov). Exactly 57 versions and 15 modules. The network access module declares the production R2 origin. Module hash `a1fcd4c5…`. Required scopes `read_markets,read_orders,read_publications,write_app_proxy,write_cart_transforms,write_products,write_validations` and optional `read_product_listings`. Earlier `read_all_orders` grants may remain on old installations. Version `1248762724353` must never be released. | theme `8e69c5ef`, binding `df556e09` (#661) |
 | Functions | "Insignia cart transform" wasm `5c8708b5…` (module `826a9059…`, query `02ab5bce…`), "Insignia cart validation" wasm `6c362b36…` (module `076bfef2…`, query `5867e61f…`); handles unchanged | `aa3b6166` |
-| Web | `insignia-web`, `insignia/web:91bc61b5` = `sha256:951174d1…` (deploy AU, EUR v2 bound to `1265289363457`) | main tree at `91bc61b5` |
-| Worker | `insignia-worker`, `insignia/worker:9cdd3eba` = `sha256:3e091a14…` (deploy AT, automatic shop erasure enabled) | main tree at `9cdd3eba` |
-| Verifier | `insignia-verifier`, `insignia/verifier:9cdd3eba` = `sha256:3d711e17…` (deploy AT, code manifest `00f01621…`) | main tree at `9cdd3eba` |
+| Web | `insignia-web`, `insignia/web:df556e09` = `sha256:43689774…` (deploy AV, EUR v2 bound to `1266368151553`) | main tree at `df556e09` |
+| Worker | `insignia-worker`, `insignia/worker:df556e09` = `sha256:0982cc03…` (deploy AV, automatic shop erasure enabled) | main tree at `df556e09` |
+| Verifier | `insignia-verifier`, `insignia/verifier:df556e09` = `sha256:9e73000e…` (deploy AV, code manifest `7293377c…`, 13 s reuse lead) | main tree at `df556e09` |
 | Signer | `insignia-signer`, `insignia/signer:afc3c1da` = `sha256:e9b1f153…` (since 13 Nov `21:54:55Z`, #431); wrapping key `secrets/signing-wrap-keys.json` (10101, 0400) | main `afc3c1da` |
 | Monitor | `insignia-heartbeat` and `insignia-heartbeat-snapshot`, `insignia/heartbeat:c54c7820` = `sha256:78d0a8da…`; state in `/srv/data/saas/insignia/monitor` | main `c54c7820` |
 | Host inspector | `/srv/data/saas/insignia/artwork-inspector/releases/19c6dc6629000cfbf6069610e3c791c905c82dd8/` (deploy AD: sharp 0.35.5 / librsvg 2.63.2, GHSA-wq5f-xc86-pv6w), env `/srv/data/saas/insignia/artwork-inspector/inspection.env` (deploy V: bundled read-only fonts for SVG text; moved in deploy AC; its unit keeps the 16 Nov host edits, reapplied with the data-volume paths by `canonical-deploy-AC/host-unit-AC.py`; prior `96726b31…` kept for rollback) | main `9b677033` (#575) |
@@ -259,6 +258,26 @@ uploaded a synthetic PNG to the declared R2 origin with HTTP 200 and decoded its
 The same-origin proxy returned 202 for upload completion and 200 for preview. No undeclared-source
 warning appeared in the captured diagnostics. The dev preview was cleaned from that store.
 Version `1263405170689` is active with the tested declaration.
+
+**Deploy AV** (25 Nov): main `8e69c5ef` (#654, #658, #659, #660) was staged as Shopify version
+`1266368151553` (`native-designer-intent-8e69c5ef`) at `15:04:56Z`. In the theme extension only
+`customise-control.liquid` and the assets changed: 17 assets from foundation run `45638468980`,
+including the new `insignia-designer-font-latin.css` and `insignia-designer-font-other.css`. Theme
+check and `shopify app config validate` passed on the frozen staging. The Function wasm stayed
+byte-identical to the pins, and there was no migration. Binding #661 merged as `df556e09`; images from
+runtime run `45641620333` (tree `53465dd4`, equal to `df556e09`) replaced verifier, web and worker at
+`15:27:30Z`–`15:27:33Z` under the new profile, before Shopify activation at `15:27:39Z`. Shopify
+reported one Active version among 57, and all 15 modules matched the binding. EUR qualification moved
+to the new version. Web and the quiesced worker role agreed on release record `e5ced3c1…` at
+`15:28:06Z`. **Quotes failed closed from `15:04:56Z` to `15:28:06Z` (23 min)**, with no reviewer
+traffic in the preceding 24 h. All 17 CDN assets returned 200 and matched the build, and a buyer
+config request on rewrite-dev returned 200. A product page now loads only `insignia-storefront.js`,
+`insignia-element.js` and the buyer-session chunk (37 KB decoded, about 11 KB compressed) and no
+Designer CSS. Before the release it loaded about 1.47 MB of JavaScript and the Designer CSS without
+interaction. Hovering Customise loaded the Designer, a click opened it in 0.4 s, and Escape closed
+it. Purchase facts, schema and privileges matched the restore-verified checkpoint baseline. The only
+error-level lines were the worker's #640 held-row summaries. Legacy sites returned 200. No orders
+were placed, and the cart was left empty. Receipt directory `designer-intent-release-8e69c5ef` is on prod.
 
 **Deploy AU** (25 Nov, web only): main `91bc61b5`, #650. A background release refresh no longer
 starts before it is due: an early timer waits out the remainder, and the refresh is rescheduled
