@@ -426,6 +426,7 @@ export class InsigniaBuyer extends HTMLElement {
         cartRoot,
         storage: sessionStorage,
         onClose: () => this.querySelector<HTMLButtonElement>('button[slot="trigger"]')?.focus(),
+        isCurrent: () => generation === this.generation,
         retry: async () => {
           this.liveFrame?.destroy();
           this.liveFrame = undefined;
