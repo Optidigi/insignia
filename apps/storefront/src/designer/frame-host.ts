@@ -37,8 +37,8 @@ function designerAssets() {
   return {
     entry: new URL('insignia-designer-frame.js', base),
     css: new URL('insignia-designer.css', base),
-    // Inter Latin + Latin Extended faces (every EU language), base64: loaded with the Designer. Greek, Cyrillic
-    // and Vietnamese faces are in insignia-designer-font-other.css, which the frame adds after it opens.
+    // The Inter Latin face (every Designer UI language), base64: loaded with the Designer. Latin Extended, Greek,
+    // Cyrillic and Vietnamese faces are in insignia-designer-font-other.css, which the frame adds after it opens.
     fonts: new URL('insignia-designer-font-latin.css', base),
   };
 }

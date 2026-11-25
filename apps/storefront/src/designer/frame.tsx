@@ -337,10 +337,10 @@ window.addEventListener('message', (event) => {
   }
 });
 /**
- * Inter is not in the main stylesheet (#653). Latin + Latin Extended faces come with the Designer in
+ * Inter is not in the main stylesheet (#653). The Latin face comes with the Designer in
  * insignia-designer-font-latin.css; the frame announces itself only once the Latin face is ready, so the revealed
  * chrome never flashes a fallback font. A face that cannot load holds the Designer back at most briefly, well inside
- * the host's 10 s initialization limit. Greek, Cyrillic and Vietnamese faces follow without blocking: a stylesheet
+ * the host's 10 s initialization limit. Latin Extended, Greek, Cyrillic and Vietnamese faces follow without blocking: a stylesheet
  * added by script does not hold rendering, and their glyphs swap in if such text appears. Artwork uses no web font.
  */
 const UI_FONT_WAIT_LIMIT_MS = 3000;

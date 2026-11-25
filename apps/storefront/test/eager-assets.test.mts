@@ -106,8 +106,18 @@ test('the main Designer stylesheet carries no fonts; two font stylesheets carry 
     assert.doesNotMatch(css, /url\((?!data:font\/woff2;base64,)/, 'faces are inlined, never separate font files');
     assert.match(css, /font-display:\s*swap/);
   }
-  // Latin (U+0000-00FF) and Latin Extended (U+0100-024F…) with the Designer; the rest separately.
-  assert.equal(subsets(latin.css).length, 2);
-  assert.ok(subsets(latin.css).some((range) => range?.startsWith('U+0000-00FF')));
-  assert.equal(subsets(other.css).length, 5, 'Greek, Greek Extended, Cyrillic, Cyrillic Extended, Vietnamese');
+  // Latin (U+0000-00FF, every Designer UI language) with the Designer; every other subset after it opens.
+  assert.deepEqual(
+    subsets(latin.css).map((range) => range?.split(',')[0]),
+    ['U+0000-00FF'],
+  );
+  assert.equal(
+    subsets(other.css).length,
+    6,
+    'Latin Extended, Greek, Greek Extended, Cyrillic, Cyrillic Extended, Vietnamese',
+  );
+  assert.ok(
+    subsets(other.css).some((range) => range?.startsWith('U+0100-02BA')),
+    'Latin Extended is included',
+  );
 });

@@ -16,8 +16,8 @@ const fontsourceCss = createRequire(resolve(import.meta.dirname, '../../frontend
 const fontsource = /\/@fontsource-variable\/inter\/index\.css$/;
 /** Inter subset faces per font stylesheet; frame-host.ts and frame.tsx load these by name. */
 const fontStylesheets = {
-  'insignia-designer-font-latin.css': ['latin', 'latin-ext'],
-  'insignia-designer-font-other.css': ['greek', 'greek-ext', 'cyrillic', 'cyrillic-ext', 'vietnamese'],
+  'insignia-designer-font-latin.css': ['latin'],
+  'insignia-designer-font-other.css': ['latin-ext', 'greek', 'greek-ext', 'cyrillic', 'cyrillic-ext', 'vietnamese'],
 };
 
 /** Modules the element imports to open the Designer, besides the frame entry. */
@@ -33,8 +33,8 @@ export default defineConfig({
     {
       // The Designer's Inter faces (≈290 KB as base64) must not block its main stylesheet, and Shopify's CLI only
       // deploys .jpg .jpeg .json .js .css .png .svg .wasm theme assets: no .woff2. The main stylesheet gets no
-      // @font-face; two font stylesheets carry the faces base64 (#653). Latin + Latin Extended (every EU language)
-      // load with the Designer; Greek, Cyrillic and Vietnamese load without blocking after it opens.
+      // @font-face; two font stylesheets carry the faces base64 (#653). Latin (every Designer UI language) loads
+      // with the Designer; Latin Extended, Greek, Cyrillic and Vietnamese load without blocking after it opens.
       name: 'insignia-designer-fonts',
       enforce: 'pre',
       load(id) {
