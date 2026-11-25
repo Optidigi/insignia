@@ -103,7 +103,7 @@ describe('catalog availability read', () => {
       createCatalogTransport({ shop: 'synthetic.myshopify.com', accessToken: 'synthetic-token', fetchImpl }),
     ).availabilityProduct('gid://shopify/Product/111');
   it.each([
-    ['429', status(429), 'http_5xx'],
+    ['429', status(429), 'throttled'],
     ['503', status(503), 'http_5xx'],
     ['THROTTLED', graphqlError('THROTTLED'), 'throttled'],
     ['INTERNAL_SERVER_ERROR', graphqlError('INTERNAL_SERVER_ERROR'), 'internal_server_error'],

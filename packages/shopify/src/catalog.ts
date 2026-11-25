@@ -421,7 +421,10 @@ export function createCatalogTransport(input: {
             signal,
           });
           if (transientStatus(response.status))
-            throw new ShopifyAdminUnavailableError('Catalog read failed', 'http_5xx');
+            throw new ShopifyAdminUnavailableError(
+              'Catalog read failed',
+              response.status === 429 ? 'throttled' : 'http_5xx',
+            );
           if (!response.ok) throw new CatalogReadError('http_error', 'Catalog read failed');
           reader = response.body?.getReader();
           if (!reader) throw new CatalogReadError('missing_body', 'Catalog response body missing');
