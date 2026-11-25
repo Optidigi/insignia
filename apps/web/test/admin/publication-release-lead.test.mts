@@ -2,7 +2,12 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { resolveRuntimeReleaseProfile } from '@insignia/shopify';
-import { lastingReleaseRecords, PUBLICATION_STEP_RELEASE_LEAD_MS } from '../../src/server/admin/publication-release.ts';
+import {
+  lastingReleaseRecords,
+  PUBLICATION_RELEASE_REFRESH_AFTER_MS,
+  PUBLICATION_RELEASE_REFRESH_INTERVAL_MS,
+  PUBLICATION_STEP_RELEASE_LEAD_MS,
+} from '../../src/server/admin/publication-release.ts';
 import {
   createDemandDrivenReleaseReader,
   type TrustedReleaseEvidenceRecordsPort,
@@ -21,7 +26,7 @@ type Evidence = NonNullable<Awaited<ReturnType<TrustedReleaseEvidenceRecordsPort
 /**
  * One publication step on an injected clock, as production.ts composes it: the demand-driven reader
  * (over `lastingReleaseRecords` unless `raw`), a collector that, like the collector process, answers
- * with a stored record still fresh 8 s ahead and otherwise collects for 5 s, and the release part of
+ * with a stored record still fresh RELEASE_REFRESH_LEAD_MS ahead and otherwise collects for 5 s, and the release part of
  * the write gate (`publicationAuthorityFresh`) on the step's own evidence after its write budget.
  */
 function release(input: { recordAgeMs: number | null; raw?: boolean }) {
@@ -110,8 +115,16 @@ test('the step lead covers the measured step write budget and stays inside the c
   assert.ok(PUBLICATION_STEP_RELEASE_LEAD_MS >= STEP_WRITE_BUDGET_MS);
   // A record the collector answers with (fresh 8 s ahead) also satisfies the step when read back.
   assert.ok(PUBLICATION_STEP_RELEASE_LEAD_MS < RELEASE_REFRESH_LEAD_MS);
-  // The background refresh asks for a new record before steps stop reusing the old one.
-  assert.ok(RELEASE_FRESHNESS_MS - RELEASE_REFRESH_AFTER_MS >= PUBLICATION_STEP_RELEASE_LEAD_MS);
+  // The publish refresh asks early enough that a 6 s collection lands before steps stop reusing the
+  // old record, and the collector answers that ask with a new collection, not the record it replaces.
+  assert.ok(PUBLICATION_RELEASE_REFRESH_AFTER_MS + 6_000 <= RELEASE_FRESHNESS_MS - PUBLICATION_STEP_RELEASE_LEAD_MS);
+  assert.ok(RELEASE_FRESHNESS_MS - PUBLICATION_RELEASE_REFRESH_AFTER_MS <= RELEASE_REFRESH_LEAD_MS);
+  // The interval never delays a refresh the record's age has made due (the next ask comes 17 s after
+  // an observation made after the previous start).
+  assert.ok(PUBLICATION_RELEASE_REFRESH_INTERVAL_MS <= PUBLICATION_RELEASE_REFRESH_AFTER_MS);
+  // The buyer path's ask is unchanged and still covered by the collector's lead.
+  assert.equal(RELEASE_REFRESH_AFTER_MS, 22_000);
+  assert.ok(RELEASE_FRESHNESS_MS - RELEASE_REFRESH_AFTER_MS <= RELEASE_REFRESH_LEAD_MS);
 });
 
 for (const ageMs of [26_000, 27_000, 28_000, 29_000]) {

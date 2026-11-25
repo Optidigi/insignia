@@ -43,7 +43,7 @@ import { loadArtworkStorageProfile } from '@insignia/storage';
 import { createAutomaticUninstallEnrollment, inspectArtworkPrivately } from '@insignia/worker';
 import { Pool } from 'pg';
 import { loadCredentialKeys } from '../../../../worker/src/config.ts';
-import { RELEASE_FRESHNESS_MS, RELEASE_REFRESH_AFTER_MS } from '../buyer/release-refresh.ts';
+import { RELEASE_FRESHNESS_MS } from '../buyer/release-refresh.ts';
 import { createMerchantConfigService } from '../merchant-config.js';
 import { createSignerClient, type SignerClient } from '../signer-client.ts';
 import {
@@ -62,7 +62,11 @@ import { createMerchantPublicationCapture } from './merchant-previews.js';
 import { createMethodLibrary } from './methods.js';
 import { createMerchantPreferences } from './preferences.js';
 import { productSummary } from './product-summary.js';
-import { createPublicationReleaseRefresh, lastingReleaseRecords } from './publication-release.ts';
+import {
+  createPublicationReleaseRefresh,
+  lastingReleaseRecords,
+  PUBLICATION_RELEASE_REFRESH_AFTER_MS,
+} from './publication-release.ts';
 import { publicationStage } from './publication-timing.js';
 import {
   createBoundProductionActivationReadiness,
@@ -211,8 +215,8 @@ export function createProductionAdminServices(
       throw new Error('Online staff grant unavailable');
     return online;
   }
-  /** The actor's demand-driven release reader. `refreshAhead` (the background refresh) treats a
-   * record older than RELEASE_REFRESH_AFTER_MS as missing, so it collects ahead of expiry; a step's
+  /** The actor's demand-driven release reader. `refreshAhead` (the publish's background refresh) treats a
+   * record older than PUBLICATION_RELEASE_REFRESH_AFTER_MS as missing, so it collects ahead of expiry; a step's
    * reader treats one that lapses within PUBLICATION_STEP_RELEASE_LEAD_MS as missing. Both share
    * `collecting`, so one shop has one collection in flight. */
   async function releaseReader(actor: AdminActor, refreshAhead: boolean): Promise<DurableCoreReleaseReader | null> {
@@ -235,7 +239,7 @@ export function createProductionAdminServices(
             read: (request) =>
               core.trustedReleaseRecords.read({
                 ...request,
-                now: new Date(+request.now + RELEASE_FRESHNESS_MS - RELEASE_REFRESH_AFTER_MS),
+                now: new Date(+request.now + RELEASE_FRESHNESS_MS - PUBLICATION_RELEASE_REFRESH_AFTER_MS),
               }),
           }
         : // A step reuses a record only while it outlasts the step's writes; else it collects or joins.
