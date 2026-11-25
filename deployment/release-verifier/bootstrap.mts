@@ -16,7 +16,7 @@ let child: ReturnType<typeof spawn> | undefined;
 try {
   assert.equal(process.argv.length, 5);
   assert.equal(process.argv[2], '--manifest-sha256');
-  assert.equal(process.version, 'v24.21.0');
+  assert.equal(process.version, 'v24.22.3');
   assert.equal(await realpath(process.execPath), await realpath(join(root, 'bin/node')));
   const manifestSha256 = process.argv[3],
     profileName = process.argv[4];

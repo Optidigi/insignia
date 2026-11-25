@@ -21,7 +21,7 @@ try {
   const manifestSha256 = args[1];
   assert(typeof manifestSha256 === 'string');
   assert.match(manifestSha256, /^[a-f0-9]{64}$/);
-  assert.equal(process.version, 'v24.21.0');
+  assert.equal(process.version, 'v24.22.3');
   assert.equal(await realpath(process.execPath), join(root, 'bin/node'));
   const raw = await readFile(join(root, 'manifest.json'));
   assert.equal(hash(raw), args[1]);

@@ -18,7 +18,7 @@ test('relocated immutable verifier qualifies exact reviewed bytes without git an
       version: 'insignia-release-verifier-artifact-v1',
       sourceHead: '1'.repeat(40),
       sourceTree: '2'.repeat(40),
-      nodeVersion: 'v24.21.0',
+      nodeVersion: 'v24.22.3',
       files: { 'scripts/receiver.mjs': { kind: 'file', mode: 0o400, sha256: sha('export {};') } },
     };
     const bytes = JSON.stringify(manifest);

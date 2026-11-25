@@ -303,9 +303,9 @@ function observation() {
       externalConnect: false,
       nodeExecutableSha256: 'frozen-node-hash',
     },
-    inventory: { node: 'v24.21.0', nodeExecutableSha256: 'frozen-node-hash', packages: [{ name: '@insignia/worker' }] },
+    inventory: { node: 'v24.22.3', nodeExecutableSha256: 'frozen-node-hash', packages: [{ name: '@insignia/worker' }] },
     expectedInventory: {
-      node: 'v24.21.0',
+      node: 'v24.22.3',
       nodeExecutableSha256: 'frozen-node-hash',
       packages: [{ name: '@insignia/worker' }],
     },

@@ -63,12 +63,12 @@ jobs:
       DATABASE_URL: postgres://synthetic_runtime_owner:insignia_test@localhost:5432/insignia_test?sslmode=disable
       INSIGNIA_REQUIRE_POSTGRES_TEST: '1'
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24.21.0'
+          node-version: '24.22.3'
       - name: Verify exact status-reference route
         id: changes
         env:
@@ -116,7 +116,7 @@ jobs:
           node scripts/runtime/qualify-purchases.mts
       - name: Preserve actual runtime-role qualification
         if: ${{ always() && steps.changes.outputs.route == 'full' }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: m8-runtime-role-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -166,7 +166,7 @@ jobs:
           sha256sum "$RUNNER_TEMP/insignia-operations-artifact/heartbeat-image.tar" > "$RUNNER_TEMP/insignia-operations-artifact/heartbeat-image.tar.sha256"
       - name: Preserve operations runtime for later gated deployment
         if: steps.changes.outputs.route == 'full'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: operations-runtime-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/insignia-operations-artifact
@@ -186,7 +186,7 @@ jobs:
           sha256sum "$RUNNER_TEMP/insignia-inspector-artifact/inspector.tar" > "$RUNNER_TEMP/insignia-inspector-artifact/inspector.tar.sha256"
       - name: Preserve versioned inspector host artifact (native handover remains unqualified)
         if: steps.changes.outputs.route == 'full'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: artwork-inspector-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/insignia-inspector-artifact
@@ -214,7 +214,7 @@ jobs:
           sha256sum "$RUNNER_TEMP/insignia-verifier-artifact/verifier-image.tar" > "$RUNNER_TEMP/insignia-verifier-artifact/verifier-image.tar.sha256"
       - name: Preserve independent verifier immutable image (native handover remains unqualified)
         if: steps.changes.outputs.route == 'full'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-verifier-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/insignia-verifier-artifact
@@ -238,7 +238,7 @@ jobs:
         run: node --test scripts/runtime/production-compose.test.mts scripts/runtime/web-compose.test.mts scripts/runtime/signing-owner-compose.test.mts scripts/runtime/signer-compose.test.mts
       - name: Preserve image qualification receipts and raw logs
         if: ${{ always() && steps.changes.outputs.route == 'full' }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: m5-024-image-controls-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/m5-024-image-evidence
@@ -246,7 +246,7 @@ jobs:
           retention-days: 30
       - name: Preserve qualified ordinary worker deployment image
         if: steps.changes.outputs.route == 'full'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: m5-024-worker-image-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/m5-024-worker-image
@@ -269,7 +269,7 @@ jobs:
         run: node --test scripts/runtime/web-image.test.mts
       - name: Preserve web image qualification receipts and logs
         if: ${{ always() && steps.changes.outputs.route == 'full' }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: m5-web-image-evidence-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -279,7 +279,7 @@ jobs:
           retention-days: 30
       - name: Preserve qualified ordinary web deployment image
         if: steps.changes.outputs.route == 'full'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: m5-web-image-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
