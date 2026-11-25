@@ -35,7 +35,8 @@ for (const [name, request] of [
         return true;
       });
       await new Promise((resolve) => setImmediate(resolve));
-      t.mock.timers.tick(60000);
+      // The publication budget: the server's 60 s publish deadline plus a resend's token wait (25 Nov 2026).
+      t.mock.timers.tick(95000);
       await rejected;
       await new Promise((resolve) => setImmediate(resolve));
       assert.equal(sent, 1);
@@ -65,8 +66,18 @@ for (const [name, request] of [
         assert.equal(isUnansweredRequest(error), true);
         return true;
       });
+      let settled = false;
+      void result.then(
+        () => (settled = true),
+        () => (settled = true),
+      );
       await new Promise((resolve) => setImmediate(resolve));
+      // The server may run a publish's steps for 60 s after accepting it (owner decision, 25 Nov 2026):
+      // the editor still waits for its answer then, and gives up only after the 95 s budget.
       t.mock.timers.tick(60000);
+      await new Promise((resolve) => setImmediate(resolve));
+      assert.equal(settled, false, 'still waiting at 60 s');
+      t.mock.timers.tick(35000);
       await rejected;
       assert.equal(sent, 1);
     } finally {

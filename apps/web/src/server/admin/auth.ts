@@ -93,6 +93,33 @@ export const ADMIN_GRANT_REUSE_MARGIN_MS = 30_000;
  * minutes, so staff permission changes in Shopify apply within that time even on
  * non-sensitive actions. */
 export const ADMIN_GRANT_REUSE_MAX_MS = 5 * 60_000;
+/** A publication write needs its online staff grant to outlast it by this much (production.ts
+ * `grant()`), so a publish's authority ends this long before the grant does. */
+export const PUBLICATION_GRANT_MARGIN_MS = 30_000;
+
+/** Options of one authentication. */
+export interface AdminAuthenticationOptions {
+  /** Staff-sensitive: exchange again and reuse no remembered grant or installation. */
+  fresh?: boolean;
+  /** Owner decision (25 Nov 2026), publish only: with `fresh`, the actor's authority
+   * (`expiresAtMs`) runs until this time instead of ending with the App Bridge session token.
+   * The token must still be valid when the request authenticates, and the authority never
+   * outlasts the online staff grant (less PUBLICATION_GRANT_MARGIN_MS) its writes use. */
+  authorityUntilMs?: number;
+}
+
+/** The actor's authority deadline. By default it ends with the session token or the online grant,
+ * whichever comes first; a fresh publish request may instead run to `authorityUntilMs` (its accepted
+ * time plus 60 s), still bounded by the online grant its Shopify writes use. */
+export function adminAuthorityExpiry(
+  identityExpiresAtMs: number,
+  grantExpiresAtMs: number,
+  options: AdminAuthenticationOptions = {},
+): number {
+  return options.fresh && options.authorityUntilMs !== undefined
+    ? Math.min(options.authorityUntilMs, grantExpiresAtMs - PUBLICATION_GRANT_MARGIN_MS)
+    : Math.min(identityExpiresAtMs, grantExpiresAtMs);
+}
 
 type Pending<T> = { value?: T; promise: Promise<T> };
 /** Process-local reuse of verified authentication facts. Bounded; oldest entries are evicted first. */
@@ -193,7 +220,7 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
     if (transientFailure(error)) throw new AdminAuthenticationBusyError();
     throw new Error('Authentication unavailable');
   }
-  return async (request: Request, options: { fresh?: boolean } = {}): Promise<AdminAuthentication<G> | null> => {
+  return async (request: Request, options: AdminAuthenticationOptions = {}): Promise<AdminAuthentication<G> | null> => {
     const authorization = request.headers.get('Authorization');
     const match = /^Bearer ([^\s]{1,8192})$/.exec(authorization ?? '');
     if (!match) {
@@ -393,7 +420,8 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
         installationGeneration: installation.installationGeneration,
         staffId: identity.staffId,
         sessionId: identity.sessionId,
-        expiresAtMs: Math.min(identity.expiresAtMs, grant.expiresAtMs),
+        expiresAtMs: adminAuthorityExpiry(identity.expiresAtMs, grant.expiresAtMs, options),
+        sessionTokenExpiresAtMs: identity.expiresAtMs,
         canRead,
         canEdit,
         canReadArtwork: grant.accountOwner === true && canRead,
@@ -416,6 +444,6 @@ export function createAdminAuthenticator<G extends OnlineAdminGrant>(
   cache?: AdminAuthenticationCache<G>,
 ) {
   const authenticate = createAdminGrantAuthenticator(port, now, diagnostic, cache);
-  return async (request: Request, options: { fresh?: boolean } = {}): Promise<AdminActor | null> =>
+  return async (request: Request, options: AdminAuthenticationOptions = {}): Promise<AdminActor | null> =>
     (await authenticate(request, options))?.actor ?? null;
 }

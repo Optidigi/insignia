@@ -44,7 +44,7 @@ import { createAutomaticUninstallEnrollment, inspectArtworkPrivately } from '@in
 import { Pool } from 'pg';
 import { loadCredentialKeys } from '../../../../worker/src/config.ts';
 import { RELEASE_FRESHNESS_MS } from '../buyer/release-refresh.ts';
-import { createMerchantConfigService } from '../merchant-config.js';
+import { createMerchantConfigService, PUBLICATION_STEP_MARGIN_MS } from '../merchant-config.js';
 import { createSignerClient, type SignerClient } from '../signer-client.ts';
 import {
   type AdminAuthenticationDiagnostic,
@@ -734,6 +734,11 @@ export function createProductionAdminServices(
         preparationStopped('RELEASE_VERIFICATION');
         return { ready: false, reason: 'Publication verification is unavailable. Contact support.' };
       }
+      // Signing provisioning re-uses the session token itself (it verifies and exchanges it again), so
+      // unlike the other steps it needs the token's own step margin. A publish may outlive its token
+      // (owner decision, 25 Nov 2026); without that margin a store that still needs its key is resent.
+      const tokenUsable =
+        (actor.sessionTokenExpiresAtMs ?? actor.expiresAtMs) - Date.now() >= PUBLICATION_STEP_MARGIN_MS;
       // The owner's armed plan applies to its own store; every other store uses automatic provisioning.
       if (!signingOwner || signingOwnerConfiguration?.binding.tenantShopId !== actor.tenantShopId) {
         if (!automaticSigning) return { ready: true, reason: null };
@@ -742,8 +747,12 @@ export function createProductionAdminServices(
         const token = requestTokens.get(actor);
         const timezone = merchantTimezones.get(actor);
         if (!token || !timezone) throw new Error('Publication authorization unavailable');
-        const state = await publicationStage('signing', () => automaticSigning.ensure(actor, token, timezone));
+        const state = await publicationStage('signing', () =>
+          automaticSigning.ensure(actor, tokenUsable ? token : null, timezone),
+        );
         await active(actor);
+        if (state === 'SESSION_REQUIRED')
+          return { ready: false, reason: 'Publication needs a new session.', resend: true };
         return state === 'READY' || state === 'PROVISIONED'
           ? { ready: true, reason: null }
           : { ready: false, reason: 'Publication preparation is unavailable. Contact support.' };
@@ -752,6 +761,14 @@ export function createProductionAdminServices(
       grant(actor);
       const token = requestTokens.get(actor);
       if (!token) throw new Error('Publication authorization unavailable');
+      if (!tokenUsable) {
+        // Already provisioned needs no token; anything else waits for a request with a usable one.
+        const current = await publicationStage('signing', () => signingOwner.status(actor));
+        await active(actor);
+        return current.state === 'PROVISIONED'
+          ? { ready: true, reason: null }
+          : { ready: false, reason: 'Publication needs a new session.', resend: true };
+      }
       const result = await publicationStage('signing', () => signingOwner.prepare(actor, token));
       await active(actor);
       return {

@@ -21,7 +21,12 @@ export interface AdminActor {
   installationGeneration: string;
   staffId: string;
   sessionId: string;
+  /** The end of this actor's authority. Usually the session token's or online grant's expiry,
+   * whichever is first; for a publish request, its accepted time plus 60 s (see auth.ts). */
   expiresAtMs: number;
+  /** The App Bridge session token's own expiry. A step that re-uses the token itself (signing
+   * provisioning) needs it; a publish's other steps run on the online grant to `expiresAtMs`. */
+  sessionTokenExpiresAtMs?: number;
   canRead: boolean;
   canEdit: boolean;
   /** Private artwork uses an explicit grant; product scopes alone never suffice. */
@@ -89,7 +94,7 @@ export interface AdminServices {
    * staff grant and the active installation, including reinstall/deactivation
    * invalidation. A verified grant and a durably fenced installation observation may
    * be reused (see auth.ts); `fresh` (staff-sensitive actions) never reuses either. */
-  authenticate(request: Request, options?: { fresh?: boolean }): Promise<AdminActor | null>;
+  authenticate(request: Request, options?: import('./auth.js').AdminAuthenticationOptions): Promise<AdminActor | null>;
   /** HTTP-only rejected boundary observation; no request, claims or error crosses this port. */
   recordAuthenticationRejection?(stage: 'BEARER_MISSING' | 'BEARER_MALFORMED' | 'AUTHENTICATED_ACTOR_REJECTED'): void;
   /** Configuration-route 422 observation: action and reason code only, never request or draft content. */

@@ -12,6 +12,7 @@ import {
   resolveRuntimeReleaseProfile,
 } from '@insignia/shopify';
 import { Pool } from 'pg';
+import { adminAuthorityExpiry } from '../../src/server/admin/auth.ts';
 import type { AdminActor } from '../../src/server/admin/contracts.ts';
 import { handleAdminRequest } from '../../src/server/admin/http.ts';
 import {
@@ -29,6 +30,7 @@ import { RELEASE_REFRESH_LEAD_MS } from '../../src/server/admin/release-verifica
 import { RELEASE_FRESHNESS_MS } from '../../src/server/buyer/release-refresh.ts';
 import {
   createMerchantConfigService,
+  PUBLICATION_REQUEST_DEADLINE_MS,
   PUBLICATION_RESEND_VALIDITY_MS,
   PUBLICATION_STEP_MARGIN_MS,
 } from '../../src/server/merchant-config.ts';
@@ -216,6 +218,9 @@ function releaseModel(config: ReleaseModel) {
  * dispatch) through the real admin HTTP route, merchant-config loop and PG activation coordinator.
  * Every provider port is a counted double with the same latency, so the provider-call budget is
  * the request's serial wait. `authenticate` answers the current `actor` (one per request session).
+ * With `tokens` set it models session tokens instead: a request's bearer names its token's expiry
+ * (`Bearer synthetic-identity.<ms>`), an expired one is rejected, and the actor's authority is derived
+ * as auth.ts derives it (`legacy`: the rule before the owner decision of 25 Nov 2026, ending with the token).
  */
 type Preparation = (actor: AdminActor) => Promise<{ ready: boolean; reason: string | null }>;
 async function firstPublication(
@@ -274,6 +279,9 @@ async function firstPublication(
   await lifecycle.activate(scope, 7);
 
   const calls = new Map<string, number>();
+  let tokens: { legacy: boolean; grantExpiresAtMs: number } | null = null;
+  // Shopify refuses every call with a revoked online staff token.
+  let grantRevoked = false;
   // Runs after each acknowledged provider write, between two persisted publication steps.
   let afterWrite: ((label: string) => void) | undefined;
   // Runs as each provider call starts, inside a publication step.
@@ -283,6 +291,7 @@ async function firstPublication(
   let inFlight = 0;
   let rounds = 0;
   const count = async (label: string) => {
+    if (grantRevoked) throw new PublicationAdminError('unauthorized');
     beforeCall?.(label);
     calls.set(label, (calls.get(label) ?? 0) + 1);
     if (inFlight++ === 0) rounds++;
@@ -540,7 +549,18 @@ async function firstPublication(
   const services = adminServices({
     appOrigin: 'https://synthetic.example',
     recordPublicationTiming: (timing) => timings.push(timing),
-    authenticate: async () => actor,
+    authenticate: async (request, options) => {
+      const bearer = /^Bearer synthetic-identity\.([0-9]+)$/.exec(request.headers.get('Authorization') ?? '')?.[1];
+      if (!tokens || bearer === undefined) return actor;
+      const tokenExpiresAtMs = Number(bearer);
+      if (tokenExpiresAtMs <= Date.now()) return null;
+      actor = {
+        ...actor,
+        expiresAtMs: adminAuthorityExpiry(tokenExpiresAtMs, tokens.grantExpiresAtMs, tokens.legacy ? {} : options),
+        sessionTokenExpiresAtMs: tokenExpiresAtMs,
+      };
+      return actor;
+    },
     catalog,
     configs: {
       ...configs,
@@ -555,12 +575,12 @@ async function firstPublication(
       },
     },
   });
-  const publish = (key: string) =>
+  const publish = (key: string, authorization = 'Bearer synthetic-identity') =>
     handleAdminRequest(
       new Request(`https://synthetic.example/api/admin/products/${productId}/config`, {
         method: 'POST',
         headers: {
-          Authorization: 'Bearer synthetic-identity',
+          Authorization: authorization,
           Origin: 'https://synthetic.example',
           'Content-Type': 'application/json',
           'Idempotency-Key': key,
@@ -599,6 +619,13 @@ async function firstPublication(
     session: (next: Partial<AdminActor>) => {
       actor = { ...actor, ...next };
       return actor;
+    },
+    /** Model session tokens (see above); the online staff grant lasts `grantMs` from now (24 h by default). */
+    tokens: (model: { legacy?: boolean; grantMs?: number } = {}) => {
+      tokens = { legacy: model.legacy === true, grantExpiresAtMs: Date.now() + (model.grantMs ?? 86_399_000) };
+    },
+    revokeGrant: () => {
+      grantRevoked = true;
     },
     afterWrite: (hook: (label: string) => void) => {
       afterWrite = hook;
@@ -947,6 +974,206 @@ test('#466 B with #468: an abandoned request is answered, never resent or resume
     // Publish again: a new request runs to ACTIVE.
     const again = await (await f.publish('m5-466-again')).json();
     assert.deepEqual([again.kind, again.state], ['accepted', 'ACTIVE']);
+  } finally {
+    await core.close();
+  }
+});
+
+const bearer = (tokenExpiresAtMs: number) => `Bearer synthetic-identity.${tokenExpiresAtMs}`;
+
+test('owner decision 25 Nov 2026: a publish whose session token expires mid-way finishes every step in one request', {
+  skip: !database,
+  timeout: 120000,
+}, async (t) => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  try {
+    // Before the decision a token with 3 s left could not start a step: the request answered `resend`.
+    const legacy = await firstPublication(core);
+    legacy.tokens({ legacy: true });
+    const refused = await (await legacy.publish('m5-deadline-legacy', bearer(Date.now() + 3_000))).json();
+    assert.equal(refused.kind, 'resend', JSON.stringify(refused));
+    // Only the route's own product check ran; no publication read, capture or write.
+    assert.deepEqual(Object.fromEntries(legacy.calls), { 'product read': 1 });
+
+    const f = await firstPublication(core);
+    f.tokens();
+    const started = Date.now();
+    const tokenExpiresAtMs = started + 3_000;
+    const response = await f.publish('m5-deadline-one-request', bearer(tokenExpiresAtMs));
+    const finished = Date.now();
+    const body = await response.json();
+    t.diagnostic(`token expired ${tokenExpiresAtMs - started} ms in; publish took ${finished - started} ms`);
+    assert.equal(response.status, 202, JSON.stringify(body));
+    assert.deepEqual([body.kind, body.state], ['accepted', 'ACTIVE']);
+    assert.ok(finished > tokenExpiresAtMs, 'the token expired while the publish ran');
+    assert.ok(finished - started < PUBLICATION_REQUEST_DEADLINE_MS);
+    // One request, no resend: every write once, the owned hold acquired and restored.
+    assert.equal(f.timings.length, 1);
+    assert.equal(f.timings[0]?.outcome, 'accepted');
+    assert.equal(f.calls.get('product status write'), 2);
+    assert.equal(f.calls.get('metafield write'), 4);
+    assert.equal(f.status(), 'ACTIVE');
+  } finally {
+    await core.close();
+  }
+});
+
+test('owner decision 25 Nov 2026: no step starts within the step margin of 60 s after acceptance; the request is resent between steps', {
+  skip: !database,
+  timeout: 120000,
+}, async (t) => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  try {
+    const f = await firstPublication(core);
+    f.tokens();
+    // The server's clock jumps 46 s ahead right after the second acknowledged write: 14 s remain of
+    // the request's 60 s, less than the step margin, so the next step must not start.
+    const realNow = Date.now.bind(Date);
+    let offset = 0;
+    t.mock.method(Date, 'now', () => realNow() + offset);
+    let writes = 0;
+    f.afterWrite(() => {
+      if (++writes === 2) offset = PUBLICATION_REQUEST_DEADLINE_MS - PUBLICATION_STEP_MARGIN_MS + 1_000;
+    });
+    // The token itself has plenty of life left (it is not what stops the publish).
+    const response = await f.publish('m5-deadline-cap', bearer(realNow() + 10 * 60_000));
+    f.afterWrite(() => {});
+    const body = await response.json();
+    assert.equal(response.status, 202, JSON.stringify(body));
+    assert.equal(body.kind, 'resend', JSON.stringify(body));
+    assert.equal(body.minimumValidityMs, PUBLICATION_RESEND_VALIDITY_MS);
+    assert.match(body.revisionId, /^[a-f0-9-]{36}$/);
+    assert.equal(writesSoFar(f), 2, 'it stopped at the step boundary after the write in flight');
+    // The resend authenticates with a new valid token and finishes from the persisted step, each write once.
+    const resumed = await (await f.publish('m5-deadline-cap', bearer(Date.now() + 60_000))).json();
+    assert.deepEqual([resumed.kind, resumed.state, resumed.revisionId], ['accepted', 'ACTIVE', body.revisionId]);
+    assert.equal(f.calls.get('product status write'), 2);
+    assert.equal(f.calls.get('metafield write'), 4);
+  } finally {
+    await core.close();
+  }
+});
+
+test('owner decision 25 Nov 2026: a publish whose session token is expired on arrival is rejected as before', {
+  skip: !database,
+}, async () => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  try {
+    const f = await firstPublication(core);
+    f.tokens();
+    const response = await f.publish('m5-deadline-expired', bearer(Date.now() - 1));
+    assert.equal(response.status, 401);
+    assert.equal(f.calls.size, 0, 'no provider call');
+  } finally {
+    await core.close();
+  }
+});
+
+test('owner decision 25 Nov 2026: an online staff grant that becomes invalid mid-publish stops its writes', {
+  skip: !database,
+  timeout: 120000,
+}, async () => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  try {
+    // Revoked in Shopify after the first acknowledged write: the remaining writes fail closed.
+    const revoked = await firstPublication(core);
+    revoked.tokens();
+    revoked.afterWrite(() => revoked.revokeGrant());
+    const response = await revoked.publish('m5-deadline-revoked', bearer(Date.now() + 3_000));
+    const body = await response.json();
+    assert.equal(writesSoFar(revoked), 1, 'no write after the grant was revoked');
+    // As today for a refused write: the publication never reaches ACTIVE; the held product is left to
+    // operator reconciliation (or the request fails), never published on a revoked grant.
+    assert.ok(
+      response.status === 503 || (body.kind === 'accepted' && body.state === 'OPERATOR_HOLD'),
+      JSON.stringify(body),
+    );
+    assert.equal(revoked.status(), 'DRAFT', 'the product stays held');
+
+    // A grant that expires soon bounds the publish too: no step starts near its end; the request is resent.
+    const expiring = await firstPublication(core);
+    expiring.tokens({ grantMs: 30_000 + PUBLICATION_STEP_MARGIN_MS - 1_000 });
+    const stopped = await (await expiring.publish('m5-deadline-grant', bearer(Date.now() + 60_000))).json();
+    assert.equal(stopped.kind, 'resend', JSON.stringify(stopped));
+    assert.deepEqual(Object.fromEntries(expiring.calls), { 'product read': 1 });
+  } finally {
+    await core.close();
+  }
+});
+
+/** App Bridge as measured on production (PR #665): `idToken()` returns a 60 s token unchanged until it
+ * expires; the next is issued about 1 s later. `firstExpiresAtMs` is the expiry of the token at the click. */
+function appBridge(firstExpiresAtMs: number) {
+  const tokenAt = (at: number) => {
+    let expiresAtMs = firstExpiresAtMs;
+    while (at >= expiresAtMs) {
+      if (at < expiresAtMs + 1_000) return null;
+      expiresAtMs += 61_000;
+    }
+    return expiresAtMs;
+  };
+  return {
+    /** readFreshBridgeToken: poll until a token with at least `validityMs` left is available. */
+    async token(validityMs: number) {
+      for (;;) {
+        const at = Date.now();
+        const expiresAtMs = tokenAt(at);
+        if (expiresAtMs !== null && expiresAtMs - at >= validityMs) return expiresAtMs;
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+    },
+  };
+}
+/** The editor's sendUntilAccepted: send with the ordinary 2 s token floor, then resend (at most three
+ * times) with the validity a `resend` names. Times are wall clock, including the token waits. */
+async function editorPublish(
+  f: Awaited<ReturnType<typeof firstPublication>>,
+  bridge: ReturnType<typeof appBridge>,
+  key: string,
+) {
+  const started = Date.now();
+  let tokenWaitMs = 0;
+  let requests = 0;
+  const send = async (validityMs: number) => {
+    const waiting = Date.now();
+    const expiresAtMs = await bridge.token(validityMs);
+    tokenWaitMs += Date.now() - waiting;
+    requests++;
+    return (await f.publish(key, bearer(expiresAtMs))).json();
+  };
+  let body = await send(2_000);
+  for (let resent = 0; body.kind === 'resend' && resent < 3; resent++) body = await send(body.minimumValidityMs);
+  return { ms: Date.now() - started, tokenWaitMs, requests, kind: body.kind, state: body.state };
+}
+
+test('owner decision 25 Nov 2026: with App Bridge tokens, a first publish and a republish each take one request', {
+  skip: !database,
+  timeout: 600000,
+}, async (t) => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  try {
+    const results: Record<string, Awaited<ReturnType<typeof editorPublish>>> = {};
+    for (const legacy of [true, false]) {
+      // At production call latency the release model runs in real time, with its ~5 s collections; at a
+      // faster latency its virtual clock would not match the session tokens' wall clock, so it is left out.
+      const release = latencyMs === VIRTUAL_CALL_MS ? releaseModel({ background: true, recordAgeMs: null }) : undefined;
+      try {
+        const f = await firstPublication(core, release ? { release } : {});
+        f.tokens({ legacy });
+        // The click comes with 30 s left on the current token; the republish follows at once.
+        const bridge = appBridge(Date.now() + 30_000);
+        const label = legacy ? 'before' : 'after';
+        results[`${label} first`] = await editorPublish(f, bridge, `m5-deadline-${label}-first`);
+        results[`${label} republish`] = await editorPublish(f, bridge, `m5-deadline-${label}-again`);
+      } finally {
+        release?.close();
+      }
+    }
+    for (const [label, result] of Object.entries(results)) t.diagnostic(`${label} ${JSON.stringify(result)}`);
+    for (const label of ['after first', 'after republish']) {
+      const result = results[label];
+      assert.deepEqual([result?.kind, result?.state, result?.requests], ['accepted', 'ACTIVE', 1], label);
+    }
   } finally {
     await core.close();
   }
