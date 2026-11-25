@@ -63,7 +63,7 @@ const designerRequest = (path: string) =>
   path.startsWith('/src/designer/') ||
   path === '/src/buyer.ts' ||
   /\/frontend\/(?:designer|localization)\//.test(path) ||
-  /\/insignia-(?:designer(?:-frame\.js|\.css)|font-[^/]+\.woff2)$/.test(path) ||
+  /\/insignia-designer(?:-frame\.js|\.css|-font-[a-z]+\.css)$/.test(path) ||
   path.includes('/node_modules/.vite/deps/preact');
 
 async function fixture(t: TestContext, engine: BrowserType, options: { hasTouch?: boolean } = {}) {
@@ -135,9 +135,7 @@ async function waitForPrepared(page: Page) {
     () =>
       !!document.querySelector('link[rel=modulepreload][href$="insignia-designer-frame.js"]') &&
       !!document.querySelector('link[rel=preload][as=style][href$="insignia-designer.css"]') &&
-      !!document.querySelector(
-        'link[rel=preload][as=font][crossorigin][href$="insignia-font-inter-latin-wght-normal.woff2"]',
-      ),
+      !!document.querySelector('link[rel=preload][as=style][href$="insignia-designer-font-latin.css"]'),
   );
 }
 

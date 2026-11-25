@@ -14,7 +14,7 @@ export async function copyThemeAssets({ from = source, to = destination } = {}) 
     !files.some((file) => file.name === 'insignia-element.js')
   )
     throw new Error('Theme build is missing its bootstrap or module entry');
-  if (files.some((file) => !file.isFile() || !/^insignia-[A-Za-z0-9_.-]+\.(?:js|css|woff2)$/.test(file.name)))
+  if (files.some((file) => !file.isFile() || !/^insignia-[A-Za-z0-9_.-]+\.(?:js|css)$/.test(file.name)))
     throw new Error('Theme build must contain only flat owned assets');
   await mkdir(to, { recursive: true });
   await Promise.all(files.map((file) => copyFile(resolve(from, file.name), resolve(to, file.name))));

@@ -159,10 +159,6 @@ export function text(value: unknown): string {
 }
 
 /** Vite serves the actual compiled isolated frame and its closed asset graph at the source host URL. */
-/** Content types of the flat storefront build: scripts, the Designer stylesheet and its font files. */
-export function contentType(name: string): string {
-  return name.endsWith('.css') ? 'text/css' : name.endsWith('.woff2') ? 'font/woff2' : 'text/javascript';
-}
 export function selectedFrameAssets(): Plugin {
   return {
     name: 'selected-frame-artifact',
@@ -174,13 +170,13 @@ export function selectedFrameAssets(): Plugin {
       server.middlewares.use((request, response, next) => {
         const path = new URL(request.url ?? '/', 'http://fixture').pathname;
         const name = path.split('/').at(-1);
-        if (!name || !/^insignia-[A-Za-z0-9_.-]+\.(js|css|woff2)$/.test(name)) {
+        if (!name || !/^insignia-[A-Za-z0-9_.-]+\.(js|css)$/.test(name)) {
           next();
           return;
         }
         void readFile(new URL(`../dist/${name}`, import.meta.url))
           .then((bytes) => {
-            response.setHeader('Content-Type', contentType(name));
+            response.setHeader('Content-Type', name.endsWith('.css') ? 'text/css' : 'text/javascript');
             response.end(bytes);
           })
           .catch(() => {

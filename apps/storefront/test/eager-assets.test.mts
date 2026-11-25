@@ -73,7 +73,7 @@ test('the theme embed entry statically loads no Designer modal, theme preference
   assert.ok(gzip <= 15 * 1024, `eager Insignia JavaScript is ${gzip} gzip bytes, over the 15 KB budget`);
 });
 
-test('the Designer stylesheet references its Inter faces as separate files beside it instead of inlining them', async () => {
+test('the main Designer stylesheet carries no fonts; two font stylesheets carry every Inter face', async () => {
   const result = await build({
     ...config,
     root: new URL('..', import.meta.url).pathname,
@@ -84,20 +84,30 @@ test('the Designer stylesheet references its Inter faces as separate files besid
     (Array.isArray(result) ? result : [result])
       .flatMap((output) => (output as Rollup.RollupOutput).output)
       .filter((item): item is Rollup.OutputAsset => item.type === 'asset')
-      .map((asset) => [asset.fileName, asset.source] as const),
+      .map((asset) => [asset.fileName, String(asset.source)] as const),
   );
-  const css = String(assets.get('insignia-designer.css') ?? '');
-  assert.ok(css.length > 0, 'the stylesheet is built');
-  assert.doesNotMatch(css, /url\(\s*['"]?data:/, 'no asset is inlined into the stylesheet');
-  const fonts = [...css.matchAll(/url\(\s*['"]?([^'")]+\.woff2)/g)].map((match) => match[1] ?? '');
-  assert.equal(fonts.length, 7, 'every Inter subset face is referenced');
-  for (const url of fonts) {
-    // Relative to the stylesheet on the extension CDN: never the shop origin or the Designer's about:srcdoc.
-    assert.match(url, /^\.\/insignia-font-inter-[a-z-]+-wght-normal\.woff2$/);
-    assert.ok(assets.has(url.slice(2)), `${url} is emitted`);
+  const sizes: string[] = [];
+  const measure = (fileName: string) => {
+    const css = assets.get(fileName) ?? '';
+    assert.ok(css.length > 0, `${fileName} is built`);
+    const gzip = gzipSync(css, { level: 9 }).length;
+    sizes.push(`${fileName} ${css.length}/${gzip}`);
+    return { css, gzip };
+  };
+  const main = measure('insignia-designer.css');
+  assert.doesNotMatch(main.css, /@font-face|url\(\s*['"]?data:/, 'the main stylesheet inlines nothing');
+  assert.ok(main.gzip <= 20 * 1024, `the main Designer stylesheet is ${main.gzip} gzip bytes`);
+  const subsets = (css: string) =>
+    [...css.matchAll(/@font-face\s*\{[^}]*unicode-range:([^;]+);[^}]*\}/g)].map((match) => match[1]?.trim());
+  const latin = measure('insignia-designer-font-latin.css');
+  const other = measure('insignia-designer-font-other.css');
+  console.log(`Designer stylesheets (raw/gzip bytes): ${sizes.join(', ')}`);
+  for (const { css } of [latin, other]) {
+    assert.doesNotMatch(css, /url\((?!data:font\/woff2;base64,)/, 'faces are inlined, never separate font files');
+    assert.match(css, /font-display:\s*swap/);
   }
-  assert.ok(assets.has('insignia-font-inter-latin-wght-normal.woff2'), 'the preloaded Latin face keeps its name');
-  const gzip = gzipSync(css, { level: 9 }).length;
-  console.log(`insignia-designer.css: ${css.length} raw / ${gzip} gzip bytes`);
-  assert.ok(gzip <= 20 * 1024, `the Designer stylesheet is ${gzip} gzip bytes`);
+  // Latin (U+0000-00FF) and Latin Extended (U+0100-024F…) with the Designer; the rest separately.
+  assert.equal(subsets(latin.css).length, 2);
+  assert.ok(subsets(latin.css).some((range) => range?.startsWith('U+0000-00FF')));
+  assert.equal(subsets(other.css).length, 5, 'Greek, Greek Extended, Cyrillic, Cyrillic Extended, Vietnamese');
 });

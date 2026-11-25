@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import { chromium } from 'playwright';
 import { build } from 'vite';
 import config from '../vite.config.ts';
-import { contentType, serverPort } from './support.mts';
+import { serverPort } from './support.mts';
 
 /** Every Designer chunk is slow to arrive, as on a slow mobile connection. */
 const CHUNK_DELAY_MS = 600;
@@ -52,7 +52,7 @@ test('a cold click fetches the whole Designer open path in parallel instead of a
         const body = await readFile(join(directory, name));
         if (!EAGER.has(name) && !name.startsWith('insignia-buyer-session-'))
           await new Promise((resolve) => setTimeout(resolve, CHUNK_DELAY_MS));
-        response.setHeader('Content-Type', contentType(name));
+        response.setHeader('Content-Type', name.endsWith('.css') ? 'text/css' : 'text/javascript');
         response.setHeader('Access-Control-Allow-Origin', '*');
         response.end(body);
       } catch {

@@ -9,7 +9,6 @@ apps/*/test-results/
 extensions/insignia-theme/assets/insignia-storefront.js
 extensions/insignia-theme/assets/insignia-*.js
 extensions/insignia-theme/assets/insignia-*.css
-extensions/insignia-theme/assets/insignia-*.woff2
 crates/*/target/
 target/
 extensions/insignia-cart-*/target/

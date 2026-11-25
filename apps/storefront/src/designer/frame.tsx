@@ -337,13 +337,34 @@ window.addEventListener('message', (event) => {
   }
 });
 /**
- * Inter ships as separate per-script files beside the stylesheet (#653), not inlined in it. The frame announces
- * itself only once the Latin face (every Designer UI language) is loaded, so the revealed chrome never flashes a
- * fallback font; other scripts' faces load by unicode-range when such text appears. A face that cannot load holds
- * the Designer back only briefly, well inside the host's 10 s initialization limit. Artwork uses no web font.
+ * Inter is not in the main stylesheet (#653). Latin + Latin Extended faces come with the Designer in
+ * insignia-designer-font-latin.css; the frame announces itself only once the Latin face is ready, so the revealed
+ * chrome never flashes a fallback font. A face that cannot load holds the Designer back at most briefly, well inside
+ * the host's 10 s initialization limit. Greek, Cyrillic and Vietnamese faces follow without blocking: a stylesheet
+ * added by script does not hold rendering, and their glyphs swap in if such text appears. Artwork uses no web font.
  */
 const UI_FONT_WAIT_LIMIT_MS = 3000;
+function addOtherScriptFaces() {
+  const main = document.querySelector<HTMLLinkElement>('link[rel="stylesheet"][href*="insignia-designer.css"]');
+  if (!main) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  // Not for this medium until it has loaded: the sheet never holds rendering or the Designer's own work.
+  link.media = 'print';
+  link.addEventListener('load', () => (link.media = 'all'), { once: true });
+  link.href = new URL('insignia-designer-font-other.css', main.href).href;
+  document.head.append(link);
+}
+let fontWait: ReturnType<typeof setTimeout> | undefined;
 void Promise.race([
   document.fonts.load('16px "Inter Variable"', 'Customize').catch(() => undefined),
-  new Promise<void>((resolve) => setTimeout(resolve, UI_FONT_WAIT_LIMIT_MS)),
-]).then(() => send('insignia:designer:ready'));
+  new Promise<void>((resolve) => {
+    fontWait = setTimeout(resolve, UI_FONT_WAIT_LIMIT_MS);
+  }),
+]).then(() => {
+  clearTimeout(fontWait);
+  send('insignia:designer:ready');
+  // After the frame document's load event, which the host waits for before it reveals the Designer.
+  if (document.readyState === 'complete') addOtherScriptFaces();
+  else window.addEventListener('load', addOtherScriptFaces, { once: true });
+});

@@ -8,7 +8,7 @@ import { chromium } from 'playwright';
 import { build } from 'vite';
 import { copyThemeAssets } from '../scripts/copy-theme-asset.mts';
 import config from '../vite.config.ts';
-import { contentType, serverPort } from './support.mts';
+import { serverPort } from './support.mts';
 
 test('unlocked storefront loads buyer controls through its cookie-gated proxy and public-only CDN preparation on intent', async () => {
   const temporary = await mkdtemp(join(tmpdir(), 'insignia-theme-build-'));
@@ -28,8 +28,8 @@ test('unlocked storefront loads buyer controls through its cookie-gated proxy an
     assert.ok(files.includes('insignia-designer-frame.js'), 'the selected Designer has a separate iframe entry');
     assert.ok(files.includes('insignia-designer.css'), 'the selected Designer stylesheet ships with its frame');
     assert.ok(
-      files.includes('insignia-font-inter-latin-wght-normal.woff2'),
-      'the Designer UI font ships as a separate asset',
+      files.includes('insignia-designer-font-latin.css') && files.includes('insignia-designer-font-other.css'),
+      'the Designer UI font faces ship as their own stylesheets',
     );
     assert.equal(
       files.some((file) => file.startsWith('insignia-customizer-')),
@@ -58,7 +58,7 @@ test('unlocked storefront loads buyer controls through its cookie-gated proxy an
       const path = new URL(request.url ?? '/', 'http://localhost').pathname;
       if (path.startsWith('/cdn-assets/')) {
         try {
-          response.setHeader('Content-Type', contentType(path));
+          response.setHeader('Content-Type', path.endsWith('.css') ? 'text/css' : 'text/javascript');
           // As the extension CDN does: the Designer's frame fetches fonts cross-origin in CORS mode.
           response.setHeader('Access-Control-Allow-Origin', '*');
           response.end(await readFile(join(assets, path.slice('/cdn-assets/'.length))));
@@ -250,8 +250,9 @@ test('unlocked storefront loads buyer controls through its cookie-gated proxy an
       assert.ok(requested.includes('/cdn-assets/insignia-designer-frame.js'));
       assert.ok(requested.includes('/cdn-assets/insignia-designer.css'));
       assert.ok(
-        requested.includes('/cdn-assets/insignia-font-inter-latin-wght-normal.woff2'),
-        'The Latin UI face loads from beside the stylesheet on the CDN',
+        requested.includes('/cdn-assets/insignia-designer-font-latin.css') &&
+          requested.includes('/cdn-assets/insignia-designer-font-other.css'),
+        'Both font stylesheets load from beside the main stylesheet on the CDN',
       );
       assert.equal(
         await frame.locator('.app').evaluate(() => document.fonts.check('16px "Inter Variable"', 'Customize')),
