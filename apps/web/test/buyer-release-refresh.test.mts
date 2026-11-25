@@ -14,8 +14,12 @@ import {
   subscriptionReuseMs,
 } from '../src/server/buyer/subscription-cache.ts';
 
-/** Deterministic timer queue: `advance` fires due timers in order and drains their async work. */
-function timers(start = 1_800_000_000_000) {
+/**
+ * Deterministic timer queue: `advance` fires due timers in order and drains their async work. With
+ * `earlyMs`, a timer fires that much before its delay (never in the instant it was set), as Node's
+ * timers can by up to 1 ms against Date.now().
+ */
+function timers(start = 1_800_000_000_000, earlyMs = 0) {
   let now = start;
   const queue: { at: number; run: () => void; cancelled: boolean }[] = [];
   const settle = async () => {
@@ -24,7 +28,7 @@ function timers(start = 1_800_000_000_000) {
   return {
     clock: () => now,
     setTimer: (run: () => void, delayMs: number) => {
-      const timer = { at: now + delayMs, run, cancelled: false };
+      const timer = { at: now + Math.max(Math.min(delayMs, 1), delayMs - earlyMs), run, cancelled: false };
       queue.push(timer);
       return timer;
     },
@@ -145,6 +149,34 @@ test('a fresh record is not collected again, and failures retry no sooner than t
   await t.advance(1);
   assert.equal(calls, 3);
   refresher.close();
+});
+
+test('a refresh due when the record turns 22 s old collects then, even when its timer fires early', async () => {
+  for (const earlyMs of [0, 1]) {
+    const t = timers(undefined, earlyMs);
+    const starts: number[] = [];
+    let observedAt: number | null = null;
+    const refresher = createReleaseRefresher({
+      clock: t.clock,
+      setTimer: t.setTimer,
+      // A collection that observes the Active version 4 s in: its record turns 22 s old after the interval.
+      refresh: async () => {
+        if (observedAt !== null && t.clock() - observedAt <= RELEASE_REFRESH_AFTER_MS) return observedAt;
+        starts.push(t.clock());
+        const begun = t.clock();
+        await new Promise<void>((resolve) => t.setTimer(resolve, 5_000));
+        observedAt = begun + 4_000;
+        return observedAt;
+      },
+    });
+    const start = t.clock();
+    refresher.touch(scope, new Date(start + 60_000));
+    await t.advance(40_000);
+    // Run at exactly 22 s of age it would collect nothing, start the interval again and let the record lapse.
+    const age = (starts[1] ?? Number.NaN) - (start + 4_000);
+    assert.ok(age > RELEASE_REFRESH_AFTER_MS && age <= RELEASE_REFRESH_AFTER_MS + 2, `earlyMs ${earlyMs}: age ${age}`);
+    refresher.close();
+  }
 });
 
 test('Partner subscription reads are reused per shop for 60 s, single-flight, and never cache failures', async () => {

@@ -31,11 +31,12 @@ export function createReleaseRefresher(input: {
   const clearTimer = input.clearTimer ?? ((timer) => clearTimeout(timer as ReturnType<typeof setTimeout>));
   const shops = new Map<
     string,
-    { scope: Scope; activeUntil: number; lastStart: number; running: boolean; timer?: Timer }
+    { scope: Scope; activeUntil: number; lastStart: number; running: boolean; timer?: Timer; dueAt?: number }
   >();
   function schedule(key: string, at: number) {
     const state = shops.get(key);
     if (!state) return;
+    state.dueAt = at;
     const timer = setTimer(() => void run(key), Math.max(0, at - clock()));
     (timer as { unref?: () => unknown }).unref?.();
     state.timer = timer;
@@ -44,6 +45,12 @@ export function createReleaseRefresher(input: {
     const state = shops.get(key);
     if (!state) return;
     state.timer = undefined;
+    // A timer can fire up to a millisecond before its delay by `clock`; a run before it is due could
+    // find nothing to collect yet use up the interval, so it waits out the rest instead.
+    if (state.dueAt !== undefined && clock() < state.dueAt) {
+      schedule(key, state.dueAt);
+      return;
+    }
     if (clock() > state.activeUntil) {
       shops.delete(key);
       return;
@@ -67,8 +74,11 @@ export function createReleaseRefresher(input: {
       shops.delete(key);
       return;
     }
+    // Just past the reuse boundary. Production reuses a record only while its age is strictly below
+    // RELEASE_REFRESH_AFTER_MS, so a run at exactly that age collects; the +1 ms (with the early-fire guard)
+    // keeps a timer that fires early from landing inside the reuse window and spending the interval.
     const due =
-      observedAt !== null && Number.isFinite(observedAt) ? observedAt + RELEASE_REFRESH_AFTER_MS : state.lastStart;
+      observedAt !== null && Number.isFinite(observedAt) ? observedAt + RELEASE_REFRESH_AFTER_MS + 1 : state.lastStart;
     schedule(key, Math.max(state.lastStart + RELEASE_REFRESH_INTERVAL_MS, due));
   }
   return {

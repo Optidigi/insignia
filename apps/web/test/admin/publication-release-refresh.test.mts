@@ -5,8 +5,12 @@ import { createPublicationReleaseRefresh } from '../../src/server/admin/publicat
 import { publicationStage, timePublication } from '../../src/server/admin/publication-timing.ts';
 import { RELEASE_REFRESH_AFTER_MS } from '../../src/server/buyer/release-refresh.ts';
 
-/** Deterministic timer queue: `advance` fires due timers in order and drains their async work. */
-function timers(start = 1_800_000_000_000) {
+/**
+ * Deterministic timer queue: `advance` fires due timers in order and drains their async work. With
+ * `earlyMs`, a timer fires that much before its delay (never in the instant it was set), as Node's
+ * timers can by up to 1 ms against Date.now().
+ */
+function timers(start = 1_800_000_000_000, earlyMs = 0) {
   let now = start;
   const queue: { at: number; run: () => void }[] = [];
   const settle = async () => {
@@ -15,7 +19,7 @@ function timers(start = 1_800_000_000_000) {
   return {
     clock: () => now,
     setTimer: (run: () => void, delayMs: number) => {
-      const timer = { at: now + delayMs, run };
+      const timer = { at: now + Math.max(Math.min(delayMs, 1), delayMs - earlyMs), run };
       queue.push(timer);
       return timer;
     },
@@ -150,6 +154,25 @@ test('a record still fresh when the publish begins is refreshed once it is 22 s 
   assert.deepEqual(
     c.starts.map((entry) => entry.at - start),
     [2_001, 27_001],
+  );
+  end();
+  refresh.close();
+});
+
+test('a deferred refresh whose timer fires early still waits until the record is past 22 s, so it collects', async () => {
+  const t = timers(undefined, 1);
+  const start = t.clock();
+  const observed = start - 20_000;
+  const c = collector(t, { observedAt: observed });
+  const refresh = createPublicationReleaseRefresh<Staff>({ ...c, clock: t.clock, setTimer: t.setTimer });
+  const end = refresh.begin(actor(t));
+  await t.advance(30_000);
+  // Run at 22 s of age it would find nothing to collect yet use up the 25 s interval, and the record
+  // would lapse 10 s into the publish with no refresh until 27 s in.
+  const first = (c.starts[0]?.at ?? Number.NaN) - observed;
+  assert.ok(
+    first > RELEASE_REFRESH_AFTER_MS && first <= RELEASE_REFRESH_AFTER_MS + 2,
+    `first collection at age ${first}`,
   );
   end();
   refresh.close();
