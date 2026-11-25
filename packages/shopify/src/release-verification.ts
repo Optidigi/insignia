@@ -23,6 +23,7 @@ export function parseReleaseVerificationRequest(
   expectedVersion: string = resolveRuntimeReleaseProfile().activeVersionRef,
 ): ReleaseVerificationRequest {
   const reviewedVersions: readonly string[] = [
+    'native-designer-intent-8e69c5ef',
     'native-escape-once-bcb6cd16',
     'native-cart-repair-2ed66ade',
     'native-sticky-keyboard-1127c3e2',
