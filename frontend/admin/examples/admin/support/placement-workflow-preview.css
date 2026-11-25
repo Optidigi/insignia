@@ -11,6 +11,11 @@
     sans-serif;
   min-width: 0;
 }
+
+/* Holds the editor's inert flag without adding a box; dialogs sit beside it. */
+.placement-workflow-content {
+  display: contents;
+}
 .placement-workflow * {
   box-sizing: border-box;
 }

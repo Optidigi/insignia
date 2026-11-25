@@ -53,7 +53,9 @@ import {
   resolvePlacementVariantEditorSelection,
   serializePlacementVariantEditorSelection,
 } from '../../examples/admin/support/placement-variant-editor-selection.mts';
-import VariantPhotoPanel, { VariantPhotoSelector } from '../../examples/admin/support/placement-variant-photo-panel.tsx';
+import VariantPhotoPanel, {
+  VariantPhotoSelector,
+} from '../../examples/admin/support/placement-variant-photo-panel.tsx';
 import {
   confirmVariantPhotoAlignment,
   getVariantPhotoGroups,
@@ -94,7 +96,6 @@ import {
   placementWorkspaceReducer,
 } from '../../examples/admin/support/placement-workflow-state.mts';
 
-
 import type { PlacementPreviewState } from '../../examples/admin/support/placement-preview-storage.mts';
 import type { PublishPlacementPreviewResult } from '../../examples/admin/support/placement-publication.mts';
 import type { PlacementMethodCatalog } from './selected-method-choices.ts';
@@ -104,21 +105,32 @@ import type { EditorProductImage, EditorMethod, MethodDraftBinding } from '@insi
 const decimalOrNaN = (text: string): number => parseDecimalNumber(text) ?? Number.NaN;
 type MethodBindings = Record<string, MethodDraftBinding>;
 type EditorSnapshot = { product: PlacementProduct; bindings: MethodBindings };
-export type ProductPublicationResult = PublishPlacementPreviewResult | { status: 'pending' } | { status:'rejected' } | { status: 'changed'; product: PlacementProduct };
+export type ProductPublicationResult =
+  | PublishPlacementPreviewResult
+  | { status: 'pending' }
+  | { status: 'rejected' }
+  | { status: 'changed'; product: PlacementProduct };
 export interface ProductEditorAdapter {
-  kind: 'demo' | 'production'; currency: string; selectionScope: string;
-  readOnly?: boolean; hasPublished?: boolean; publicationBlocked?: boolean; publicationFailed?: boolean;
+  kind: 'demo' | 'production';
+  currency: string;
+  selectionScope: string;
+  readOnly?: boolean;
+  hasPublished?: boolean;
+  publicationBlocked?: boolean;
+  publicationFailed?: boolean;
   /** A publish request ended without an answer and is being followed until it settles. */
   publicationProgressing?: boolean;
   /** The publication stopped in a state only operator review can resolve. */
   publicationNeedsReview?: boolean;
   productChanging?(previous: PlacementProduct, next: PlacementProduct): PlacementProduct;
   reviews?: { methodId: string; name: string }[];
-  reviewMethod?(product: PlacementProduct, methodId: string, decision: 'keep'|'remove'): PlacementProduct;
+  reviewMethod?(product: PlacementProduct, methodId: string, decision: 'keep' | 'remove'): PlacementProduct;
   publicationIssues?(product: PlacementProduct): PlacementPublicationIssue[];
   saveIssues?(product: PlacementProduct): PlacementPublicationIssue[];
-  publication: PlacementPreviewState | null; settled?: PlacementProduct;
-  revision(): number; pending(): boolean;
+  publication: PlacementPreviewState | null;
+  settled?: PlacementProduct;
+  revision(): number;
+  pending(): boolean;
   getBindings?(): MethodBindings;
   restoreBindings?(bindings: MethodBindings): void;
   save(product: PlacementProduct): Promise<PlacementProduct | void>;
@@ -129,7 +141,13 @@ export interface ProductEditorAdapter {
   copyPorts: PlacementSetupCopyPorts;
   upload?(image: EditorProductImage): Promise<EditorProductImage>;
   preview: typeof import('../../examples/admin/support/placement-customer-preview.mts').launchCustomerPreview;
-  methodsApplied?(placementId: string, change: Pick<EditorPlacement, 'methodIds'|'sizes'>, choices: EditorMethod[], editedIds: string[], editedCells: { sizeId: string; methodId: string }[]): void;
+  methodsApplied?(
+    placementId: string,
+    change: Pick<EditorPlacement, 'methodIds' | 'sizes'>,
+    choices: EditorMethod[],
+    editedIds: string[],
+    editedCells: { sizeId: string; methodId: string }[],
+  ): void;
   priceEdited?(placementId: string, sizeId: string, methodId: string, amount: string): void;
 }
 
@@ -193,9 +211,12 @@ type PlacementNotice =
 
 function placementIssueProblem(reason: PlacementIssueReason, t: Translate): string {
   switch (reason) {
-    case 'capacity-exceeded': return t('editor:placementWorkflowPreview.realCapacityExceeded');
-    case 'production-dimensions-required': return t('editor:placementWorkflowPreview.realDimensionsRequired');
-    case 'method-review-required': return t('editor:placementWorkflowPreview.realReviewMethods');
+    case 'capacity-exceeded':
+      return t('editor:placementWorkflowPreview.realCapacityExceeded');
+    case 'production-dimensions-required':
+      return t('editor:placementWorkflowPreview.realDimensionsRequired');
+    case 'method-review-required':
+      return t('editor:placementWorkflowPreview.realReviewMethods');
     case 'product-name-required':
       return t('editor:placementValidation.errors.productNameRequired');
     case 'method-name-required':
@@ -291,7 +312,12 @@ function publicationIssueText(issue: PlacementPublicationIssue, product: Placeme
   return issue.viewId ? t('editor:placementValidation.context.view', { viewName, problem }) : problem;
 }
 
-function placementNoticeText(notice: PlacementNotice, product: PlacementProduct, t: Translate, production = false): string {
+function placementNoticeText(
+  notice: PlacementNotice,
+  product: PlacementProduct,
+  t: Translate,
+  production = false,
+): string {
   if (!notice) return '';
   if (notice.kind === 'publication-issue') return publicationIssueText(notice.issue, product, t);
   if (notice.kind === 'customer-preview-failed') {
@@ -383,11 +409,19 @@ function placementNoticeText(notice: PlacementNotice, product: PlacementProduct,
     case 'storage-save-failed':
       return t('editor:placementWorkflowPreview.notices.storageSaveFailed');
     case 'draft-saved':
-      return t(production ? 'editor:placementWorkflowPreview.realDraftSaved' : 'editor:placementWorkflowPreview.notices.draftSaved');
+      return t(
+        production
+          ? 'editor:placementWorkflowPreview.realDraftSaved'
+          : 'editor:placementWorkflowPreview.notices.draftSaved',
+      );
     case 'publish-failed':
       return t('editor:placementWorkflowPreview.realPublicationFailed');
     case 'publish-succeeded':
-      return t(production ? 'editor:placementWorkflowPreview.realPublished' : 'editor:placementWorkflowPreview.notices.publishSucceeded');
+      return t(
+        production
+          ? 'editor:placementWorkflowPreview.realPublished'
+          : 'editor:placementWorkflowPreview.notices.publishSucceeded',
+      );
     case 'changes-discarded':
       return t('editor:placementWorkflowPreview.notices.changesDiscarded');
     case 'position-reverted':
@@ -421,14 +455,21 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     if (!adapter.settled) return;
     const confirmedBindings = adapter.getBindings?.() ?? {};
     if (!writeBusyRef.current && !adapter.pending()) {
-      commitPlacementDraftChange(history.current, { product: currentProduct.current, bindings: currentBindings.current }, { product: adapter.settled, bindings: confirmedBindings });
+      commitPlacementDraftChange(
+        history.current,
+        { product: currentProduct.current, bindings: currentBindings.current },
+        { product: adapter.settled, bindings: confirmedBindings },
+      );
       currentBindings.current = confirmedBindings;
       currentProduct.current = adapter.settled;
       renderProduct(adapter.settled);
     }
-    setSaved(adapter.settled); savedBindings.current = confirmedBindings;
+    setSaved(adapter.settled);
+    savedBindings.current = confirmedBindings;
   }, [adapter.settled]);
-  useEffect(() => { setPublication(adapter.publication); }, [adapter.publication]);
+  useEffect(() => {
+    setPublication(adapter.publication);
+  }, [adapter.publication]);
   const [saved, setSaved] = useState(initial);
   const currentBindings = useRef<MethodBindings>(adapter.getBindings?.() ?? {});
   const savedBindings = useRef(currentBindings.current);
@@ -463,9 +504,17 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     const current = currentProduct.current;
     if (editsRefused()) return false;
     let next = pruneVariantPhotoAssignments(typeof change === 'function' ? change(current) : change);
-    next = adapter.productChanging?.(current,next) ?? next;
+    next = adapter.productChanging?.(current, next) ?? next;
     const nextBindings = adapter.getBindings?.() ?? currentBindings.current;
-    if (!commitPlacementDraftChange(history.current, { product: current, bindings: currentBindings.current }, { product: next, bindings: nextBindings }, historyGroup.current)) return false;
+    if (
+      !commitPlacementDraftChange(
+        history.current,
+        { product: current, bindings: currentBindings.current },
+        { product: next, bindings: nextBindings },
+        historyGroup.current,
+      )
+    )
+      return false;
     currentBindings.current = nextBindings;
     currentProduct.current = next;
     renderProduct(next);
@@ -522,7 +571,18 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
   const methodDialog = dialog.kind === 'method-manager' ? dialog : null;
   const publishReview = dialog.kind === 'publish' ? dialog : null;
   const production = adapter.kind === 'production';
-  useEffect(() => { if (dialog.kind === 'publish' && dialog.error === 'pending' && !adapter.pending() && (adapter.publicationFailed || adapter.publication?.published)) { dispatchDialog({ type: 'dialog-closed', id: dialog.id }); setNotice({ kind: 'message', reason: adapter.publicationFailed ? 'publish-failed' : 'publish-succeeded' }); } else if (dialog.kind === 'publish' && dialog.error === 'pending' && adapter.publicationNeedsReview) dispatchDialog({ type: 'dialog-closed', id: dialog.id }); }, [adapter.publication, adapter.publicationNeedsReview]);
+  useEffect(() => {
+    if (
+      dialog.kind === 'publish' &&
+      dialog.error === 'pending' &&
+      !adapter.pending() &&
+      (adapter.publicationFailed || adapter.publication?.published)
+    ) {
+      dispatchDialog({ type: 'dialog-closed', id: dialog.id });
+      setNotice({ kind: 'message', reason: adapter.publicationFailed ? 'publish-failed' : 'publish-succeeded' });
+    } else if (dialog.kind === 'publish' && dialog.error === 'pending' && adapter.publicationNeedsReview)
+      dispatchDialog({ type: 'dialog-closed', id: dialog.id });
+  }, [adapter.publication, adapter.publicationNeedsReview]);
   const publishError = publishReview?.error
     ? translateUi(
         publishReview.error === 'pending'
@@ -530,10 +590,10 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
             ? 'editor:placementWorkflowPreview.realPublicationProgress'
             : 'editor:placementWorkflowPreview.realPublicationPending'
           : publishReview.error === 'conflict'
-          ? 'editor:placementWorkflowPreview.publishErrors.conflict'
-          : publishReview.error === 'busy'
-          ? 'editor:placementWorkflowPreview.publishErrors.shopifyBusy'
-          : 'editor:placementWorkflowPreview.publishErrors.storageError',
+            ? 'editor:placementWorkflowPreview.publishErrors.conflict'
+            : publishReview.error === 'busy'
+              ? 'editor:placementWorkflowPreview.publishErrors.shopifyBusy'
+              : 'editor:placementWorkflowPreview.publishErrors.storageError',
       )
     : '';
   const removing = dialog.kind === 'remove' ? dialog.target : null;
@@ -993,13 +1053,22 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
   }
   const removal = removing ? locateOutlineItem(product, removing) : null;
   const copySourceData = copySource ? locateOutlineItem(product, copySource) : null;
-  const dirty = !placementDraftEqual(currentBindings.current, savedBindings.current) || !placementDraftEqual(product, saved) || geometryInput !== null || movementEditing;
+  const dirty =
+    !placementDraftEqual(currentBindings.current, savedBindings.current) ||
+    !placementDraftEqual(product, saved) ||
+    geometryInput !== null ||
+    movementEditing;
   const publishedCurrent =
-    !!publication?.published && !adapter.pending() && placementDraftEqual(product, publication.published) && !geometryInput;
+    !!publication?.published &&
+    !adapter.pending() &&
+    placementDraftEqual(product, publication.published) &&
+    !geometryInput;
   const setupStatus = translateUi(
     publication?.published || adapter.hasPublished
       ? publishedCurrent
-        ? adapter.kind === 'demo' ? 'editor:placementWorkflowPreview.status.previewPublished' : 'editor:placementWorkflowPreview.realPublished'
+        ? adapter.kind === 'demo'
+          ? 'editor:placementWorkflowPreview.status.previewPublished'
+          : 'editor:placementWorkflowPreview.realPublished'
         : 'editor:placementWorkflowPreview.status.draftChanges'
       : 'editor:placementWorkflowPreview.status.draft',
   );
@@ -1748,7 +1817,11 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     }
     cancelCalibration();
     cancelDrawingTask();
-    dispatchDialog({ type: 'copy-setup-opened', id: uid(), source: structuredClone(canonicalPlacementDecimals(candidate)) });
+    dispatchDialog({
+      type: 'copy-setup-opened',
+      id: uid(),
+      source: structuredClone(canonicalPlacementDecimals(candidate)),
+    });
   }
   /**
    * Start measuring an explicit view. A caller that selects a view in the same event cannot rely on
@@ -1779,7 +1852,8 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     if (workspaceMode.viewId !== view.id || workspaceMode.imageUrl !== view.imageUrl) {
       // The line was drawn on another view or image: never apply it here and never fail silently.
       // Restart measuring on the visible image with the existing message, or leave measuring cleanly.
-      if (startMeasurementFor(view, selectedId)) dispatchWorkspace({ type: 'measurement-error', reason: 'measurement-invalid' });
+      if (startMeasurementFor(view, selectedId))
+        dispatchWorkspace({ type: 'measurement-error', reason: 'measurement-invalid' });
       else cancelCalibration();
       return;
     }
@@ -2348,16 +2422,25 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
       return false;
     }
     const transportIssues = adapter.saveIssues?.(candidate) ?? [];
-    if (transportIssues.length) { setNotice({ kind: 'publication-issue', issue: transportIssues[0]! }); return false; }
+    if (transportIssues.length) {
+      setNotice({ kind: 'publication-issue', issue: transportIssues[0]! });
+      return false;
+    }
     setErrors({});
     candidate = canonicalPlacementDecimals(candidate);
     writeBusyRef.current = true;
     setWriteBusy(true);
-    try { const confirmed = await adapter.save(candidate); if (confirmed) candidate = confirmed; } catch (error) {
+    try {
+      const confirmed = await adapter.save(candidate);
+      if (confirmed) candidate = confirmed;
+    } catch (error) {
       // In production the host's banner explains every failed save (unconfirmed, conflict or rejection); one message.
       setNotice(configRejectionFrom(error) || production ? null : { kind: 'message', reason: 'storage-save-failed' });
       return false;
-    } finally { writeBusyRef.current = false; setWriteBusy(false); }
+    } finally {
+      writeBusyRef.current = false;
+      setWriteBusy(false);
+    }
     setProduct(candidate);
     setSaved(candidate);
     savedBindings.current = currentBindings.current;
@@ -2370,7 +2453,14 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     saveDraft();
   }
   function openPublishReview() {
-    if (!product.views.length || adapter.readOnly || adapter.publicationBlocked || writeBusyRef.current || adapter.pending()) return;
+    if (
+      !product.views.length ||
+      adapter.readOnly ||
+      adapter.publicationBlocked ||
+      writeBusyRef.current ||
+      adapter.pending()
+    )
+      return;
     if (movementEditing) {
       setNotice({ kind: 'message', reason: 'movement-edit-before-publish' });
       return;
@@ -2384,7 +2474,11 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
       id: uid(),
       product: structuredClone(canonicalPlacementDecimals(candidate)),
       revision: adapter.revision(),
-      issues: [...placementPublicationIssues(candidate), ...imageLoadIssues(candidate), ...(adapter.publicationIssues?.(candidate) ?? [])],
+      issues: [
+        ...placementPublicationIssues(candidate),
+        ...imageLoadIssues(candidate),
+        ...(adapter.publicationIssues?.(candidate) ?? []),
+      ],
     });
   }
   async function confirmPublish() {
@@ -2399,10 +2493,12 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     setWriteBusy(true);
     let result: ProductPublicationResult;
     let shopifyBusy = false;
-    try { result = await adapter.publish(publishReview.product, publishReview.revision); }
-    catch (error) {
+    try {
+      result = await adapter.publish(publishReview.product, publishReview.revision);
+    } catch (error) {
       if (configRejectionFrom(error)) {
-        if (adapter.pending()) result = { status: 'pending' }; // The write may have committed: keep the pending flow.
+        if (adapter.pending())
+          result = { status: 'pending' }; // The write may have committed: keep the pending flow.
         else {
           // Refused, not lost: close the review so the merchant can fix the edit the host's banner names.
           dispatchDialog({ type: 'dialog-closed', id: publishReview.id });
@@ -2413,15 +2509,23 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
         shopifyBusy = isShopifyBusy(error);
         result = { status: 'storage-error', reason: 'write-failed' };
       }
+    } finally {
+      writeBusyRef.current = false;
+      setWriteBusy(false);
     }
-    finally { writeBusyRef.current = false; setWriteBusy(false); }
     if (result.status === 'changed') {
-      setProduct(result.product); setSaved(result.product); savedBindings.current = adapter.getBindings?.() ?? currentBindings.current;
+      setProduct(result.product);
+      setSaved(result.product);
+      savedBindings.current = adapter.getBindings?.() ?? currentBindings.current;
       dispatchDialog({ type: 'dialog-closed', id: publishReview.id });
       setNotice({ kind: 'message', reason: 'draft-changed' });
       return;
     }
-    if (result.status === 'rejected') {dispatchDialog({type:'dialog-closed',id:publishReview.id});setNotice({kind:'message',reason:'publish-failed'});return;}
+    if (result.status === 'rejected') {
+      dispatchDialog({ type: 'dialog-closed', id: publishReview.id });
+      setNotice({ kind: 'message', reason: 'publish-failed' });
+      return;
+    }
     if (result.status === 'pending') {
       dispatchDialog({ type: 'publish-failed', id: publishReview.id, reason: 'pending' });
       return;
@@ -2470,7 +2574,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
       return translateUi(
         key.endsWith('.name')
           ? 'editor:placementWorkflowPreview.publicationActions.editSizeName'
-          : (key.endsWith('.widthPercent')||key.endsWith('.heightPercent'))
+          : key.endsWith('.widthPercent') || key.endsWith('.heightPercent')
             ? 'editor:placementWorkflowPreview.publicationActions.editSizeFactor'
             : 'editor:placementWorkflowPreview.publicationActions.reviewSize',
       );
@@ -2601,7 +2705,11 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     renderProduct(result.state.product);
     interactionTargetRevision.current += 1;
     invalidatePhotoPickerContext(result.state.product.id, selectedViewId.current, interactionTargetRevision.current);
-    const selection = selections.current.get(result.state.product) ?? { viewId, selectedId, appearanceKey: activePhotoGroup };
+    const selection = selections.current.get(result.state.product) ?? {
+      viewId,
+      selectedId,
+      appearanceKey: activePhotoGroup,
+    };
     const restoredGroups = getVariantPhotoGroups(result.state.product);
     setActivePhotoGroup(
       selection.appearanceKey === null
@@ -2610,7 +2718,8 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
           ? selection.appearanceKey
           : (restoredGroups[0]?.key ?? null),
     );
-    const nextView = result.state.product.views.find((item) => item.id === selection.viewId) ?? result.state.product.views[0];
+    const nextView =
+      result.state.product.views.find((item) => item.id === selection.viewId) ?? result.state.product.views[0];
     setViewId(nextView?.id ?? '');
     setSelectedId(
       selection.selectedId === null || nextView?.placements.some((item) => item.id === selection.selectedId)
@@ -2695,7 +2804,6 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     <div
       class="placement-workflow"
       ref={main}
-      inert={writeBusy || adapter.pending() || adapter.readOnly}
       onFocusIn={(event) => {
         if (event.composedPath().some((node) => node instanceof HTMLElement && node.matches('input,textarea'))) {
           endHistoryGroup();
@@ -2712,1471 +2820,1581 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
       onPointerUpCapture={() => queueMicrotask(endHistoryGroup)}
       onPointerCancelCapture={() => queueMicrotask(endHistoryGroup)}
     >
-      <span
-        class={`placement-announcement ${panel === 'settings' ? 'is-inactive' : ''}`}
-        role="status"
-        aria-live="polite"
-      >
-        {feedback && hostToast() ? '' : noticeText}
-      </span>
-      <span class="placement-announcement" role="status" aria-live="polite">
-        {historyNotice === 'change-undone'
-          ? translateUi('editor:placementWorkflowPreview.history.changeUndone')
-          : historyNotice === 'change-redone'
-            ? translateUi('editor:placementWorkflowPreview.history.changeRedone')
-            : ''}
-      </span>
-      {adapter.kind === 'production' && <AdminSaveBar dirty={dirty} saving={dirty && writeBusy && dialog.kind !== 'publish'} canSave={dirty && !writeBusy && !adapter.pending() && !adapter.readOnly} canDiscard={!writeBusy && !adapter.pending()} onSave={save} onDiscard={discard} manageNavigation={false}/>}
-      <s-page heading={product.title} inlineSize="large">
-        <s-link slot="breadcrumb-actions" href={returnTo}>
-          {translateUi(
-            returnTo === '/admin/settings/storefront'
-              ? 'editor:placementWorkflowPreview.storefrontSetup'
-              : 'editor:placementWorkflowPreview.products',
-          )}
-        </s-link>
-        <s-button slot="primary-action" variant="primary" disabled={publishedCurrent || !product.views.length || !!adapter.readOnly || !!adapter.publicationBlocked || writeBusy || adapter.pending()} onClick={openPublishReview}>
-          {translateUi('editor:placementWorkflowPreview.publish')}
-        </s-button>
-        <s-button
-          slot="secondary-actions"
-          variant="secondary"
-          icon="external"
-          accessibilityLabel={translateUi('editor:placementWorkflowPreview.previewCustomization')}
-          disabled={movementEditing || drawing || calibrationEditing}
-          onClick={() =>
-            adapter.preview(
-              canonicalPlacementDecimals(product),
-              (reason) => {
-                setNotice({ kind: 'customer-preview-failed', reason });
-                setPanel('settings');
-              },
-              activePhoto ? { appearanceGroupKey: activePhoto.key } : {},
-            )
-          }
+      {/* Dialogs stay outside this inert region: a modal must not have an inert ancestor. */}
+      <div class="placement-workflow-content" inert={writeBusy || adapter.pending() || adapter.readOnly}>
+        <span
+          class={`placement-announcement ${panel === 'settings' ? 'is-inactive' : ''}`}
+          role="status"
+          aria-live="polite"
         >
-          {translateUi('editor:placementWorkflowPreview.previewCustomization')}
-        </s-button>
-        <s-button
-          slot="secondary-actions"
-          icon="menu-horizontal"
-          accessibilityLabel={translateUi('editor:placementWorkflowPreview.moreActions')}
-          commandFor="placement-page-actions"
-        >{adapter.kind === 'production' ? translateUi('editor:placementWorkflowPreview.moreActions') : null}</s-button>
-        <s-menu
-          id="placement-page-actions"
-          accessibilityLabel={translateUi('editor:placementWorkflowPreview.editorActions')}
-        >
-          <s-button href={storefrontProductTestSetupHref(product.id) ?? '/admin/settings/storefront#test-product'}>
-            {translateUi('editor:placementWorkflowPreview.testOnYourStore')}
-          </s-button>
-          <s-button disabled={!product.views.length || calibrationEditing} onClick={openSetupCopy}>
-            {translateUi('editor:placementWorkflowPreview.copySetupToProducts')}
-          </s-button>
+          {feedback && hostToast() ? '' : noticeText}
+        </span>
+        <span class="placement-announcement" role="status" aria-live="polite">
+          {historyNotice === 'change-undone'
+            ? translateUi('editor:placementWorkflowPreview.history.changeUndone')
+            : historyNotice === 'change-redone'
+              ? translateUi('editor:placementWorkflowPreview.history.changeRedone')
+              : ''}
+        </span>
+        {adapter.kind === 'production' && (
+          <AdminSaveBar
+            dirty={dirty}
+            saving={dirty && writeBusy && dialog.kind !== 'publish'}
+            canSave={dirty && !writeBusy && !adapter.pending() && !adapter.readOnly}
+            canDiscard={!writeBusy && !adapter.pending()}
+            onSave={save}
+            onDiscard={discard}
+            manageNavigation={false}
+          />
+        )}
+        <s-page heading={product.title} inlineSize="large">
+          <s-link slot="breadcrumb-actions" href={returnTo}>
+            {translateUi(
+              returnTo === '/admin/settings/storefront'
+                ? 'editor:placementWorkflowPreview.storefrontSetup'
+                : 'editor:placementWorkflowPreview.products',
+            )}
+          </s-link>
           <s-button
-            tone="critical"
-            disabled={!dirty || !!adapter.readOnly || writeBusy || adapter.pending()}
-            onClick={() => dispatchDialog({ type: 'discard-requested', id: uid() })}
+            slot="primary-action"
+            variant="primary"
+            disabled={
+              publishedCurrent ||
+              !product.views.length ||
+              !!adapter.readOnly ||
+              !!adapter.publicationBlocked ||
+              writeBusy ||
+              adapter.pending()
+            }
+            onClick={openPublishReview}
           >
-            {translateUi('editor:placementWorkflowPreview.discardChanges')}
+            {translateUi('editor:placementWorkflowPreview.publish')}
           </s-button>
-        </s-menu>
-        {adapter.kind !== 'production' && (
           <s-button
             slot="secondary-actions"
-            data-preview-keep-visible
-            data-editor-save-draft
             variant="secondary"
-            disabled={!dirty || !!adapter.readOnly || writeBusy || adapter.pending()}
-            onClick={save}
+            icon="external"
+            accessibilityLabel={translateUi('editor:placementWorkflowPreview.previewCustomization')}
+            disabled={movementEditing || drawing || calibrationEditing}
+            onClick={() =>
+              adapter.preview(
+                canonicalPlacementDecimals(product),
+                (reason) => {
+                  setNotice({ kind: 'customer-preview-failed', reason });
+                  setPanel('settings');
+                },
+                activePhoto ? { appearanceGroupKey: activePhoto.key } : {},
+              )
+            }
           >
-            {translateUi('editor:placementWorkflowPreview.saveDraft')}
+            {translateUi('editor:placementWorkflowPreview.previewCustomization')}
           </s-button>
-        )}
-      </s-page>
-      {!!adapter.reviews?.length && <div class="placement-method-review" role="region" aria-label={translateUi('editor:placementWorkflowPreview.realReviewMethods')}>
-        <s-banner tone="warning">{translateUi('editor:placementWorkflowPreview.realReviewMethods')}
-          {adapter.reviews.map((review) => <s-stack direction="inline" gap="small" key={review.methodId}>
-            <s-text>{review.name}</s-text>
-            <s-button disabled={!!adapter.readOnly||writeBusy||adapter.pending()} onClick={() => { if(adapter.readOnly||writeBusyRef.current||adapter.pending())return;const next=adapter.reviewMethod?.(currentProduct.current,review.methodId,'keep'); if(next)setProduct(next); }}>{translateUi('editor:placementWorkflowPreview.realKeepMethod')}</s-button>
-            <s-button disabled={!!adapter.readOnly||writeBusy||adapter.pending()} onClick={() => { if(adapter.readOnly||writeBusyRef.current||adapter.pending())return;const next=adapter.reviewMethod?.(currentProduct.current,review.methodId,'remove'); if(next)setProduct(next); }}>{translateUi('editor:placementWorkflowPreview.realRemoveMethod')}</s-button>
-          </s-stack>)}
-        </s-banner>
-      </div>}
-      {/* Local host bridge. Production host integration is deliberately separate. */}
-      <div data-preview-editor-chrome hidden>
-        <s-button
-          data-editor-control="panels"
-          icon="layout-sidebar-left"
-          accessibilityLabel={translateUi(
-            outlineHidden
-              ? 'editor:placementWorkflowPreview.showViewsAndPlacements'
-              : 'editor:placementWorkflowPreview.hideViewsAndPlacements',
-          )}
-          disabled={!view}
-          onClick={() => setOutlineHidden((hidden) => !hidden)}
-        />
-        <s-button
-          data-editor-control="undo"
-          icon="undo"
-          accessibilityLabel={translateUi('editor:placementWorkflowPreview.undo')}
-          disabled={movementEditing || calibrationEditing || (!geometryInput && !history.current.past.length)}
-          onClick={() => restoreHistory('undo')}
-        />
-        <s-button
-          data-editor-control="redo"
-          icon="redo"
-          accessibilityLabel={translateUi('editor:placementWorkflowPreview.redo')}
-          disabled={movementEditing || calibrationEditing || !!geometryInput || !history.current.future.length}
-          onClick={() => restoreHistory('redo')}
-        />
-      </div>
-      <div
-        class={`placement-editor ${!view ? 'is-empty' : ''} ${view && outlineHidden ? 'is-outline-hidden' : ''}`}
-        data-placement-editor
-      >
-        <div
-          class="placement-mobile-tabs"
-          role="tablist"
-          aria-label={translateUi('editor:placementWorkflowPreview.editorPanels')}
-          onKeyDown={(event) => {
-            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-            event.preventDefault();
-            const next =
-              event.key === 'Home'
-                ? 'placements'
-                : event.key === 'End'
-                  ? 'settings'
-                  : panel === 'placements'
-                    ? 'settings'
-                    : 'placements';
-            setPanel(next);
-            event.currentTarget.querySelector<HTMLButtonElement>(`[data-panel="${next}"]`)?.focus();
-          }}
-        >
-          <button
-            type="button"
-            role="tab"
-            id="placement-outline-tab"
-            data-panel="placements"
-            tabIndex={panel === 'placements' ? 0 : -1}
-            aria-selected={panel === 'placements'}
-            aria-controls="placement-outline"
-            onClick={() => {
-              setPanel('placements');
-              if (view) setExpandedViews((current) => (current.includes(view.id) ? current : [...current, view.id]));
-            }}
+          <s-button
+            slot="secondary-actions"
+            icon="menu-horizontal"
+            accessibilityLabel={translateUi('editor:placementWorkflowPreview.moreActions')}
+            commandFor="placement-page-actions"
           >
-            {translateUi('editor:placementWorkflowPreview.viewsPlacements')}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            id="placement-settings-tab"
-            data-panel="settings"
-            disabled={!view}
-            tabIndex={panel === 'settings' ? 0 : -1}
-            aria-selected={panel === 'settings'}
-            aria-controls="placement-properties"
-            onClick={() => setPanel('settings')}
+            {adapter.kind === 'production' ? translateUi('editor:placementWorkflowPreview.moreActions') : null}
+          </s-button>
+          <s-menu
+            id="placement-page-actions"
+            accessibilityLabel={translateUi('editor:placementWorkflowPreview.editorActions')}
           >
-            {translateUi('editor:placementWorkflowPreview.settings')}
-          </button>
-        </div>
-        <div
-          id="placement-outline"
-          inert={wideEditor && !!view && outlineHidden}
-          class={`placement-outline ${panel === 'placements' ? 'is-mobile-active' : ''}`}
-          role="tabpanel"
-          aria-labelledby="placement-outline-tab"
-          aria-label={translateUi('editor:placementWorkflowPreview.viewsAndPlacements')}
-        >
-          <div class="placement-panel-heading">
-            <s-heading>{translateUi('editor:placementWorkflowPreview.viewsPlacements')}</s-heading>
-            <s-text color="subdued">{setupStatus}</s-text>
-          </div>
-          <div class="placement-outline-summary">
-            <span>
-              {translateUi('editor:placementWorkflowPreview.outlineSummary', {
-                views: translateUi('editor:placementWorkflowPreview.viewCount', {
-                  count: product.views.length,
-                  formattedCount: new Intl.NumberFormat(formatLocale).format(product.views.length),
-                }),
-                placements: translateUi('editor:placementWorkflowPreview.placementCount', {
-                  count,
-                  formattedCount: new Intl.NumberFormat(formatLocale).format(count),
-                }),
-              })}
-            </span>
+            <s-button href={storefrontProductTestSetupHref(product.id) ?? '/admin/settings/storefront#test-product'}>
+              {translateUi('editor:placementWorkflowPreview.testOnYourStore')}
+            </s-button>
+            <s-button disabled={!product.views.length || calibrationEditing} onClick={openSetupCopy}>
+              {translateUi('editor:placementWorkflowPreview.copySetupToProducts')}
+            </s-button>
             <s-button
-              variant="tertiary"
-              icon="menu-horizontal"
-              accessibilityLabel={translateUi('editor:placementWorkflowPreview.outlineActions')}
-              commandFor="placement-outline-menu"
-              command="--show"
-            />
-            <s-menu
-              id="placement-outline-menu"
-              accessibilityLabel={translateUi('editor:placementWorkflowPreview.outlineActions')}
+              tone="critical"
+              disabled={!dirty || !!adapter.readOnly || writeBusy || adapter.pending()}
+              onClick={() => dispatchDialog({ type: 'discard-requested', id: uid() })}
             >
-              <s-button
-                disabled={!!outlineSearch}
-                onClick={() => setExpandedViews(product.views.map((item) => item.id))}
-              >
-                {translateUi('editor:placementWorkflowPreview.expandAllViews')}
-              </s-button>
-              <s-button disabled={!!outlineSearch} onClick={collapseOtherViews}>
-                {translateUi('editor:placementWorkflowPreview.collapseOtherViews')}
-              </s-button>
-            </s-menu>
-          </div>
-          {(count > 8 || product.views.length > 6 || outlineQuery) && (
-            <div class="placement-outline-search">
-              <s-search-field
-                label={translateUi('editor:placementWorkflowPreview.searchViewsAndPlacements')}
-                labelAccessibilityVisibility="exclusive"
-                placeholder={translateUi('editor:placementWorkflowPreview.searchViewsAndPlacements')}
-                value={outlineQuery}
-                onInput={(event) => setOutlineQuery(event.currentTarget.value)}
-              />
-            </div>
+              {translateUi('editor:placementWorkflowPreview.discardChanges')}
+            </s-button>
+          </s-menu>
+          {adapter.kind !== 'production' && (
+            <s-button
+              slot="secondary-actions"
+              data-preview-keep-visible
+              data-editor-save-draft
+              variant="secondary"
+              disabled={!dirty || !!adapter.readOnly || writeBusy || adapter.pending()}
+              onClick={save}
+            >
+              {translateUi('editor:placementWorkflowPreview.saveDraft')}
+            </s-button>
           )}
-          <div class="placement-outline-body">
-            {outlineItems.map(({ view: item, areas }) => (
-              <div class="placement-view-group" key={item.id}>
-                <fieldset
-                  aria-label={translateUi('editor:placementWorkflowPreview.viewAccessibilityName', {
-                    viewName: item.name || translateUi('editor:placementWorkflowPreview.unnamedView'),
-                  })}
-                  data-outline-sort-kind="view"
-                  data-outline-sort-id={item.id}
-                  class={`placement-view-heading ${view?.id === item.id && !placement ? 'is-selected' : ''}${dropClass({ kind: 'view', id: item.id })}${draggingClass({ kind: 'view', id: item.id })}`}
-                >
-                  <button
-                    type="button"
-                    class="placement-disclosure"
-                    aria-label={translateUi(
-                      outlineSearch || expandedViews.includes(item.id)
-                        ? 'editor:placementWorkflowPreview.collapseView'
-                        : 'editor:placementWorkflowPreview.expandView',
-                      { viewName: item.name },
-                    )}
-                    aria-expanded={!!outlineSearch || expandedViews.includes(item.id)}
-                    aria-controls={`view-placements-${item.id}`}
-                    disabled={!!outlineSearch}
-                    onClick={() => toggleViewExpansion(item)}
-                  >
-                    <s-icon
-                      type={outlineSearch || expandedViews.includes(item.id) ? 'chevron-down' : 'chevron-right'}
-                    />
-                  </button>
-                  <button
-                    class="placement-view"
-                    type="button"
-                    data-outline-select-view-id={item.id}
-                    aria-current={view?.id === item.id && !placement ? 'true' : undefined}
-                    onClick={() => select(item, null, true)}
-                    onDblClick={() => rename(item, null)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'F2') {
-                        event.preventDefault();
-                        rename(item, null);
-                      }
+        </s-page>
+        {!!adapter.reviews?.length && (
+          <div
+            class="placement-method-review"
+            role="region"
+            aria-label={translateUi('editor:placementWorkflowPreview.realReviewMethods')}
+          >
+            <s-banner tone="warning">
+              {translateUi('editor:placementWorkflowPreview.realReviewMethods')}
+              {adapter.reviews.map((review) => (
+                <s-stack direction="inline" gap="small" key={review.methodId}>
+                  <s-text>{review.name}</s-text>
+                  <s-button
+                    disabled={!!adapter.readOnly || writeBusy || adapter.pending()}
+                    onClick={() => {
+                      if (adapter.readOnly || writeBusyRef.current || adapter.pending()) return;
+                      const next = adapter.reviewMethod?.(currentProduct.current, review.methodId, 'keep');
+                      if (next) setProduct(next);
                     }}
                   >
-                    {resolveVariantPhotoView(product, item.id, activePhoto?.key).view.imageUrl ? (
-                      <img
-                        src={resolveVariantPhotoView(product, item.id, activePhoto?.key).view.imageUrl}
-                        width="20"
-                        height="20"
-                        alt=""
-                      />
-                    ) : (
-                      <s-icon type="image" />
-                    )}
-                    <AdminTruncatedLabel
-                      text={item.name || translateUi('editor:placementWorkflowPreview.unnamedView')}
-                    />
-                    <span class="placement-count">
-                      {translateUi('editor:placementWorkflowPreview.placementCount', {
-                        count: item.placements.length,
-                        formattedCount: new Intl.NumberFormat(formatLocale).format(item.placements.length),
-                      })}
-                    </span>
-                    {(!item.imageUrl || item.needsAlignmentReview) && (
-                      <span
-                        class="placement-setup-warning"
-                        role="img"
-                        aria-label={translateUi(
-                          !item.imageUrl
-                            ? 'editor:placementWorkflowPreview.publicationActions.chooseImage'
-                            : 'editor:placementWorkflowPreview.publicationActions.reviewAlignment',
-                        )}
-                      >
-                        <s-icon type="alert-circle" tone="warning" />
-                      </span>
-                    )}
-                  </button>
-                  {outlineActions(
-                    { kind: 'view', id: item.id },
-                    item.name || translateUi('editor:placementWorkflowPreview.unnamedView'),
-                  )}
-                  {dragHandle(
-                    { kind: 'view', id: item.id },
-                    item.name || translateUi('editor:placementWorkflowPreview.unnamedView'),
-                  )}
-                </fieldset>
-                <div
-                  class="placement-children"
-                  id={`view-placements-${item.id}`}
-                  hidden={!outlineSearch && !expandedViews.includes(item.id)}
-                >
-                  {areas.map((area) => {
-                    const issue = placementSetupIssue(product, area);
-                    const rowSize =
-                      item.calibration && calibrationMatchesImage(item.calibration, item)
-                        ? approximatePlacementDimensions(item.calibration, area.rect)
-                        : null;
-                    const sizeLabel = rowSize
-                      ? translateUi('editor:placementWorkflowPreview.approximateDimensions', {
-                          width: new Intl.NumberFormat(formatLocale, {
-                            minimumFractionDigits: 1,
-                            maximumFractionDigits: 1,
-                          }).format(rowSize.widthCm),
-                          height: new Intl.NumberFormat(formatLocale, {
-                            minimumFractionDigits: 1,
-                            maximumFractionDigits: 1,
-                          }).format(rowSize.heightCm),
-                        })
-                      : '';
-                    return (
-                      <fieldset
-                        aria-label={translateUi('editor:placementWorkflowPreview.placementAccessibilityName', {
-                          placementName: area.name || translateUi('editor:placementWorkflowPreview.unnamedPlacement'),
-                        })}
-                        data-outline-sort-kind="placement"
-                        data-outline-sort-id={area.id}
-                        data-outline-sort-view-id={item.id}
-                        class={`placement-row-shell${view?.id === item.id && selectedId === area.id ? ' is-selected' : ''}${dropClass({ kind: 'placement', id: area.id, viewId: item.id })}${draggingClass({ kind: 'placement', id: area.id, viewId: item.id })}`}
-                        key={area.id}
-                      >
-                        <button
-                          type="button"
-                          class={`placement-row ${rowSize ? 'has-estimate' : ''} ${view?.id === item.id && selectedId === area.id ? 'is-selected' : ''}`}
-                          aria-description={
-                            sizeLabel
-                              ? translateUi('editor:placementWorkflowPreview.estimatedFullArtworkArea', {
-                                  dimensions: sizeLabel,
-                                })
-                              : undefined
-                          }
-                          data-outline-select-placement-id={area.id}
-                          aria-pressed={view?.id === item.id && selectedId === area.id}
-                          onClick={() => select(item, area.id, true)}
-                          onDblClick={() => rename(item, area.id)}
-                          onKeyDown={(event) => {
-                            if (event.key === 'F2') {
-                              event.preventDefault();
-                              rename(item, area.id);
-                            }
-                          }}
-                          key={area.id}
-                        >
-                          <span
-                            class="placement-color-dot"
-                            style={{ backgroundColor: placementColor(area.id).stroke }}
-                            aria-hidden="true"
-                          />
-                          <AdminTruncatedLabel
-                            className="placement-row-label"
-                            text={area.name || translateUi('editor:placementWorkflowPreview.unnamedPlacement')}
-                          />
-                          {sizeLabel && (
-                            <span
-                              class="placement-row-dimensions"
-                              aria-hidden="true"
-                              title={translateUi('editor:placementWorkflowPreview.estimatedFullArtworkArea', {
-                                dimensions: sizeLabel,
-                              })}
-                            >
-                              {sizeLabel}
-                            </span>
-                          )}
-                          {issue && (
-                            <span
-                              class="placement-setup-warning"
-                              role="img"
-                              aria-label={placementSetupIssueText(issue, translateUi)}
-                            >
-                              <s-icon type="alert-circle" tone="warning" />
-                            </span>
-                          )}
-                        </button>
-                        {outlineActions(
-                          { kind: 'placement', id: area.id, viewId: item.id },
-                          area.name || translateUi('editor:placementWorkflowPreview.unnamedPlacement'),
-                        )}
-                        {dragHandle(
-                          { kind: 'placement', id: area.id, viewId: item.id },
-                          area.name || translateUi('editor:placementWorkflowPreview.unnamedPlacement'),
-                        )}
-                      </fieldset>
-                    );
-                  })}
-                  {!outlineSearch && (
-                    <button class="placement-add" type="button" onClick={() => add(item)}>
-                      <s-icon type="plus-circle" tone="info" />
-                      <span>{translateUi('editor:placementWorkflowPreview.addPlacement')}</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-            {outlineSearch && !outlineItems.length && (
-              <div class="placement-outline-empty">
-                <s-text>{translateUi('editor:placementWorkflowPreview.noViewsOrPlacementsFound')}</s-text>
-                <s-button variant="tertiary" onClick={() => setOutlineQuery('')}>
-                  {translateUi('editor:placementWorkflowPreview.clearSearch')}
-                </s-button>
-              </div>
-            )}
-            {outlineSearch &&
-              view &&
-              !outlineItems.some(
-                (item) =>
-                  item.view.id === view.id && (!placement || item.areas.some((area) => area.id === placement.id)),
-              ) && (
-                <div class="placement-outline-empty">
-                  <s-text color="subdued">
-                    {translateUi('editor:placementWorkflowPreview.currentSelectionIsHiddenBySearch')}
-                  </s-text>
-                  <s-button variant="tertiary" onClick={() => setOutlineQuery('')}>
-                    {translateUi('editor:placementWorkflowPreview.showSelection')}
+                    {translateUi('editor:placementWorkflowPreview.realKeepMethod')}
                   </s-button>
-                </div>
-              )}
+                  <s-button
+                    disabled={!!adapter.readOnly || writeBusy || adapter.pending()}
+                    onClick={() => {
+                      if (adapter.readOnly || writeBusyRef.current || adapter.pending()) return;
+                      const next = adapter.reviewMethod?.(currentProduct.current, review.methodId, 'remove');
+                      if (next) setProduct(next);
+                    }}
+                  >
+                    {translateUi('editor:placementWorkflowPreview.realRemoveMethod')}
+                  </s-button>
+                </s-stack>
+              ))}
+            </s-banner>
           </div>
-          <div class="placement-outline-footer">
-            <s-button data-outline-add-view variant="tertiary" icon="plus" onClick={() => openViewDialog()}>
-              {translateUi('editor:placementWorkflowPreview.addView')}
-            </s-button>
-          </div>
+        )}
+        {/* Local host bridge. Production host integration is deliberately separate. */}
+        <div data-preview-editor-chrome hidden>
+          <s-button
+            data-editor-control="panels"
+            icon="layout-sidebar-left"
+            accessibilityLabel={translateUi(
+              outlineHidden
+                ? 'editor:placementWorkflowPreview.showViewsAndPlacements'
+                : 'editor:placementWorkflowPreview.hideViewsAndPlacements',
+            )}
+            disabled={!view}
+            onClick={() => setOutlineHidden((hidden) => !hidden)}
+          />
+          <s-button
+            data-editor-control="undo"
+            icon="undo"
+            accessibilityLabel={translateUi('editor:placementWorkflowPreview.undo')}
+            disabled={movementEditing || calibrationEditing || (!geometryInput && !history.current.past.length)}
+            onClick={() => restoreHistory('undo')}
+          />
+          <s-button
+            data-editor-control="redo"
+            icon="redo"
+            accessibilityLabel={translateUi('editor:placementWorkflowPreview.redo')}
+            disabled={movementEditing || calibrationEditing || !!geometryInput || !history.current.future.length}
+            onClick={() => restoreHistory('redo')}
+          />
         </div>
-        <section
-          class={`placement-workspace ${expandedCanvas ? 'is-expanded' : ''}`}
-          aria-label={translateUi('editor:placementWorkflowPreview.garmentPreview')}
-          data-preview-mode={preview}
+        <div
+          class={`placement-editor ${!view ? 'is-empty' : ''} ${view && outlineHidden ? 'is-outline-hidden' : ''}`}
+          data-placement-editor
         >
           <div
-            class={`placement-canvas-toolbar ${photoGroups.length ? 'has-variant-photos' : ''} ${preview && placement && placement.sizes.length > 1 ? 'is-size-preview' : ''} ${movementEditing || drawing || calibrationEditing ? 'is-editing-task' : ''}`}
+            class="placement-mobile-tabs"
+            role="tablist"
+            aria-label={translateUi('editor:placementWorkflowPreview.editorPanels')}
+            onKeyDown={(event) => {
+              if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+              event.preventDefault();
+              const next =
+                event.key === 'Home'
+                  ? 'placements'
+                  : event.key === 'End'
+                    ? 'settings'
+                    : panel === 'placements'
+                      ? 'settings'
+                      : 'placements';
+              setPanel(next);
+              event.currentTarget.querySelector<HTMLButtonElement>(`[data-panel="${next}"]`)?.focus();
+            }}
           >
-            <div>
-              {adapter.kind === 'production' && (
-                <>
-                  {wideEditor && (
-                    <s-button
-                      variant="tertiary"
-                      icon="layout-sidebar-left"
-                      interestFor="placement-panel-toggle-help"
-                      accessibilityLabel={translateUi(outlineHidden ? 'editor:placementWorkflowPreview.showViewsAndPlacements' : 'editor:placementWorkflowPreview.hideViewsAndPlacements')}
-                      disabled={!view || writeBusy || adapter.pending()}
-                      onClick={() => setOutlineHidden((hidden) => !hidden)}
-                    />
-                  )}
-                  <s-button
-                    variant="tertiary"
-                    icon="undo"
-                    interestFor="placement-undo-help"
-                    accessibilityLabel={translateUi('editor:placementWorkflowPreview.undo')}
-                    disabled={movementEditing || calibrationEditing || writeBusy || adapter.pending() || (!geometryInput && !history.current.past.length)}
-                    onClick={() => restoreHistory('undo')}
-                  />
-                  <s-button
-                    variant="tertiary"
-                    icon="redo"
-                    interestFor="placement-redo-help"
-                    accessibilityLabel={translateUi('editor:placementWorkflowPreview.redo')}
-                    disabled={movementEditing || calibrationEditing || writeBusy || adapter.pending() || !!geometryInput || !history.current.future.length}
-                    onClick={() => restoreHistory('redo')}
-                  />
-                  {wideEditor && (
-                    <s-tooltip id="placement-panel-toggle-help">
-                      {translateUi(outlineHidden ? 'editor:placementWorkflowPreview.showViewsAndPlacements' : 'editor:placementWorkflowPreview.hideViewsAndPlacements')}
-                    </s-tooltip>
-                  )}
-                  <s-tooltip id="placement-undo-help">{translateUi('editor:placementWorkflowPreview.undo')}</s-tooltip>
-                  <s-tooltip id="placement-redo-help">{translateUi('editor:placementWorkflowPreview.redo')}</s-tooltip>
-                </>
-              )}
-              {view && placement && !movementEditing && !drawing && !calibrationEditing ? (
-                <AdminResourceName text={view.name}>
-                  {({ textRef, interestFor, tooltip }) => (
-                    <>
-                      <s-button
-                        data-placement-view-overview
-                        variant="tertiary"
-                        icon="chevron-left"
-                        interestFor={interestFor}
-                        accessibilityLabel={translateUi('editor:placementWorkflowPreview.showAllPlacementsInView', {
-                          viewName: view.name,
-                        })}
-                        onClick={() => select(view, null, true)}
-                      >
-                        <div class="placement-view-overview-label" ref={textRef}>
-                          {view.name}
-                        </div>
-                      </s-button>
-                      {tooltip}
-                    </>
-                  )}
-                </AdminResourceName>
-              ) : (
-                <span class="placement-canvas-title">
-                  {view && placement && (movementEditing || drawing || calibrationEditing)
-                    ? `${view.name} · ${placement.name}`
-                    : (view?.name ?? translateUi('editor:placementWorkflowPreview.productSetup'))}
-                </span>
-              )}
-              {view && (
-                <span class="placement-toolbar-caption">
-                  {preview
-                    ? translateUi('editor:placementWorkflowPreview.sampleArtwork')
-                    : calibrationEditing
-                      ? translateUi('editor:placementWorkflowPreview.imageScale')
-                      : movementEditing
-                        ? translateUi('editor:placementWorkflowPreview.movementArea')
-                        : drawing
-                          ? translateUi('editor:placementWorkflowPreview.artworkArea')
-                          : (placement?.name ??
-                            translateUi(
-                              view.placements.length
-                                ? 'editor:placementWorkflowPreview.allPlacements'
-                                : 'editor:placementWorkflowPreview.viewSettings',
-                            ))}
-                </span>
-              )}
+            <button
+              type="button"
+              role="tab"
+              id="placement-outline-tab"
+              data-panel="placements"
+              tabIndex={panel === 'placements' ? 0 : -1}
+              aria-selected={panel === 'placements'}
+              aria-controls="placement-outline"
+              onClick={() => {
+                setPanel('placements');
+                if (view) setExpandedViews((current) => (current.includes(view.id) ? current : [...current, view.id]));
+              }}
+            >
+              {translateUi('editor:placementWorkflowPreview.viewsPlacements')}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="placement-settings-tab"
+              data-panel="settings"
+              disabled={!view}
+              tabIndex={panel === 'settings' ? 0 : -1}
+              aria-selected={panel === 'settings'}
+              aria-controls="placement-properties"
+              onClick={() => setPanel('settings')}
+            >
+              {translateUi('editor:placementWorkflowPreview.settings')}
+            </button>
+          </div>
+          <div
+            id="placement-outline"
+            inert={wideEditor && !!view && outlineHidden}
+            class={`placement-outline ${panel === 'placements' ? 'is-mobile-active' : ''}`}
+            role="tabpanel"
+            aria-labelledby="placement-outline-tab"
+            aria-label={translateUi('editor:placementWorkflowPreview.viewsAndPlacements')}
+          >
+            <div class="placement-panel-heading">
+              <s-heading>{translateUi('editor:placementWorkflowPreview.viewsPlacements')}</s-heading>
+              <s-text color="subdued">{setupStatus}</s-text>
             </div>
-            <div class="placement-canvas-actions">
-              {view && photoGroups.length > 0 && (
-                <>
-                  <VariantPhotoSelector
-                    product={product}
-                    value={activePhoto?.key ?? null}
-                    onChange={choosePhotoGroup}
-                    disabled={movementEditing || drawing || calibrationEditing}
-                  />
-                  {!preview && !movementEditing && !drawing && !calibrationEditing && (
-                    <s-button
-                      variant="tertiary"
-                      icon="image"
-                      accessibilityLabel={translateUi('editor:placementWorkflowPreview.variantImages')}
-                      data-variant-images-action
-                      onClick={() => {
-                        if (select(view, null, true)) {
-                          nameFocusRevision.current++;
-                          requestAnimationFrame(() => {
-                            const target = document.querySelector<HTMLElement>('[data-variant-photo-panel]');
-                            target?.scrollIntoView({ block: 'start' });
-                            target?.focus({ preventScroll: true });
-                          });
+            <div class="placement-outline-summary">
+              <span>
+                {translateUi('editor:placementWorkflowPreview.outlineSummary', {
+                  views: translateUi('editor:placementWorkflowPreview.viewCount', {
+                    count: product.views.length,
+                    formattedCount: new Intl.NumberFormat(formatLocale).format(product.views.length),
+                  }),
+                  placements: translateUi('editor:placementWorkflowPreview.placementCount', {
+                    count,
+                    formattedCount: new Intl.NumberFormat(formatLocale).format(count),
+                  }),
+                })}
+              </span>
+              <s-button
+                variant="tertiary"
+                icon="menu-horizontal"
+                accessibilityLabel={translateUi('editor:placementWorkflowPreview.outlineActions')}
+                commandFor="placement-outline-menu"
+                command="--show"
+              />
+              <s-menu
+                id="placement-outline-menu"
+                accessibilityLabel={translateUi('editor:placementWorkflowPreview.outlineActions')}
+              >
+                <s-button
+                  disabled={!!outlineSearch}
+                  onClick={() => setExpandedViews(product.views.map((item) => item.id))}
+                >
+                  {translateUi('editor:placementWorkflowPreview.expandAllViews')}
+                </s-button>
+                <s-button disabled={!!outlineSearch} onClick={collapseOtherViews}>
+                  {translateUi('editor:placementWorkflowPreview.collapseOtherViews')}
+                </s-button>
+              </s-menu>
+            </div>
+            {(count > 8 || product.views.length > 6 || outlineQuery) && (
+              <div class="placement-outline-search">
+                <s-search-field
+                  label={translateUi('editor:placementWorkflowPreview.searchViewsAndPlacements')}
+                  labelAccessibilityVisibility="exclusive"
+                  placeholder={translateUi('editor:placementWorkflowPreview.searchViewsAndPlacements')}
+                  value={outlineQuery}
+                  onInput={(event) => setOutlineQuery(event.currentTarget.value)}
+                />
+              </div>
+            )}
+            <div class="placement-outline-body">
+              {outlineItems.map(({ view: item, areas }) => (
+                <div class="placement-view-group" key={item.id}>
+                  <fieldset
+                    aria-label={translateUi('editor:placementWorkflowPreview.viewAccessibilityName', {
+                      viewName: item.name || translateUi('editor:placementWorkflowPreview.unnamedView'),
+                    })}
+                    data-outline-sort-kind="view"
+                    data-outline-sort-id={item.id}
+                    class={`placement-view-heading ${view?.id === item.id && !placement ? 'is-selected' : ''}${dropClass({ kind: 'view', id: item.id })}${draggingClass({ kind: 'view', id: item.id })}`}
+                  >
+                    <button
+                      type="button"
+                      class="placement-disclosure"
+                      aria-label={translateUi(
+                        outlineSearch || expandedViews.includes(item.id)
+                          ? 'editor:placementWorkflowPreview.collapseView'
+                          : 'editor:placementWorkflowPreview.expandView',
+                        { viewName: item.name },
+                      )}
+                      aria-expanded={!!outlineSearch || expandedViews.includes(item.id)}
+                      aria-controls={`view-placements-${item.id}`}
+                      disabled={!!outlineSearch}
+                      onClick={() => toggleViewExpansion(item)}
+                    >
+                      <s-icon
+                        type={outlineSearch || expandedViews.includes(item.id) ? 'chevron-down' : 'chevron-right'}
+                      />
+                    </button>
+                    <button
+                      class="placement-view"
+                      type="button"
+                      data-outline-select-view-id={item.id}
+                      aria-current={view?.id === item.id && !placement ? 'true' : undefined}
+                      onClick={() => select(item, null, true)}
+                      onDblClick={() => rename(item, null)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'F2') {
+                          event.preventDefault();
+                          rename(item, null);
                         }
                       }}
                     >
-                      <span class="placement-toolbar-action-label">
-                        {translateUi('editor:placementWorkflowPreview.images')}
+                      {resolveVariantPhotoView(product, item.id, activePhoto?.key).view.imageUrl ? (
+                        <img
+                          src={resolveVariantPhotoView(product, item.id, activePhoto?.key).view.imageUrl}
+                          width="20"
+                          height="20"
+                          alt=""
+                        />
+                      ) : (
+                        <s-icon type="image" />
+                      )}
+                      <AdminTruncatedLabel
+                        text={item.name || translateUi('editor:placementWorkflowPreview.unnamedView')}
+                      />
+                      <span class="placement-count">
+                        {translateUi('editor:placementWorkflowPreview.placementCount', {
+                          count: item.placements.length,
+                          formattedCount: new Intl.NumberFormat(formatLocale).format(item.placements.length),
+                        })}
                       </span>
+                      {(!item.imageUrl || item.needsAlignmentReview) && (
+                        <span
+                          class="placement-setup-warning"
+                          role="img"
+                          aria-label={translateUi(
+                            !item.imageUrl
+                              ? 'editor:placementWorkflowPreview.publicationActions.chooseImage'
+                              : 'editor:placementWorkflowPreview.publicationActions.reviewAlignment',
+                          )}
+                        >
+                          <s-icon type="alert-circle" tone="warning" />
+                        </span>
+                      )}
+                    </button>
+                    {outlineActions(
+                      { kind: 'view', id: item.id },
+                      item.name || translateUi('editor:placementWorkflowPreview.unnamedView'),
+                    )}
+                    {dragHandle(
+                      { kind: 'view', id: item.id },
+                      item.name || translateUi('editor:placementWorkflowPreview.unnamedView'),
+                    )}
+                  </fieldset>
+                  <div
+                    class="placement-children"
+                    id={`view-placements-${item.id}`}
+                    hidden={!outlineSearch && !expandedViews.includes(item.id)}
+                  >
+                    {areas.map((area) => {
+                      const issue = placementSetupIssue(product, area);
+                      const rowSize =
+                        item.calibration && calibrationMatchesImage(item.calibration, item)
+                          ? approximatePlacementDimensions(item.calibration, area.rect)
+                          : null;
+                      const sizeLabel = rowSize
+                        ? translateUi('editor:placementWorkflowPreview.approximateDimensions', {
+                            width: new Intl.NumberFormat(formatLocale, {
+                              minimumFractionDigits: 1,
+                              maximumFractionDigits: 1,
+                            }).format(rowSize.widthCm),
+                            height: new Intl.NumberFormat(formatLocale, {
+                              minimumFractionDigits: 1,
+                              maximumFractionDigits: 1,
+                            }).format(rowSize.heightCm),
+                          })
+                        : '';
+                      return (
+                        <fieldset
+                          aria-label={translateUi('editor:placementWorkflowPreview.placementAccessibilityName', {
+                            placementName: area.name || translateUi('editor:placementWorkflowPreview.unnamedPlacement'),
+                          })}
+                          data-outline-sort-kind="placement"
+                          data-outline-sort-id={area.id}
+                          data-outline-sort-view-id={item.id}
+                          class={`placement-row-shell${view?.id === item.id && selectedId === area.id ? ' is-selected' : ''}${dropClass({ kind: 'placement', id: area.id, viewId: item.id })}${draggingClass({ kind: 'placement', id: area.id, viewId: item.id })}`}
+                          key={area.id}
+                        >
+                          <button
+                            type="button"
+                            class={`placement-row ${rowSize ? 'has-estimate' : ''} ${view?.id === item.id && selectedId === area.id ? 'is-selected' : ''}`}
+                            aria-description={
+                              sizeLabel
+                                ? translateUi('editor:placementWorkflowPreview.estimatedFullArtworkArea', {
+                                    dimensions: sizeLabel,
+                                  })
+                                : undefined
+                            }
+                            data-outline-select-placement-id={area.id}
+                            aria-pressed={view?.id === item.id && selectedId === area.id}
+                            onClick={() => select(item, area.id, true)}
+                            onDblClick={() => rename(item, area.id)}
+                            onKeyDown={(event) => {
+                              if (event.key === 'F2') {
+                                event.preventDefault();
+                                rename(item, area.id);
+                              }
+                            }}
+                            key={area.id}
+                          >
+                            <span
+                              class="placement-color-dot"
+                              style={{ backgroundColor: placementColor(area.id).stroke }}
+                              aria-hidden="true"
+                            />
+                            <AdminTruncatedLabel
+                              className="placement-row-label"
+                              text={area.name || translateUi('editor:placementWorkflowPreview.unnamedPlacement')}
+                            />
+                            {sizeLabel && (
+                              <span
+                                class="placement-row-dimensions"
+                                aria-hidden="true"
+                                title={translateUi('editor:placementWorkflowPreview.estimatedFullArtworkArea', {
+                                  dimensions: sizeLabel,
+                                })}
+                              >
+                                {sizeLabel}
+                              </span>
+                            )}
+                            {issue && (
+                              <span
+                                class="placement-setup-warning"
+                                role="img"
+                                aria-label={placementSetupIssueText(issue, translateUi)}
+                              >
+                                <s-icon type="alert-circle" tone="warning" />
+                              </span>
+                            )}
+                          </button>
+                          {outlineActions(
+                            { kind: 'placement', id: area.id, viewId: item.id },
+                            area.name || translateUi('editor:placementWorkflowPreview.unnamedPlacement'),
+                          )}
+                          {dragHandle(
+                            { kind: 'placement', id: area.id, viewId: item.id },
+                            area.name || translateUi('editor:placementWorkflowPreview.unnamedPlacement'),
+                          )}
+                        </fieldset>
+                      );
+                    })}
+                    {!outlineSearch && (
+                      <button class="placement-add" type="button" onClick={() => add(item)}>
+                        <s-icon type="plus-circle" tone="info" />
+                        <span>{translateUi('editor:placementWorkflowPreview.addPlacement')}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {outlineSearch && !outlineItems.length && (
+                <div class="placement-outline-empty">
+                  <s-text>{translateUi('editor:placementWorkflowPreview.noViewsOrPlacementsFound')}</s-text>
+                  <s-button variant="tertiary" onClick={() => setOutlineQuery('')}>
+                    {translateUi('editor:placementWorkflowPreview.clearSearch')}
+                  </s-button>
+                </div>
+              )}
+              {outlineSearch &&
+                view &&
+                !outlineItems.some(
+                  (item) =>
+                    item.view.id === view.id && (!placement || item.areas.some((area) => area.id === placement.id)),
+                ) && (
+                  <div class="placement-outline-empty">
+                    <s-text color="subdued">
+                      {translateUi('editor:placementWorkflowPreview.currentSelectionIsHiddenBySearch')}
+                    </s-text>
+                    <s-button variant="tertiary" onClick={() => setOutlineQuery('')}>
+                      {translateUi('editor:placementWorkflowPreview.showSelection')}
                     </s-button>
-                  )}
-                </>
-              )}
-              {view && !view.placements.length && (
-                <s-button icon="plus" variant="secondary" onClick={() => add(view)}>
-                  {translateUi('editor:placementWorkflowPreview.addPlacement')}
-                </s-button>
-              )}
-              {view && (placement || preview) && !movementEditing && !drawing && !calibrationEditing && (
-                <s-button
-                  variant="secondary"
-                  icon={preview ? 'edit' : 'view'}
-                  accessibilityLabel={translateUi(
-                    preview ? 'editor:placementWorkflowPreview.exitPreview' : 'editor:placementWorkflowPreview.preview',
-                  )}
-                  disabled={movementEditing || (!placement && !preview)}
-                  onClick={() => {
-                    cancelCalibration();
-                    cancelDrawingTask();
-                    if (preview) exitSizePreview();
-                    else if (view && placement) {
-                      const sizeId = previewSize?.id ?? placement.sizes[0]?.id;
-                      if (sizeId)
-                        dispatchWorkspace({
-                          type: 'size-preview-selected',
-                          viewId: view.id,
-                          placementId: placement.id,
-                          sizeId,
-                        });
-                    }
-                  }}
-                >
-                  <span class="placement-toolbar-action-label">
-                    {translateUi(
+                  </div>
+                )}
+            </div>
+            <div class="placement-outline-footer">
+              <s-button data-outline-add-view variant="tertiary" icon="plus" onClick={() => openViewDialog()}>
+                {translateUi('editor:placementWorkflowPreview.addView')}
+              </s-button>
+            </div>
+          </div>
+          <section
+            class={`placement-workspace ${expandedCanvas ? 'is-expanded' : ''}`}
+            aria-label={translateUi('editor:placementWorkflowPreview.garmentPreview')}
+            data-preview-mode={preview}
+          >
+            <div
+              class={`placement-canvas-toolbar ${photoGroups.length ? 'has-variant-photos' : ''} ${preview && placement && placement.sizes.length > 1 ? 'is-size-preview' : ''} ${movementEditing || drawing || calibrationEditing ? 'is-editing-task' : ''}`}
+            >
+              <div>
+                {adapter.kind === 'production' && (
+                  <>
+                    {wideEditor && (
+                      <s-button
+                        variant="tertiary"
+                        icon="layout-sidebar-left"
+                        interestFor="placement-panel-toggle-help"
+                        accessibilityLabel={translateUi(
+                          outlineHidden
+                            ? 'editor:placementWorkflowPreview.showViewsAndPlacements'
+                            : 'editor:placementWorkflowPreview.hideViewsAndPlacements',
+                        )}
+                        disabled={!view || writeBusy || adapter.pending()}
+                        onClick={() => setOutlineHidden((hidden) => !hidden)}
+                      />
+                    )}
+                    <s-button
+                      variant="tertiary"
+                      icon="undo"
+                      interestFor="placement-undo-help"
+                      accessibilityLabel={translateUi('editor:placementWorkflowPreview.undo')}
+                      disabled={
+                        movementEditing ||
+                        calibrationEditing ||
+                        writeBusy ||
+                        adapter.pending() ||
+                        (!geometryInput && !history.current.past.length)
+                      }
+                      onClick={() => restoreHistory('undo')}
+                    />
+                    <s-button
+                      variant="tertiary"
+                      icon="redo"
+                      interestFor="placement-redo-help"
+                      accessibilityLabel={translateUi('editor:placementWorkflowPreview.redo')}
+                      disabled={
+                        movementEditing ||
+                        calibrationEditing ||
+                        writeBusy ||
+                        adapter.pending() ||
+                        !!geometryInput ||
+                        !history.current.future.length
+                      }
+                      onClick={() => restoreHistory('redo')}
+                    />
+                    {wideEditor && (
+                      <s-tooltip id="placement-panel-toggle-help">
+                        {translateUi(
+                          outlineHidden
+                            ? 'editor:placementWorkflowPreview.showViewsAndPlacements'
+                            : 'editor:placementWorkflowPreview.hideViewsAndPlacements',
+                        )}
+                      </s-tooltip>
+                    )}
+                    <s-tooltip id="placement-undo-help">
+                      {translateUi('editor:placementWorkflowPreview.undo')}
+                    </s-tooltip>
+                    <s-tooltip id="placement-redo-help">
+                      {translateUi('editor:placementWorkflowPreview.redo')}
+                    </s-tooltip>
+                  </>
+                )}
+                {view && placement && !movementEditing && !drawing && !calibrationEditing ? (
+                  <AdminResourceName text={view.name}>
+                    {({ textRef, interestFor, tooltip }) => (
+                      <>
+                        <s-button
+                          data-placement-view-overview
+                          variant="tertiary"
+                          icon="chevron-left"
+                          interestFor={interestFor}
+                          accessibilityLabel={translateUi('editor:placementWorkflowPreview.showAllPlacementsInView', {
+                            viewName: view.name,
+                          })}
+                          onClick={() => select(view, null, true)}
+                        >
+                          <div class="placement-view-overview-label" ref={textRef}>
+                            {view.name}
+                          </div>
+                        </s-button>
+                        {tooltip}
+                      </>
+                    )}
+                  </AdminResourceName>
+                ) : (
+                  <span class="placement-canvas-title">
+                    {view && placement && (movementEditing || drawing || calibrationEditing)
+                      ? `${view.name} · ${placement.name}`
+                      : (view?.name ?? translateUi('editor:placementWorkflowPreview.productSetup'))}
+                  </span>
+                )}
+                {view && (
+                  <span class="placement-toolbar-caption">
+                    {preview
+                      ? translateUi('editor:placementWorkflowPreview.sampleArtwork')
+                      : calibrationEditing
+                        ? translateUi('editor:placementWorkflowPreview.imageScale')
+                        : movementEditing
+                          ? translateUi('editor:placementWorkflowPreview.movementArea')
+                          : drawing
+                            ? translateUi('editor:placementWorkflowPreview.artworkArea')
+                            : (placement?.name ??
+                              translateUi(
+                                view.placements.length
+                                  ? 'editor:placementWorkflowPreview.allPlacements'
+                                  : 'editor:placementWorkflowPreview.viewSettings',
+                              ))}
+                  </span>
+                )}
+              </div>
+              <div class="placement-canvas-actions">
+                {view && photoGroups.length > 0 && (
+                  <>
+                    <VariantPhotoSelector
+                      product={product}
+                      value={activePhoto?.key ?? null}
+                      onChange={choosePhotoGroup}
+                      disabled={movementEditing || drawing || calibrationEditing}
+                    />
+                    {!preview && !movementEditing && !drawing && !calibrationEditing && (
+                      <s-button
+                        variant="tertiary"
+                        icon="image"
+                        accessibilityLabel={translateUi('editor:placementWorkflowPreview.variantImages')}
+                        data-variant-images-action
+                        onClick={() => {
+                          if (select(view, null, true)) {
+                            nameFocusRevision.current++;
+                            requestAnimationFrame(() => {
+                              const target = document.querySelector<HTMLElement>('[data-variant-photo-panel]');
+                              target?.scrollIntoView({ block: 'start' });
+                              target?.focus({ preventScroll: true });
+                            });
+                          }
+                        }}
+                      >
+                        <span class="placement-toolbar-action-label">
+                          {translateUi('editor:placementWorkflowPreview.images')}
+                        </span>
+                      </s-button>
+                    )}
+                  </>
+                )}
+                {view && !view.placements.length && (
+                  <s-button icon="plus" variant="secondary" onClick={() => add(view)}>
+                    {translateUi('editor:placementWorkflowPreview.addPlacement')}
+                  </s-button>
+                )}
+                {view && (placement || preview) && !movementEditing && !drawing && !calibrationEditing && (
+                  <s-button
+                    variant="secondary"
+                    icon={preview ? 'edit' : 'view'}
+                    accessibilityLabel={translateUi(
                       preview
                         ? 'editor:placementWorkflowPreview.exitPreview'
                         : 'editor:placementWorkflowPreview.preview',
                     )}
-                  </span>
-                </s-button>
-              )}
-              {preview && placement && placement.sizes.length > 1 && (
-                <div class="placement-size-selector">
-                  <span aria-hidden="true">{translateUi('editor:placementWorkflowPreview.size')}</span>
-                  <div class="placement-size-field">
-                    <s-select
-                      label={translateUi('editor:placementWorkflowPreview.previewSize')}
-                      labelAccessibilityVisibility="exclusive"
-                      value={previewSize?.id ?? ''}
-                      onChange={(event) => {
-                        if (view && placement)
+                    disabled={movementEditing || (!placement && !preview)}
+                    onClick={() => {
+                      cancelCalibration();
+                      cancelDrawingTask();
+                      if (preview) exitSizePreview();
+                      else if (view && placement) {
+                        const sizeId = previewSize?.id ?? placement.sizes[0]?.id;
+                        if (sizeId)
                           dispatchWorkspace({
                             type: 'size-preview-selected',
                             viewId: view.id,
                             placementId: placement.id,
-                            sizeId: event.currentTarget.value,
+                            sizeId,
                           });
-                      }}
-                    >
-                      {placement.sizes.map((size) => (
-                        <s-option key={size.id} value={size.id}>
-                          {size.name}
-                        </s-option>
-                      ))}
-                    </s-select>
-                  </div>
-                </div>
-              )}
-              {movementEditing ? (
-                <>
-                  <s-button
-                    variant="secondary"
-                    disabled={
-                      !movementDraft ||
-                      drawing ||
-                      !placement ||
-                      !movementRectContainsPlacementRect(movementDraft, placement.rect)
-                    }
-                    onClick={completeMovementAreaEdit}
-                  >
-                    {translateUi('editor:placementWorkflowPreview.done')}
-                  </s-button>
-                  <s-button variant="tertiary" onClick={cancelMovementAreaEdit}>
-                    {translateUi('editor:placementWorkflowPreview.cancel')}
-                  </s-button>
-                </>
-              ) : drawing ? (
-                <s-button variant="tertiary" onClick={cancelDrawingTask}>
-                  {translateUi('editor:placementWorkflowPreview.cancelDrawing')}
-                </s-button>
-              ) : null}
-              <span class="placement-expand">
-                <s-button
-                  data-add-size
-                  variant="tertiary"
-                  icon={expandedCanvas ? 'minimize' : 'maximize'}
-                  accessibilityLabel={translateUi(
-                    expandedCanvas
-                      ? 'editor:placementWorkflowPreview.reduceCanvas'
-                      : 'editor:placementWorkflowPreview.expandCanvas',
-                  )}
-                  onClick={() => setExpandedCanvas((current) => !current)}
-                />
-              </span>
-            </div>
-          </div>
-          {view && activePhoto && photoView?.needsAlignmentReview && photoView.status === 'ready' && (
-            <div class="placement-variant-review">
-              <s-stack direction="inline" gap="small" alignItems="center">
-                <s-text>
-                  {translateUi('editor:placementWorkflowPreview.checkAppearanceOnView', {
-                    appearanceName: activePhoto.label,
-                    viewName: view.name,
-                  })}
-                </s-text>
-                <s-button
-                  data-confirm-variant-alignment
-                  disabled={!canvasView || !readyPhotoUrls.includes(canvasView.imageUrl)}
-                  onClick={() => {
-                    setProduct((current) => confirmVariantPhotoAlignment(current, view.id, activePhoto.key));
-                    requestAnimationFrame(() =>
-                      document.querySelector<HTMLElement>('[data-variant-images-action]')?.focus(),
-                    );
-                  }}
-                >
-                  {translateUi('editor:placementWorkflowPreview.confirmAlignment')}
-                </s-button>
-              </s-stack>
-            </div>
-          )}
-          {view && canvasView?.imageUrl ? (
-            <PlacementCanvas
-              key={`${canvasView.imageUrl}:${photoRetryRevisions[canvasView.imageUrl] ?? 0}`}
-              view={canvasView}
-              onImageStatus={(status) => {
-                if (status === 'ready' || status === 'image-error')
-                  photoLoadStatus(canvasView.imageUrl, status === 'image-error', 'canvas');
-              }}
-              selectedId={selectedId}
-              preview={preview}
-              editingLocked={movementEditing}
-              interactionRevision={interactionRevision}
-              sizePercent={decimalOrNaN(previewSize?.widthPercent ?? '100')}
-              sizeHeightPercent={decimalOrNaN(previewSize?.heightPercent ?? previewSize?.widthPercent ?? '100')}
-              movementRect={movementEditing ? movementDraft : null}
-              drawing={drawing}
-              drawTarget={drawingTarget === 'movement' ? 'movement' : 'artwork'}
-              measuring={calibrationEditing}
-              measurementLine={calibrationEditing ? measurementLine : null}
-              measurementControls={renderMeasurementControls()}
-              measurementCoordinates={measurementCoordinates}
-              onEnterMeasureCoordinates={() => {
-                dispatchWorkspace({ type: 'measurement-coordinates-toggled', open: true });
-                nameFocusRevision.current++;
-                requestAnimationFrame(() =>
-                  requestAnimationFrame(() => {
-                    main.current
-                      ?.querySelector<HTMLElement>('.placement-calibration-form s-text-field[name="measurement-a-x"]')
-                      ?.focus();
-                  }),
-                );
-              }}
-              onMeasure={(line, pointerType) => {
-                dispatchWorkspace({ type: 'measurement-drawn', line });
-                if (pointerType === 'mouse' && matchMedia('(min-width: 801px)').matches)
-                  requestAnimationFrame(() => {
-                    main.current
-                      ?.querySelector<HTMLElement>('.placement-calibration-form s-text-field')
-                      ?.focus({ preventScroll: true });
-                  });
-              }}
-              onStartMeasure={activePhoto ? undefined : () => startMeasurement()}
-              onCancelMeasure={cancelCalibration}
-              onCancelDraw={cancelDrawingTask}
-              onDraw={(rect): CanvasDrawFailure | undefined => {
-                if (drawingTarget === 'movement') {
-                  if (!placement) return 'placement-required';
-                  if (!movementRectContainsPlacementRect(rect, placement.rect)) {
-                    dispatchWorkspace({
-                      type: 'movement-error',
-                      viewId: view.id,
-                      placementId: placement.id,
-                      reason: 'movement-must-contain-artwork',
-                    });
-                    return 'movement-must-contain-artwork';
-                  }
-                  dispatchWorkspace({
-                    type: 'movement-drawn',
-                    viewId: view.id,
-                    placementId: placement.id,
-                    draft: rect,
-                  });
-                  const movementKey = `views.${view.id}.placements.${placement.id}.movementRect`;
-                  setErrors((current) => {
-                    const remaining = { ...current };
-                    delete remaining[movementKey];
-                    return remaining;
-                  });
-                  if (
-                    (notice?.kind === 'publication-issue' && notice.issue.key === movementKey) ||
-                    (errors[movementKey] &&
-                      Object.keys(errors).length === 1 &&
-                      notice?.kind === 'message' &&
-                      notice.reason === 'invalid-setup')
-                  )
-                    setNotice(null);
-                  return undefined;
-                }
-                patchPlacement({ rect });
-                dispatchWorkspace({ type: 'placement-drawing-canceled' });
-                return undefined;
-              }}
-              onSelect={(id) => select(view, id, true)}
-              onRect={(id, rect) => changeArtworkRect(id, rect)}
-            />
-          ) : view ? (
-            <div class="placement-start">
-              <s-empty-state heading={translateUi('editor:placementWorkflowPreview.chooseAnImageForThisView')}>
-                <s-icon slot="graphic" type="image-add" />
-                <s-text slot="subheading">
-                  {activePhoto
-                    ? translateUi('editor:placementWorkflowPreview.addImageForAppearance', {
-                        viewName: view.name,
-                        appearanceName: activePhoto.label,
-                      })
-                    : translateUi('editor:placementWorkflowPreview.copiedViewImageGuidance', {
-                        viewName: view.name,
-                      })}
-                </s-text>
-                <s-button
-                  slot="primary-action"
-                  variant="primary"
-                  onClick={() => (activePhoto ? openVariantImagePicker([activePhoto.key]) : openViewDialog(true))}
-                >
-                  {translateUi('editor:placementWorkflowPreview.chooseImage')}
-                </s-button>
-              </s-empty-state>
-            </div>
-          ) : (
-            <div class="placement-start">
-              <div class="placement-start-guide">
-                <div class={`placement-start-image${product.images.length ? '' : ' is-illustration'}`}>
-                  <s-image
-                    src={product.images[0]?.url ?? '/illustrations/shopify/empty-records.png'}
-                    alt=""
-                    aspectRatio="1/1"
-                    objectFit="contain"
-                  />
-                </div>
-                <div class="placement-start-copy">
-                  <s-heading fontSize="large">
-                    {translateUi('editor:placementWorkflowPreview.addYourFirstProductView')}
-                  </s-heading>
-                  <p class="placement-start-description">
-                    {translateUi(
-                      'editor:placementWorkflowPreview.aViewIsAProductPhotoSuchAsTheFrontOrBackNextMarkWhereCustomersCanAddArtwork',
-                    )}
-                  </p>
-                  <s-text color="subdued">{translateUi('editor:placementWorkflowPreview.publishNeedsView')}</s-text>
-                  <s-button variant="primary" onClick={() => openViewDialog()}>
-                    {translateUi('editor:placementWorkflowPreview.addView')}
-                  </s-button>
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
-        <div
-          id="placement-properties"
-          class={`placement-properties ${panel === 'settings' ? 'is-mobile-active' : ''}`}
-          role="tabpanel"
-          aria-labelledby="placement-settings-tab"
-          aria-label={translateUi('editor:placementWorkflowPreview.placementSettings')}
-        >
-          <div class="placement-panel-heading">
-            {view && (
-              <>
-                <button
-                  type="button"
-                  class="placement-object-name"
-                  aria-label={translateUi('editor:placementWorkflowPreview.renameItem', {
-                    itemName: placement
-                      ? placement.name || translateUi('editor:placementWorkflowPreview.unnamedPlacement')
-                      : view.name || translateUi('editor:placementWorkflowPreview.unnamedView'),
-                  })}
-                  title={translateUi('editor:placementWorkflowPreview.rename')}
-                  onClick={() => focusName()}
-                >
-                  <s-icon type={placement ? 'location' : 'image'} />
-                  <AdminTruncatedLabel
-                    text={
-                      placement
-                        ? placement.name || translateUi('editor:placementWorkflowPreview.unnamedPlacement')
-                        : view.name || translateUi('editor:placementWorkflowPreview.unnamedView')
-                    }
-                  />
-                </button>
-                <s-button
-                  data-inspector-actions
-                  icon="menu-horizontal"
-                  variant="tertiary"
-                  accessibilityLabel={translateUi(
-                    placement
-                      ? 'editor:placementWorkflowPreview.moreActionsForSelectedPlacement'
-                      : 'editor:placementWorkflowPreview.moreActionsForSelectedView',
-                  )}
-                  commandFor="placement-inspector-actions"
-                  interestFor="placement-inspector-actions-help"
-                />
-              </>
-            )}
-          </div>
-          {view && (
-            <div class="placement-control-overlays">
-              <s-tooltip id="placement-inspector-actions-help">
-                {translateUi('editor:placementWorkflowPreview.moreActions')}
-              </s-tooltip>
-              <s-menu
-                id="placement-inspector-actions"
-                accessibilityLabel={translateUi('editor:placementWorkflowPreview.selectedItemActions')}
-              >
-                {itemMenuItems(
-                  placement ? { kind: 'placement', id: placement.id, viewId: view.id } : { kind: 'view', id: view.id },
-                  'inspector',
-                )}
-              </s-menu>
-            </div>
-          )}
-          {view?.needsAlignmentReview && (
-            <div class="placement-alignment-review">
-              <s-text>
-                {view.imageUrl
-                  ? view.placements.some((area) => area.customPlacementAllowed)
-                    ? translateUi('editor:placementWorkflowPreview.checkArtworkAndMovementAreas')
-                    : translateUi('editor:placementWorkflowPreview.checkArtworkAreas')
-                  : translateUi('editor:placementWorkflowPreview.chooseImageForCopiedView')}
-              </s-text>
-              <s-button
-                variant="tertiary"
-                data-field-invalid={!!errors[`views.${view.id}.alignment`]}
-                onClick={() => (view.imageUrl ? patchView({ needsAlignmentReview: false }) : openViewDialog(true))}
-              >
-                {translateUi(
-                  view.imageUrl
-                    ? 'editor:placementWorkflowPreview.markAlignmentReviewed'
-                    : 'editor:placementWorkflowPreview.chooseImage',
-                )}
-              </s-button>
-            </div>
-          )}
-          {notice && !(feedback && hostToast()) && (
-            <div class={`placement-notice${feedback ? ' is-feedback' : ''}`}>
-              <s-banner tone={Object.keys(errors).length ? 'critical' : feedback ? 'success' : 'info'}>
-                {noticeText}
-              </s-banner>
-            </div>
-          )}
-          {placement && view ? (
-            <div class="placement-properties-body" key={placement.id}>
-              <section class="placement-property-section">
-                <s-text-field
-                  label={translateUi('editor:placementWorkflowPreview.placementName')}
-                  data-editor-name-field
-                  name="placement-name"
-                  value={placement.name}
-                  maxLength={80}
-                  required
-                  error={fieldError('name')}
-                  data-field-invalid={!!fieldError('name')}
-                  onInput={(event) => patchPlacement({ name: event.currentTarget.value })}
-                />
-                <s-text color="subdued">
-                  {translateUi('editor:placementWorkflowPreview.shownToCustomersWhenChoosingAPlacement')}
-                </s-text>
-              </section>
-              <section class="placement-property-section">
-                <div class="placement-section-label placement-section-label-artwork">
-                  <s-heading>{translateUi('editor:placementWorkflowPreview.artworkArea')}</s-heading>
-                  <s-button
-                    variant="tertiary"
-                    disabled={movementEditing}
-                    onClick={() => {
-                      cancelCalibration();
-                      exitSizePreview();
-                      if (drawing) cancelDrawingTask();
-                      else
-                        dispatchWorkspace({
-                          type: 'placement-drawing-started',
-                          viewId: view.id,
-                          placementId: placement.id,
-                        });
-                      if (!drawing && matchMedia('(max-width: 800px)').matches) {
-                        setExpandedCanvas(true);
-                        window.scrollTo({ top: 0 });
                       }
                     }}
                   >
-                    {translateUi(
-                      movementEditing
-                        ? 'editor:placementWorkflowPreview.drawArtworkArea'
-                        : drawing
-                          ? 'editor:placementWorkflowPreview.cancelDrawing'
-                          : 'editor:placementWorkflowPreview.drawArea',
-                    )}
+                    <span class="placement-toolbar-action-label">
+                      {translateUi(
+                        preview
+                          ? 'editor:placementWorkflowPreview.exitPreview'
+                          : 'editor:placementWorkflowPreview.preview',
+                      )}
+                    </span>
                   </s-button>
-                </div>
-                {photoGroups.length > 0 ? (
-                  <div class="placement-variant-area-scope">
-                    <s-text color="subdued">
-                      {groupAreaScope && activePhoto
-                        ? translateUi('editor:placementWorkflowPreview.alignmentForAppearance', {
-                            appearanceName: activePhoto.label,
-                          })
-                        : translateUi('editor:placementWorkflowPreview.sharedArtworkArea')}
-                    </s-text>
-                    {activePhoto && (
-                      <s-button
-                        variant="tertiary"
-                        disabled={photoView?.status !== 'ready'}
-                        onClick={() => {
-                          if (!prepareSelectionChange()) return;
-                          if (groupAreaScope) {
-                            setProduct((current) =>
-                              resetVariantPhotoPlacementRect(current, view.id, activePhoto.key, placement.id),
-                            );
-                            dispatchWorkspace({ type: 'mode-canceled' });
-                          } else
+                )}
+                {preview && placement && placement.sizes.length > 1 && (
+                  <div class="placement-size-selector">
+                    <span aria-hidden="true">{translateUi('editor:placementWorkflowPreview.size')}</span>
+                    <div class="placement-size-field">
+                      <s-select
+                        label={translateUi('editor:placementWorkflowPreview.previewSize')}
+                        labelAccessibilityVisibility="exclusive"
+                        value={previewSize?.id ?? ''}
+                        onChange={(event) => {
+                          if (view && placement)
                             dispatchWorkspace({
-                              type: 'group-area-edit-started',
+                              type: 'size-preview-selected',
                               viewId: view.id,
                               placementId: placement.id,
-                              groupKey: activePhoto.key,
+                              sizeId: event.currentTarget.value,
                             });
                         }}
                       >
-                        {groupAreaScope
-                          ? translateUi('editor:placementWorkflowPreview.useSharedArea')
-                          : translateUi('editor:placementWorkflowPreview.adjustForAppearance', {
-                              appearanceName: activePhoto.label,
-                            })}
-                      </s-button>
-                    )}
+                        {placement.sizes.map((size) => (
+                          <s-option key={size.id} value={size.id}>
+                            {size.name}
+                          </s-option>
+                        ))}
+                      </s-select>
+                    </div>
                   </div>
-                ) : (
-                  <s-text color="subdued">
-                    {translateUi('editor:placementWorkflowPreview.setsTheMaximumArtworkSizeAndStartingPosition')}
-                  </s-text>
                 )}
-
-                <div class="placement-fields-grid">
-                  {(
-                    [
-                      ['width', translateUi('editor:placementWorkflowPreview.geometryLabels.width')],
-                      ['height', translateUi('editor:placementWorkflowPreview.geometryLabels.height')],
-                      ['centerX', translateUi('editor:placementWorkflowPreview.geometryLabels.centerX')],
-                      ['centerY', translateUi('editor:placementWorkflowPreview.geometryLabels.centerY')],
-                    ] as const
-                  ).map(([key, label]) => (
-                    <DecimalField
-                      key={key}
-                      label={label}
-                      name={`area-${key}`}
-                      disabled={movementEditing}
-                      suffix="%"
-                      value={
-                        geometryInput?.placementId === placement.id && geometryInput.key === key
-                          ? geometryInput.value
-                          : String(Math.round((displayedRect ?? placement.rect)[key] * 1000) / 10)
+                {movementEditing ? (
+                  <>
+                    <s-button
+                      variant="secondary"
+                      disabled={
+                        !movementDraft ||
+                        drawing ||
+                        !placement ||
+                        !movementRectContainsPlacementRect(movementDraft, placement.rect)
                       }
-                      error={fieldError(`rect.${key}`)}
-                      data-field-invalid={!!fieldError(`rect.${key}`)}
-                      onValue={(value) =>
-                        setGeometryInput({
-                          viewId: view.id,
-                          placementId: placement.id,
-                          key,
-                          value,
+                      onClick={completeMovementAreaEdit}
+                    >
+                      {translateUi('editor:placementWorkflowPreview.done')}
+                    </s-button>
+                    <s-button variant="tertiary" onClick={cancelMovementAreaEdit}>
+                      {translateUi('editor:placementWorkflowPreview.cancel')}
+                    </s-button>
+                  </>
+                ) : drawing ? (
+                  <s-button variant="tertiary" onClick={cancelDrawingTask}>
+                    {translateUi('editor:placementWorkflowPreview.cancelDrawing')}
+                  </s-button>
+                ) : null}
+                <span class="placement-expand">
+                  <s-button
+                    data-add-size
+                    variant="tertiary"
+                    icon={expandedCanvas ? 'minimize' : 'maximize'}
+                    accessibilityLabel={translateUi(
+                      expandedCanvas
+                        ? 'editor:placementWorkflowPreview.reduceCanvas'
+                        : 'editor:placementWorkflowPreview.expandCanvas',
+                    )}
+                    onClick={() => setExpandedCanvas((current) => !current)}
+                  />
+                </span>
+              </div>
+            </div>
+            {view && activePhoto && photoView?.needsAlignmentReview && photoView.status === 'ready' && (
+              <div class="placement-variant-review">
+                <s-stack direction="inline" gap="small" alignItems="center">
+                  <s-text>
+                    {translateUi('editor:placementWorkflowPreview.checkAppearanceOnView', {
+                      appearanceName: activePhoto.label,
+                      viewName: view.name,
+                    })}
+                  </s-text>
+                  <s-button
+                    data-confirm-variant-alignment
+                    disabled={!canvasView || !readyPhotoUrls.includes(canvasView.imageUrl)}
+                    onClick={() => {
+                      setProduct((current) => confirmVariantPhotoAlignment(current, view.id, activePhoto.key));
+                      requestAnimationFrame(() =>
+                        document.querySelector<HTMLElement>('[data-variant-images-action]')?.focus(),
+                      );
+                    }}
+                  >
+                    {translateUi('editor:placementWorkflowPreview.confirmAlignment')}
+                  </s-button>
+                </s-stack>
+              </div>
+            )}
+            {view && canvasView?.imageUrl ? (
+              <PlacementCanvas
+                key={`${canvasView.imageUrl}:${photoRetryRevisions[canvasView.imageUrl] ?? 0}`}
+                view={canvasView}
+                onImageStatus={(status) => {
+                  if (status === 'ready' || status === 'image-error')
+                    photoLoadStatus(canvasView.imageUrl, status === 'image-error', 'canvas');
+                }}
+                selectedId={selectedId}
+                preview={preview}
+                editingLocked={movementEditing}
+                interactionRevision={interactionRevision}
+                sizePercent={decimalOrNaN(previewSize?.widthPercent ?? '100')}
+                sizeHeightPercent={decimalOrNaN(previewSize?.heightPercent ?? previewSize?.widthPercent ?? '100')}
+                movementRect={movementEditing ? movementDraft : null}
+                drawing={drawing}
+                drawTarget={drawingTarget === 'movement' ? 'movement' : 'artwork'}
+                measuring={calibrationEditing}
+                measurementLine={calibrationEditing ? measurementLine : null}
+                measurementControls={renderMeasurementControls()}
+                measurementCoordinates={measurementCoordinates}
+                onEnterMeasureCoordinates={() => {
+                  dispatchWorkspace({ type: 'measurement-coordinates-toggled', open: true });
+                  nameFocusRevision.current++;
+                  requestAnimationFrame(() =>
+                    requestAnimationFrame(() => {
+                      main.current
+                        ?.querySelector<HTMLElement>('.placement-calibration-form s-text-field[name="measurement-a-x"]')
+                        ?.focus();
+                    }),
+                  );
+                }}
+                onMeasure={(line, pointerType) => {
+                  dispatchWorkspace({ type: 'measurement-drawn', line });
+                  if (pointerType === 'mouse' && matchMedia('(min-width: 801px)').matches)
+                    requestAnimationFrame(() => {
+                      main.current
+                        ?.querySelector<HTMLElement>('.placement-calibration-form s-text-field')
+                        ?.focus({ preventScroll: true });
+                    });
+                }}
+                onStartMeasure={activePhoto ? undefined : () => startMeasurement()}
+                onCancelMeasure={cancelCalibration}
+                onCancelDraw={cancelDrawingTask}
+                onDraw={(rect): CanvasDrawFailure | undefined => {
+                  if (drawingTarget === 'movement') {
+                    if (!placement) return 'placement-required';
+                    if (!movementRectContainsPlacementRect(rect, placement.rect)) {
+                      dispatchWorkspace({
+                        type: 'movement-error',
+                        viewId: view.id,
+                        placementId: placement.id,
+                        reason: 'movement-must-contain-artwork',
+                      });
+                      return 'movement-must-contain-artwork';
+                    }
+                    dispatchWorkspace({
+                      type: 'movement-drawn',
+                      viewId: view.id,
+                      placementId: placement.id,
+                      draft: rect,
+                    });
+                    const movementKey = `views.${view.id}.placements.${placement.id}.movementRect`;
+                    setErrors((current) => {
+                      const remaining = { ...current };
+                      delete remaining[movementKey];
+                      return remaining;
+                    });
+                    if (
+                      (notice?.kind === 'publication-issue' && notice.issue.key === movementKey) ||
+                      (errors[movementKey] &&
+                        Object.keys(errors).length === 1 &&
+                        notice?.kind === 'message' &&
+                        notice.reason === 'invalid-setup')
+                    )
+                      setNotice(null);
+                    return undefined;
+                  }
+                  patchPlacement({ rect });
+                  dispatchWorkspace({ type: 'placement-drawing-canceled' });
+                  return undefined;
+                }}
+                onSelect={(id) => select(view, id, true)}
+                onRect={(id, rect) => changeArtworkRect(id, rect)}
+              />
+            ) : view ? (
+              <div class="placement-start">
+                <s-empty-state heading={translateUi('editor:placementWorkflowPreview.chooseAnImageForThisView')}>
+                  <s-icon slot="graphic" type="image-add" />
+                  <s-text slot="subheading">
+                    {activePhoto
+                      ? translateUi('editor:placementWorkflowPreview.addImageForAppearance', {
+                          viewName: view.name,
+                          appearanceName: activePhoto.label,
                         })
-                      }
-                      onCommit={(value) => geometry(key, value, view.id, placement.id)}
+                      : translateUi('editor:placementWorkflowPreview.copiedViewImageGuidance', {
+                          viewName: view.name,
+                        })}
+                  </s-text>
+                  <s-button
+                    slot="primary-action"
+                    variant="primary"
+                    onClick={() => (activePhoto ? openVariantImagePicker([activePhoto.key]) : openViewDialog(true))}
+                  >
+                    {translateUi('editor:placementWorkflowPreview.chooseImage')}
+                  </s-button>
+                </s-empty-state>
+              </div>
+            ) : (
+              <div class="placement-start">
+                <div class="placement-start-guide">
+                  <div class={`placement-start-image${product.images.length ? '' : ' is-illustration'}`}>
+                    <s-image
+                      src={product.images[0]?.url ?? '/illustrations/shopify/empty-records.png'}
+                      alt=""
+                      aspectRatio="1/1"
+                      objectFit="contain"
                     />
-                  ))}
+                  </div>
+                  <div class="placement-start-copy">
+                    <s-heading fontSize="large">
+                      {translateUi('editor:placementWorkflowPreview.addYourFirstProductView')}
+                    </s-heading>
+                    <p class="placement-start-description">
+                      {translateUi(
+                        'editor:placementWorkflowPreview.aViewIsAProductPhotoSuchAsTheFrontOrBackNextMarkWhereCustomersCanAddArtwork',
+                      )}
+                    </p>
+                    <s-text color="subdued">{translateUi('editor:placementWorkflowPreview.publishNeedsView')}</s-text>
+                    <s-button variant="primary" onClick={() => openViewDialog()}>
+                      {translateUi('editor:placementWorkflowPreview.addView')}
+                    </s-button>
+                  </div>
                 </div>
-                {renderImageScale()}
-                <s-divider />
-                <div data-placement-positioning>
-                  <s-stack gap="base">
-                    <s-switch
-                      label={translateUi('editor:placementWorkflowPreview.allowCustomersToMoveArtwork')}
-                      details={translateUi('editor:placementWorkflowPreview.customerMovementDetails')}
-                      checked={placement.customPlacementAllowed}
-                      disabled={movementEditing}
-                      onChange={(event) => patchPlacement({ customPlacementAllowed: event.currentTarget.checked })}
+              </div>
+            )}
+          </section>
+          <div
+            id="placement-properties"
+            class={`placement-properties ${panel === 'settings' ? 'is-mobile-active' : ''}`}
+            role="tabpanel"
+            aria-labelledby="placement-settings-tab"
+            aria-label={translateUi('editor:placementWorkflowPreview.placementSettings')}
+          >
+            <div class="placement-panel-heading">
+              {view && (
+                <>
+                  <button
+                    type="button"
+                    class="placement-object-name"
+                    aria-label={translateUi('editor:placementWorkflowPreview.renameItem', {
+                      itemName: placement
+                        ? placement.name || translateUi('editor:placementWorkflowPreview.unnamedPlacement')
+                        : view.name || translateUi('editor:placementWorkflowPreview.unnamedView'),
+                    })}
+                    title={translateUi('editor:placementWorkflowPreview.rename')}
+                    onClick={() => focusName()}
+                  >
+                    <s-icon type={placement ? 'location' : 'image'} />
+                    <AdminTruncatedLabel
+                      text={
+                        placement
+                          ? placement.name || translateUi('editor:placementWorkflowPreview.unnamedPlacement')
+                          : view.name || translateUi('editor:placementWorkflowPreview.unnamedView')
+                      }
                     />
-                    {placement.customPlacementAllowed && (
-                      <div class="placement-movement-settings">
-                        {movementEditing ? (
-                          <>
-                            {!drawing && (
-                              <s-button variant="tertiary" onClick={redrawMovementArea}>
-                                {translateUi(
-                                  movementDraft
-                                    ? 'editor:placementWorkflowPreview.redrawMovementArea'
-                                    : 'editor:placementWorkflowPreview.drawMovementArea',
-                                )}
-                              </s-button>
-                            )}
-                            {(movementErrorText || fieldError('movementRect')) && (
-                              <s-text tone="critical">{movementErrorText || fieldError('movementRect')}</s-text>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <s-stack direction="inline" gap="small" justifyContent="space-between" alignItems="center">
-                              <s-stack direction="inline" gap="small" alignItems="center">
-                                <s-text>{translateUi('editor:placementWorkflowPreview.movementArea')}</s-text>
-                                <s-badge
-                                  tone={
-                                    !view.imageUrl || !placement.movementRect || movementNeedsReview
-                                      ? 'warning'
-                                      : 'auto'
-                                  }
-                                >
-                                  {!view.imageUrl
-                                    ? translateUi('editor:placementWorkflowPreview.movementStatus.noImage')
-                                    : !placement.movementRect
-                                      ? translateUi('editor:placementWorkflowPreview.movementStatus.areaNeeded')
-                                      : movementNeedsReview
-                                        ? translateUi('editor:placementWorkflowPreview.movementStatus.reviewArea')
-                                        : translateUi('editor:placementWorkflowPreview.movementStatus.areaSet')}
-                                </s-badge>
-                              </s-stack>
-                              {!view.imageUrl ? (
-                                <s-button
-                                  variant="secondary"
-                                  accessibilityLabel={translateUi(
-                                    'editor:placementWorkflowPreview.chooseImageForThisView',
-                                  )}
-                                  data-field-invalid={!!fieldError('movementRect')}
-                                  onClick={() => openViewDialog(true)}
-                                >
-                                  {translateUi('editor:placementWorkflowPreview.chooseImage')}
-                                </s-button>
-                              ) : (
-                                <s-button
-                                  variant={!placement.movementRect || movementNeedsReview ? 'secondary' : 'tertiary'}
-                                  accessibilityLabel={translateUi(
-                                    placement.movementRect
-                                      ? 'editor:placementWorkflowPreview.editMovementArea'
-                                      : 'editor:placementWorkflowPreview.setMovementArea',
-                                  )}
-                                  data-field-invalid={!!fieldError('movementRect')}
-                                  onClick={startMovementAreaEdit}
-                                >
+                  </button>
+                  <s-button
+                    data-inspector-actions
+                    icon="menu-horizontal"
+                    variant="tertiary"
+                    accessibilityLabel={translateUi(
+                      placement
+                        ? 'editor:placementWorkflowPreview.moreActionsForSelectedPlacement'
+                        : 'editor:placementWorkflowPreview.moreActionsForSelectedView',
+                    )}
+                    commandFor="placement-inspector-actions"
+                    interestFor="placement-inspector-actions-help"
+                  />
+                </>
+              )}
+            </div>
+            {view && (
+              <div class="placement-control-overlays">
+                <s-tooltip id="placement-inspector-actions-help">
+                  {translateUi('editor:placementWorkflowPreview.moreActions')}
+                </s-tooltip>
+                <s-menu
+                  id="placement-inspector-actions"
+                  accessibilityLabel={translateUi('editor:placementWorkflowPreview.selectedItemActions')}
+                >
+                  {itemMenuItems(
+                    placement
+                      ? { kind: 'placement', id: placement.id, viewId: view.id }
+                      : { kind: 'view', id: view.id },
+                    'inspector',
+                  )}
+                </s-menu>
+              </div>
+            )}
+            {view?.needsAlignmentReview && (
+              <div class="placement-alignment-review">
+                <s-text>
+                  {view.imageUrl
+                    ? view.placements.some((area) => area.customPlacementAllowed)
+                      ? translateUi('editor:placementWorkflowPreview.checkArtworkAndMovementAreas')
+                      : translateUi('editor:placementWorkflowPreview.checkArtworkAreas')
+                    : translateUi('editor:placementWorkflowPreview.chooseImageForCopiedView')}
+                </s-text>
+                <s-button
+                  variant="tertiary"
+                  data-field-invalid={!!errors[`views.${view.id}.alignment`]}
+                  onClick={() => (view.imageUrl ? patchView({ needsAlignmentReview: false }) : openViewDialog(true))}
+                >
+                  {translateUi(
+                    view.imageUrl
+                      ? 'editor:placementWorkflowPreview.markAlignmentReviewed'
+                      : 'editor:placementWorkflowPreview.chooseImage',
+                  )}
+                </s-button>
+              </div>
+            )}
+            {notice && !(feedback && hostToast()) && (
+              <div class={`placement-notice${feedback ? ' is-feedback' : ''}`}>
+                <s-banner tone={Object.keys(errors).length ? 'critical' : feedback ? 'success' : 'info'}>
+                  {noticeText}
+                </s-banner>
+              </div>
+            )}
+            {placement && view ? (
+              <div class="placement-properties-body" key={placement.id}>
+                <section class="placement-property-section">
+                  <s-text-field
+                    label={translateUi('editor:placementWorkflowPreview.placementName')}
+                    data-editor-name-field
+                    name="placement-name"
+                    value={placement.name}
+                    maxLength={80}
+                    required
+                    error={fieldError('name')}
+                    data-field-invalid={!!fieldError('name')}
+                    onInput={(event) => patchPlacement({ name: event.currentTarget.value })}
+                  />
+                  <s-text color="subdued">
+                    {translateUi('editor:placementWorkflowPreview.shownToCustomersWhenChoosingAPlacement')}
+                  </s-text>
+                </section>
+                <section class="placement-property-section">
+                  <div class="placement-section-label placement-section-label-artwork">
+                    <s-heading>{translateUi('editor:placementWorkflowPreview.artworkArea')}</s-heading>
+                    <s-button
+                      variant="tertiary"
+                      disabled={movementEditing}
+                      onClick={() => {
+                        cancelCalibration();
+                        exitSizePreview();
+                        if (drawing) cancelDrawingTask();
+                        else
+                          dispatchWorkspace({
+                            type: 'placement-drawing-started',
+                            viewId: view.id,
+                            placementId: placement.id,
+                          });
+                        if (!drawing && matchMedia('(max-width: 800px)').matches) {
+                          setExpandedCanvas(true);
+                          window.scrollTo({ top: 0 });
+                        }
+                      }}
+                    >
+                      {translateUi(
+                        movementEditing
+                          ? 'editor:placementWorkflowPreview.drawArtworkArea'
+                          : drawing
+                            ? 'editor:placementWorkflowPreview.cancelDrawing'
+                            : 'editor:placementWorkflowPreview.drawArea',
+                      )}
+                    </s-button>
+                  </div>
+                  {photoGroups.length > 0 ? (
+                    <div class="placement-variant-area-scope">
+                      <s-text color="subdued">
+                        {groupAreaScope && activePhoto
+                          ? translateUi('editor:placementWorkflowPreview.alignmentForAppearance', {
+                              appearanceName: activePhoto.label,
+                            })
+                          : translateUi('editor:placementWorkflowPreview.sharedArtworkArea')}
+                      </s-text>
+                      {activePhoto && (
+                        <s-button
+                          variant="tertiary"
+                          disabled={photoView?.status !== 'ready'}
+                          onClick={() => {
+                            if (!prepareSelectionChange()) return;
+                            if (groupAreaScope) {
+                              setProduct((current) =>
+                                resetVariantPhotoPlacementRect(current, view.id, activePhoto.key, placement.id),
+                              );
+                              dispatchWorkspace({ type: 'mode-canceled' });
+                            } else
+                              dispatchWorkspace({
+                                type: 'group-area-edit-started',
+                                viewId: view.id,
+                                placementId: placement.id,
+                                groupKey: activePhoto.key,
+                              });
+                          }}
+                        >
+                          {groupAreaScope
+                            ? translateUi('editor:placementWorkflowPreview.useSharedArea')
+                            : translateUi('editor:placementWorkflowPreview.adjustForAppearance', {
+                                appearanceName: activePhoto.label,
+                              })}
+                        </s-button>
+                      )}
+                    </div>
+                  ) : (
+                    <s-text color="subdued">
+                      {translateUi('editor:placementWorkflowPreview.setsTheMaximumArtworkSizeAndStartingPosition')}
+                    </s-text>
+                  )}
+
+                  <div class="placement-fields-grid">
+                    {(
+                      [
+                        ['width', translateUi('editor:placementWorkflowPreview.geometryLabels.width')],
+                        ['height', translateUi('editor:placementWorkflowPreview.geometryLabels.height')],
+                        ['centerX', translateUi('editor:placementWorkflowPreview.geometryLabels.centerX')],
+                        ['centerY', translateUi('editor:placementWorkflowPreview.geometryLabels.centerY')],
+                      ] as const
+                    ).map(([key, label]) => (
+                      <DecimalField
+                        key={key}
+                        label={label}
+                        name={`area-${key}`}
+                        disabled={movementEditing}
+                        suffix="%"
+                        value={
+                          geometryInput?.placementId === placement.id && geometryInput.key === key
+                            ? geometryInput.value
+                            : String(Math.round((displayedRect ?? placement.rect)[key] * 1000) / 10)
+                        }
+                        error={fieldError(`rect.${key}`)}
+                        data-field-invalid={!!fieldError(`rect.${key}`)}
+                        onValue={(value) =>
+                          setGeometryInput({
+                            viewId: view.id,
+                            placementId: placement.id,
+                            key,
+                            value,
+                          })
+                        }
+                        onCommit={(value) => geometry(key, value, view.id, placement.id)}
+                      />
+                    ))}
+                  </div>
+                  {renderImageScale()}
+                  <s-divider />
+                  <div data-placement-positioning>
+                    <s-stack gap="base">
+                      <s-switch
+                        label={translateUi('editor:placementWorkflowPreview.allowCustomersToMoveArtwork')}
+                        details={translateUi('editor:placementWorkflowPreview.customerMovementDetails')}
+                        checked={placement.customPlacementAllowed}
+                        disabled={movementEditing}
+                        onChange={(event) => patchPlacement({ customPlacementAllowed: event.currentTarget.checked })}
+                      />
+                      {placement.customPlacementAllowed && (
+                        <div class="placement-movement-settings">
+                          {movementEditing ? (
+                            <>
+                              {!drawing && (
+                                <s-button variant="tertiary" onClick={redrawMovementArea}>
                                   {translateUi(
-                                    placement.movementRect
-                                      ? 'editor:placementWorkflowPreview.edit'
-                                      : 'editor:placementWorkflowPreview.set',
+                                    movementDraft
+                                      ? 'editor:placementWorkflowPreview.redrawMovementArea'
+                                      : 'editor:placementWorkflowPreview.drawMovementArea',
                                   )}
                                 </s-button>
                               )}
-                            </s-stack>
-                            {!view.imageUrl ? (
-                              <s-text color="subdued">
-                                {translateUi(
-                                  'editor:placementWorkflowPreview.chooseAnImageForThisViewBeforeSettingAMovementArea',
+                              {(movementErrorText || fieldError('movementRect')) && (
+                                <s-text tone="critical">{movementErrorText || fieldError('movementRect')}</s-text>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <s-stack
+                                direction="inline"
+                                gap="small"
+                                justifyContent="space-between"
+                                alignItems="center"
+                              >
+                                <s-stack direction="inline" gap="small" alignItems="center">
+                                  <s-text>{translateUi('editor:placementWorkflowPreview.movementArea')}</s-text>
+                                  <s-badge
+                                    tone={
+                                      !view.imageUrl || !placement.movementRect || movementNeedsReview
+                                        ? 'warning'
+                                        : 'auto'
+                                    }
+                                  >
+                                    {!view.imageUrl
+                                      ? translateUi('editor:placementWorkflowPreview.movementStatus.noImage')
+                                      : !placement.movementRect
+                                        ? translateUi('editor:placementWorkflowPreview.movementStatus.areaNeeded')
+                                        : movementNeedsReview
+                                          ? translateUi('editor:placementWorkflowPreview.movementStatus.reviewArea')
+                                          : translateUi('editor:placementWorkflowPreview.movementStatus.areaSet')}
+                                  </s-badge>
+                                </s-stack>
+                                {!view.imageUrl ? (
+                                  <s-button
+                                    variant="secondary"
+                                    accessibilityLabel={translateUi(
+                                      'editor:placementWorkflowPreview.chooseImageForThisView',
+                                    )}
+                                    data-field-invalid={!!fieldError('movementRect')}
+                                    onClick={() => openViewDialog(true)}
+                                  >
+                                    {translateUi('editor:placementWorkflowPreview.chooseImage')}
+                                  </s-button>
+                                ) : (
+                                  <s-button
+                                    variant={!placement.movementRect || movementNeedsReview ? 'secondary' : 'tertiary'}
+                                    accessibilityLabel={translateUi(
+                                      placement.movementRect
+                                        ? 'editor:placementWorkflowPreview.editMovementArea'
+                                        : 'editor:placementWorkflowPreview.setMovementArea',
+                                    )}
+                                    data-field-invalid={!!fieldError('movementRect')}
+                                    onClick={startMovementAreaEdit}
+                                  >
+                                    {translateUi(
+                                      placement.movementRect
+                                        ? 'editor:placementWorkflowPreview.edit'
+                                        : 'editor:placementWorkflowPreview.set',
+                                    )}
+                                  </s-button>
                                 )}
-                              </s-text>
-                            ) : (
-                              (!placement.movementRect || movementNeedsReview) && (
+                              </s-stack>
+                              {!view.imageUrl ? (
                                 <s-text color="subdued">
                                   {translateUi(
-                                    movementNeedsReview
-                                      ? 'editor:placementWorkflowPreview.updateMovementAreaBeforePublish'
-                                      : 'editor:placementWorkflowPreview.setMovementBoundaryBeforePublish',
+                                    'editor:placementWorkflowPreview.chooseAnImageForThisViewBeforeSettingAMovementArea',
                                   )}
                                 </s-text>
-                              )
-                            )}
-                            {fieldError('movementRect') && (
-                              <s-text tone="critical">{fieldError('movementRect')}</s-text>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </s-stack>
-                </div>
-              </section>
-              <section class="placement-property-section">
-                <div class="placement-section-label">
-                  <s-heading>{translateUi('editor:placementWorkflowPreview.decorationSizes')}</s-heading>
-                </div>
-                <s-text color="subdued">{translateUi('editor:placementWorkflowPreview.maxArtworkSizeGuidance')}</s-text>
-                <div class="placement-size-headings" aria-hidden="true">
-                  <span>{translateUi('editor:placementWorkflowPreview.sizeName')}</span>
-                  <span>{translateUi('editor:placementWorkflowPreview.scale')}</span>
-                </div>
-                {placement.sizes.map((size) => (
-                  <div class="placement-size-row" key={size.id}>
-                    <s-text-field
-                      label={translateUi('editor:placementWorkflowPreview.sizeName')}
-                      data-editor-name-field
-                      labelAccessibilityVisibility="exclusive"
-                      value={size.name}
-                      error={fieldError(`sizes.${size.id}.name`)}
-                      data-field-invalid={!!fieldError(`sizes.${size.id}.name`)}
-                      onInput={(event) =>
-                        patchPlacement({
-                          sizes: placement.sizes.map((entry) =>
-                            entry.id === size.id ? { ...entry, name: event.currentTarget.value } : entry,
-                          ),
-                        })
-                      }
-                    />
-                    <DecimalField
-                      label={translateUi(size.heightPercent!==undefined?'editor:placementWorkflowPreview.legacyWidthScale':'editor:placementWorkflowPreview.areaScale')}
-                      labelAccessibilityVisibility="exclusive"
-                      value={size.widthPercent}
-                      error={fieldError(`sizes.${size.id}.widthPercent`)}
-                      data-field-invalid={!!fieldError(`sizes.${size.id}.widthPercent`)}
-                      onValue={(value) =>
-                        patchPlacement({
-                          sizes: placement.sizes.map((entry) =>
-                            entry.id === size.id ? { ...entry, widthPercent: value } : entry,
-                          ),
-                        })
-                      }
-                    />
-                    {size.heightPercent!==undefined&&<DecimalField label={translateUi('editor:placementWorkflowPreview.legacyHeightScale')} value={size.heightPercent} error={fieldError(`sizes.${size.id}.heightPercent`)} data-field-invalid={!!fieldError(`sizes.${size.id}.heightPercent`)} onValue={value=>patchPlacement({sizes:placement.sizes.map(entry=>entry.id===size.id?{...entry,heightPercent:value}:entry)})}/>}
-                    <s-button
-                      icon="view"
-                      variant={preview && previewSize?.id === size.id ? 'secondary' : 'tertiary'}
-                      accessibilityLabel={translateUi(
-                        preview && previewSize?.id === size.id
-                          ? 'editor:placementWorkflowPreview.exitPreviewForSize'
-                          : 'editor:placementWorkflowPreview.previewSizeNamed',
-                        {
-                          sizeName: size.name || translateUi('editor:placementWorkflowPreview.unnamedSize'),
-                        },
+                              ) : (
+                                (!placement.movementRect || movementNeedsReview) && (
+                                  <s-text color="subdued">
+                                    {translateUi(
+                                      movementNeedsReview
+                                        ? 'editor:placementWorkflowPreview.updateMovementAreaBeforePublish'
+                                        : 'editor:placementWorkflowPreview.setMovementBoundaryBeforePublish',
+                                    )}
+                                  </s-text>
+                                )
+                              )}
+                              {fieldError('movementRect') && (
+                                <s-text tone="critical">{fieldError('movementRect')}</s-text>
+                              )}
+                            </>
+                          )}
+                        </div>
                       )}
-                      disabled={movementEditing || drawing || calibrationEditing}
-                      onClick={() => showSize(size.id)}
-                    />
-                    <s-button
-                      icon="delete"
-                      variant="tertiary"
-                      accessibilityLabel={translateUi('editor:placementWorkflowPreview.removeSizeNamed', {
-                        sizeName: size.name || translateUi('editor:placementWorkflowPreview.unnamedSize'),
-                      })}
-                      disabled={placement.sizes.length === 1}
-                      onClick={() => patchPlacement({ sizes: placement.sizes.filter((entry) => entry.id !== size.id) })}
-                    />
+                    </s-stack>
                   </div>
-                ))}
-                <s-button
-                  variant="tertiary"
-                  icon="plus"
-                  onClick={() =>
-                    patchPlacement({
-                      sizes: [
-                        ...placement.sizes,
-                        {
-                          id: uid(),
-                          name: nextItemName(
-                            translateUi('editor:placementWorkflowPreview.defaultNames.size'),
-                            placement.sizes.map((size) => size.name),
-                          ),
-                          widthPercent: defaultNewSizeScale(placement.sizes),
-                          prices: {},
-                        },
-                      ],
-                    })
-                  }
-                >
-                  {translateUi('editor:placementWorkflowPreview.addSize')}
-                </s-button>
-              </section>
-              <section class="placement-property-section" data-placement-methods>
-                <div class="placement-section-label">
-                  <s-heading>{translateUi('editor:placementWorkflowPreview.decorationMethods')}</s-heading>
+                </section>
+                <section class="placement-property-section">
+                  <div class="placement-section-label">
+                    <s-heading>{translateUi('editor:placementWorkflowPreview.decorationSizes')}</s-heading>
+                  </div>
+                  <s-text color="subdued">
+                    {translateUi('editor:placementWorkflowPreview.maxArtworkSizeGuidance')}
+                  </s-text>
+                  <div class="placement-size-headings" aria-hidden="true">
+                    <span>{translateUi('editor:placementWorkflowPreview.sizeName')}</span>
+                    <span>{translateUi('editor:placementWorkflowPreview.scale')}</span>
+                  </div>
+                  {placement.sizes.map((size) => (
+                    <div class="placement-size-row" key={size.id}>
+                      <s-text-field
+                        label={translateUi('editor:placementWorkflowPreview.sizeName')}
+                        data-editor-name-field
+                        labelAccessibilityVisibility="exclusive"
+                        value={size.name}
+                        error={fieldError(`sizes.${size.id}.name`)}
+                        data-field-invalid={!!fieldError(`sizes.${size.id}.name`)}
+                        onInput={(event) =>
+                          patchPlacement({
+                            sizes: placement.sizes.map((entry) =>
+                              entry.id === size.id ? { ...entry, name: event.currentTarget.value } : entry,
+                            ),
+                          })
+                        }
+                      />
+                      <DecimalField
+                        label={translateUi(
+                          size.heightPercent !== undefined
+                            ? 'editor:placementWorkflowPreview.legacyWidthScale'
+                            : 'editor:placementWorkflowPreview.areaScale',
+                        )}
+                        labelAccessibilityVisibility="exclusive"
+                        value={size.widthPercent}
+                        error={fieldError(`sizes.${size.id}.widthPercent`)}
+                        data-field-invalid={!!fieldError(`sizes.${size.id}.widthPercent`)}
+                        onValue={(value) =>
+                          patchPlacement({
+                            sizes: placement.sizes.map((entry) =>
+                              entry.id === size.id ? { ...entry, widthPercent: value } : entry,
+                            ),
+                          })
+                        }
+                      />
+                      {size.heightPercent !== undefined && (
+                        <DecimalField
+                          label={translateUi('editor:placementWorkflowPreview.legacyHeightScale')}
+                          value={size.heightPercent}
+                          error={fieldError(`sizes.${size.id}.heightPercent`)}
+                          data-field-invalid={!!fieldError(`sizes.${size.id}.heightPercent`)}
+                          onValue={(value) =>
+                            patchPlacement({
+                              sizes: placement.sizes.map((entry) =>
+                                entry.id === size.id ? { ...entry, heightPercent: value } : entry,
+                              ),
+                            })
+                          }
+                        />
+                      )}
+                      <s-button
+                        icon="view"
+                        variant={preview && previewSize?.id === size.id ? 'secondary' : 'tertiary'}
+                        accessibilityLabel={translateUi(
+                          preview && previewSize?.id === size.id
+                            ? 'editor:placementWorkflowPreview.exitPreviewForSize'
+                            : 'editor:placementWorkflowPreview.previewSizeNamed',
+                          {
+                            sizeName: size.name || translateUi('editor:placementWorkflowPreview.unnamedSize'),
+                          },
+                        )}
+                        disabled={movementEditing || drawing || calibrationEditing}
+                        onClick={() => showSize(size.id)}
+                      />
+                      <s-button
+                        icon="delete"
+                        variant="tertiary"
+                        accessibilityLabel={translateUi('editor:placementWorkflowPreview.removeSizeNamed', {
+                          sizeName: size.name || translateUi('editor:placementWorkflowPreview.unnamedSize'),
+                        })}
+                        disabled={placement.sizes.length === 1}
+                        onClick={() =>
+                          patchPlacement({ sizes: placement.sizes.filter((entry) => entry.id !== size.id) })
+                        }
+                      />
+                    </div>
+                  ))}
                   <s-button
                     variant="tertiary"
-                    accessibilityLabel={translateUi(
-                      product.methods.length
-                        ? 'editor:placementWorkflowPreview.manageMethods'
-                        : 'editor:placementWorkflowPreview.chooseMethods',
-                    )}
-                    onClick={() => openMethodEditor()}
+                    icon="plus"
+                    onClick={() =>
+                      patchPlacement({
+                        sizes: [
+                          ...placement.sizes,
+                          {
+                            id: uid(),
+                            name: nextItemName(
+                              translateUi('editor:placementWorkflowPreview.defaultNames.size'),
+                              placement.sizes.map((size) => size.name),
+                            ),
+                            widthPercent: defaultNewSizeScale(placement.sizes),
+                            prices: {},
+                          },
+                        ],
+                      })
+                    }
                   >
-                    {translateUi(
-                      product.methods.length
-                        ? 'editor:placementWorkflowPreview.manage'
-                        : 'editor:placementWorkflowPreview.chooseMethods',
-                    )}
+                    {translateUi('editor:placementWorkflowPreview.addSize')}
                   </s-button>
-                </div>
-                <s-text color="subdued">
-                  {translateUi(
-                    product.methods.length > 6
-                      ? 'editor:placementWorkflowPreview.pricesPerItemAtPlacement'
-                      : 'editor:placementWorkflowPreview.chooseCustomerOptionsForPlacement',
-                  )}
-                </s-text>
-                {!product.methods.length && (
-                  <s-paragraph>
-                    {translateUi(
-                      'editor:placementWorkflowPreview.noDecorationMethodsSelectedChooseAMethodFromYourLibraryToOfferThisPlacement',
-                    )}
-                  </s-paragraph>
-                )}
-                {product.methods.length > 6 ? (
-                  <div class="placement-method-summary">
-                    <s-stack direction="inline">
-                      <s-badge>
-                        {translateUi('editor:placementWorkflowPreview.enabledMethodCount', {
-                          count: enabledMethods.length,
-                          formattedCount: new Intl.NumberFormat(formatLocale).format(enabledMethods.length),
-                        })}
-                      </s-badge>
-                    </s-stack>
-                    {!!enabledMethods.length && (
-                      <ul>
-                        {enabledMethods.slice(0, 3).map((method) => (
-                          <li key={method.id}>
-                            <span class="placement-method-summary-name">{method.name}</span>
-                            {method.pricing === 'fixed' ? (
-                              <s-button
-                                variant="tertiary"
-                                icon="edit"
-                                accessibilityLabel={translateUi('editor:placementWorkflowPreview.editMethodPrice', {
-                                  methodName: method.name,
-                                })}
-                                onClick={() => openMethodEditor(method.id)}
-                              >
-                                {(() => {
-                                  const price = parsePrice(method.amount);
-                                  return price.kind === 'valid'
-                                    ? formatPrice(price.minor, formatLocale, adapter.currency)
-                                    : translateUi('editor:placementWorkflowPreview.priceUnavailable');
-                                })()}
-                              </s-button>
-                            ) : (
-                              <s-button
-                                variant="tertiary"
-                                accessibilityLabel={translateUi('editor:placementWorkflowPreview.editMethodPrices', {
-                                  methodName: method.name,
-                                })}
-                                onClick={() => openMethodEditor(method.id)}
-                              >
-                                {(() => {
-                                  const priced = placement.sizes.filter(
-                                    (size) => parsePrice(size.prices[method.id] ?? '').kind === 'valid',
-                                  ).length;
-                                  return translateUi('editor:placementWorkflowPreview.pricedSizeCount', {
-                                    count: placement.sizes.length,
-                                    formattedPricedCount: new Intl.NumberFormat(formatLocale).format(priced),
-                                    formattedTotalCount: new Intl.NumberFormat(formatLocale).format(
-                                      placement.sizes.length,
-                                    ),
-                                  });
-                                })()}
-                              </s-button>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    {enabledMethods.length > 3 && (
-                      <s-text color="subdued">
-                        {translateUi('editor:placementWorkflowPreview.moreEnabledMethods', {
-                          count: enabledMethods.length - 3,
-                          formattedCount: new Intl.NumberFormat(formatLocale).format(enabledMethods.length - 3),
-                        })}
-                      </s-text>
-                    )}
+                </section>
+                <section class="placement-property-section" data-placement-methods>
+                  <div class="placement-section-label">
+                    <s-heading>{translateUi('editor:placementWorkflowPreview.decorationMethods')}</s-heading>
+                    <s-button
+                      variant="tertiary"
+                      accessibilityLabel={translateUi(
+                        product.methods.length
+                          ? 'editor:placementWorkflowPreview.manageMethods'
+                          : 'editor:placementWorkflowPreview.chooseMethods',
+                      )}
+                      onClick={() => openMethodEditor()}
+                    >
+                      {translateUi(
+                        product.methods.length
+                          ? 'editor:placementWorkflowPreview.manage'
+                          : 'editor:placementWorkflowPreview.chooseMethods',
+                      )}
+                    </s-button>
                   </div>
-                ) : (
-                  renderMethodSettings()
-                )}
-                {!!product.methods.length && !placement.methodIds.length && (
-                  <s-text tone="warning">
-                    {translateUi('editor:placementWorkflowPreview.chooseAMethodBeforeOfferingThisPlacement')}
-                  </s-text>
-                )}
-              </section>
-              <section class="placement-property-section">
-                <s-heading>{translateUi('editor:placementWorkflowPreview.customerOptions')}</s-heading>
-                <s-switch
-                  label={translateUi('editor:placementWorkflowPreview.allowOrdersWithoutArtwork')}
-                  details={translateUi('editor:placementWorkflowPreview.allowOrdersWithoutArtworkDetails')}
-                  checked={placement.logoLaterAllowed}
-                  onChange={(event) => patchPlacement({ logoLaterAllowed: event.currentTarget.checked })}
-                />
-              </section>
-              <div class="placement-property-section placement-remove-action">
-                <s-button
-                  tone="critical"
-                  variant="tertiary"
-                  icon="delete"
-                  inlineSize="fill"
-                  onClick={() =>
-                    requestRemove({ kind: 'placement', id: placement.id, viewId: view.id }, 'inspector-footer')
-                  }
-                >
-                  {translateUi('editor:placementWorkflowPreview.removePlacement')}
-                </s-button>
-              </div>
-            </div>
-          ) : view ? (
-            <div class="placement-properties-body">
-              <section class="placement-property-section">
-                <s-text-field
-                  label={translateUi('editor:placementWorkflowPreview.viewName')}
-                  data-editor-name-field
-                  name="view-name"
-                  value={view?.name ?? ''}
-                  maxLength={60}
-                  required
-                  error={errorText(`views.${view?.id}.name`)}
-                  data-field-invalid={!!errors[`views.${view?.id}.name`]}
-                  onInput={(event) => patchView({ name: event.currentTarget.value })}
-                />
-                <s-text color="subdued">
-                  {translateUi('editor:placementWorkflowPreview.shownToCustomersForExampleFrontOrBack')}
-                </s-text>
-                <div class="placement-view-image">
-                  {view.imageUrl && <img src={view.imageUrl} alt="" width="56" height="64" />}
-                  <s-button
-                    data-field-invalid={!!errors[`views.${view.id}.imageUrl`]}
-                    onClick={() => openViewDialog(true)}
-                  >
+                  <s-text color="subdued">
                     {translateUi(
-                      view.imageUrl
-                        ? photoGroups.length
-                          ? 'editor:placementWorkflowPreview.changeSharedImage'
-                          : 'editor:placementWorkflowPreview.changeImage'
-                        : 'editor:placementWorkflowPreview.chooseImage',
+                      product.methods.length > 6
+                        ? 'editor:placementWorkflowPreview.pricesPerItemAtPlacement'
+                        : 'editor:placementWorkflowPreview.chooseCustomerOptionsForPlacement',
                     )}
-                  </s-button>
-                </div>
-                <s-paragraph>
-                  {translateUi(
-                    view.placements.length
-                      ? 'editor:placementWorkflowPreview.selectPlacementToEditDetails'
-                      : 'editor:placementWorkflowPreview.addPlacementToBeginDetails',
+                  </s-text>
+                  {!product.methods.length && (
+                    <s-paragraph>
+                      {translateUi(
+                        'editor:placementWorkflowPreview.noDecorationMethodsSelectedChooseAMethodFromYourLibraryToOfferThisPlacement',
+                      )}
+                    </s-paragraph>
                   )}
-                </s-paragraph>
-                <s-button data-add-placement icon="plus" onClick={() => add()}>
-                  {translateUi('editor:placementWorkflowPreview.addPlacement')}
-                </s-button>
-              </section>
-              {product.variantPhotos && (
+                  {product.methods.length > 6 ? (
+                    <div class="placement-method-summary">
+                      <s-stack direction="inline">
+                        <s-badge>
+                          {translateUi('editor:placementWorkflowPreview.enabledMethodCount', {
+                            count: enabledMethods.length,
+                            formattedCount: new Intl.NumberFormat(formatLocale).format(enabledMethods.length),
+                          })}
+                        </s-badge>
+                      </s-stack>
+                      {!!enabledMethods.length && (
+                        <ul>
+                          {enabledMethods.slice(0, 3).map((method) => (
+                            <li key={method.id}>
+                              <span class="placement-method-summary-name">{method.name}</span>
+                              {method.pricing === 'fixed' ? (
+                                <s-button
+                                  variant="tertiary"
+                                  icon="edit"
+                                  accessibilityLabel={translateUi('editor:placementWorkflowPreview.editMethodPrice', {
+                                    methodName: method.name,
+                                  })}
+                                  onClick={() => openMethodEditor(method.id)}
+                                >
+                                  {(() => {
+                                    const price = parsePrice(method.amount);
+                                    return price.kind === 'valid'
+                                      ? formatPrice(price.minor, formatLocale, adapter.currency)
+                                      : translateUi('editor:placementWorkflowPreview.priceUnavailable');
+                                  })()}
+                                </s-button>
+                              ) : (
+                                <s-button
+                                  variant="tertiary"
+                                  accessibilityLabel={translateUi('editor:placementWorkflowPreview.editMethodPrices', {
+                                    methodName: method.name,
+                                  })}
+                                  onClick={() => openMethodEditor(method.id)}
+                                >
+                                  {(() => {
+                                    const priced = placement.sizes.filter(
+                                      (size) => parsePrice(size.prices[method.id] ?? '').kind === 'valid',
+                                    ).length;
+                                    return translateUi('editor:placementWorkflowPreview.pricedSizeCount', {
+                                      count: placement.sizes.length,
+                                      formattedPricedCount: new Intl.NumberFormat(formatLocale).format(priced),
+                                      formattedTotalCount: new Intl.NumberFormat(formatLocale).format(
+                                        placement.sizes.length,
+                                      ),
+                                    });
+                                  })()}
+                                </s-button>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {enabledMethods.length > 3 && (
+                        <s-text color="subdued">
+                          {translateUi('editor:placementWorkflowPreview.moreEnabledMethods', {
+                            count: enabledMethods.length - 3,
+                            formattedCount: new Intl.NumberFormat(formatLocale).format(enabledMethods.length - 3),
+                          })}
+                        </s-text>
+                      )}
+                    </div>
+                  ) : (
+                    renderMethodSettings()
+                  )}
+                  {!!product.methods.length && !placement.methodIds.length && (
+                    <s-text tone="warning">
+                      {translateUi('editor:placementWorkflowPreview.chooseAMethodBeforeOfferingThisPlacement')}
+                    </s-text>
+                  )}
+                </section>
                 <section class="placement-property-section">
-                  <VariantPhotoPanel
-                    product={product}
-                    viewId={view.id}
-                    activeGroupKey={activePhoto?.key ?? null}
-                    onSelectGroup={choosePhotoGroup}
-                    onChange={setProduct}
-                    onChooseImage={openVariantImagePicker}
-                    onImageStatus={photoLoadStatus}
-                    failedImageUrls={failedPhotoUrls}
-                    pendingImageUrls={pendingPhotoUrls}
-                    imageRetryRevisions={photoRetryRevisions}
-                    onRetryImage={retryPhoto}
-                    onReviewAlignment={(key) => {
-                      choosePhotoGroup(key);
-                      if (matchMedia('(max-width: 800px)').matches) {
-                        setExpandedCanvas(true);
-                        window.scrollTo({ top: 0 });
-                      }
-                      setAlignmentFocusRequested(true);
-                    }}
+                  <s-heading>{translateUi('editor:placementWorkflowPreview.customerOptions')}</s-heading>
+                  <s-switch
+                    label={translateUi('editor:placementWorkflowPreview.allowOrdersWithoutArtwork')}
+                    details={translateUi('editor:placementWorkflowPreview.allowOrdersWithoutArtworkDetails')}
+                    checked={placement.logoLaterAllowed}
+                    onChange={(event) => patchPlacement({ logoLaterAllowed: event.currentTarget.checked })}
                   />
                 </section>
-              )}
-              {calibration && <section class="placement-property-section">{renderImageScale()}</section>}
-              <div class="placement-property-section placement-remove-action">
-                <s-button
-                  variant="tertiary"
-                  tone="critical"
-                  icon="delete"
-                  inlineSize="fill"
-                  onClick={() => requestRemove({ kind: 'view', id: view.id }, 'inspector-footer')}
-                >
-                  {translateUi('editor:placementWorkflowPreview.removeView')}
-                </s-button>
+                <div class="placement-property-section placement-remove-action">
+                  <s-button
+                    tone="critical"
+                    variant="tertiary"
+                    icon="delete"
+                    inlineSize="fill"
+                    onClick={() =>
+                      requestRemove({ kind: 'placement', id: placement.id, viewId: view.id }, 'inspector-footer')
+                    }
+                  >
+                    {translateUi('editor:placementWorkflowPreview.removePlacement')}
+                  </s-button>
+                </div>
               </div>
-            </div>
-          ) : null}
+            ) : view ? (
+              <div class="placement-properties-body">
+                <section class="placement-property-section">
+                  <s-text-field
+                    label={translateUi('editor:placementWorkflowPreview.viewName')}
+                    data-editor-name-field
+                    name="view-name"
+                    value={view?.name ?? ''}
+                    maxLength={60}
+                    required
+                    error={errorText(`views.${view?.id}.name`)}
+                    data-field-invalid={!!errors[`views.${view?.id}.name`]}
+                    onInput={(event) => patchView({ name: event.currentTarget.value })}
+                  />
+                  <s-text color="subdued">
+                    {translateUi('editor:placementWorkflowPreview.shownToCustomersForExampleFrontOrBack')}
+                  </s-text>
+                  <div class="placement-view-image">
+                    {view.imageUrl && <img src={view.imageUrl} alt="" width="56" height="64" />}
+                    <s-button
+                      data-field-invalid={!!errors[`views.${view.id}.imageUrl`]}
+                      onClick={() => openViewDialog(true)}
+                    >
+                      {translateUi(
+                        view.imageUrl
+                          ? photoGroups.length
+                            ? 'editor:placementWorkflowPreview.changeSharedImage'
+                            : 'editor:placementWorkflowPreview.changeImage'
+                          : 'editor:placementWorkflowPreview.chooseImage',
+                      )}
+                    </s-button>
+                  </div>
+                  <s-paragraph>
+                    {translateUi(
+                      view.placements.length
+                        ? 'editor:placementWorkflowPreview.selectPlacementToEditDetails'
+                        : 'editor:placementWorkflowPreview.addPlacementToBeginDetails',
+                    )}
+                  </s-paragraph>
+                  <s-button data-add-placement icon="plus" onClick={() => add()}>
+                    {translateUi('editor:placementWorkflowPreview.addPlacement')}
+                  </s-button>
+                </section>
+                {product.variantPhotos && (
+                  <section class="placement-property-section">
+                    <VariantPhotoPanel
+                      product={product}
+                      viewId={view.id}
+                      activeGroupKey={activePhoto?.key ?? null}
+                      onSelectGroup={choosePhotoGroup}
+                      onChange={setProduct}
+                      onChooseImage={openVariantImagePicker}
+                      onImageStatus={photoLoadStatus}
+                      failedImageUrls={failedPhotoUrls}
+                      pendingImageUrls={pendingPhotoUrls}
+                      imageRetryRevisions={photoRetryRevisions}
+                      onRetryImage={retryPhoto}
+                      onReviewAlignment={(key) => {
+                        choosePhotoGroup(key);
+                        if (matchMedia('(max-width: 800px)').matches) {
+                          setExpandedCanvas(true);
+                          window.scrollTo({ top: 0 });
+                        }
+                        setAlignmentFocusRequested(true);
+                      }}
+                    />
+                  </section>
+                )}
+                {calibration && <section class="placement-property-section">{renderImageScale()}</section>}
+                <div class="placement-property-section placement-remove-action">
+                  <s-button
+                    variant="tertiary"
+                    tone="critical"
+                    icon="delete"
+                    inlineSize="fill"
+                    onClick={() => requestRemove({ kind: 'view', id: view.id }, 'inspector-footer')}
+                  >
+                    {translateUi('editor:placementWorkflowPreview.removeView')}
+                  </s-button>
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
       {publishReview && (
@@ -4197,7 +4415,11 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                 loading={writeBusy || adapter.pending()}
                 onClick={confirmPublish}
               >
-                {translateUi(production ? 'editor:placementWorkflowPreview.realPublish' : 'editor:placementWorkflowPreview.publishPreview')}
+                {translateUi(
+                  production
+                    ? 'editor:placementWorkflowPreview.realPublish'
+                    : 'editor:placementWorkflowPreview.publishPreview',
+                )}
               </s-button>
             )
           }
@@ -4243,11 +4465,19 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                 </s-paragraph>
               </>
             )}
-            {writeBusy && !publishReview.error && adapter.kind === 'production' && <s-banner tone="info">{translateUi('editor:placementWorkflowPreview.realPublicationProgress')}</s-banner>}
-            {publishError && <s-banner tone={publishReview.error === 'pending' ? 'info' : 'critical'}>{publishError}</s-banner>}
+            {writeBusy && !publishReview.error && adapter.kind === 'production' && (
+              <s-banner tone="info">{translateUi('editor:placementWorkflowPreview.realPublicationProgress')}</s-banner>
+            )}
+            {publishError && (
+              <s-banner tone={publishReview.error === 'pending' ? 'info' : 'critical'}>{publishError}</s-banner>
+            )}
             {!publishReview.issues.length && (
               <s-text color="subdued">
-                {translateUi(adapter.kind === 'demo' ? 'editor:placementWorkflowPreview.localPreviewOnlyShopifyIsnTUpdated' : 'editor:placementWorkflowPreview.realPublicationNotice')}
+                {translateUi(
+                  adapter.kind === 'demo'
+                    ? 'editor:placementWorkflowPreview.localPreviewOnlyShopifyIsnTUpdated'
+                    : 'editor:placementWorkflowPreview.realPublicationNotice',
+                )}
               </s-text>
             )}
           </s-stack>
@@ -4355,7 +4585,9 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
           onClose={() => dispatchDialog({ type: 'dialog-closed', id: methodDialog.id })}
           onApply={(change, choices, editedIds, editedCells) => {
             if (
-              writeBusyRef.current || adapter.pending() || dialog.kind !== 'method-manager' ||
+              writeBusyRef.current ||
+              adapter.pending() ||
+              dialog.kind !== 'method-manager' ||
               dialog.id !== methodDialog.id ||
               !placementDialogTargetMatches(
                 dialog,
@@ -4544,15 +4776,15 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
           <div class={pickerImages.length ? 'placement-image-dialog' : ''}>
             {variantImageTargets && (
               <div class="variant-image-target-summary" data-photo-target tabIndex={-1}>
-              {photoPicker.assignmentRefused && (
-                <s-banner tone="warning">
-                  {translateUi('editor:placementWorkflowPreview.imageNotAssigned', {
-                    appearanceName: new Intl.ListFormat(formatLocale, { style: 'long', type: 'conjunction' }).format(
-                      photoTargetGroups.map((group) => group.label),
-                    ),
-                  })}
-                </s-banner>
-              )}
+                {photoPicker.assignmentRefused && (
+                  <s-banner tone="warning">
+                    {translateUi('editor:placementWorkflowPreview.imageNotAssigned', {
+                      appearanceName: new Intl.ListFormat(formatLocale, { style: 'long', type: 'conjunction' }).format(
+                        photoTargetGroups.map((group) => group.label),
+                      ),
+                    })}
+                  </s-banner>
+                )}
                 {variantImageTargets.length <= 3 ? (
                   <s-paragraph>
                     {translateUi(
@@ -4618,4 +4850,3 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     </div>
   );
 }
-
