@@ -2,25 +2,31 @@
 
 ## Active assignment
 
-Updated 25 November 2026. **Shopify App Store review: the pause ended 25 November; the owner resubmits.**
+Updated 26 November 2026. **Shopify App Store review.** The pause ended on 25 November. The owner resubmits after current release validation.
 Shopify had reported that customized products could not be added to the cart (2.1.1) and requested evidence for plan changes,
 order scopes and reviewer access. Use the [resubmission checklist](shopify-review-resubmission.md)
 for the findings, the 24–25 November hardening evidence and the remaining review gaps. The November 19 resubmission remains historical
-evidence below. Insignia runs only on `app.insigniacustomizer.com` on host alias `prod`: one Compose project `insignia` from `/srv/saas/infra/stacks/insignia` (installed from [deployment/production/compose.yaml](../../deployment/production/compose.yaml)), data on the encrypted volume `/srv/data/saas/insignia`. **Exact running versions live only in [Deployed identities](#deployed-identities)** (as of 25 Nov: Shopify Active `1266368151553`, profile `native-designer-intent-8e69c5ef`; web, worker and verifier deploy AV; inspector deploy AD; schema 74). Since the production cutover (16 Nov, fresh database) only the owner's dev and review stores are installed in production; no real merchant yet. The first real merchants are the Stitchs/Superfunny pilot, after the owner's backup and secret-rotation items. **A separate agent tests the storefront and merchant UI on rewrite-dev; its new issues wait for the owner's review before engineering picks them up.** Open engineering issues: #637, #656 (#643, #651/#654 and #653 are fixed and deployed in AV); deferred work: [backlog](../backlog/README.md). The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
+evidence below. Insignia runs only on `app.insigniacustomizer.com` on host alias `prod`: one Compose project `insignia` from `/srv/saas/infra/stacks/insignia` (installed from [deployment/production/compose.yaml](../../deployment/production/compose.yaml)), data on the encrypted volume `/srv/data/saas/insignia`. The current release is deploy AW on schema 74. See [Deployed identities](#deployed-identities) for exact versions. Since the production cutover (16 Nov, fresh database) only the owner's dev and review stores are installed in production; no real merchant yet. The first real merchants are the Stitchs/Superfunny pilot, after the owner's backup and secret-rotation items. **A separate agent tests the storefront and merchant UI on rewrite-dev; its new issues wait for the owner's review before engineering picks them up.** Open engineering issues: #637, #656 (deploy AW includes the fixes for #643, #651/#654 and #653); deferred work: [backlog](../backlog/README.md). The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
 
 **Hardening pass, 24–25 November 2026: done.** Deploys AS, AT and AU released its code
-(records below; PR list in the checklist). On the final version `1265289363457` the reviewer fixture passed keyboard
+(records below; PR list in the checklist). On 25 November, version `1265289363457` passed reviewer fixture keyboard
 navigation, a $30.00 Designer/cart/checkout total and Bogus test order #1015, read back paid in
 Insignia. Fresh USD and EUR setup-to-order runs, the Market switch, recovery cases R1–R7 and a
 Lighthouse baseline passed or are recorded with their limits in the
 [review checklist](shopify-review-resubmission.md#remaining-hardening). Open items are in the
 [backlog](../backlog/README.md#after-the-hardening-pass-25-nov-2026).
 
-**Next for the owner:** resubmit in the Partner Dashboard (not done by engineering); after approval,
+**Deploy AW, 26 November.** Deploy AW includes the cart repair (#663), storefront polish (#664),
+tooling and dependency refresh (#666, #667, #669 and #671), and the accepted publish deadline (#668).
+Shopify is active on AW. USD is available in its primary Market. EUR uses release-level v2 qualification
+after a native Netherlands checkout on the new Functions. The two USD and EUR validation rounds are in progress.
+See the [current review validation](shopify-review-resubmission.md#deploy-aw-validation).
+
+**Next for the owner.** Resubmit in the Partner Dashboard after current validation. After approval,
 decide on relaxing the publish hold-safety steps (≤10 s first publish) and #637. Backups, secret
 rotation and the shop-erasure purge still come before the first real merchant. The mid-step release
 lapse (a publish step starting on a 25–30 s-old record) is decided (owner approval 25 Nov), fixed in
-PR #658 and deployed in AV, with the release verifier's 13 s reuse lead installed before web.
+PR #658 and first deployed in AV. The release verifier uses a 13 s reuse lead.
 
 ### Picking this up
 
@@ -159,18 +165,18 @@ All on production (`app.insigniacustomizer.com`), proven on the review store `in
 
 ### Deployed identities
 
-Production on host alias `prod`, as of 25 November 2026 (deploy AV). One Compose project `insignia`: stack `/srv/saas/infra/stacks/insignia` (`compose.yaml` from [deployment/production/compose.yaml](../../deployment/production/compose.yaml), `.env`, `secrets/`); data on the LUKS2 volume mounted at `/srv/data/saas/insignia` (`srv-data-saas-insignia.mount`; docker drop-in `insignia-volume.conf` `Wants`/`After` it). Images run by local tag `insignia/<service>:<commit>`.
+Production on host alias `prod`, as of 26 November 2026 (deploy AW). One Compose project `insignia`: stack `/srv/saas/infra/stacks/insignia` (`compose.yaml` from [deployment/production/compose.yaml](../../deployment/production/compose.yaml), `.env`, `secrets/`); data on the LUKS2 volume mounted at `/srv/data/saas/insignia` (`srv-data-saas-insignia.mount`; docker drop-in `insignia-volume.conf` `Wants`/`After` it). Images run by local tag `insignia/<service>:<commit>`.
 
 | Component | Identity | Source |
 | --- | --- | --- |
-| Shopify Active version | `1266368151553`, profile `native-designer-intent-8e69c5ef` (deploy AV, 25 Nov). Exactly 57 versions and 15 modules. The network access module declares the production R2 origin. Module hash `a1fcd4c5…`. Required scopes `read_markets,read_orders,read_publications,write_app_proxy,write_cart_transforms,write_products,write_validations` and optional `read_product_listings`. Earlier `read_all_orders` grants may remain on old installations. Version `1248762724353` must never be released. | theme `8e69c5ef`, binding `df556e09` (#661) |
-| Functions | "Insignia cart transform" wasm `5c8708b5…` (module `826a9059…`, query `02ab5bce…`), "Insignia cart validation" wasm `6c362b36…` (module `076bfef2…`, query `5867e61f…`); handles unchanged | `aa3b6166` |
-| Web | `insignia-web`, `insignia/web:df556e09` = `sha256:43689774…` (deploy AV, EUR v2 bound to `1266368151553`) | main tree at `df556e09` |
-| Worker | `insignia-worker`, `insignia/worker:df556e09` = `sha256:0982cc03…` (deploy AV, automatic shop erasure enabled) | main tree at `df556e09` |
-| Verifier | `insignia-verifier`, `insignia/verifier:df556e09` = `sha256:9e73000e…` (deploy AV, code manifest `7293377c…`, 13 s reuse lead) | main tree at `df556e09` |
-| Signer | `insignia-signer`, `insignia/signer:afc3c1da` = `sha256:e9b1f153…` (since 13 Nov `21:54:55Z`, #431); wrapping key `secrets/signing-wrap-keys.json` (10101, 0400) | main `afc3c1da` |
-| Monitor | `insignia-heartbeat` and `insignia-heartbeat-snapshot`, `insignia/heartbeat:c54c7820` = `sha256:78d0a8da…`; state in `/srv/data/saas/insignia/monitor` | main `c54c7820` |
-| Host inspector | `/srv/data/saas/insignia/artwork-inspector/releases/19c6dc6629000cfbf6069610e3c791c905c82dd8/` (deploy AD: sharp 0.35.5 / librsvg 2.63.2, GHSA-wq5f-xc86-pv6w), env `/srv/data/saas/insignia/artwork-inspector/inspection.env` (deploy V: bundled read-only fonts for SVG text; moved in deploy AC; its unit keeps the 16 Nov host edits, reapplied with the data-volume paths by `canonical-deploy-AC/host-unit-AC.py`; prior `96726b31…` kept for rollback) | main `9b677033` (#575) |
+| Shopify Active version | `1267604848641`, profile `native-dependency-refresh-4991bcf9`. The inventory has 58 versions and the active version has 15 modules, with hash `01e99119358c…`. Required scopes are `read_markets,read_orders,read_publications,write_app_proxy,write_cart_transforms,write_products,write_validations`. `read_product_listings` is optional. Earlier `read_all_orders` grants may remain on old installations. Version `1248762724353` must never be released. | theme and Functions `4991bcf9`, binding `1fe7377d` (#672) |
+| Functions | Cart transform WASM `98f240a8…`, module `30886b08…`, query `02ab5bce…`. Cart validation WASM `9eaf1dcb…`, module `69b6edb6…`, query `5867e61f…`. Both use their existing registration and API version 2026-07. | `4991bcf9` |
+| Web | `insignia/web:1fe7377d` = `sha256:18d07113…`. EUR v2 binds `1267604848641` and the Function source `4991bcf9`. | main tree at `1fe7377d` |
+| Worker | `insignia/worker:1fe7377d` = `sha256:e3feb8a9…`. Automatic shop erasure is enabled. | main tree at `1fe7377d` |
+| Verifier | `insignia/verifier:1fe7377d` = `sha256:1b5d80e3…`. Code manifest `c65b7e8b…`, 13 s reuse lead. | main tree at `1fe7377d` |
+| Signer | `insignia/signer:1fe7377d` = `sha256:e3feb8a9…`. The wrapping key is mounted from `secrets/signing-wrap-keys.json` with uid 10101 and mode 0400. | qualified worker image for main tree at `1fe7377d` |
+| Monitor | `insignia-heartbeat` and `insignia-heartbeat-snapshot` use `insignia/heartbeat:1fe7377d` = `sha256:a3a5c217…`. State is in `/srv/data/saas/insignia/monitor`. | main tree at `1fe7377d` |
+| Host inspector | `/srv/data/saas/insignia/artwork-inspector/releases/40c1dce4122e01f2f63f51dc60d621962fe0514e/`, manifest `e0c0e8d0…`, Node 24.22.3. Its startup file is `/srv/data/saas/insignia/artwork-inspector/inspection.env`. The AD package and prior unit are available for rollback. | main `4991bcf9`, runtime run `45808231334` |
 | Database | PostgreSQL 18.6, schema 74 (migration 74 preserves separate release evidence custody during verified erasure. Migration 73 adds guarded shop erasure. Migration 72: a recorded order keeps its artwork and design six calendar months from collection; accepted quotes 72 h grace; migration 71: deactivation destroys the generation's signing keys), container `insignia-database` (10.0.7.250, aliases `database` and `insignia-rewrite-m5-019-database`, which the verifier requires), data in `/srv/data/saas/insignia/postgres` on the LUKS2 volume; fresh since 16 Nov `16:56Z` (no stores); ACL digests as before the cutover (roles and grants replayed from the dev database); `log_connections`/`log_disconnections` on | 74 repository migrations |
 
 **App Store submission (18 Nov 2026, evening UTC):** Insignia was submitted for App Store review after the owner's approval. Status: Submitted, reviewer being assigned; review emails go to admin@optidigi.nl. Listing English (Dutch later); category Selling products › Custom products › Custom file upload; capabilities embedded + online store; protected customer data 16/16 answered; automated, embedded and Online Store checks passed. The app-level event handle `customized_order_paid` (left over from the old hybrid pricing; no plan uses it) carries the display name "Customized order" because the dashboard cannot delete it. After approval the listing is reachable by direct URL only until "Make fully visible" is chosen. Owner items before the first real merchant: encrypted backups of `/srv/data/saas/insignia` and the stack, secret rotation. Demo video served by the site Worker with byte ranges at https://insigniacustomizer.com/demo.mp4.
@@ -237,8 +243,8 @@ publication.
 
 Shopify's private testing instructions were saved and read back with the prepared fixture, access
 details, expected total and both Standard billing periods. A fresh signed-out browser passed the
-storefront password page and opened the Designer with config HTTP 200. Shopify remains paused.
-Independent reviewer-admin access and shop erasure still need qualification.
+storefront password page and opened the Designer with config HTTP 200. Shopify remained paused on
+23 November. Independent reviewer-admin access and shop erasure qualification were pending at that time.
 
 **Shopify Admin API allowlist:** Shopify's security settings showed enforcement disabled. Prod
 web, worker and verifier all egress through the same static IPv4 address. A dashboard test of
@@ -257,7 +263,27 @@ Shopify CLI started the preview with existing app URLs. In the disposable store,
 uploaded a synthetic PNG to the declared R2 origin with HTTP 200 and decoded its private preview.
 The same-origin proxy returned 202 for upload completion and 200 for preview. No undeclared-source
 warning appeared in the captured diagnostics. The dev preview was cleaned from that store.
-Version `1263405170689` is active with the tested declaration.
+Shopify activated version `1263405170689` with the tested declaration on 23 November.
+
+**Deploy AW (26 Nov).** Shopify staged candidate `1267604848641` at about `11:22Z`.
+Source `4991bcf9` supplied 17 theme assets and both rebuilt Functions. Foundation run `45805199245`
+qualified the same tree. A local rebuild and the live Shopify CDN matched the artifact bytes. Shopify preserved
+the Function registration identities, queries, scopes, and API version. Binding #672 merged as `1fe7377d`.
+Runtime run `45810224212`, attempt 1, qualified the matching tree.
+
+The DB-only checkpoint restored under isolated PostgreSQL 18.6. It verified schema 74, protected purchase
+facts, and Function privileges. The rollout replaced signer, verifier, web, worker, and both monitor containers
+between `11:42:17Z` and `11:42:43Z`. The release command was sent at `11:43:35Z`. Shopify readback at
+`11:43:43.675Z` confirmed AW as the sole active version in the inventory of 58. Web and the quiesced worker
+role read the same fresh release record
+at `11:44:21Z`. Quotes failed closed for about 23 minutes between candidate creation and fresh admission.
+The artwork inspector passed the host sandbox check and readiness on the new package.
+
+The Netherlands test fixture passed SVG upload, a EUR 25.00 unit quote, a two-item signed cart, and a EUR 50.00
+checkout subtotal on AW. The checkout was left unpaid and the cart was emptied. The web-only promotion restored
+EUR v2 at `11:53:58Z` with evidence `aw-eur-nl-bridge-20261126`. The final readback matched the database ledger,
+privileges, purchase facts, and router rules. The temporary encrypted checkpoints were disposed after readback.
+The production receipts are in `/srv/data/saas/insignia/releases/dependency-refresh-4991bcf9`.
 
 **Deploy AV** (25 Nov): main `8e69c5ef` (#654, #658, #659, #660) was staged as Shopify version
 `1266368151553` (`native-designer-intent-8e69c5ef`) at `15:04:56Z`. In the theme extension only

@@ -100,7 +100,7 @@ publish (#650 fixed early timers that could skip it, also on the buyer path); #6
 failure kind in buyer logs, GraphQL INTERNAL_SERVER_ERROR as BUSY, theme translations escaped once;
 #645, #646, #648, #649 and #652 bindings and records.
 
-**Final version `1265289363457` (25 Nov).** On reviewer fixture product `10645326954779` the storefront
+**Version `1265289363457` on 25 November.** On reviewer fixture product `10645326954779` the storefront
 loaded assets from `…/native-escape-once-bcb6cd16/`. Tab skipped the off-screen sticky **Customise**
 and reached it when visible; Enter opened the Designer and Escape closed it with focus restored.
 Review showed $15.00 per item and $30.00 total (proposal 200). The cart held one signed
@@ -143,13 +143,26 @@ unverified.
 Production first publish took 25–38 s before #641; republish 9.3–10.1 s after. Production logs only
 reach back to container restarts, so a 48 h latency baseline needs persisted logs.
 
+### Deploy AW validation
+
+Shopify version `1267604848641` became active on 26 November. Deploy AW includes cart repair, storefront
+polish, publish recovery, and the one-time dependency update. The app still uses Shopify API 2026-07.
+Dependabot configuration is removed. pnpm stays at 12.16.1 for offline packaging, TypeScript stays on
+6.0.3 for the compiler API, and pg-boss stays on queue schema 43 pending issue #670.
+
+All 17 live Shopify CDN assets matched the qualified build. Web and the worker role read the same fresh
+release evidence. A Netherlands test fixture passed artwork upload, a signed EUR cart, and checkout with
+a EUR 50.00 subtotal. EUR v2 now binds the exact active Shopify version and Function source. Both fresh
+USD and EUR rounds and the quiet-host Lighthouse runs are in progress. See [deploy AW](state.md#deployed-identities)
+for the runtime identities and release receipts.
+
 ## Other review items
 
 | Requirement | Verified and remaining evidence |
 | --- | --- |
 | 1.2.3 Plan changes | **Settings → Billing → Manage plan** opens Shopify's selector for Standard at $49.99 every 30 days or $449.99 per year with identical features. Both no-charge switches passed on 23 November. On 24 November, Shopify admin **Settings → Apps → Insignia** showed **Insignia Standard · $0/month** on rewrite-dev. The owner confirmed there is no eligible billed installation for paid invoice evidence. Shopify's acceptance of switching billing periods under this requirement is open. |
 | 3.2.1 Older order scope | The active scope baseline excludes `read_all_orders`. The 19 November fresh installation verified the required grant and recent orders. The old EUR review installation may still show a historical grant. |
-| 2.1.1 Customized product | Fixed and released; the final version `1265289363457` passed the reviewer fixture through Bogus order #1015 and the Canada explanation on 25 November (above). |
+| 2.1.1 Customized product | Version `1265289363457` passed the reviewer fixture through Bogus order #1015 and the Canada explanation on 25 November. The AW validation is tracked above. |
 | 4.5.4 and 4.5.5 Access | On 24 November the listing form showed the app-account exemption selected. The saved private instructions direct reviewers through Shopify admin and give the test storefront, access instructions, expected cart total and both prices. The storefront path passed earlier in a signed-out session. Access to the merchant admin using the reviewer's own Shopify account remains unverified. |
 
 ## Release record
