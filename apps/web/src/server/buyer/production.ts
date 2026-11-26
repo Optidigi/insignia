@@ -5,7 +5,6 @@ import {
   type EntitlementPolicyConfig,
   type FunctionArtifactReadinessPorts,
   type KeyScope,
-  localDay,
   type QuoteAuthorityPorts,
   type QuoteRenewalStore,
 } from '@insignia/application';
@@ -23,7 +22,6 @@ import {
   createShopifyAdminGraphqlReadTransport,
   readVariantAvailability as readAvailability,
   readPrimaryMarketContext,
-  readShopContext,
   resolveRuntimeReleaseProfile,
   resolveVariantContext,
 } from '@insignia/shopify';

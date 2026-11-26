@@ -38,7 +38,7 @@ import {
   IconShoppingCart,
   IconX,
 } from './legacy-icons';
-import type { Artwork, ColorId, Design, Position, PositionId, Print, Quantities, View } from './model';
+import type { Artwork, ColorId, Design, Position, PositionId, Print, View } from './model';
 import { createProductModel, isValidQuantity } from './model';
 import { resolveOptionPresentation } from './option-presentation';
 import {
@@ -960,9 +960,6 @@ function DesignerSession({
   }
   function undoPosition(id: PositionId) {
     dispatch({ type: 'position-undone', positionId: id });
-  }
-  function clearPositionUndo(id: PositionId) {
-    dispatch({ type: 'position-undo-cleared', positionId: id });
   }
   function inlineConstraints(position: Position, art: Artwork) {
     const constraints = positionImageConstraints(position);
