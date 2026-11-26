@@ -9,7 +9,7 @@ for the findings, the 24–25 November hardening evidence and the remaining revi
 evidence below. Insignia runs only on `app.insigniacustomizer.com` on host alias `prod`: one Compose project `insignia` from `/srv/saas/infra/stacks/insignia` (installed from [deployment/production/compose.yaml](../../deployment/production/compose.yaml)), data on the encrypted volume `/srv/data/saas/insignia`. The current release is deploy AW on schema 74. See [Deployed identities](#deployed-identities) for exact versions. Since the production cutover (16 Nov, fresh database) only the owner's dev and review stores are installed in production; no real merchant yet. The first real merchants are the Stitchs/Superfunny pilot, after the owner's backup and secret-rotation items. **A separate agent tests the storefront and merchant UI on rewrite-dev; its new issues wait for the owner's review before engineering picks them up.** Open engineering issues: #637, #656 (deploy AW includes the fixes for #643, #651/#654 and #653); deferred work: [backlog](../backlog/README.md). The [operating model](operating-model.md) owns permissions; the [specification](../architecture/implementation-plan.md) owns requirements.
 
 **Hardening pass, 24–25 November 2026: done.** Deploys AS, AT and AU released its code
-(records below; PR list in the checklist). On the final version `1265289363457` the reviewer fixture passed keyboard
+(records below; PR list in the checklist). On 25 November, version `1265289363457` passed reviewer fixture keyboard
 navigation, a $30.00 Designer/cart/checkout total and Bogus test order #1015, read back paid in
 Insignia. Fresh USD and EUR setup-to-order runs, the Market switch, recovery cases R1–R7 and a
 Lighthouse baseline passed or are recorded with their limits in the
@@ -243,8 +243,8 @@ publication.
 
 Shopify's private testing instructions were saved and read back with the prepared fixture, access
 details, expected total and both Standard billing periods. A fresh signed-out browser passed the
-storefront password page and opened the Designer with config HTTP 200. Shopify remains paused.
-Independent reviewer-admin access and shop erasure still need qualification.
+storefront password page and opened the Designer with config HTTP 200. Shopify remained paused on
+23 November. Independent reviewer-admin access and shop erasure qualification were pending at that time.
 
 **Shopify Admin API allowlist:** Shopify's security settings showed enforcement disabled. Prod
 web, worker and verifier all egress through the same static IPv4 address. A dashboard test of
@@ -263,7 +263,7 @@ Shopify CLI started the preview with existing app URLs. In the disposable store,
 uploaded a synthetic PNG to the declared R2 origin with HTTP 200 and decoded its private preview.
 The same-origin proxy returned 202 for upload completion and 200 for preview. No undeclared-source
 warning appeared in the captured diagnostics. The dev preview was cleaned from that store.
-Version `1263405170689` is active with the tested declaration.
+Shopify activated version `1263405170689` with the tested declaration on 23 November.
 
 **Deploy AW (26 Nov).** Shopify staged candidate `1267604848641` at about `11:22Z`.
 Source `4991bcf9` supplied 17 theme assets and both rebuilt Functions. Foundation run `45805199245`
@@ -273,8 +273,9 @@ Runtime run `45810224212`, attempt 1, qualified the matching tree.
 
 The DB-only checkpoint restored under isolated PostgreSQL 18.6. It verified schema 74, protected purchase
 facts, and Function privileges. The rollout replaced signer, verifier, web, worker, and both monitor containers
-between `11:42:17Z` and `11:42:43Z`. Shopify activated AW at `11:43:35Z`. Live readback confirmed one active
-version in the complete inventory of 58. Web and the quiesced worker role read the same fresh release record
+between `11:42:17Z` and `11:42:43Z`. The release command was sent at `11:43:35Z`. Shopify readback at
+`11:43:43.675Z` confirmed AW as the sole active version in the inventory of 58. Web and the quiesced worker
+role read the same fresh release record
 at `11:44:21Z`. Quotes failed closed for about 23 minutes between candidate creation and fresh admission.
 The artwork inspector passed the host sandbox check and readiness on the new package.
 

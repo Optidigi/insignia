@@ -100,7 +100,7 @@ publish (#650 fixed early timers that could skip it, also on the buyer path); #6
 failure kind in buyer logs, GraphQL INTERNAL_SERVER_ERROR as BUSY, theme translations escaped once;
 #645, #646, #648, #649 and #652 bindings and records.
 
-**Final version `1265289363457` (25 Nov).** On reviewer fixture product `10645326954779` the storefront
+**Version `1265289363457` on 25 November.** On reviewer fixture product `10645326954779` the storefront
 loaded assets from `…/native-escape-once-bcb6cd16/`. Tab skipped the off-screen sticky **Customise**
 and reached it when visible; Enter opened the Designer and Escape closed it with focus restored.
 Review showed $15.00 per item and $30.00 total (proposal 200). The cart held one signed
@@ -162,7 +162,7 @@ for the runtime identities and release receipts.
 | --- | --- |
 | 1.2.3 Plan changes | **Settings → Billing → Manage plan** opens Shopify's selector for Standard at $49.99 every 30 days or $449.99 per year with identical features. Both no-charge switches passed on 23 November. On 24 November, Shopify admin **Settings → Apps → Insignia** showed **Insignia Standard · $0/month** on rewrite-dev. The owner confirmed there is no eligible billed installation for paid invoice evidence. Shopify's acceptance of switching billing periods under this requirement is open. |
 | 3.2.1 Older order scope | The active scope baseline excludes `read_all_orders`. The 19 November fresh installation verified the required grant and recent orders. The old EUR review installation may still show a historical grant. |
-| 2.1.1 Customized product | Fixed and released; the final version `1265289363457` passed the reviewer fixture through Bogus order #1015 and the Canada explanation on 25 November (above). |
+| 2.1.1 Customized product | Version `1265289363457` passed the reviewer fixture through Bogus order #1015 and the Canada explanation on 25 November. The AW validation is tracked above. |
 | 4.5.4 and 4.5.5 Access | On 24 November the listing form showed the app-account exemption selected. The saved private instructions direct reviewers through Shopify admin and give the test storefront, access instructions, expected cart total and both prices. The storefront path passed earlier in a signed-out session. Access to the merchant admin using the reviewer's own Shopify account remains unverified. |
 
 ## Release record
