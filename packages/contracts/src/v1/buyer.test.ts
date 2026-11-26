@@ -89,6 +89,11 @@ describe('whole-cart capacity of one signed set (#335)', () => {
     expect(violation({ ...desired([group(variants(33))]), country: 'us' })).toBeUndefined();
     expect(violation({ ...desired([group(variants(2, 6000))]), marketId: 'x' })).toBeUndefined();
     expect(violation(desired([group([{ variantId: '', quantity: 1 }])]))).toBeUndefined();
+    const defective = { variantId: '', quantity: 1 };
+    expect(violation(desired([group([...variants(32), defective])]))).toBeUndefined();
+    expect(
+      violation(desired([...Array.from({ length: 32 }, () => group(variants(1))), group([defective])])),
+    ).toBeUndefined();
   });
 });
 

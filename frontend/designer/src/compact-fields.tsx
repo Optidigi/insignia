@@ -9,7 +9,7 @@ interface FloatingSearchProps {
   value: string;
   onChange: (value: string) => void;
   controls?: string;
-  inputRef?: RefObject<HTMLInputElement>;
+  inputRef?: RefObject<HTMLInputElement | null>;
 }
 
 export function FloatingSearch({

@@ -71,7 +71,7 @@ jobs:
         run: npx --yes @shopify/cli@5.1.0 theme check --path extensions/insignia-theme --config theme-check:theme-app-extension --fail-level suggestion
       - name: Qualify Ajax carriers against actual production Functions
         if: steps.changes.outputs.route == 'full'
-        run: INSIGNIA_FUNCTION_RUNNER="$PWD/.m1-artifacts/tools/function-runner-9.2.2" node --test apps/storefront/test/cart-function-contract.test.mts
+        run: INSIGNIA_FUNCTION_RUNNER="$PWD/.m1-artifacts/tools/function-runner-9.2.3" node --test apps/storefront/test/cart-function-contract.test.mts
       - name: Publication geometry stress (100 cases, no retries)
         if: steps.changes.outputs.route == 'full'
         run: corepack pnpm test:publication-stress && corepack pnpm test:renderer-control

@@ -38,8 +38,9 @@ cpSync(join(root, 'packages/database/migrations'), join(destination, 'migrations
 });
 // The flattened Astro adapter imports this dependency from the runtime root.
 // Reuse the production SDK already installed for @insignia/shopify.
-const sdk = join(store, '@shopify+shopify-api@15.0.0/node_modules/@shopify/shopify-api');
-if (object(JSON.parse(readFileSync(join(sdk, 'package.json'), 'utf8'))).version !== '15.0.0')
+const productionSdkVersion = '15.1.2';
+const sdk = join(store, `@shopify+shopify-api@${productionSdkVersion}/node_modules/@shopify/shopify-api`);
+if (object(JSON.parse(readFileSync(join(sdk, 'package.json'), 'utf8'))).version !== productionSdkVersion)
   throw new Error('Pinned production SDK required');
 const scope = join(destination, 'node_modules/@shopify');
 mkdirSync(scope, { recursive: true });
@@ -57,7 +58,7 @@ function lstatIfPresent(path: string) {
 // resolve at the flattened Astro runtime root, including lazy API chunks.
 for (const [name, version] of [
   ['aws4fetch', '1.0.20'],
-  ['pg-boss', '12.35.0'],
+  ['pg-boss', '12.35.1'],
 ]) {
   const packageRoot = realpathSync(join(destination, 'node_modules', required(name)));
   if (relative(destination, packageRoot).startsWith('..')) throw new Error('Runtime dependency escaped destination');
@@ -75,4 +76,4 @@ function validate(directory: string) {
   }
 }
 validate(destination);
-console.log(JSON.stringify({ runtime: 'web', productionSdkVersion: '15.0.0', newBuild: false, providerRequests: 0 }));
+console.log(JSON.stringify({ runtime: 'web', productionSdkVersion, newBuild: false, providerRequests: 0 }));

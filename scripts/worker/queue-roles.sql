@@ -1,4 +1,4 @@
--- Separate owner operation AFTER install-queue.mjs. pg-boss12.35.0 / schema43 only.
+-- Separate owner operation AFTER install-queue.mjs. pg-boss 12.35.1 / schema 43 only.
 -- No passwords, login provisioning, application-table grants, upgrades or destructive down.
 BEGIN;
 DO $$ BEGIN

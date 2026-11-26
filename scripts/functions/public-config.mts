@@ -83,7 +83,7 @@ export function publicConfigReplay(runner: string) {
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const result = publicConfigReplay(
-    resolve(ROOT, process.env.INSIGNIA_FUNCTION_RUNNER ?? '.m1-artifacts/tools/function-runner-9.2.2'),
+    resolve(ROOT, process.env.INSIGNIA_FUNCTION_RUNNER ?? '.m1-artifacts/tools/function-runner-9.2.3'),
   );
   mkdirSync(join(ROOT, '.m1-artifacts'), { recursive: true });
   writeFileSync(join(ROOT, '.m1-artifacts/m4-003-public-config-replay.json'), `${JSON.stringify(result, null, 2)}\n`);

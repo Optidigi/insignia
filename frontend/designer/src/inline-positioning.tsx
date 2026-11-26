@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "preact/hooks";
 import type {
-  JSX,
+  CSSProperties,
   TargetedKeyboardEvent as ReactKeyboardEvent,
   TargetedPointerEvent as ReactPointerEvent,
 } from "preact";
@@ -401,7 +401,7 @@ export function InlineArtwork({
     nudge(move[0] * multiplier, move[1] * multiplier, move[2]);
   }
 
-  const areaStyle: JSX.CSSProperties | undefined =
+  const areaStyle: CSSProperties | undefined =
     selected && area && imageContent && !constraintMessage
       ? {
           left: `${(0.5 - imageContent.width / 2 + ((area.x - area.width / 2) / 100) * imageContent.width) * 100}%`,
@@ -410,7 +410,7 @@ export function InlineArtwork({
           height: `${area.height * imageContent.height}%`,
         }
       : undefined;
-  const artworkStyle: JSX.CSSProperties | undefined =
+  const artworkStyle: CSSProperties | undefined =
     footprint && imageContent
       ? {
           left: `${(0.5 - imageContent.width / 2 + ((renderCenter.x - footprint.width / 2) / 100) * imageContent.width + (footprint.width * imageContent.width) / 200) * 100}%`,

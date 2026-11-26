@@ -20,7 +20,7 @@ import { decodeLineCarrierV3, type HeaderV3, LINE_ATTRIBUTE, PREFIX_V3_CHARS } f
 import {
   type BuyerDesired,
   type BuyerDesiredGroup,
-  BuyerDesiredSchema,
+  BuyerDesiredGroupsSchema,
   type BuyerDraftGroup,
   BuyerDraftGroupSchema,
   PublishedConfigSchema,
@@ -791,7 +791,7 @@ export function createBuyerServices(input: {
     async renew(scope: BuyerScope, id: string, body: BuyerDesired & { idempotencyKey: string }) {
       const owned = await store.getOwnedRequest(scope, { quoteId: id, ownerBinding: binding(scope), now: clock() });
       if (!owned) return review();
-      const parsed = BuyerDesiredSchema.shape.groups.safeParse(desired(owned.request as QuoteRequest));
+      const parsed = BuyerDesiredGroupsSchema.safeParse(desired(owned.request as QuoteRequest));
       if (!parsed.success) return review();
       const groups = parsed.data;
       const ports = checkedPorts(scope, groups),
@@ -915,7 +915,7 @@ export function createBuyerServices(input: {
         if (variant) variant.quantity += line.quantity;
         else group.variants.push({ variantId: line.variantId, quantity: line.quantity });
       }
-      const result = BuyerDesiredSchema.shape.groups.parse([...groups.values()]);
+      const result = BuyerDesiredGroupsSchema.parse([...groups.values()]);
       const labels: Record<string, string> = {};
       for (const group of result) {
         const presentation = await revisions.getRevisionPresentation(scope.shopId, group.configRevisionId);
