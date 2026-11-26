@@ -207,10 +207,22 @@ EUR round 2 uses `2026-11-26-aw-r2-eur.0vRXfN`.
 
 **AW storefront performance.** The idle USD and EUR product pages requested the same three AW
 JavaScript files. They total 37,048 decoded bytes and 11,356 bytes when gzipped per file, below the
-15,360-byte budget. All 17 CDN assets matched the build. No new Lighthouse series qualified.
-The isolated USD profile reached the product, but the shared host did not meet the quiet-load threshold.
-The EUR storefront opened from Shopify Admin. Its isolated Lighthouse profile still needs store access.
-The retained Lighthouse scores are the 25 November baseline.
+15,360-byte budget. All 17 CDN assets matched the build.
+
+The USD fixture completed three mobile Lighthouse pairs. The control blocked the exact AW asset
+prefix. The theme and the app's inline Liquid markup still rendered.
+
+| USD Lighthouse medians | Score out of 100 | LCP | TBT | CLS |
+| --- | ---: | ---: | ---: | ---: |
+| AW assets loaded | 62 | 5,508 ms | 642 ms | 0 |
+| AW assets blocked | 66 | 5,223 ms | 611 ms | 0 |
+| Loaded minus blocked | −4 points | +285 ms | +31 ms | 0 |
+
+LCP was higher with AW assets loaded in all three pairs. Score and TBT moved in both directions.
+The samples in the first pair started 5 minutes 9 seconds apart because of the quiet-host wait.
+The highest recorded one-minute load during the accepted samples was 3.45. Lighthouse recorded no
+slow-load warnings. The receipts are in `~/tmp-insignia/release-AW/perf/runs/aw-4CkaaE/` and
+`aw-X99Ox7/`. An isolated EUR Lighthouse series still needs storefront access.
 
 ## Other review items
 
