@@ -25,8 +25,9 @@ for purchase and recovery evidence, the performance measurements, and the covera
 
 **Next for the owner.** Review the candidate locally after engineering qualification, then resubmit
 in the Partner Dashboard once the release and reviewer access are verified. Engineering is qualifying
-#637, #656 and #670 before resubmission. Any change to publish hold safety or a production queue
-migration still needs its own owner decision. Backups, secret rotation and the shop-erasure purge
+#637 and #670 before resubmission. The [#656 benchmark](../backlog/README.md#after-the-hardening-pass-25-nov-2026)
+supports keeping the existing publish hold checks. Changes to those checks and a production queue
+migration each need an owner decision. Backups, secret rotation and the shop-erasure purge
 still come before the first real merchant. The mid-step release
 lapse (a publish step starting on a 25–30 s-old record) is decided (owner approval 25 Nov), fixed in
 PR #658 and first deployed in AV. The release verifier uses a 13 s reuse lead.

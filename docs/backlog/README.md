@@ -70,8 +70,12 @@ refused mid-step; #641 and #650 narrowed the window. PR #658 closes it: a step r
 stays fresh for another 7 s (its measured write budget), otherwise it joins or runs a collection first.
 
 **Deferred.**
-- Relax the publish hold-safety steps to reach ≤10 s first publish (options A/B in #632's analysis); owner
-  decision 3 defers this until after approval. First publish took 25–38 s in production before #641.
+- [#656](https://github.com/Optidigi/insignia/issues/656) targets first-publish p95 of 10 s or less. The
+  isolated four-channel fixture took 69 serial Shopify rounds at 350 ms per round. The 14 availability
+  observations alone took 42 rounds (14.7 s). A trial that overlapped the hold and field reads saved five
+  rounds but allowed a policy write after the pending registration disappeared. The trial was reverted
+  and the registration-drift regression was retained. Owner decision 3 keeps the current hold checks
+  through approval. Production p95 remains unverified.
 - The guest artwork upload shop-lock wait is unbounded (other buyer waits are bounded at 2 s by #639).
 - Catalog-transport network failures are not typed yet: they return 503 instead of BUSY.
 - A persistent Shopify INTERNAL_SERVER_ERROR now shows as BUSY (warn) rather than unavailable (error) since #647.
