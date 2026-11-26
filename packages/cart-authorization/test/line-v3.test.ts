@@ -168,6 +168,26 @@ test('issuer signs domain-separated header bytes once and refuses incomplete or 
   assert.equal(messages.length, 1, 'no rejected set reached the signer');
 });
 
+test('issuance carries the same records that were committed before requesting a signature', async () => {
+  const entry = must(vector.cases.find(({ records }) => records.length === 5));
+  const records = entry.records.map((record) => ({ ...record }));
+  const issued = await issueLineSetV3(entry.header, records, entry.header.validThroughDay - 2, {
+    async signWholeQuote() {
+      must(records[0]).unitMinor = '999';
+      records.pop();
+      return {
+        keyId: entry.header.keyId,
+        publicKeyFingerprint: 'synthetic',
+        firstValidDay: entry.header.validThroughDay - 2,
+        lastValidDay: entry.header.validThroughDay,
+        signature: Buffer.from(entry.signatureHex, 'hex'),
+      };
+    },
+  });
+  assert.deepEqual(issued.carriers, entry.carriers);
+  assert.deepEqual(verifyLineSetV3(issued.carriers, publicKey).records, entry.records);
+});
+
 test('v3 issuance refuses quantity-dependent economics', () => {
   const group = { setupMinor: '0', setupComponents: [], unitComponents: [{ selectedMinQuantity: null }] };
   const line = (index: number, extra: Record<string, unknown> = {}) => ({
