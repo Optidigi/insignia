@@ -18,7 +18,7 @@ Lighthouse baseline passed or are recorded with their limits in the
 
 **Deploy AW, 26 November.** Deploy AW includes the cart repair (#663), storefront polish (#664),
 tooling and dependency refresh (#666, #667, #669 and #671), and the accepted publish deadline (#668).
-Shopify is active on AW. USD is available in its primary Market. EUR uses release-level v2 qualification
+Shopify activated AW. USD was available in its primary Market. EUR used release-level v2 qualification
 after a native Netherlands checkout on the new Functions. Two native USD and EUR rounds used that same
 release and recorded seven paid Bogus orders. See the [current review validation](shopify-review-resubmission.md#deploy-aw-validation)
 for purchase and recovery evidence, the performance measurements, and the coverage gaps.
