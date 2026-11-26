@@ -172,11 +172,19 @@ function workflowSafety(source: string, job: 'foundation' | 'durable-core' | 'ru
   assert.match(classifier, /CI_BASE_SHA:.*github\.event\.pull_request\.base\.sha/);
   assert.match(classifier, /CI_HEAD_SHA:.*github\.event\.pull_request\.head\.sha/);
   assert.doesNotMatch(classifier, /^ {8}if:/m);
-  for (const step of steps.slice(3))
+  for (const step of steps.slice(3)) {
+    if (job === 'runtime' && /uses: actions\/upload-artifact@/.test(step)) {
+      assert.match(
+        step,
+        /^ {8}if: (?:steps\.changes\.outputs\.route == 'full' && env\.KEEP_RUNTIME_ARCHIVES == '(?:true|false)'|\$\{\{ always\(\) && steps\.changes\.outputs\.route == 'full' \}\})$/m,
+      );
+      continue;
+    }
     assert.match(
       step,
       /^ {8}if: (?:steps\.changes\.outputs\.route == 'full'|\$\{\{ always\(\) && steps\.changes\.outputs\.route == 'full' \}\})$/m,
     );
+  }
   if (job === 'foundation') assert.match(source, /run: corepack pnpm check\n/);
   else {
     assert.match(
@@ -240,12 +248,21 @@ test('foundation includes frontend and workspace inputs and executes the fronten
   const workflow = readFileSync(join(root, '.github/workflows/foundation.yml'), 'utf8');
   for (const path of ['frontend/**', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.node-version'])
     assert.ok(workflow.includes(`      - '${path}'`), `Missing push trigger: ${path}`);
-  assert.match(workflow, /--filter @insignia\/designer exec playwright install --with-deps chromium/);
+  assert.deepEqual(
+    workflow.match(/^\s+corepack pnpm .*playwright install.*$/gm)?.map((line) => line.trim()),
+    ['corepack pnpm --filter @insignia/designer exec playwright install --with-deps chromium firefox'],
+  );
   assert.match(workflow, /theme check --path extensions\/insignia-theme --config theme-check:theme-app-extension/);
   const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-  assert.ok(manifest.scripts.check.includes('corepack pnpm check:ui'));
+  assert.equal(manifest.scripts.check, 'bash scripts/ci/check-workspace.sh');
+  const workspaceChecks = readFileSync(join(root, 'scripts/ci/check-workspace.sh'), 'utf8');
+  assert.match(workspaceChecks, /for check in [^\n]*\bcheck:ui\b/);
   assert.ok(manifest.scripts['check:ui'].includes("--filter './frontend/**' test"));
   const designer = JSON.parse(readFileSync(join(root, 'frontend/designer/package.json'), 'utf8'));
+  for (const app of ['apps/web', 'apps/storefront']) {
+    const appManifest = JSON.parse(readFileSync(join(root, app, 'package.json'), 'utf8'));
+    assert.equal(appManifest.devDependencies.playwright, designer.devDependencies.playwright);
+  }
   assert.ok(designer.scripts.build.includes('build:library'));
   assert.ok(designer.scripts.test.includes('scripts/*-check.mts'));
   assert.ok(

@@ -162,7 +162,7 @@ After the worker change, a failed `orders/create`, `orders/paid`, `orders/update
 **Theme or other app-version change.** Do the server steps first under the current profile. Then:
 1. Create the candidate once from the frozen staging of the current profile. Replace only the changed files: theme assets come from the foundation CI build of the source, byte-identical to a local build. Functions stay byte-identical unless the owner authorizes a Function change.
 2. Read the candidate back: inactive, inventory and module baseline as expected.
-3. Bind it in a PR. Include the release-binding JSON, module baseline, verifier profile, Shopify runtime profile, release verification protocol target and worker purchase admission target. On the binding tree, run the native purchase qualification tests to check that the runtime can resolve the version and send an exact release verification request.
+3. Bind it in a PR from a `release/` branch in this repository so Runtime retains the qualified archives. Include the release-binding JSON, module baseline, verifier profile, Shopify runtime profile, release verification protocol target and worker purchase admission target. On the binding tree, run the native purchase qualification tests to check that the runtime can resolve the version and send an exact release verification request.
 4. Phase B: replace verifier, web and worker with binding-head images and the new profile.
 5. Run exactly one `app release`. Read back: sole Active is the candidate, inventory equals the binding, NEVER_RELEASE versions inactive, Active modules equal the baseline.
 6. Obtain fresh admission: web and quiesced worker reads match one new release record.
