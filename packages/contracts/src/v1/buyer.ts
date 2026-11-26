@@ -9,14 +9,17 @@ export const BuyerCapabilitySchema = z
   .string()
   .max(2048)
   .regex(/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/);
-export const BuyerDesiredGroupSchema = CustomizationGroupSchema.omit({ shopId: true, version: true }).extend({
+const DesiredGroupSchema = CustomizationGroupSchema.omit({ shopId: true, version: true }).extend({
   productId: z.string().regex(/^[1-9][0-9]{0,19}$/),
   design: CustomizationGroupSchema.shape.design.extend({
     placements: CustomizationGroupSchema.shape.design.shape.placements.max(32),
     options: CustomizationGroupSchema.shape.design.shape.options.max(32),
   }),
-  variants: CustomizationGroupSchema.shape.variants.max(32),
 });
+export const BuyerDesiredGroupSchema = DesiredGroupSchema.extend({
+  variants: DesiredGroupSchema.shape.variants.max(32),
+});
+export const BuyerDesiredGroupsSchema = z.array(BuyerDesiredGroupSchema).min(1).max(32);
 /**
  * A saved draft (`PUT designs/:id`) may have no sizes or colours yet: artwork and placement chosen before
  * Quantities survive a reload (#366). Quotes, acceptance and renewal keep requiring at least one variant.
@@ -47,21 +50,7 @@ export function buyerCartCapacityExceeded(
 }
 const CART_CAPACITY_ISSUE = 'BUYER_CART_CAPACITY_EXCEEDED';
 type Issue = { code: string; path?: readonly PropertyKey[]; params?: unknown };
-/**
- * Zod rejects an array over its `.max()` before parsing its elements, and that rejection aborts, so the
- * whole-cart refinement never runs for it. Over 32 groups (each holds at least one variant) or over 32
- * variants in one group is already more than one signed set can carry.
- */
-function signedSetBound(issue: Issue): boolean {
-  const path = issue.path ?? [];
-  return (
-    issue.code === 'too_big' &&
-    ((path.length === 1 && path[0] === 'groups') ||
-      (path.length === 3 && path[0] === 'groups' && typeof path[1] === 'number' && path[2] === 'variants'))
-  );
-}
 function capacityKind(issue: Issue): BuyerCartCapacityExceeded | undefined {
-  if (signedSetBound(issue)) return 'SIGNED_SET';
   if (issue.code !== 'custom' || typeof issue.params !== 'object' || issue.params === null) return undefined;
   const params = issue.params as { reason?: unknown; kind?: unknown };
   return params.reason === CART_CAPACITY_ISSUE && (params.kind === 'SIGNED_SET' || params.kind === 'CART_LINES')
@@ -86,12 +75,13 @@ export function buyerCartCapacityViolation(issues: readonly Issue[]): BuyerCartC
     return undefined;
   return kinds.includes('SIGNED_SET') ? 'SIGNED_SET' : 'CART_LINES';
 }
-// Runs after the continuable bounds too; an over-long `groups` or `variants` array aborts first and is itself the issue.
+// The buyer HTTP body limit bounds this parse. Apply signed-set capacity after validating elements:
+// Zod's array .max() would skip element validation for an oversized cart and hide malformed input.
 export const BuyerDesiredSchema = z
   .strictObject({
     country: z.string().regex(/^[A-Z]{2}$/),
     marketId: z.string().regex(/^(?:gid:\/\/shopify\/Market\/)?[1-9][0-9]{0,19}$/),
-    groups: z.array(BuyerDesiredGroupSchema).min(1).max(32),
+    groups: z.array(DesiredGroupSchema).min(1),
     capacity: z.strictObject({
       ordinaryLineCount: z.number().int().min(0).max(200),
       inputBytes: z.number().int().min(0).max(128000),
@@ -260,7 +250,7 @@ export const BuyerAcceptedCartSchema = z.strictObject({
   validThroughDay: z.number().int(),
   applicationId: BuyerIdSchema,
   buckets: z.array(BuyerCartBucketSchema).min(1).max(32),
-  desired: z.array(BuyerDesiredGroupSchema).min(1).max(32),
+  desired: BuyerDesiredGroupsSchema,
 });
 export const BuyerCartRestorationSchema = z.strictObject({
   groups: z.array(BuyerDesiredGroupSchema).max(32),

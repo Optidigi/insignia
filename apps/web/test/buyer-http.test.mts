@@ -336,7 +336,7 @@ test('empty or malformed quote selections stop before proposal credential/provid
   }
 });
 
-test('a cart over one signed set is 422 CAPACITY_EXCEEDED stating the limit, before proposal work (#335)', async () => {
+test('proposal and renewal report signed-set capacity only for otherwise valid carts (#335)', async () => {
   let reached = 0;
   const services = buyerFixture({
     guest: {
@@ -378,12 +378,24 @@ test('a cart over one signed set is 422 CAPACITY_EXCEEDED stating the limit, bef
     capacity: { ordinaryLineCount: 0, inputBytes: 100 },
     groups,
   });
+  const requestDesired = (route: 'proposal' | 'renewal', value: ReturnType<typeof body>) => {
+    const path = 'quotes/22222222-2222-4222-8222-222222222222/renew';
+    return route === 'proposal'
+      ? handleBuyerRequest(post(value), services, 'quote-proposals', () => {})
+      : handleBuyerRequest(
+          post({ ...value, idempotencyKey: '11111111-1111-4111-8111-111111111111' }, `/v1/${path}`),
+          services,
+          path,
+          () => {},
+        );
+  };
   const expectCapacity = async (response: Response) => {
     assert.equal(response.status, 422);
     const error = record(await response.json());
     assert.equal(error.code, 'CAPACITY_EXCEEDED');
     assert.match(String(error.message), /32\b/);
     assert.match(String(error.message), /10,000/);
+    assert.equal(error.details, undefined);
     assert.ok(error.requestId);
     assert.equal(error.retryable, undefined);
   };
@@ -401,20 +413,11 @@ test('a cart over one signed set is 422 CAPACITY_EXCEEDED stating the limit, bef
   for (const groups of [
     [group(variants(16)), group(variants(17))],
     [group(variants(33))],
+    Array.from({ length: 33 }, () => group(variants(1))),
     [group(variants(2, 6000))],
   ]) {
-    await expectCapacity(await handleBuyerRequest(post(body(groups)), services, 'quote-proposals', () => {}));
-    await expectCapacity(
-      await handleBuyerRequest(
-        post(
-          { ...body(groups), idempotencyKey: '11111111-1111-4111-8111-111111111111' },
-          '/v1/quotes/22222222-2222-4222-8222-222222222222/renew',
-        ),
-        services,
-        'quotes/22222222-2222-4222-8222-222222222222/renew',
-        () => {},
-      ),
-    );
+    for (const route of ['proposal', 'renewal'] as const)
+      await expectCapacity(await requestDesired(route, body(groups)));
   }
   assert.equal(reached, 0, 'an oversized request never reaches proposal or renewal composition');
 
@@ -458,10 +461,14 @@ test('a cart over one signed set is 422 CAPACITY_EXCEEDED stating the limit, bef
   for (const malformed of [
     { ...body([group(variants(33))]), country: 'us' },
     { ...body([group(variants(2, 6000))]), marketId: 'x' },
+    body([group([...variants(32), { variantId: '', quantity: 1 }])]),
+    body([...Array.from({ length: 32 }, () => group(variants(1))), group([])]),
   ]) {
-    const response = await handleBuyerRequest(post(malformed), services, 'quote-proposals', () => {});
-    assert.equal(response.status, 400);
-    assert.equal(record(await response.json()).code, 'INVALID_REQUEST');
+    for (const route of ['proposal', 'renewal'] as const) {
+      const response = await requestDesired(route, malformed);
+      assert.equal(response.status, 400, route);
+      assert.equal(record(await response.json()).code, 'INVALID_REQUEST', route);
+    }
   }
   assert.equal(reached, 0);
 });
