@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync, type SpawnSyncReturns, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, posix, resolve } from 'node:path';
@@ -295,7 +295,7 @@ test('the required Foundation result accepts only a successful full run or the b
     ['status-docs', 'failure', 'skipped', 1],
     ['', 'success', 'skipped', 1],
   ] as const) {
-    const result = spawnSync('bash', ['-c', command], {
+    const result: SpawnSyncReturns<string> = spawnSync('bash', ['-c', command], {
       env: { ...process.env, ROUTE: route, BUILD: build, SUITES: suites },
       encoding: 'utf8',
     });
