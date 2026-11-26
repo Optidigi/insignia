@@ -23,6 +23,7 @@ on:
       - 'scripts/functions/**'
       - 'biome.json'
       - 'Cargo.toml'
+      - 'Cargo.lock'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
@@ -38,11 +39,12 @@ permissions:
   contents: read
 
 jobs:
-  foundation:
+  build:
+    name: Foundation build
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
-    env:
-      RUSTUP_TOOLCHAIN: '1.100.0'
+    timeout-minutes: 15
+    outputs:
+      route: ${{ steps.changes.outputs.route }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -58,33 +60,93 @@ jobs:
         run: |
           node --test scripts/ci/status-docs.test.mts
           node scripts/ci/status-docs.mts
-      - name: Install pinned Rust and browser dependencies
+      - name: Build workspace once
         if: steps.changes.outputs.route == 'full'
         run: |
-          rustup toolchain install 1.100.0 --profile minimal --component rustfmt,clippy --target wasm32-unknown-unknown
           corepack pnpm install --frozen-lockfile
-          corepack pnpm --filter @insignia/designer exec playwright install --with-deps chromium firefox
-      - name: Build and check actual workspace
+          bash scripts/ci/check-workspace.sh build
+      - name: Archive workspace build outputs
         if: steps.changes.outputs.route == 'full'
-        run: corepack pnpm check
+        run: |
+          tar -czf "$RUNNER_TEMP/foundation-build.tar.gz" \
+            apps/*/dist apps/web/.astro packages/*/dist frontend/*/dist frontend/*/dist-library frontend/admin/.astro \
+            extensions/insignia-theme/assets/insignia-*.js extensions/insignia-theme/assets/insignia-*.css
+      - name: Share build with suites
+        if: steps.changes.outputs.route == 'full'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: foundation-build-${{ github.sha }}
+          path: ${{ runner.temp }}/foundation-build.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+          overwrite: true
+
+  suites:
+    name: Foundation / ${{ matrix.suite }}
+    needs: build
+    if: needs.build.outputs.route == 'full'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: workspace
+            browsers: chromium firefox
+          - suite: web
+            browsers: chromium
+          - suite: storefront
+            browsers: chromium firefox
+          - suite: publication
+            browsers: chromium
+          - suite: functions
+            browsers: ''
+    env:
+      RUSTUP_TOOLCHAIN: '1.100.0'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # workspace checks read fixed historical refs
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24.22.3'
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Download workspace build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: foundation-build-${{ github.sha }}
+          path: ${{ runner.temp }}
+      - run: tar -xzf "$RUNNER_TEMP/foundation-build.tar.gz"
+      - name: Install required browsers
+        if: matrix.browsers != ''
+        env:
+          BROWSERS: ${{ matrix.browsers }}
+        run: |
+          read -ra browsers <<< "$BROWSERS"
+          corepack pnpm --filter @insignia/designer exec playwright install --with-deps "${browsers[@]}"
+      - name: Install pinned Rust toolchain
+        if: matrix.suite == 'functions'
+        run: rustup toolchain install 1.100.0 --profile minimal --component rustfmt,clippy --target wasm32-unknown-unknown
+      - name: Run suite
+        env:
+          SUITE: ${{ matrix.suite }}
+        run: bash scripts/ci/check-workspace.sh "$SUITE"
       - name: Shopify theme check (theme app extension)
-        if: steps.changes.outputs.route == 'full'
+        if: matrix.suite == 'functions'
         env:
           SHOPIFY_CLI_NO_ANALYTICS: '1'
         run: npx --yes @shopify/cli@5.1.0 theme check --path extensions/insignia-theme --config theme-check:theme-app-extension --fail-level suggestion
       - name: Qualify Ajax carriers against actual production Functions
-        if: steps.changes.outputs.route == 'full'
+        if: matrix.suite == 'functions'
         run: INSIGNIA_FUNCTION_RUNNER="$PWD/.m1-artifacts/tools/function-runner-9.2.3" node --test apps/storefront/test/cart-function-contract.test.mts
-      - name: Publication geometry stress (100 cases, no retries)
-        if: steps.changes.outputs.route == 'full'
-        run: corepack pnpm test:publication-stress && corepack pnpm test:renderer-control
-      # pnpm check owns theme-artifact tests (test:vectors) and artifact-manifest.
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: steps.changes.outputs.route == 'full'
+        if: matrix.suite == 'functions'
         with:
           name: m1-001-foundation-${{ github.sha }}
           if-no-files-found: error
           overwrite: false
+          include-hidden-files: true
           retention-days: 14
           path: |
             .m1-artifacts/manifest.json
@@ -102,3 +164,20 @@ jobs:
             apps/web/dist/client/**
             apps/web/dist/server/entry.mjs
             apps/worker/dist/main.js
+
+  foundation:
+    needs: [build, suites]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require all selected Foundation suites
+        env:
+          ROUTE: ${{ needs.build.outputs.route }}
+          BUILD: ${{ needs.build.result }}
+          SUITES: ${{ needs.suites.result }}
+        run: |
+          case "$ROUTE:$BUILD:$SUITES" in
+            full:success:success|status-docs:success:skipped) ;;
+            *) echo "::error::Foundation route=$ROUTE build=$BUILD suites=$SUITES"; exit 1 ;;
+          esac

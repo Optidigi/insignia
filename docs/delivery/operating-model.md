@@ -31,11 +31,15 @@ Choose independent review by impact; one focused reviewer normally suffices. Sec
 
 ### CI checks and artifacts
 
-Foundation checks the workspace, browsers and Shopify Functions. Durable core exercises
-the database on PostgreSQL 18. Runtime qualifies built packages and images, restricted
-roles and application processes. Each required check cancels its older runs for the
-same PR. Push runs on `main` finish independently. Foundation's run summary shows
-the duration and result of each workspace check.
+Foundation builds the workspace once. Workspace checks, web tests, storefront tests,
+publication stress and Shopify Function checks use that build in parallel. The required
+Foundation result waits for all five suites on the full route. Each suite's summary
+shows its check durations.
+
+Durable core exercises the database on PostgreSQL 18. Runtime runs the non-browser web
+suite on PostgreSQL and qualifies built packages and images, restricted roles and
+application processes. Each required workflow cancels its older runs for the same PR.
+Push runs on `main` finish independently.
 
 Ordinary PRs keep Runtime receipts and logs. Full archives are retained for qualified
 `main` runs and same-repository `release/` PRs that need those bytes for

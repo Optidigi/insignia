@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, posix, resolve } from 'node:path';
@@ -158,7 +158,7 @@ function workflowSafety(source: string, job: 'foundation' | 'durable-core' | 'ru
   assert.match(source, /runs-on: ubuntu-24\.04/);
   assert.match(source, /node-version: '24\.22\.3'/);
   const steps = source
-    .slice(source.indexOf('    steps:\n'))
+    .slice(source.indexOf('    steps:\n'), job === 'foundation' ? source.indexOf('\n  suites:') : source.length)
     .split(/(?=^ {6}- )/m)
     .slice(1);
   assert.ok(steps.length >= 4);
@@ -185,8 +185,11 @@ function workflowSafety(source: string, job: 'foundation' | 'durable-core' | 'ru
       /^ {8}if: (?:steps\.changes\.outputs\.route == 'full'|\$\{\{ always\(\) && steps\.changes\.outputs\.route == 'full' \}\})$/m,
     );
   }
-  if (job === 'foundation') assert.match(source, /run: corepack pnpm check\n/);
-  else {
+  if (job === 'foundation') {
+    assert.match(source, /bash scripts\/ci\/check-workspace\.sh build\n/);
+    assert.match(source, /\n {2}suites:\n[\s\S]*?needs: build\n {4}if: needs\.build\.outputs\.route == 'full'\n/);
+    assert.match(source, /run: bash scripts\/ci\/check-workspace\.sh "\$SUITE"/);
+  } else {
     assert.match(
       source,
       /image: docker\.io\/library\/postgres@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336/,
@@ -246,12 +249,14 @@ test('the real current state supports prose updates with its actual local links'
 // Frontend-only changes must select the existing full foundation gate.
 test('foundation includes frontend and workspace inputs and executes the frontend gate', () => {
   const workflow = readFileSync(join(root, '.github/workflows/foundation.yml'), 'utf8');
-  for (const path of ['frontend/**', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.node-version'])
+  for (const path of ['frontend/**', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.node-version', 'Cargo.lock'])
     assert.ok(workflow.includes(`      - '${path}'`), `Missing push trigger: ${path}`);
-  assert.deepEqual(
-    workflow.match(/^\s+corepack pnpm .*playwright install.*$/gm)?.map((line) => line.trim()),
-    ['corepack pnpm --filter @insignia/designer exec playwright install --with-deps chromium firefox'],
+  assert.match(
+    workflow,
+    /corepack pnpm --filter @insignia\/designer exec playwright install --with-deps "\$\{browsers\[@\]\}"/,
   );
+  assert.match(workflow, /suite: workspace\n\s+browsers: chromium firefox/);
+  assert.match(workflow, /suite: storefront\n\s+browsers: chromium firefox/);
   assert.match(workflow, /theme check --path extensions\/insignia-theme --config theme-check:theme-app-extension/);
   const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
   assert.equal(manifest.scripts.check, 'bash scripts/ci/check-workspace.sh');
@@ -269,6 +274,33 @@ test('foundation includes frontend and workspace inputs and executes the fronten
     readFileSync(join(root, 'frontend/designer/scripts/library-artifact-check.mts'), 'utf8').includes('dist-library'),
   );
   assert.ok(manifest.scripts.build.includes('pnpm -r build'));
+});
+test('the required Foundation result accepts only a successful full run or the bounded docs route', () => {
+  const workflow = readFileSync(join(root, '.github/workflows/foundation.yml'), 'utf8');
+  assert.deepEqual(
+    [...workflow.matchAll(/^ {10}- suite: (\w+)$/gm)].map((match) => match[1]),
+    ['workspace', 'web', 'storefront', 'publication', 'functions'],
+  );
+  const gate = workflow.slice(workflow.indexOf('\n  foundation:'));
+  assert.match(gate, /needs: \[build, suites\]\n {4}if: always\(\)/);
+  const command = gate.split('        run: |\n')[1];
+  assert.ok(command);
+  for (const [route, build, suites, status] of [
+    ['full', 'success', 'success', 0],
+    ['full', 'success', 'failure', 1],
+    ['full', 'failure', 'skipped', 1],
+    ['full', 'success', 'cancelled', 1],
+    ['full', 'success', 'skipped', 1],
+    ['status-docs', 'success', 'skipped', 0],
+    ['status-docs', 'failure', 'skipped', 1],
+    ['', 'success', 'skipped', 1],
+  ] as const) {
+    const result = spawnSync('bash', ['-c', command], {
+      env: { ...process.env, ROUTE: route, BUILD: build, SUITES: suites },
+      encoding: 'utf8',
+    });
+    assert.equal(result.status, status, `${route}:${build}:${suites}: ${result.stderr}`);
+  }
 });
 test('runtime image qualification includes selected frontend and storefront source inputs', () => {
   const workflow = readFileSync(join(root, '.github/workflows/runtime.yml'), 'utf8');
