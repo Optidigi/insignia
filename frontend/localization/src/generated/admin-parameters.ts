@@ -866,6 +866,7 @@ export const adminParameterContracts = {
   'editor:placementWorkflowPreview.configRejection.planFeatureRequired': {},
   'editor:placementWorkflowPreview.configRejection.priceAmountInvalid': {},
   'editor:placementWorkflowPreview.configRejection.productIdentityChanged': {},
+  'editor:placementWorkflowPreview.configRejection.publicationAnchorConflict': {},
   'editor:placementWorkflowPreview.configRejection.publicationIncomplete': { reason: 'string' },
   'editor:placementWorkflowPreview.configRejection.publicationUnavailable': {},
   'editor:placementWorkflowPreview.configRejection.reloadAndDiscard': {},

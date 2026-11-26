@@ -979,7 +979,7 @@ test('a committed publish that never prepared is abandoned after its bound and n
       draftVersion: again.draftVersion,
       idempotencyKey: 'publish-anchor-conflict',
     });
-    assert.equal(refused.kind === 'invalid' && refused.code, 'PUBLICATION_UNAVAILABLE');
+    assert.equal(refused.kind === 'invalid' && refused.code, 'PUBLICATION_ANCHOR_CONFLICT');
   } finally {
     await sql.end();
     await core.close();

@@ -1085,6 +1085,7 @@
     "realHistoricalPricingReview": "This configuration uses prices that this editor cannot represent safely. Its saved draft and published prices remain unchanged. Review the pricing before converting it.",
     "realHistoricalAppearanceReview": "Existing variant photos or placement alignments need review against the complete Shopify catalogue. The saved configuration remains unchanged.",
     "configRejection": {
+      "publicationAnchorConflict": "Contact support to fix this product’s Insignia fields in Shopify before publishing.",
       "generic": "This change can’t be saved: {{reason}}",
       "draftSchemaInvalid": {
         "view": "A view in this setup isn’t valid. Correct it, then save again.",

@@ -841,6 +841,7 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.configRejection.planFeatureRequired': object;
   'editor:placementWorkflowPreview.configRejection.priceAmountInvalid': object;
   'editor:placementWorkflowPreview.configRejection.productIdentityChanged': object;
+  'editor:placementWorkflowPreview.configRejection.publicationAnchorConflict': object;
   'editor:placementWorkflowPreview.configRejection.publicationIncomplete': { reason: string };
   'editor:placementWorkflowPreview.configRejection.publicationUnavailable': object;
   'editor:placementWorkflowPreview.configRejection.reloadAndDiscard': object;

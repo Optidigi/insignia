@@ -1217,6 +1217,7 @@
     "realHistoricalPricingReview": "Esta configuración usa precios que el editor no puede representar de forma segura. El borrador guardado y los precios publicados permanecen sin cambios. Revisa los precios antes de convertirla.",
     "realHistoricalAppearanceReview": "Las fotos de variantes o las ubicaciones existentes deben revisarse con el catálogo completo de Shopify. La configuración guardada permanece sin cambios.",
     "configRejection": {
+      "publicationAnchorConflict": "Contacta con soporte para corregir los campos de Insignia de este producto en Shopify antes de publicarlo.",
       "generic": "No se puede guardar este cambio: {{reason}}",
       "draftSchemaInvalid": {
         "view": "Una vista de esta configuración no es válida. Corrígelo y vuelve a guardar.",

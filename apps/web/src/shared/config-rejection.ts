@@ -35,6 +35,7 @@ export const CONFIG_REJECTION_CODES = [
   // Publication refused for the store as a whole; nothing was published. A 403 means only lost access.
   'PLAN_FEATURE_REQUIRED',
   'PUBLICATION_UNAVAILABLE',
+  'PUBLICATION_ANCHOR_CONFLICT',
   'INSTALLATION_CHANGED',
 ] as const;
 export type ConfigRejectionCode = (typeof CONFIG_REJECTION_CODES)[number];

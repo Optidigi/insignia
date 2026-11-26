@@ -364,6 +364,7 @@
     "realHistoricalPricingReview": "Deze configuratie gebruikt prijzen die deze editor niet veilig kan weergeven. Het opgeslagen concept en de gepubliceerde prijzen blijven ongewijzigd. Controleer de prijzen vóór omzetting.",
     "realHistoricalAppearanceReview": "Bestaande variantfoto’s of plaatsingen moeten worden gecontroleerd met de volledige Shopify-catalogus. De opgeslagen configuratie blijft ongewijzigd.",
     "configRejection": {
+      "publicationAnchorConflict": "Neem contact op met support om de Insignia-velden van dit product in Shopify te herstellen voordat je publiceert.",
       "generic": "Deze wijziging kan niet worden opgeslagen: {{reason}}",
       "draftSchemaInvalid": {
         "view": "Een weergave in deze instelling is ongeldig. Corrigeer dit en sla daarna opnieuw op.",

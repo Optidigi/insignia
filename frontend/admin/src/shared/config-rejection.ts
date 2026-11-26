@@ -91,6 +91,8 @@ export function configRejectionText(rejection: ConfigRejection, t: Translate): s
       return t('editor:placementWorkflowPreview.configRejection.planFeatureRequired');
     case 'PUBLICATION_UNAVAILABLE':
       return t('editor:placementWorkflowPreview.configRejection.publicationUnavailable');
+    case 'PUBLICATION_ANCHOR_CONFLICT':
+      return t('editor:placementWorkflowPreview.configRejection.publicationAnchorConflict');
     case 'INSTALLATION_CHANGED':
       return t('editor:placementWorkflowPreview.configRejection.installationChanged');
     // Codes a merchant cannot act on by themselves, or that only a client defect can cause, keep the server's reason.

@@ -2496,8 +2496,9 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     try {
       result = await adapter.publish(publishReview.product, publishReview.revision);
     } catch (error) {
-      if (configRejectionFrom(error)) {
-        if (adapter.pending())
+      const rejection = configRejectionFrom(error);
+      if (rejection) {
+        if (adapter.pending() && rejection.code !== 'PUBLICATION_ANCHOR_CONFLICT')
           result = { status: 'pending' }; // The write may have committed: keep the pending flow.
         else {
           // Refused, not lost: close the review so the merchant can fix the edit the host's banner names.

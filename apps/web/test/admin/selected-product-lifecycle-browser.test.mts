@@ -57,6 +57,25 @@ test('a publish paused by changed defaults shows the saved draft without an unsa
   assert.equal(await storedIntent(f.page), null);
 });
 
+test('a copied publication anchor shows the support refusal and keeps custody of the recorded intent', { timeout: 20000 }, async (t) => {
+  const f = await fixture(t);
+  await f.page.route('**/api/admin/products/111/config', async (route) => {
+    if (route.request().method() !== 'POST') return route.fallback();
+    const body = route.request().postDataJSON();
+    if (body.action === 'reconcile')
+      return route.fulfill({ json: { kind: 'resolved', publicationRecorded: true } });
+    if (body.action !== 'publish') return route.fallback();
+    return route.fulfill({ status: 422, json: { kind: 'invalid', code: 'PUBLICATION_ANCHOR_CONFLICT' } });
+  });
+  await f.open();
+  const modal = await openPublication(f.page);
+  await modal.locator('s-button[slot="primary-action"]').click();
+  await f.page.getByText('Contact support to fix this product’s Insignia fields in Shopify before publishing.').waitFor();
+  await modal.waitFor({ state: 'hidden' });
+  assert.equal(await f.page.getByRole('button', { name: 'Retry', exact: true }).count(), 0);
+  assert.ok(await storedIntent(f.page));
+});
+
 test('unsupported historical advanced economics remain inaccessible to editing and cannot be silently repriced', {
   timeout: 20000,
 }, async (t) => {
