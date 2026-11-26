@@ -36,6 +36,27 @@ async function settleFrame(page: Page) {
   );
 }
 
+test('a publish paused by changed defaults shows the saved draft without an unsaved conflict', { timeout: 20000 }, async (t) => {
+  const f = await fixture(t);
+  await f.page.route('**/api/admin/products/111/config', async (route) => {
+    if (route.request().method() !== 'GET' || !f.mutations.some((entry) => entry.method === 'PUT'))
+      return route.fallback();
+    const view = f.view();
+    const binding = required(required(required(view.config).draft.selectedSetup).methodBindings[methodId]);
+    binding.prices.default = { ...required(binding.prices.default), value: '9.00' };
+    return route.fulfill({ json: view });
+  });
+  await f.open();
+  await editName(f.page, 'Saved during publish review');
+  const modal = await openPublication(f.page);
+  await modal.locator('s-button[slot="primary-action"]').click();
+  await f.page.locator('s-banner').filter({ hasText: 'Inherited defaults changed. Review the saved changes before publishing again.' }).waitFor();
+  assert.equal(await f.page.getByText(draftConflictText, { exact: true }).count(), 0);
+  assert.equal(await f.page.getByRole('textbox', { name: /^Placement name/ }).inputValue(), 'Saved during publish review');
+  assert.equal(f.mutations.some((entry) => entry.method === 'POST'), false);
+  assert.equal(await storedIntent(f.page), null);
+});
+
 test('unsupported historical advanced economics remain inaccessible to editing and cannot be silently repriced', {
   timeout: 20000,
 }, async (t) => {

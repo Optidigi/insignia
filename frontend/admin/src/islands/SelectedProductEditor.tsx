@@ -2514,9 +2514,17 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
       setWriteBusy(false);
     }
     if (result.status === 'changed') {
-      setProduct(result.product);
+      const confirmedBindings = adapter.getBindings?.() ?? currentBindings.current;
+      commitPlacementDraftChange(
+        history.current,
+        { product: currentProduct.current, bindings: currentBindings.current },
+        { product: result.product, bindings: confirmedBindings },
+      );
+      currentBindings.current = confirmedBindings;
+      currentProduct.current = result.product;
+      renderProduct(result.product);
       setSaved(result.product);
-      savedBindings.current = adapter.getBindings?.() ?? currentBindings.current;
+      savedBindings.current = confirmedBindings;
       dispatchDialog({ type: 'dialog-closed', id: publishReview.id });
       setNotice({ kind: 'message', reason: 'draft-changed' });
       return;

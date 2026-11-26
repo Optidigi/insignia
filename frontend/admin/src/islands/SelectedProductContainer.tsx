@@ -576,7 +576,7 @@ function SelectedProductContainer({ productId }: { productId: string }) {
               }
               if (error instanceof SelectedProductReviewChanged) {
                 const product = await observe(error.view);
-                setRemote('conflict');
+                setRemote('idle');
                 return { status: 'changed', product };
               }
               if (
