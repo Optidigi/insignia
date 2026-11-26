@@ -346,6 +346,8 @@ export function connectThemeIntegration(host: HTMLElement): () => void {
         const buyer = document.createElement('insignia-buyer');
         buyer.setAttribute('data-insignia-auto', '');
         buyer.setAttribute('product-id', id);
+        const unavailableVariants = id === mainId ? host.getAttribute('unavailable-variant-ids') : null;
+        if (unavailableVariants) buyer.setAttribute('unavailable-variant-ids', unavailableVariants);
         for (const key of contextAttributes) {
           const value = host.getAttribute(key);
           if (value) buyer.setAttribute(key, value);

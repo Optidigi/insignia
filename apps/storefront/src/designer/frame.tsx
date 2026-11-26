@@ -180,7 +180,7 @@ function Frame({ initial }: { initial: Initial }) {
         setVisible(true);
         setOpen(true);
         setEntryFocus({ keyboard: event.data.keyboard === true });
-        if (typeof event.data.variantId === 'string') setProductVariant({ variantId: event.data.variantId });
+        setProductVariant(typeof event.data.variantId === 'string' ? { variantId: event.data.variantId } : undefined);
       }
       if (event.data.type === 'insignia:designer:suspend') setVisible(false);
       if (event.data.type === 'insignia:designer:request-close') {

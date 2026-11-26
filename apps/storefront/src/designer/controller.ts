@@ -33,6 +33,8 @@ export async function mountLiveDesigner(input: {
   isCurrent(): boolean;
   /** The product page's currently selected variant, read each time the Designer opens (#499). */
   productPageVariant?(): string | undefined;
+  /** Shopify Liquid observations for the product page in this buyer's country. */
+  unavailableVariantIds?: ReadonlySet<string>;
 }) {
   if (input.initiallyHidden && input.repair) throw new Error('Background cart recovery is unavailable');
   const api = createBuyerApi({
@@ -84,7 +86,14 @@ export async function mountLiveDesigner(input: {
       }
     }
     if (!current() || signal.aborted || generation !== selectionGeneration) return;
-    const options = { locale: input.locale, storeName: input.storeName };
+    const options = {
+      locale: input.locale,
+      storeName: input.storeName,
+      unavailableVariantIds:
+        !input.repair && !group && source.productId === input.source.productId
+          ? input.unavailableVariantIds
+          : undefined,
+    };
     let mapped: ReturnType<typeof buildBuyerDesigner> | undefined;
     try {
       if (configRead) mapped = buildBuyerDesigner(source, options);

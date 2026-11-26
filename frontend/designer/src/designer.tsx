@@ -453,15 +453,16 @@ function DesignerSession({
     (entryFocusSignal.keyboard ? skipLinkRef.current : appRef.current)?.focus({ preventScroll: true });
   }, [entryFocusSignal]);
   const hintedVariant = useRef<string | undefined>(undefined);
+  const bareVariantId = (id: string) => id.replace(/^gid:\/\/shopify\/ProductVariant\//, '');
+  const productPageVariantId = productVariantSignal && bareVariantId(productVariantSignal.variantId);
+  const productPageCell = productPageVariantId
+    ? config.variantMatrix?.find((cell) => bareVariantId(cell.variantId) === productPageVariantId)
+    : undefined;
   useEffect(() => {
     // Only a new product-page choice: a colour picked in the Designer survives closing and reopening.
     if (!productVariantSignal || productVariantSignal.variantId === hintedVariant.current) return;
     hintedVariant.current = productVariantSignal.variantId;
-    const bare = (id: string) => id.replace(/^gid:\/\/shopify\/ProductVariant\//, '');
-    const color = config.variantMatrix?.find(
-      (cell) => bare(cell.variantId) === bare(productVariantSignal.variantId),
-    )?.rowId;
-    if (color) dispatch({ type: 'product-page-color-hinted', color });
+    if (productPageCell) dispatch({ type: 'product-page-color-hinted', color: productPageCell.rowId });
   }, [productVariantSignal]);
   const reviewIntent = designerIntentKey(workflow);
   const beforeQuantities = step === 0;
@@ -1623,6 +1624,13 @@ function DesignerSession({
             <ValidationSummary issues={validationIssues} summaryRef={summaryRef} onNavigate={navigateIssue} />
             {step === 0 && (
               <>
+                {!artworkOnly && productPageCell?.available === false && productPageCell.rowId === color && (
+                  <p className="quantity-no-results" role="status">
+                    {quantitiesLayout.cells.some((cell) => cell.available)
+                      ? t('customer:quantities.unavailableForSelection')
+                      : t('customer:quantities.noOptionsAvailable')}
+                  </p>
+                )}
                 {prints.length === 0 && (
                   <div className="empty-state">
                     <h2>{t('customer:artwork.emptyTitle')}</h2>

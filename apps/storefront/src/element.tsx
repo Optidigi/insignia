@@ -60,7 +60,17 @@ export class InsigniaBuyer extends HTMLElement {
     removeAssets?: () => void;
   };
   static get observedAttributes() {
-    return ['product-id', 'proxy-base', 'country', 'market-id', 'language', 'cart-root', 'store-name', 'repair'];
+    return [
+      'product-id',
+      'proxy-base',
+      'country',
+      'market-id',
+      'language',
+      'cart-root',
+      'store-name',
+      'repair',
+      'unavailable-variant-ids',
+    ];
   }
   private context() {
     return JSON.stringify([
@@ -208,6 +218,9 @@ export class InsigniaBuyer extends HTMLElement {
       storage: sessionStorage,
       repair: this.hasAttribute('repair'),
       productPageVariant: () => this.productPageVariant(),
+      unavailableVariantIds: new Set(
+        (this.getAttribute('unavailable-variant-ids') ?? '').split(',').filter((id) => /^[1-9][0-9]{0,19}$/.test(id)),
+      ),
       isCurrent: () => generation === this.generation,
       onClose: () => {
         this.querySelector<HTMLButtonElement>('button[slot="trigger"]')?.focus();
