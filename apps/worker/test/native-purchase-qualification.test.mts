@@ -86,6 +86,7 @@ test('observed native origin binds only the closed release profile and validated
 });
 
 for (const [releaseProfile, expectedVersion] of [
+  ['native-dependency-refresh-4991bcf9', '1267604848641'],
   ['native-designer-intent-8e69c5ef', '1266368151553'],
   ['native-escape-once-bcb6cd16', '1265289363457'],
   ['native-cart-repair-2ed66ade', '1265206460417'],
