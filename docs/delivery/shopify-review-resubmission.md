@@ -224,16 +224,38 @@ The highest recorded one-minute load during the accepted samples was 3.45. Light
 slow-load warnings. The receipts are in `~/tmp-insignia/release-AW/perf/runs/aw-4CkaaE/` and
 `aw-X99Ox7/`. An isolated EUR Lighthouse series still needs storefront access.
 
+### Deploy AX validation
+
+Shopify version `1268027162625` became the sole Active version on 26 November. See
+[deployed identities](state.md#deployed-identities) for the runtime and database schema.
+All 17 Shopify CDN assets matched the qualified build. The Function modules matched AW.
+
+| Native fixture | Items | Customization | Signed cart and checkout subtotal |
+| --- | --- | --- | --- |
+| USD reviewer fixture, 2 items | $20.00 | $10.00 | $30.00 |
+| Netherlands QA fixture, 2 items | €40.00 | €10.00 | €50.00 |
+
+Both buyers uploaded the same synthetic SVG, reviewed the split price, and added the signed line
+to Shopify's cart. Both stopped at checkout without placing an order or paying. Both carts were
+verified empty after cleanup. The Netherlands result qualified EUR v2 for AX.
+
+The disposable USD QA fixture returned to **Published** after a placement label change.
+The Netherlands QA fixture showed **Unavailable for this selection** before artwork when its M
+variant had zero stock. Restoring the original 500 units cleared the sold-out hint.
+The USD reviewer storefront opened Designer in a signed-out session using the fixture password.
+The owner account opened the embedded merchant editor. Shopify reviewer-account access is still
+unverified. The AX receipts are in `/srv/data/saas/insignia/releases/review-readiness-849a38e1`.
+
 ## Other review items
 
 | Requirement | Verified and remaining evidence |
 | --- | --- |
-| 1.1.9 Buyer consent | For the next candidate, capture the item subtotal, customization subtotal, final quote and explicit **Add to cart** action on the reviewer fixture. Verify that changed terms are displayed before another acceptance. Shopify has yet to confirm how it classifies Insignia's Cart Transform price for customized merchandise under the fee guidance. |
+| 1.1.9 Buyer consent | AX showed the item subtotal, customization subtotal and quote before **Add to cart** in USD and EUR. The signed cart and native checkout subtotals matched. The expired quote browser regression requires a new acceptance when terms change. Shopify has yet to confirm how it classifies Insignia's Cart Transform price under the fee guidance. |
 | 1.2.2 Billing lifecycle | On 26 November, the new Basic dev store `insignia-billing-qa-1126` declined Standard and Insignia showed **No active subscription** with a link back to plan selection. The store approved the $0 annual plan, uninstalled, and reinstalled. Shopify retained the trial with cancellation scheduled. The merchant reapproved via **Manage plan in Shopify** and the cancellation notice cleared. Shopify showed €0/year after trial. The disposable store remains installed on the $0 plan. No payment or order was made. The dev-host receipt is in `~/insignia-qa/runs/2026-11-26-billing-lifecycle.QJ2UbX/receipt.md`. |
 | 1.2.3 Plan changes | **Settings → Billing → Manage plan** opens Shopify's selector for Standard at $49.99 every 30 days or $449.99 per year with identical features. Both no-charge switches passed on 23 November. On 24 November, Shopify admin **Settings → Apps → Insignia** showed **Insignia Standard · $0/month** on rewrite-dev. The owner confirmed there is no eligible billed installation for paid invoice evidence. Shopify's acceptance of switching billing periods under this requirement is open. |
 | 3.2.1 Older order scope | The active scope baseline excludes `read_all_orders`. The 19 November fresh installation verified the required grant and recent orders. The old EUR review installation may still show a historical grant. |
 | 2.1.1 Customized product | Version `1265289363457` passed the reviewer fixture through Bogus order #1015 and the Canada explanation on 25 November. The AW validation is tracked above. |
-| 4.5.4 and 4.5.5 Access | On 24 November the listing form showed the app-account exemption selected. The saved private instructions direct reviewers through Shopify admin and give the test storefront, access instructions, expected cart total and both prices. The storefront path passed earlier in a signed-out session. Access to the merchant admin using the reviewer's own Shopify account remains unverified. |
+| 4.5.4 and 4.5.5 Access | On 24 November the listing form showed the app-account exemption selected. The saved private instructions direct reviewers through Shopify admin and give the test storefront, access instructions, expected cart total and both prices. The storefront path and Designer opened in a signed-out session on AX. Access to the merchant admin using the reviewer's own Shopify account remains unverified. |
 
 ## Release record
 

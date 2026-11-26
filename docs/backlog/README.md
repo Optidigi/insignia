@@ -60,9 +60,9 @@ Added 25 Nov 2026 from the 24–25 Nov hardening pass ([evidence](../delivery/sh
 
 **Open issues.**
 - [#637](https://github.com/Optidigi/insignia/issues/637) uses the native product page's Shopify
-  availability hint in the review candidate. The split-inventory fixture showed the variant as
+  availability hint on AX. The split-inventory fixture showed the variant as
   unavailable on the Netherlands product page. The alternate Storefront API probe returned
-  `Online Store channel is locked` for both countries. Verify the hint on the released candidate.
+  `Online Store channel is locked` for both countries. AX verified the sold-out warning before artwork and cleared the hint after stock restoration.
 - #643 Misleading cart messages after compensated partial adds and throttled witness reads (fix in PR #659).
 - #651 Flaky selected-repair Escape test (fix in PR #654).
 - #653 Storefront performance: idle Designer prewarm (~200 KB JS + 234 KB CSS), USD TBT +238 ms, USD footer

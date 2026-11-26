@@ -126,6 +126,10 @@ test('separate owner installation and restricted queue roles preserve messages a
     } finally {
       await oldGrants.stop();
     }
+    // Match a running installation where purchase recovery already owns its lease grants.
+    await pool.query(
+      'grant update(lease_owner, lease_until, next_attempt_at) on public.inbox_messages to insignia_queue_consume',
+    );
     await pool.query(await readFile(new URL('../worker/queue-roles.sql', import.meta.url), 'utf8'));
     const boss = new PgBoss({
       connectionString: url.href,
@@ -182,6 +186,7 @@ test('separate owner installation and restricted queue roles preserve messages a
         'select * from pgboss.instance',
         'insert into pgboss.instance default values',
         'update pgboss.version set version=42',
+        'update public.inbox_messages set payload=payload',
         'delete from public.uninstall_delivery_authority',
         'select public.recover_uninstall_privacy(null::uuid,null::uuid)',
       ])
@@ -197,6 +202,7 @@ test('separate owner installation and restricted queue roles preserve messages a
     const domain = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
     const shopifyShopId = (BigInt(`0x${randomUUID().replaceAll('-', '').slice(0, 12)}`) + 1n).toString();
     try {
+      assert.deepEqual(await consumerCore.purchases.selectPurchaseRecoveryHints(20), []);
       await ownerCore.transactions.run((tx) =>
         ownerCore.tenants.createShop(tx, { shopId, shopDomain: domain, shopifyShopId }),
       );
