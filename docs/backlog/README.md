@@ -44,6 +44,16 @@ leftovers to fold into it (each needs a restart, so they were not done during re
   `insignia-staging`). The repository folder `deployment/m5-runtime` and the retained `deployment/m5-019*` records are
   historical names only.
 
+## AW validation findings
+
+- Publishing a Shopify duplicate can reach the existing enforcement-field guard. The AW fixture copied both
+  app-owned fields from its source. The editor displayed an unconfirmed request with Retry for the typed
+  `422 PUBLICATION_UNAVAILABLE` support refusal. Surface that refusal while retaining reconciliation for
+  genuinely ambiguous requests. See the [native evidence](../delivery/shopify-review-resubmission.md#deploy-aw-validation).
+- The first Setup publish on each blank EUR product showed an inherited-defaults review and an unsaved-draft
+  banner at the same time. The saved values were present on reload. Show one consistent draft state after
+  the review pause.
+
 ## After the hardening pass (25 Nov 2026)
 
 Added 25 Nov 2026 from the 24–25 Nov hardening pass ([evidence](../delivery/shopify-review-resubmission.md#remaining-hardening)).

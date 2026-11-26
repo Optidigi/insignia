@@ -152,9 +152,65 @@ Dependabot configuration is removed. pnpm stays at 12.16.1 for offline packaging
 
 All 17 live Shopify CDN assets matched the qualified build. Web and the worker role read the same fresh
 release evidence. A Netherlands test fixture passed artwork upload, a signed EUR cart, and checkout with
-a EUR 50.00 subtotal. EUR v2 now binds the exact active Shopify version and Function source. Both fresh
-USD and EUR rounds and the quiet-host Lighthouse runs are in progress. See [deploy AW](state.md#deployed-identities)
-for the runtime identities and release receipts.
+a EUR 50.00 subtotal. EUR v2 binds the exact active Shopify version and Function source. See
+[deploy AW](state.md#deployed-identities) for the runtime identities and release receipts.
+
+Both native rounds ran on AW with the same code and runtime profile. Fresh EUR qualification used
+Shopify's **Add product** action after the duplicated fixture was diagnosed. Insignia recorded each
+Bogus order below as Paid and Artwork complete.
+
+| Round | Store and purchase | Signed cart subtotal | Paid total | Shopify order |
+| --- | --- | --- | --- | --- |
+| 1 | USD reviewer fixture | USD 30.00 | USD 38.00 | #1018 |
+| 1 | USD fresh product | USD 50.00 | USD 58.00 | #1019 |
+| 1 | EUR retained product | EUR 50.00 | EUR 56.95 | #1003 |
+| 1 | EUR fresh product | EUR 25.00 | EUR 31.95 | #1004 |
+| 2 | USD reviewer fixture | USD 30.00 | USD 38.00 | #1020 |
+| 2 | USD fresh product | USD 50.00 | USD 58.00 | #1021 |
+| 2 | EUR fresh product | EUR 25.00 | EUR 31.95 | #1005 |
+
+**Publish timing.** Times run from the merchant's confirmation to durable activation. Both EUR rounds
+first showed an inherited-defaults review warning and a conflicting unsaved-draft banner. Reloading
+the current draft verified the saved values. The measurements start at the following confirmation.
+
+| Store | Round 1 first | Round 1 republish | Round 2 first | Round 2 republish |
+| --- | ---: | ---: | ---: | ---: |
+| USD | 28.1 s | 16.9 s | 25.9 s | 15.2 s |
+| EUR | 17.4 s | 12.0 s | 17.1 s | 11.7 s |
+
+**Market switch and recovery.** Both EUR rounds confirmed one stocked variant in the Netherlands
+and Germany primary Market and in the Canada Market. Round 1 used variant `64553686040906`.
+Round 2 used variant `64580209279306` with 9 available at Shop location and 10 at My Custom Location.
+The cart re-signed for Germany and reached clean checkout. Canada refused customization. Escape closed the confirmation and repair view, and confirmed
+removal reached a fresh empty cart. Both rounds passed native over-stock retry, lost acceptance
+response with same-key retry, 409 BUSY retry, dropped proposal, and upload retry. EUR publishes on blank
+products activated about 2.5 s and 2.7 s after the admin tab closed.
+
+**Fixture conflict.** The first EUR round initially used Shopify **Duplicate product**. The duplicate
+had the same ready registration and policy metafields as its source and no effective Insignia
+publication. Publication preparation returned `422 PUBLICATION_UNAVAILABLE` before a provider write.
+The editor showed its unconfirmed-request Retry copy. The unprepared intent lapsed after ten minutes.
+Both blank-product trials then passed. See [the recorded follow-ups](../backlog/README.md#aw-validation-findings).
+
+**Coverage limits.** The USD reviewer fixture passed keyboard open, Escape, and focus return. Hover,
+the small viewport, quiet ordinary-product eligibility, and the stable Customise control passed both
+USD rounds. Native physical touch and renewal of an owned expired quote remain unverified. Chromium
+and Firefox touch preparation and expired-offer renewal passed local tests. Normal EUR billing loaded
+in both rounds. The automated 503 recovery test passed. T3 Preview could not inject the same fault in
+the native cross-origin billing frame. Shopify challenged the round 1 USD fresh-product tab after
+checkout. Cart emptiness was unverified in that tab. The other recorded carts were verified empty.
+
+**Evidence custody.** Redacted run records on the dev host are under `~/insignia-qa/runs/`.
+USD rounds use `2026-11-26-aw-round1-usd.F6UKBX` and `2026-11-26-aw-round2-usd.2z4FNC`.
+EUR round 1 uses `2026-11-26-aw-r1-eur.kPc07W` and `2026-11-26-aw-r1-eur-clean.UMhwWA`.
+EUR round 2 uses `2026-11-26-aw-r2-eur.0vRXfN`.
+
+**AW storefront performance.** The idle USD and EUR product pages requested the same three AW
+JavaScript files. They total 37,048 decoded bytes and 11,356 bytes when gzipped per file, below the
+15,360-byte budget. All 17 CDN assets matched the build. No new Lighthouse series qualified.
+The isolated USD profile reached the product, but the shared host did not meet the quiet-load threshold.
+The EUR storefront opened from Shopify Admin. Its isolated Lighthouse profile still needs store access.
+The retained Lighthouse scores are the 25 November baseline.
 
 ## Other review items
 
