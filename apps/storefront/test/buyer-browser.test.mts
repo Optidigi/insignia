@@ -2761,11 +2761,12 @@ test('cart repair in an unsupported country or Market explains it at once and re
     const confirm = ui.getByRole('button', { name: 'Confirm cart update', exact: true });
     await confirm.waitFor();
     await confirm.focus();
+    // Keep the original document so navigation cannot satisfy the Designer close assertion.
+    await page.route('**/cart', (route) => route.fulfill({ status: 204 }));
     const navigated = cartNavigation(page);
     await page.keyboard.press('Enter');
     await navigated;
     await page.locator('dialog[open]').waitFor({ state: 'detached' });
-    await page.waitForURL((url) => url.pathname === '/cart');
     assert.equal(updates(), 1);
     assert.deepEqual(items(), []);
     assert.equal(cartNavigations(), 1, 'the confirmed removal opens the native cart once');
@@ -2783,7 +2784,6 @@ test('confirmed removal in an unsupported country or Market opens the native car
     const navigated = cartNavigation(page);
     await ui.getByRole('button', { name: 'Confirm cart update', exact: true }).click();
     await navigated;
-    await page.locator('dialog[open]').waitFor({ state: 'detached' });
     await page.waitForURL((url) => url.pathname === '/cart');
     assert.equal(updates(), 1);
     assert.deepEqual(items(), []);
