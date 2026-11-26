@@ -44,8 +44,11 @@ test('a publish paused by changed defaults shows the saved draft without an unsa
     if (route.request().method() !== 'GET' || !f.mutations.some((entry) => entry.method === 'PUT'))
       return route.fallback();
     const view = f.view();
-    const binding = required(required(required(view.config).draft.selectedSetup).methodBindings[methodId]);
+    const config = required(view.config);
+    const savedDraft = MerchantDraftSchema.parse(config.draft);
+    const binding = required(required(savedDraft.selectedSetup).methodBindings[methodId]);
     binding.prices.default = { ...required(binding.prices.default), value: '9.00' };
+    config.draft = savedDraft;
     return route.fulfill({ json: view });
   });
   await f.open();
