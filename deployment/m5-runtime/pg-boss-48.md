@@ -94,6 +94,8 @@ is disabled. Queue pause authority stays with the owner.
    on `job_common` and the count by queue/state matches the checkpoint before any consumer resumes.
    Confirm all five new indexes `job_common_i13` through `job_common_i17` are ready and valid in
    `pg_index`. Compare the application ledger and ACLs with the frozen baseline and expected column grants.
+   Confirm purchase recovery still has its existing `lease_owner`, `lease_until` and `next_attempt_at`
+   update grants on `public.inbox_messages`. The queue role must still lack payload and erasure-state updates.
    Verify enqueue, consume, supervision and role denials on the isolated upgraded copy. After live
    pre-start checks pass, choose whether to resume writers or restore the checkpoint while it is
    still current. Start the matched artifacts with ingress held, verify readiness and observe pending

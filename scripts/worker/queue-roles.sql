@@ -63,10 +63,9 @@ GRANT UPDATE(updated_at) ON public.shops TO insignia_queue_consume;
 GRANT UPDATE(deactivated_at) ON public.installation_generations TO insignia_queue_consume;
 GRANT UPDATE ON public.shop_credentials TO insignia_queue_consume;
 GRANT UPDATE(shop_id, installation_generation, state, attempts, last_error_class) ON public.inbox_messages TO insignia_queue_consume;
--- No qualified raw-body erasure executor exists. Reapplication also removes
--- obsolete column grants from earlier local candidates; metadata cleanup needs
--- no payload/disposition/lease rewrite authority.
-REVOKE UPDATE(payload, erasure_state, lease_owner, lease_until) ON public.inbox_messages FROM insignia_queue_consume;
+-- Raw-body erasure stays outside the queue role. The purchase grant script owns
+-- lease updates, so replaying the baseline must preserve any grants it installed.
+REVOKE UPDATE(payload, erasure_state) ON public.inbox_messages FROM insignia_queue_consume;
 GRANT UPDATE(queue_handoff_state, queue_cleanup_pending, queue_recovery_selected_at) ON public.shopify_webhook_deliveries TO insignia_queue_consume;
 GRANT UPDATE(effective_revision_id, effective_operation_id, updated_at) ON public.product_configs TO insignia_queue_consume;
 -- A later qualified retention migration supplies only fixed-expiry executors.
