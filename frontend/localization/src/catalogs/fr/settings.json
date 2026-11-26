@@ -470,6 +470,7 @@
       "customer_review_edit": "Modifier",
       "customer_review_pricePerItem": "Prix par article",
       "customer_review_baseItem": "Article",
+      "customer_review_customizationPrice": "Personnalisation",
       "customer_review_artworkRequiredBeforeProduction": "Visuel requis avant la production.",
       "customer_review_artworkLaterNextStep": "Visuel plus tard : étape suivante",
       "customer_review_previewDisclaimer": "L’apparence et le positionnement peuvent légèrement différer de l’aperçu.",

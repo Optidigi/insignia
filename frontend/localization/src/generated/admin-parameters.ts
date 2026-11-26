@@ -2535,6 +2535,7 @@ export const adminParameterContracts = {
   'settings:translations.fields.customer_review_artworkToFollow': {},
   'settings:translations.fields.customer_review_baseItem': {},
   'settings:translations.fields.customer_review_currentDesign': {},
+  'settings:translations.fields.customer_review_customizationPrice': {},
   'settings:translations.fields.customer_review_customizedProduct': {},
   'settings:translations.fields.customer_review_customPosition': {},
   'settings:translations.fields.customer_review_designTotals': {},

@@ -2495,6 +2495,7 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_review_artworkToFollow': object;
   'settings:translations.fields.customer_review_baseItem': object;
   'settings:translations.fields.customer_review_currentDesign': object;
+  'settings:translations.fields.customer_review_customizationPrice': object;
   'settings:translations.fields.customer_review_customizedProduct': object;
   'settings:translations.fields.customer_review_customPosition': object;
   'settings:translations.fields.customer_review_designTotals': object;
