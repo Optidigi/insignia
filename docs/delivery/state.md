@@ -23,9 +23,11 @@ after a native Netherlands checkout on the new Functions. Two native USD and EUR
 release and recorded seven paid Bogus orders. See the [current review validation](shopify-review-resubmission.md#deploy-aw-validation)
 for purchase and recovery evidence, the performance measurements, and the coverage gaps.
 
-**Next for the owner.** Resubmit in the Partner Dashboard after current validation. After approval,
-decide on relaxing the publish hold-safety steps (≤10 s first publish) and #637. Backups, secret
-rotation and the shop-erasure purge still come before the first real merchant. The mid-step release
+**Next for the owner.** Review the candidate locally after engineering qualification, then resubmit
+in the Partner Dashboard once the release and reviewer access are verified. Engineering is qualifying
+#637, #656 and #670 before resubmission. Any change to publish hold safety or a production queue
+migration still needs its own owner decision. Backups, secret rotation and the shop-erasure purge
+still come before the first real merchant. The mid-step release
 lapse (a publish step starting on a 25–30 s-old record) is decided (owner approval 25 Nov), fixed in
 PR #658 and first deployed in AV. The release verifier uses a 13 s reuse lead.
 

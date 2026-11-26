@@ -22,8 +22,8 @@ the reviewer’s precise request to the mismatch.
 For the release proof, use the exact store, product, variant, placement and price you will give the
 reviewer inside Shopify. From a clean buyer session, choose quantity 2 and verify the unit price
 is the expected Shopify base price plus the customization surcharge. Verify the same line total
-in Designer Review, the native cart and checkout, then place an authorized test-gateway order and
-verify the matching order in Insignia. Repeat opening the Designer in an unsupported Market and
+in Designer Review, the native cart and checkout. Stop at checkout for the candidate walkthrough.
+Use the recorded AW Bogus orders as evidence of order ingestion on AW. Repeat opening the Designer in an unsupported Market and
 verify it explains the restriction before collecting artwork. Check that changing Market with an
 existing customized cart cannot bypass validation.
 
@@ -228,6 +228,7 @@ slow-load warnings. The receipts are in `~/tmp-insignia/release-AW/perf/runs/aw-
 
 | Requirement | Verified and remaining evidence |
 | --- | --- |
+| 1.1.9 Buyer consent | For the next candidate, capture the item subtotal, customization subtotal, final quote and explicit **Add to cart** action on the reviewer fixture. Verify that changed terms are displayed before another acceptance. Shopify has yet to confirm how it classifies Insignia's Cart Transform price for customized merchandise under the fee guidance. |
 | 1.2.2 Billing lifecycle | On 26 November, the new Basic dev store `insignia-billing-qa-1126` declined Standard and Insignia showed **No active subscription** with a link back to plan selection. The store approved the $0 annual plan, uninstalled, and reinstalled. Shopify retained the trial with cancellation scheduled. The merchant reapproved via **Manage plan in Shopify** and the cancellation notice cleared. Shopify showed €0/year after trial. The disposable store remains installed on the $0 plan. No payment or order was made. The dev-host receipt is in `~/insignia-qa/runs/2026-11-26-billing-lifecycle.QJ2UbX/receipt.md`. |
 | 1.2.3 Plan changes | **Settings → Billing → Manage plan** opens Shopify's selector for Standard at $49.99 every 30 days or $449.99 per year with identical features. Both no-charge switches passed on 23 November. On 24 November, Shopify admin **Settings → Apps → Insignia** showed **Insignia Standard · $0/month** on rewrite-dev. The owner confirmed there is no eligible billed installation for paid invoice evidence. Shopify's acceptance of switching billing periods under this requirement is open. |
 | 3.2.1 Older order scope | The active scope baseline excludes `read_all_orders`. The 19 November fresh installation verified the required grant and recent orders. The old EUR review installation may still show a historical grant. |
@@ -242,7 +243,7 @@ slow-load warnings. The receipts are in `~/tmp-insignia/release-AW/perf/runs/aw-
    Verify Shopify serves the actual extension assets and obtain fresh Function admission.
 3. Attach current evidence for the purchase path, scope, billing and independent reviewer access.
    Record the exact released versions and fixture used in delivery state. Use the Partner Dashboard
-   to resubmit after the pause ends and the evidence is complete.
+   to resubmit after owner review and once the evidence is complete.
 
 Automatic shop erasure is live. The [delivery state](state.md#deployed-identities) records live
 completion and isolated restore evidence. Three historical drafts remain on hold because later
