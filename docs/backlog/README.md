@@ -59,7 +59,10 @@ leftovers to fold into it (each needs a restart, so they were not done during re
 Added 25 Nov 2026 from the 24–25 Nov hardening pass ([evidence](../delivery/shopify-review-resubmission.md#remaining-hardening)).
 
 **Open issues.**
-- #637 Market-aware stock check before quoting (owner decision 6: deferred until after App Store approval).
+- [#637](https://github.com/Optidigi/insignia/issues/637) uses the native product page's Shopify
+  availability hint in the review candidate. The split-inventory fixture showed the variant as
+  unavailable on the Netherlands product page. The alternate Storefront API probe returned
+  `Online Store channel is locked` for both countries. Verify the hint on the released candidate.
 - #643 Misleading cart messages after compensated partial adds and throttled witness reads (fix in PR #659).
 - #651 Flaky selected-repair Escape test (fix in PR #654).
 - #653 Storefront performance: idle Designer prewarm (~200 KB JS + 234 KB CSS), USD TBT +238 ms, USD footer
