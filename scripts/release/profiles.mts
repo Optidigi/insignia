@@ -132,6 +132,12 @@ import reviewMarketBinding from '../../deployment/m5-runtime/native-review-marke
 };
 import reviewNavModules from '../../deployment/m5-runtime/native-review-nav-module-baseline.json' with { type: 'json' };
 import reviewNavBinding from '../../deployment/m5-runtime/native-review-nav-release-binding.json' with { type: 'json' };
+import reviewReadinessModules from '../../deployment/m5-runtime/native-review-readiness-849a38e1-module-baseline.json' with {
+  type: 'json',
+};
+import reviewReadinessBinding from '../../deployment/m5-runtime/native-review-readiness-849a38e1-release-binding.json' with {
+  type: 'json',
+};
 import scope60Modules from '../../deployment/m5-runtime/native-scope60-module-baseline.json' with { type: 'json' };
 import scope60Binding from '../../deployment/m5-runtime/native-scope60-release-binding.json' with { type: 'json' };
 import scopesModules from '../../deployment/m5-runtime/native-scopes-module-baseline.json' with { type: 'json' };
@@ -262,6 +268,15 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  'native-review-readiness-849a38e1': {
+    versionId: reviewReadinessBinding.versionId,
+    versionTag: reviewReadinessBinding.versionTag,
+    versionIds: reviewReadinessBinding.versionIds,
+    moduleHash: reviewReadinessBinding.moduleHash,
+    modules: reviewReadinessModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: dependencyRefreshFunctions,
+  },
   'native-dependency-refresh-4991bcf9': {
     versionId: dependencyRefreshBinding.versionId,
     versionTag: dependencyRefreshBinding.versionTag,
