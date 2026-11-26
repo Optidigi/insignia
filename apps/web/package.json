@@ -34,11 +34,11 @@
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",
-    "@shopify/polaris-types": "2.0.0-rc.3",
+    "@shopify/polaris-types": "2.0.0",
     "@shopify/shopify-api": "15.1.2",
     "@types/node": "24.19.2",
     "@types/pg": "8.23.1",
-    "playwright": "1.63.0",
+    "playwright": "1.65.1",
     "typescript": "6.0.3"
   }
 }

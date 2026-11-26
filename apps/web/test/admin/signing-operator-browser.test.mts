@@ -21,7 +21,7 @@ test('real Polaris setup is keyboard accessible at 320px and reload retains read
     jsxImportSource: 'preact',
   });
   const polaris = await readFile(
-    new URL('../../../../frontend/admin/examples/fixtures/polaris-2.0-rc.snapshot', import.meta.url),
+    new URL('../../../../frontend/admin/examples/fixtures/polaris-2.0.snapshot', import.meta.url),
     'utf8',
   );
   const browser = await chromium.launch({ headless: true });

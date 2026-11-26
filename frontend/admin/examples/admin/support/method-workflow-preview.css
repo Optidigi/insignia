@@ -3,6 +3,10 @@
   min-width: 0;
   outline: none;
 }
+/* Holds the Methods inert flag without adding a box; dialogs sit beside it. */
+.method-workflow-content {
+  display: contents;
+}
 .method-workflow s-link,
 .method-workflow s-text,
 .method-workflow s-paragraph,

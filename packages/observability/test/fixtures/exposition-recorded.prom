@@ -1,0 +1,43 @@
+# HELP insignia_webhook_total Webhook ingress outcomes
+# TYPE insignia_webhook_total counter
+insignia_webhook_total{outcome="received"} 2
+
+# HELP insignia_inbox_processing_total Durable inbox processing outcomes
+# TYPE insignia_inbox_processing_total counter
+insignia_inbox_processing_total{outcome="deferred"} 1
+
+# HELP insignia_queue_attempt_total Queue retry or terminal failure
+# TYPE insignia_queue_attempt_total counter
+insignia_queue_attempt_total{outcome="retry"} 1
+
+# HELP insignia_credential_refresh_total Credential refresh outcomes
+# TYPE insignia_credential_refresh_total counter
+insignia_credential_refresh_total{outcome="reauth_required"} 1
+
+# HELP insignia_refresh_claim_contention_total Serialized refresh claim contention
+# TYPE insignia_refresh_claim_contention_total counter
+insignia_refresh_claim_contention_total 1
+
+# HELP insignia_inbox_ingress_resolution_total Inbox resolution observed after accepted ingress
+# TYPE insignia_inbox_ingress_resolution_total counter
+insignia_inbox_ingress_resolution_total{outcome="failed"} 1
+
+# HELP insignia_usage_qualification_pass_total Completed usage qualification passes, not billed usage
+# TYPE insignia_usage_qualification_pass_total counter
+insignia_usage_qualification_pass_total{outcome="success"} 1
+
+# HELP insignia_publication_abandonment_total Abandoned publication hold outcomes
+# TYPE insignia_publication_abandonment_total counter
+insignia_publication_abandonment_total{outcome="flagged"} 1
+
+# HELP insignia_publication_holds_flagged Publication availability holds waiting for the operator
+# TYPE insignia_publication_holds_flagged gauge
+insignia_publication_holds_flagged 4
+
+# HELP insignia_artwork_cleanup_review_rows Artwork rows whose cleanup failed 12 consecutive times and needs review
+# TYPE insignia_artwork_cleanup_review_rows gauge
+insignia_artwork_cleanup_review_rows 2
+
+# HELP insignia_unresolved_inbox_backlog Number of unresolved inbox rows
+# TYPE insignia_unresolved_inbox_backlog gauge
+insignia_unresolved_inbox_backlog 3

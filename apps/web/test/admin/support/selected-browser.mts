@@ -20,8 +20,8 @@ import './browser-state.mts';
 const authority = 'a'.repeat(64);
 const methodId = 'cc756ade-f50a-4f5c-94b7-fd320a7a75e6';
 const imageUrl = 'https://cdn.shopify.com/synthetic-selected/hoodie-front.jpg';
-const polarisUrl = 'https://cdn.shopify.com/shopifycloud/polaris-2.0-rc.js';
-const polarisSha = '89dd2052b7b8cc6b042900f5c044e1f5754e31bf769d205b6e2399992bdb0c7b';
+const polarisUrl = 'https://cdn.shopify.com/shopifycloud/polaris-2.0.js';
+const polarisSha = 'af6e068300a7ec498092ecd2c4feb90bd93c43a2d8f75d27f65f86ae1f93d9f2';
 const artifacts = new URL('../../../../../.m1-artifacts/selected-product-browser/', import.meta.url);
 const rect = { centerX: 0.38, centerY: 0.315, width: 0.18, height: 0.15 };
 const setup = SelectedProductSetupSchema.parse({
@@ -180,7 +180,7 @@ function ensureBrowser() {
 }
 async function startBrowser() {
   polaris = await readFile(
-    new URL('../../../../../frontend/admin/examples/fixtures/polaris-2.0-rc.snapshot', import.meta.url),
+    new URL('../../../../../frontend/admin/examples/fixtures/polaris-2.0.snapshot', import.meta.url),
   );
   assert.equal(
     createHash('sha256').update(polaris).digest('hex'),

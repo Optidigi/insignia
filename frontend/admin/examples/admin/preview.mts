@@ -221,14 +221,24 @@ config.config.draft.labels = {
 // Read-only selected-container fixtures for scenarios without the interactive demo adapter.
 const selectedContext = { shop: 'synthetic.myshopify.com', authority: 'a'.repeat(64), canEdit: false };
 fixtures['/api/admin/preferences'] = {
-  version: 'merchant-preferences-v1', ...selectedContext, canReadPrivacy: false,
-  guidanceVersion: '0', wordingVersion: '0', notificationsVersion: '0', guidance: { dismissed: false, completedSteps: [] },
+  version: 'merchant-preferences-v1',
+  ...selectedContext,
+  canReadPrivacy: false,
+  guidanceVersion: '0',
+  wordingVersion: '0',
+  notificationsVersion: '0',
+  guidance: { dismissed: false, completedSteps: [] },
   notifications: { customerArtworkEmail: true },
   overlays: { en: { locale: 'en', messages: {} } },
 };
 fixtures['/api/admin/methods'] = { ...selectedContext, currency: 'USD', methods: [] };
-Object.assign(config.product, { tags: [], collections: [], collectionsTruncated: false, methodSetup: [],
-  configurationSummary: { state: 'draft', methods: ['Screen printing'], locations: ['Front chest'] } });
+Object.assign(config.product, {
+  tags: [],
+  collections: [],
+  collectionsTruncated: false,
+  methodSetup: [],
+  configurationSummary: { state: 'draft', methods: ['Screen printing'], locations: ['Front chest'] },
+});
 fixtures['/api/admin/products'] = { products: [config.product], nextCursor: null };
 fixtures['/api/admin/products/111/config'] = config;
 const loadPreviewIcon = createPreviewIconLoader();
@@ -261,7 +271,11 @@ const server = createServer(async (request, reply) => {
     reply.setHeader('cache-control', 'no-store');
     if (
       request.method === 'GET' &&
-      ['/illustrations/shopify/empty-records.png', '/illustrations/shopify/empty-product.png', '/illustrations/editor-sample.png'].includes(url.pathname)
+      [
+        '/illustrations/shopify/empty-records.png',
+        '/illustrations/shopify/empty-product.png',
+        '/illustrations/editor-sample.png',
+      ].includes(url.pathname)
     ) {
       reply.setHeader('content-type', 'image/png');
       reply.end(await readFile(new URL(`../../dist/client${url.pathname}`, import.meta.url)));
@@ -377,9 +391,7 @@ const server = createServer(async (request, reply) => {
         reply.end(methodBundle?.outputFiles?.[0]?.text);
       } else if (url.pathname.endsWith('/style.css')) {
         reply.setHeader('content-type', 'text/css');
-        reply.end(
-          await readFile(new URL('./support/method-workflow-preview.css', import.meta.url), 'utf8'),
-        );
+        reply.end(await readFile(new URL('./support/method-workflow-preview.css', import.meta.url), 'utf8'));
       } else {
         reply.statusCode = 404;
         reply.end('Preview resource unavailable');
@@ -424,7 +436,7 @@ const server = createServer(async (request, reply) => {
     }
     if (url.pathname === '/__preview/polaris.js') {
       reply.setHeader('content-type', 'text/javascript');
-      reply.end(await readFile(new URL('../fixtures/polaris-2.0-rc.snapshot', import.meta.url)));
+      reply.end(await readFile(new URL('../fixtures/polaris-2.0.snapshot', import.meta.url)));
       return;
     }
     if (url.pathname.startsWith('/__preview/icons/')) {
@@ -578,7 +590,7 @@ const server = createServer(async (request, reply) => {
     if (type.includes('text/html')) {
       let html = (await result.text())
         .replace('https://cdn.shopify.com/shopifycloud/app-bridge.js', '/__preview/bridge.js')
-        .replace('https://cdn.shopify.com/shopifycloud/polaris-2.0-rc.js', '/__preview/polaris.js')
+        .replace('https://cdn.shopify.com/shopifycloud/polaris-2.0.js', '/__preview/polaris.js')
         .replace(
           /<script\b(?=[^>]*\bsrc="\/__preview\/polaris\.js")[^>]*>\s*<\/script>/,
           '<script defer src="/__preview/assets.js"></script><script defer src="/__preview/polaris.js"></script>',

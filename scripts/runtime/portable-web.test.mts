@@ -143,7 +143,7 @@ test('current compiled web package survives relocation and serves HTTP on the co
         !html.includes('22222222222222222222222222222222'),
         `${route}: browser input must not supply the client key`,
       );
-      assert.match(html, /shopifycloud\/polaris-2\.0-rc\.js/);
+      assert.match(html, /shopifycloud\/polaris-2\.0\.js/);
       if (route.endsWith('/config')) assert.match(html, /component-url="[^"]*SelectedProductContainer/);
       for (const match of html.matchAll(/(?:src|href|component-url|renderer-url)="(\/_astro\/[^"#]+)"/g)) {
         const asset = await fetch(`http://127.0.0.2:${port}${match[1]}`);
@@ -209,7 +209,7 @@ test('current compiled web package survives relocation and serves HTTP on the co
           html,
           /<s-button\b[^>]*href="https:\/\/admin\.shopify\.com"[^>]*target="_top"[^>]*>Return to Shopify Admin<\/s-button>/,
         );
-        assert.match(html, /shopifycloud\/polaris-2\.0-rc\.js/);
+        assert.match(html, /shopifycloud\/polaris-2\.0\.js/);
         assert.match(html, /<html\b[^>]*data-admin-ready="true"/);
         assert.doesNotMatch(html, /shopify-api-key|shopifycloud\/app-bridge|<s-app-nav|id="admin-route-skeleton"/);
         assert.ok(
