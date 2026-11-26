@@ -1,8 +1,8 @@
 # pg-boss 12.40.0 upgrade and recovery
 
-Issue [#670](https://github.com/Optidigi/insignia/issues/670) records the App Store approval gate.
-The original issue named schema 47. The reviewed candidate takes the queue directly from schema 43
-(pg-boss 12.35.1) to schema 48 (12.40.0). The application migration ledger is independent.
+Issue [#670](https://github.com/Optidigi/insignia/issues/670) tracks the owner-approved queue migration.
+The candidate upgrades schema 43 (pg-boss 12.35.1) directly to schema 48 (12.40.0). The application
+migration ledger is independent.
 Web and worker require the exact queue schema for their image and start with `migrate: false`
 and `createSchema: false`. Use paired images during the transition.
 
@@ -29,27 +29,56 @@ is disabled. Queue pause authority stays with the owner.
 1. Retain the exact schema-43 web and worker images, matching operations bundle, private settings and
    role definitions. Build and qualify the matched schema-48 artifacts from the candidate. Follow the
    [bounded deployment and recovery sequence](README.md#bounded-deployment-and-recovery-sequence).
-2. Hold public ingress and stop web, worker and any other queue clients. Quiesce database writers
-   for the rollback checkpoint, including the inspector or verifier if they can write during the hold.
-   Let in-flight work settle before proceeding. Resolve any `active` jobs and ambiguous external effects
-   with the existing recovery rules. Pending or retry jobs may stay queued. Record queue names, per-state
-   counts, protected application facts, application migration ledger, owner and ACLs.
-3. From the quiesced database, take an encrypted, database-only custom-format checkpoint. Keep its role
-   definitions under existing separate custody. Restore to a fresh isolated PostgreSQL 18 database with
-   matching roles, owners and ACLs, check the schema-43 ledger and pending jobs, and dry-run the next step
-   on that restored database. Use a private credential source for the owner connection. With libpq configured
-   for the explicitly verified source and isolated restore endpoints, the commands are:
+2. Hold public ingress and prevent automatic restarts of the old web, worker and any other queue
+   clients. Stop those processes and quiesce the other database writers, including the inspector or
+   verifier if they can write. A schema-43 client that already started can still process jobs after
+   the upgrade. Verify the stopped processes and absence of their PostgreSQL sessions before
+   capturing the checkpoint. Keep the restart hold through migration and grants. Recheck the
+   process inventory and `pg_stat_activity` immediately before the migration.
+
+   ```sql
+   SELECT pid, usename, application_name, backend_type, state
+   FROM pg_stat_activity
+   WHERE datname = current_database() AND pid <> pg_backend_pid()
+   ORDER BY usename, application_name, pid;
+   ```
+
+   Let in-flight work settle and resolve any `active` jobs and ambiguous effects with the existing
+   recovery rules. Pending and retry jobs may stay queued. Record queue counts by name and state,
+   protected application facts, the application migration ledger, and database and schema ACLs.
+3. Take an encrypted, database-only custom-format checkpoint from the quiesced database. Keep the
+   role definitions under existing separate custody. Restore into a fresh isolated PostgreSQL 18
+   cluster with matching roles and memberships and no database with the archive's name. Check the
+   schema-43 ledger and pending jobs, then dry-run the upgrade on the restore. Use private libpq
+   service definitions for the verified source and isolated endpoints.
 
    ```sh
    umask 077
    pg_dump --format=custom --file="$QUEUE_CHECKPOINT" --dbname="$SOURCE_SERVICE"
    pg_restore --list "$QUEUE_CHECKPOINT"
-   pg_restore --exit-on-error --single-transaction --dbname="$ISOLATED_RESTORE_SERVICE" "$QUEUE_CHECKPOINT"
+   pg_restore --create --exit-on-error --dbname="$ISOLATED_MAINTENANCE_SERVICE" "$QUEUE_CHECKPOINT"
    ```
 
-   Store the dump only on approved encrypted storage. Prepare an empty restore target and reproduce
-   roles before `pg_restore`. Preserve ownership and ACLs. Keep the restored database offline and follow
-   the existing erasure, expiry and authority requalification rules before any restored database can serve traffic.
+   Store the dump only on approved encrypted storage. Verify the maintenance service points to the
+   fresh cluster. The archive supplies the database name and `--create` restores its ownership,
+   ACLs and database-specific configuration. Record the following before backup and compare it to
+   the restored database. Keep the restore offline and follow erasure, expiry and authority
+   requalification before it can serve traffic.
+
+   ```sql
+   SELECT pg_get_userbyid(datdba) AS owner,
+          ARRAY(SELECT acl::text
+                FROM unnest(COALESCE(datacl, acldefault('d', datdba))) AS entries(acl)
+                ORDER BY acl::text) AS database_acl
+   FROM pg_database WHERE datname = current_database();
+
+   SELECT COALESCE(r.rolname, 'ALL') AS role, s.setconfig
+   FROM pg_db_role_setting s
+   JOIN pg_database d ON d.oid = s.setdatabase
+   LEFT JOIN pg_roles r ON r.oid = s.setrole
+   WHERE d.datname = current_database()
+   ORDER BY role;
+   ```
 4. From the built candidate checkout, execute the migration and existing grants as the schema owner.
    Set `DATABASE_URL` privately for Node and configure libpq to address the same verified database as the owner
    (for example with a private service definition). The CLI's default mode serves fresh installs and
@@ -79,7 +108,7 @@ is disabled. Queue pause authority stays with the owner.
 - If schema 48 committed and the grants or readiness check failed, keep the hold. Fix the grants or
   images forward and verify again. A schema-43 image rejects schema 48.
 - Restoring a checkpoint is an owner decision. Before admitting any new writes or external effects,
-  restore the verified schema-43 checkpoint to a separate empty PostgreSQL 18 database using the
+  restore the verified schema-43 checkpoint to a separate PostgreSQL 18 cluster using the
   same restore procedure, verify schema, pending jobs and ACLs, complete restore requalification
   with the matching schema-43 tooling, then switch the paired old artifacts together. If writers
   have resumed or an external action could have happened, preserve the current data and reconcile
