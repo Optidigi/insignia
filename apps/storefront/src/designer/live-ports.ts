@@ -480,6 +480,7 @@ export function createLiveDesignerPorts(input: {
             ...labelled(labels.get(group.productId)),
             ...variantDetail(group.selection),
             quantity: group.quantity,
+            baseTotalMinor: group.baseTotalMinor,
             totalMinor: group.totalMinor,
           })),
         },

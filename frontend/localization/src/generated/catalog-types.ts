@@ -2875,6 +2875,7 @@ export interface CustomerMessageTable {
   'customer:review.artworkToFollow': object;
   'customer:review.baseItem': object;
   'customer:review.currentDesign': object;
+  'customer:review.customizationPrice': object;
   'customer:review.customizedProduct': object;
   'customer:review.customPosition': object;
   'customer:review.designTotals': object;

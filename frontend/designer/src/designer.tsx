@@ -51,7 +51,7 @@ import {
 import { PositionPicker } from './position-picker';
 import { QuantityEntry } from './quantity-entry';
 import { quantityLayout } from './quantity-layout';
-import { type DesignerQuoteReview, quoteReviewMoney } from './quote-review';
+import { type DesignerQuoteReview, quoteReviewBreakdown, quoteReviewMoney } from './quote-review';
 import { ReviewPanel } from './review-panel';
 import { type CartReceipt, createDesignerRuntime, designerIntentKey, type DesignerPorts } from './runtime';
 import { ThemeControl } from './theme';
@@ -1134,6 +1134,7 @@ function DesignerSession({
         : 'loading'
     : undefined;
   const footerBusy = workflow.commit.kind === 'pending' || (step === 2 && workflow.commit.kind === 'preparing');
+  const quoteBreakdown = step === 2 && !quoteStatus ? quoteReviewBreakdown(quoteReview) : undefined;
   // A failed review or Add to cart: its copy and the one action that helps come from its cause (#335, #337).
   const failureView = workflow.commit.kind === 'failed' ? commitFailureView(workflow.commit, formatLocale) : undefined;
   // The add/update action Review offers; after a failed add, Retry repeats it.
@@ -2064,6 +2065,18 @@ function DesignerSession({
                     : money(qty ? (hasQuantityErrors ? unit * qty : totalPrice(prints, quantities)) : unit)}
                 </strong>
               </div>
+              {quoteBreakdown && quoteReview && (
+                <dl className="review-costs footer-quote-breakdown">
+                  <div>
+                    <dt>{t('customer:review.items')}</dt>
+                    <dd><bdi>{quoteReviewMoney(quoteBreakdown.base, quoteReview.currency, quoteReview.exponent, formatLocale)}</bdi></dd>
+                  </div>
+                  <div>
+                    <dt>{t('customer:review.customizationPrice')}</dt>
+                    <dd><bdi>{quoteReviewMoney(quoteBreakdown.customization, quoteReview.currency, quoteReview.exponent, formatLocale)}</bdi></dd>
+                  </div>
+                </dl>
+              )}
               <div className="footer-buttons">
                 {step > 0 && (
                   <button

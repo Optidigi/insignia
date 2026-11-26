@@ -241,6 +241,7 @@ export const customerParameterContracts = {
   'customer:review.artworkToFollow': {},
   'customer:review.baseItem': {},
   'customer:review.currentDesign': {},
+  'customer:review.customizationPrice': {},
   'customer:review.customizedProduct': {},
   'customer:review.customPosition': {},
   'customer:review.designTotals': {},

@@ -159,7 +159,7 @@ export function ReviewPanel({
           })}
         </ul>
       </section>
-      <details className="review-pricing">
+      {!quoteReview?.groups.some((group) => group.baseTotalMinor !== undefined) && <details className="review-pricing">
         <summary>
           <span>{t('customer:review.pricePerItem')}</span>
           <strong>
@@ -195,7 +195,7 @@ export function ReviewPanel({
             </div>
           ))}
         </dl>
-      </details>
+      </details>}
       {quoteReview && quoteReview.groups.length > 1 && (
         <section className="review-section review-design-totals" aria-labelledby="review-design-totals-title">
           <div className="section-label">

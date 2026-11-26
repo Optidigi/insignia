@@ -1785,12 +1785,11 @@ test('expired quote with changed terms keeps Add, shows the fresh price and requ
       await applyButton(host).waitFor();
       assert.equal(proposals.length, 1);
       const originalTotal = await host.locator('.footer-price strong').innerText();
-      await host.locator('.review-pricing summary').click();
       assert.equal(originalTotal, '€90.00', 'the footer owns the full three-item design total');
-      assert.equal(await host.locator('.review-pricing summary bdi').innerText(), '€30.00');
-      assert.deepEqual(await host.locator('.review-costs dd').allTextContents(), ['€20.00', '€10.00']);
+      const breakdown = host.locator('.footer-quote-breakdown dd');
+      assert.deepEqual(await breakdown.allTextContents(), ['€60.00', '€30.00']);
       assert.equal(await host.getByRole('region', { name: 'Design totals', exact: true }).count(), 0);
-      assert.equal(await host.locator('.review-pricing').getByText(originalTotal, { exact: true }).count(), 0);
+      assert.equal(await host.locator('.review-pricing').count(), 0);
       const repriced = structuredClone(config);
       repriced.variants = repriced.variants.map((variant) => ({ ...variant, baseUnitMinor: '9000' }));
       configure(repriced);
@@ -1804,9 +1803,10 @@ test('expired quote with changed terms keeps Add, shows the fresh price and requ
         originalTotal,
         'the last price stays visible',
       );
-      assert.deepEqual(await host.locator('.review-costs dd').allTextContents(), ['€20.00', '€10.00']);
+      assert.deepEqual(await breakdown.allTextContents(), ['€60.00', '€30.00']);
       await applyButton(host).click();
       await host.locator('.footer-price strong').filter({ hasText: '300.00' }).waitFor({ timeout: 3000 });
+      assert.deepEqual(await breakdown.allTextContents(), ['€270.00', '€30.00']);
       await applyButton(host).waitFor();
       assert.equal(await host.locator('.cart-submit-error').count(), 0, 'refresh is not a cart failure');
       assert.equal(proposals.length, 2);

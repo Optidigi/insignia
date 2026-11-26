@@ -984,6 +984,11 @@ button svg {
   font-size: 12px;
   color: var(--muted);
 }
+.footer-quote-breakdown {
+  grid-column: 1 / -1;
+  gap: 4px;
+  padding-bottom: 12px;
+}
 .footer-buttons {
   display: flex;
   gap: 8px;
