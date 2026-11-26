@@ -37,6 +37,10 @@ on:
       - '.node-version'
       - '.github/workflows/runtime.yml'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
 
@@ -60,6 +64,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
+      KEEP_RUNTIME_ARCHIVES: ${{ github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'release/')) }}
       DATABASE_URL: postgres://synthetic_runtime_owner:insignia_test@localhost:5432/insignia_test?sslmode=disable
       INSIGNIA_REQUIRE_POSTGRES_TEST: '1'
     steps:
@@ -165,7 +170,7 @@ jobs:
           docker save --output "$RUNNER_TEMP/insignia-operations-artifact/heartbeat-image.tar" "$image_id"
           sha256sum "$RUNNER_TEMP/insignia-operations-artifact/heartbeat-image.tar" > "$RUNNER_TEMP/insignia-operations-artifact/heartbeat-image.tar.sha256"
       - name: Preserve operations runtime for later gated deployment
-        if: steps.changes.outputs.route == 'full'
+        if: steps.changes.outputs.route == 'full' && env.KEEP_RUNTIME_ARCHIVES == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: operations-runtime-${{ github.run_id }}-${{ github.run_attempt }}
@@ -185,7 +190,7 @@ jobs:
           cp "$RUNNER_TEMP/insignia-inspector-package/receipt.json" "$RUNNER_TEMP/insignia-inspector-artifact/receipt.json"
           sha256sum "$RUNNER_TEMP/insignia-inspector-artifact/inspector.tar" > "$RUNNER_TEMP/insignia-inspector-artifact/inspector.tar.sha256"
       - name: Preserve versioned inspector host artifact (native handover remains unqualified)
-        if: steps.changes.outputs.route == 'full'
+        if: steps.changes.outputs.route == 'full' && env.KEEP_RUNTIME_ARCHIVES == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: artwork-inspector-${{ github.run_id }}-${{ github.run_attempt }}
@@ -213,7 +218,7 @@ jobs:
           docker save --output "$RUNNER_TEMP/insignia-verifier-artifact/verifier-image.tar" "$image_id"
           sha256sum "$RUNNER_TEMP/insignia-verifier-artifact/verifier-image.tar" > "$RUNNER_TEMP/insignia-verifier-artifact/verifier-image.tar.sha256"
       - name: Preserve independent verifier immutable image (native handover remains unqualified)
-        if: steps.changes.outputs.route == 'full'
+        if: steps.changes.outputs.route == 'full' && env.KEEP_RUNTIME_ARCHIVES == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-verifier-${{ github.run_id }}-${{ github.run_attempt }}
@@ -245,7 +250,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
       - name: Preserve qualified ordinary worker deployment image
-        if: steps.changes.outputs.route == 'full'
+        if: steps.changes.outputs.route == 'full' && env.KEEP_RUNTIME_ARCHIVES == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: m5-024-worker-image-${{ github.run_id }}-${{ github.run_attempt }}
@@ -259,8 +264,8 @@ jobs:
           # Qualified package construction below remains offline and frozen.
           corepack pnpm --filter @insignia/web deploy --prod --frozen-lockfile --legacy /tmp/insignia-m5-web-cache-primer
           corepack pnpm install --offline --frozen-lockfile --ignore-scripts --prod=false
-          node --test scripts/worker/copy-built-workspaces.test.mts scripts/runtime/web-address.test.mts scripts/runtime/portable-web.test.mts
           bash scripts/runtime/build-web.sh /tmp/insignia-m5-web
+          M5_WEB_PACKAGE=/tmp/insignia-m5-web node --test scripts/worker/copy-built-workspaces.test.mts scripts/runtime/web-address.test.mts scripts/runtime/portable-web.test.mts
       - name: Actual current web image startup restart and export
         if: steps.changes.outputs.route == 'full'
         env:
@@ -278,7 +283,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
       - name: Preserve qualified ordinary web deployment image
-        if: steps.changes.outputs.route == 'full'
+        if: steps.changes.outputs.route == 'full' && env.KEEP_RUNTIME_ARCHIVES == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: m5-web-image-${{ github.run_id }}-${{ github.run_attempt }}
@@ -287,6 +292,20 @@ jobs:
             ${{ runner.temp }}/m5-web-image-evidence/receipt.json
           if-no-files-found: error
           retention-days: 3
+      - name: Preserve ordinary PR package receipts
+        if: steps.changes.outputs.route == 'full' && env.KEEP_RUNTIME_ARCHIVES == 'false'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: runtime-package-receipts-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/insignia-operations-artifact/receipt.json
+            ${{ runner.temp }}/insignia-operations-artifact/offline-image-probe.json
+            ${{ runner.temp }}/insignia-inspector-artifact/receipt.json
+            ${{ runner.temp }}/insignia-verifier-artifact/receipt.json
+            ${{ runner.temp }}/insignia-verifier-artifact/offline-image-probe.json
+            ${{ runner.temp }}/m5-024-worker-image/receipt.json
+          if-no-files-found: error
+          retention-days: 7
       - name: Generic webhook quarantine through real HTTP and worker
         if: steps.changes.outputs.route == 'full'
         env:

@@ -30,6 +30,10 @@ on:
       - 'rust-toolchain.toml'
       - '.github/workflows/foundation.yml'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
 
@@ -59,7 +63,6 @@ jobs:
         run: |
           rustup toolchain install 1.100.0 --profile minimal --component rustfmt,clippy --target wasm32-unknown-unknown
           corepack pnpm install --frozen-lockfile
-          corepack pnpm --filter @insignia/web exec playwright install --with-deps chromium
           corepack pnpm --filter @insignia/designer exec playwright install --with-deps chromium firefox
       - name: Build and check actual workspace
         if: steps.changes.outputs.route == 'full'

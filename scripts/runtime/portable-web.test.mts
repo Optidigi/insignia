@@ -12,7 +12,7 @@ import {
 } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
-import { join, relative, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import test from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { errorCode, object, required } from './validation.mts';
@@ -23,18 +23,23 @@ const root = resolve(import.meta.dirname, '../..');
 test('current compiled web package survives relocation and serves HTTP on the configured interface and port', {
   timeout: 180_000,
 }, async () => {
-  const scratch = mkdtempSync(join(tmpdir(), 'insignia-web-package-'));
+  const suppliedPackage = process.env.M5_WEB_PACKAGE && resolve(process.env.M5_WEB_PACKAGE);
+  const scratch = mkdtempSync(join(suppliedPackage ? dirname(suppliedPackage) : tmpdir(), 'insignia-web-package-'));
+  const destination = suppliedPackage || join(scratch, 'original');
+  const relocated = join(scratch, 'relocated');
+  let moved = false;
   let server: import('node:child_process').ChildProcess | undefined;
   try {
-    const destination = join(scratch, 'original');
-    const packaged = spawnSync('bash', ['scripts/runtime/build-web.sh', destination], {
-      cwd: root,
-      encoding: 'utf8',
-      timeout: 120_000,
-    });
-    assert.equal(packaged.status, 0, packaged.stderr + packaged.stdout);
-    const relocated = join(scratch, 'relocated');
+    if (!suppliedPackage) {
+      const packaged = spawnSync('bash', ['scripts/runtime/build-web.sh', destination], {
+        cwd: root,
+        encoding: 'utf8',
+        timeout: 120_000,
+      });
+      assert.equal(packaged.status, 0, packaged.stderr + packaged.stdout);
+    }
     renameSync(destination, relocated);
+    moved = true;
     assert.deepEqual(
       readFileSync(join(relocated, 'dist/server/entry.mjs')),
       readFileSync(join(root, 'apps/web/dist/server/entry.mjs')),
@@ -224,6 +229,7 @@ test('current compiled web package survives relocation and serves HTTP on the co
       server.kill('SIGTERM');
       await stopped;
     }
+    if (suppliedPackage && moved) renameSync(relocated, suppliedPackage);
     rmSync(scratch, { recursive: true, force: true });
   }
 });

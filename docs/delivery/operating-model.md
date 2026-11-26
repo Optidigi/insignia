@@ -29,6 +29,20 @@ Security work is proportionate to actual data, integrations and exposure. Preser
 
 Choose independent review by impact; one focused reviewer normally suffices. Security/economic/identity/privacy/concurrency/release changes need appropriate correctness coverage. Corrections receive impact review, not an automatic full restart. Use normal protected-branch merges and verify actual parents/tree/remote refs; no fabricated approval, protection bypass, force rewrite or direct protected-main overwrite. Documentation-only work creates no runtime or native proof.
 
+### CI checks and artifacts
+
+Foundation checks the workspace, browsers and Shopify Functions. Durable core exercises
+the database on PostgreSQL 18. Runtime qualifies built packages and images, restricted
+roles and application processes. Each required check cancels its older runs for the
+same PR. Push runs on `main` finish independently. Foundation's run summary shows
+the duration and result of each workspace check.
+
+Ordinary PRs keep Runtime receipts and logs. Full archives are retained for qualified
+`main` runs and same-repository `release/` PRs that need those bytes for
+[Shopify version binding](../../deployment/m5-runtime/README.md#deploy-next).
+[Release image custody](../../.github/workflows/images.yml) publishes the qualified
+`main` archives to private GHCR and verifies their manifest digests.
+
 ## UI state and effects
 
 Reuse the selected presentation, reducers and existing real service ports. Use a reducer or explicit state machine when related transitions, asynchronous work or recovery would otherwise create conflicting flags. Keep simple independent controls local; a new state framework is not a default requirement.
