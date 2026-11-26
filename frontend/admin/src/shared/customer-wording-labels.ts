@@ -216,6 +216,7 @@ export const customerWordingLabels = {
   'customer:review.edit': 'settings:translations.fields.customer_review_edit',
   'customer:review.pricePerItem': 'settings:translations.fields.customer_review_pricePerItem',
   'customer:review.baseItem': 'settings:translations.fields.customer_review_baseItem',
+  'customer:review.customizationPrice': 'settings:translations.fields.customer_review_customizationPrice',
   'customer:review.artworkRequiredBeforeProduction':
     'settings:translations.fields.customer_review_artworkRequiredBeforeProduction',
   'customer:review.artworkLaterNextStep': 'settings:translations.fields.customer_review_artworkLaterNextStep',

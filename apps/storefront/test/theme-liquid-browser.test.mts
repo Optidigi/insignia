@@ -81,7 +81,7 @@ async function renderTheme(
   const values = {
     product: {
       id: '111',
-      variants: [{ id: '101' }],
+      variants: [{ id: '101' }, { id: '102', available: false }, { id: '103', available: true }],
       metafields: { $app: mode ? { insignia_policy_v2: { value: `${generation}:1:${mode}` } } : {} },
     },
     block: {
@@ -140,6 +140,8 @@ test('rendered theme Liquid retains valid attributes and native Customise placem
   const integration = page.locator('insignia-theme-integration');
   assert.equal(await integration.getAttribute('auto-placement'), 'true');
   assert.equal(await integration.getAttribute('proxy-base'), '/apps/insignia');
+  assert.equal(await integration.getAttribute('unavailable-variant-ids'), '102');
+  assert.equal(await page.locator('insignia-buyer[data-insignia-auto]').getAttribute('unavailable-variant-ids'), '102');
   assert.equal(await integration.getAttribute('trigger-label'), 'Customise & draw');
   assert.equal(await integration.getAttribute('known-required'), '');
   await page.getByRole('button', { name: 'Customise & draw', exact: true }).waitFor();
@@ -159,6 +161,10 @@ test('rendered manual block remains available for required publications despite 
     html,
   );
   assert.equal(await page.locator('insignia-buyer:not([data-insignia-auto])').count(), 1);
+  assert.equal(
+    await page.locator('insignia-buyer:not([data-insignia-auto])').getAttribute('unavailable-variant-ids'),
+    '102',
+  );
   await page.getByRole('button', { name: 'Customise & draw', exact: true }).waitFor();
   assert.equal(await page.locator('insignia-buyer[data-insignia-auto]').count(), 0);
   assert.equal(await page.locator('button[name=add]').isVisible(), false);

@@ -1098,7 +1098,7 @@ export function createMerchantConfigService(input: {
         if (error instanceof PublicationAnchorConflictError)
           return {
             kind: 'invalid',
-            code: 'PUBLICATION_UNAVAILABLE',
+            code: 'PUBLICATION_ANCHOR_CONFLICT',
             message: "This product's Insignia fields in Shopify need support before it can be published.",
           };
         throw error;

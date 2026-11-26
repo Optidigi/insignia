@@ -1121,6 +1121,7 @@
     "realHistoricalPricingReview": "Cette configuration utilise des prix que cet éditeur ne peut pas représenter de façon sûre. Le brouillon enregistré et les prix publiés restent inchangés. Vérifiez les prix avant la conversion.",
     "realHistoricalAppearanceReview": "Les photos de variantes ou les placements existants doivent être vérifiés avec le catalogue Shopify complet. La configuration enregistrée reste inchangée.",
     "configRejection": {
+      "publicationAnchorConflict": "Contactez l’assistance pour corriger les champs Insignia de ce produit dans Shopify avant de le publier.",
       "generic": "Cette modification ne peut pas être enregistrée : {{reason}}",
       "draftSchemaInvalid": {
         "view": "Une vue de cette configuration n’est pas valide. Corrigez ce point, puis enregistrez à nouveau.",

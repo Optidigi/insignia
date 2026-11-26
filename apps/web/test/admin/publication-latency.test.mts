@@ -617,6 +617,7 @@ async function firstPublication(
     calls,
     rounds: () => rounds,
     status: () => status,
+    removeRegistration: () => cells.delete('registration'),
     actor: () => actor,
     session: (next: Partial<AdminActor>) => {
       actor = { ...actor, ...next };
@@ -643,6 +644,32 @@ async function firstPublication(
     },
   };
 }
+
+test('first publication stops before the policy write if registration disappears during the held observation', {
+  skip: !database,
+  timeout: 120000,
+}, async () => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  try {
+    const f = await firstPublication(core);
+    let heldRead = 0;
+    f.beforeCall((label) => {
+      // The next hold check brackets the channel reads with two product reads.
+      // Change Shopify's registration in the final product round, after an early field read could finish.
+      if (f.calls.get('metafield write') !== 2 || label !== 'product availability read') return;
+      heldRead++;
+      if (heldRead === 2) f.removeRegistration();
+    });
+    const response = await f.publish('registration-drift-while-checking-hold');
+    assert.ok(heldRead >= 2);
+    assert.equal(f.calls.get('metafield write'), 2, 'no policy write after registration evidence disappears');
+    assert.equal(response.status, 202);
+    assert.equal((await response.json()).state, 'OPERATOR_HOLD');
+    assert.equal(f.status(), 'DRAFT');
+  } finally {
+    await core.close();
+  }
+});
 
 test('#436: a first publication spends its provider calls on sequencing, not repeated gates', {
   skip: !database,

@@ -36,6 +36,63 @@ async function settleFrame(page: Page) {
   );
 }
 
+test('a publish paused by changed defaults shows the saved draft without an unsaved conflict', {
+  timeout: 20000,
+}, async (t) => {
+  const f = await fixture(t);
+  await f.page.route('**/api/admin/products/111/config', async (route) => {
+    if (route.request().method() !== 'GET' || !f.mutations.some((entry) => entry.method === 'PUT'))
+      return route.fallback();
+    const view = f.view();
+    const config = required(view.config);
+    const savedDraft = MerchantDraftSchema.parse(config.draft);
+    const binding = required(required(savedDraft.selectedSetup).methodBindings[methodId]);
+    binding.prices.default = { ...required(binding.prices.default), value: '9.00' };
+    config.draft = savedDraft;
+    return route.fulfill({ json: view });
+  });
+  await f.open();
+  await editName(f.page, 'Saved during publish review');
+  const modal = await openPublication(f.page);
+  await modal.locator('s-button[slot="primary-action"]').click();
+  await f.page
+    .locator('s-banner')
+    .filter({ hasText: 'Inherited defaults changed. Review the saved changes before publishing again.' })
+    .waitFor();
+  assert.equal(await f.page.getByText(draftConflictText, { exact: true }).count(), 0);
+  assert.equal(
+    await f.page.getByRole('textbox', { name: /^Placement name/ }).inputValue(),
+    'Saved during publish review',
+  );
+  assert.equal(
+    f.mutations.some((entry) => entry.method === 'POST'),
+    false,
+  );
+  assert.equal(await storedIntent(f.page), null);
+});
+
+test('a copied publication anchor shows the support refusal and keeps custody of the recorded intent', {
+  timeout: 20000,
+}, async (t) => {
+  const f = await fixture(t);
+  await f.page.route('**/api/admin/products/111/config', async (route) => {
+    if (route.request().method() !== 'POST') return route.fallback();
+    const body = route.request().postDataJSON();
+    if (body.action === 'reconcile') return route.fulfill({ json: { kind: 'resolved', publicationRecorded: true } });
+    if (body.action !== 'publish') return route.fallback();
+    return route.fulfill({ status: 422, json: { kind: 'invalid', code: 'PUBLICATION_ANCHOR_CONFLICT' } });
+  });
+  await f.open();
+  const modal = await openPublication(f.page);
+  await modal.locator('s-button[slot="primary-action"]').click();
+  await f.page
+    .getByText('Contact support to fix this product’s Insignia fields in Shopify before publishing.')
+    .waitFor();
+  await modal.waitFor({ state: 'hidden' });
+  assert.equal(await f.page.getByRole('button', { name: 'Retry', exact: true }).count(), 0);
+  assert.ok(await storedIntent(f.page));
+});
+
 test('unsupported historical advanced economics remain inaccessible to editing and cannot be silently repriced', {
   timeout: 20000,
 }, async (t) => {

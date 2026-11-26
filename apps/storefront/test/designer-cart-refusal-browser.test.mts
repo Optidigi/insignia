@@ -82,7 +82,7 @@ type Scenario = {
 async function withRefusedAdd(
   botChecks: number,
   run: (scenario: Scenario) => Promise<void>,
-  { landed = 0 }: { landed?: number } = {},
+  { landed = 0, availabilityHint = false }: { landed?: number; availabilityHint?: boolean } = {},
 ) {
   const server = await createServer({
     plugins: [selectedFrameAssets()],
@@ -189,7 +189,27 @@ async function withRefusedAdd(
       const path = new URL(route.request().url()).pathname;
       if (path.includes('/designs/')) return route.fallback();
       const body = record(route.request().postData() ? route.request().postDataJSON() : {});
-      if (path.endsWith('/config')) return route.fulfill({ json: config });
+      if (path.endsWith('/config'))
+        return route.fulfill({
+          json: availabilityHint
+            ? {
+                ...config,
+                variants: [
+                  ...config.variants,
+                  {
+                    id: '223',
+                    label: 'Blue / M',
+                    available: true,
+                    selectedOptions: [
+                      { name: 'Color', value: 'Blue' },
+                      { name: 'Size', value: 'M' },
+                    ],
+                    baseUnitMinor: '2000',
+                  },
+                ],
+              }
+            : config,
+        });
       if (path.endsWith('/sessions'))
         return route.fulfill({
           json: {
@@ -248,14 +268,18 @@ async function withRefusedAdd(
       route.fulfill({ contentType: 'text/html', body: '<main><h1>Native cart</h1></main>' }),
     );
     const mount = async () => {
-      await page.evaluate(() => {
+      await page.evaluate((hint) => {
         const host = document.createElement('insignia-buyer');
         host.setAttribute('product-id', '111');
         host.setAttribute('cart-root', '/');
         host.setAttribute('country', 'NL');
         host.setAttribute('market-id', '1');
+        if (hint) {
+          host.setAttribute('unavailable-variant-ids', '222,invalid');
+          history.replaceState(null, '', '?variant=222');
+        }
         document.body.append(host);
-      });
+      }, availabilityHint);
       await page.locator('insignia-buyer').getByRole('button', { name: 'Customize this product' }).click();
       await page.frameLocator('iframe').locator('.app').waitFor({ timeout: 30_000 });
     };
@@ -305,6 +329,30 @@ async function assertStockRefusal(page: Page, ui: FrameLocator) {
   );
   assert.equal(new URL(page.url()).pathname, '/');
 }
+
+test('a Shopify product-page stock hint appears before artwork and leaves unobserved variants selectable', async () => {
+  await withRefusedAdd(
+    0,
+    async ({ page, ui, addCalls }) => {
+      const warning = ui.getByRole('status').getByText('Unavailable for this selection');
+      await warning.waitFor({ timeout: 4000 });
+      await page.keyboard.press('Escape');
+      await page.evaluate(() => history.replaceState(null, '', '/'));
+      await page.locator('insignia-buyer').getByRole('button', { name: 'Customize this product' }).click();
+      await ui.getByRole('button', { name: 'Add artwork', exact: true }).first().waitFor();
+      await warning.waitFor({ state: 'hidden' });
+      await designTwo(ui);
+      await ui.getByRole('button', { name: 'Choose quantities', exact: true }).click();
+      const soldOut = ui.locator('.compact-quantity-row').filter({ hasText: 'Blue / S' });
+      await soldOut.getByText('Unavailable', { exact: true }).waitFor();
+      assert.equal(await soldOut.getByRole('textbox').count(), 0);
+      const available = ui.locator('.compact-quantity-row').filter({ hasText: 'Blue / M' });
+      assert.equal(await available.getByRole('textbox').isEnabled(), true);
+      assert.equal(addCalls(), 0);
+    },
+    { availabilityHint: true },
+  );
+});
 
 test('a sold-out add followed by two bot-checked cart reads is a stock refusal; Add again by keyboard', async () => {
   await withRefusedAdd(2, async ({ page, ui, addCalls, restock }) => {

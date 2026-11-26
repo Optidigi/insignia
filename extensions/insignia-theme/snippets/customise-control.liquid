@@ -13,6 +13,9 @@
   if block.settings.button_label == blank
     assign trigger_label = 'insignia.customise' | t
   endif
+  if required and localization.country.iso_code != blank
+    assign unavailable_variant_ids = product.variants | where: 'available', false | map: 'id' | join: ','
+  endif
 -%}
 {%- if control == 'automatic' and required -%}
   {%- comment -%}
@@ -38,6 +41,9 @@
 {%- if control == 'automatic' or required -%}
   <{{ control_tag }}
     product-id="{{ product.id }}"
+    {% if unavailable_variant_ids != blank %}
+      unavailable-variant-ids="{{ unavailable_variant_ids }}"
+    {% endif %}
     {% if control == 'automatic' %}
       variant-ids="{{ product.variants | map: 'id' | join: ',' }}"
       auto-placement="{{ block.settings.auto_placement }}"

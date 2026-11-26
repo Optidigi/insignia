@@ -379,8 +379,8 @@ function SelectedProductContainer({ productId }: { productId: string }) {
   }
   /** A write that is still unresolved stays pending; a server rejection is final; anything else is `otherwise`. */
   function failedRemote(owned: Client, error: unknown, otherwise: 'failed' | 'conflict'): Remote {
-    if (owned.hasPending()) return 'pending';
     const rejection = configRejectionFrom(error);
+    if (owned.hasPending() && rejection?.code !== 'PUBLICATION_ANCHOR_CONFLICT') return 'pending';
     return rejection ? { kind: 'rejected', rejection } : otherwise;
   }
   const rejected = typeof remote === 'object' ? remote.rejection : null;
@@ -576,7 +576,7 @@ function SelectedProductContainer({ productId }: { productId: string }) {
               }
               if (error instanceof SelectedProductReviewChanged) {
                 const product = await observe(error.view);
-                setRemote('conflict');
+                setRemote('idle');
                 return { status: 'changed', product };
               }
               if (
@@ -658,7 +658,7 @@ function SelectedProductContainer({ productId }: { productId: string }) {
           {!rejected && (view.config?.publication.reason || view.config?.publishEligibility.reason) && (
             <s-paragraph>{view.config.publication.reason ?? view.config.publishEligibility.reason}</s-paragraph>
           )}
-          {client.current?.hasPending() && !publicationProgressing && (
+          {client.current?.hasPending() && !publicationProgressing && rejected?.code !== 'PUBLICATION_ANCHOR_CONFLICT' && (
             <s-button onClick={() => void retry()}>{t('common:actions.retry')}</s-button>
           )}
           {!client.current?.hasPending() && (!rejected || configRejectionNeedsReload(rejected)) && (

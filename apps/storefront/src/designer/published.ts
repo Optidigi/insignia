@@ -106,6 +106,15 @@ export function canonicalDesignerSource(source: BuyerConfig): PublishedDesignerS
   });
   return { ...source, readProduct, stepBindings, variantRowsById: true };
 }
-export function buildBuyerDesigner(source: BuyerConfig, options: { locale: string; storeName: string }) {
-  return buildPublishedDesigner(canonicalDesignerSource(source), options);
+export function buildBuyerDesigner(
+  source: BuyerConfig,
+  options: { locale: string; storeName: string; unavailableVariantIds?: ReadonlySet<string> | undefined },
+) {
+  const published = canonicalDesignerSource(source);
+  const { unavailableVariantIds } = options;
+  if (!unavailableVariantIds?.size) return buildPublishedDesigner(published, options);
+  const variants = published.variants.map((variant) =>
+    unavailableVariantIds.has(variant.id) ? { ...variant, available: false } : variant,
+  );
+  return buildPublishedDesigner({ ...published, variants }, options);
 }

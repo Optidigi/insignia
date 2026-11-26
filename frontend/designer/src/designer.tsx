@@ -51,7 +51,7 @@ import {
 import { PositionPicker } from './position-picker';
 import { QuantityEntry } from './quantity-entry';
 import { quantityLayout } from './quantity-layout';
-import { type DesignerQuoteReview, quoteReviewMoney } from './quote-review';
+import { type DesignerQuoteReview, quoteReviewBreakdown, quoteReviewMoney } from './quote-review';
 import { ReviewPanel } from './review-panel';
 import { type CartReceipt, createDesignerRuntime, designerIntentKey, type DesignerPorts } from './runtime';
 import { ThemeControl } from './theme';
@@ -453,15 +453,16 @@ function DesignerSession({
     (entryFocusSignal.keyboard ? skipLinkRef.current : appRef.current)?.focus({ preventScroll: true });
   }, [entryFocusSignal]);
   const hintedVariant = useRef<string | undefined>(undefined);
+  const bareVariantId = (id: string) => id.replace(/^gid:\/\/shopify\/ProductVariant\//, '');
+  const productPageVariantId = productVariantSignal && bareVariantId(productVariantSignal.variantId);
+  const productPageCell = productPageVariantId
+    ? config.variantMatrix?.find((cell) => bareVariantId(cell.variantId) === productPageVariantId)
+    : undefined;
   useEffect(() => {
     // Only a new product-page choice: a colour picked in the Designer survives closing and reopening.
     if (!productVariantSignal || productVariantSignal.variantId === hintedVariant.current) return;
     hintedVariant.current = productVariantSignal.variantId;
-    const bare = (id: string) => id.replace(/^gid:\/\/shopify\/ProductVariant\//, '');
-    const color = config.variantMatrix?.find(
-      (cell) => bare(cell.variantId) === bare(productVariantSignal.variantId),
-    )?.rowId;
-    if (color) dispatch({ type: 'product-page-color-hinted', color });
+    if (productPageCell) dispatch({ type: 'product-page-color-hinted', color: productPageCell.rowId });
   }, [productVariantSignal]);
   const reviewIntent = designerIntentKey(workflow);
   const beforeQuantities = step === 0;
@@ -1134,6 +1135,7 @@ function DesignerSession({
         : 'loading'
     : undefined;
   const footerBusy = workflow.commit.kind === 'pending' || (step === 2 && workflow.commit.kind === 'preparing');
+  const quoteBreakdown = step === 2 && !quoteStatus ? quoteReviewBreakdown(quoteReview) : undefined;
   // A failed review or Add to cart: its copy and the one action that helps come from its cause (#335, #337).
   const failureView = workflow.commit.kind === 'failed' ? commitFailureView(workflow.commit, formatLocale) : undefined;
   // The add/update action Review offers; after a failed add, Retry repeats it.
@@ -1622,6 +1624,13 @@ function DesignerSession({
             <ValidationSummary issues={validationIssues} summaryRef={summaryRef} onNavigate={navigateIssue} />
             {step === 0 && (
               <>
+                {!artworkOnly && productPageCell?.available === false && productPageCell.rowId === color && (
+                  <p className="quantity-no-results" role="status">
+                    {quantitiesLayout.cells.some((cell) => cell.available)
+                      ? t('customer:quantities.unavailableForSelection')
+                      : t('customer:quantities.noOptionsAvailable')}
+                  </p>
+                )}
                 {prints.length === 0 && (
                   <div className="empty-state">
                     <h2>{t('customer:artwork.emptyTitle')}</h2>
@@ -2064,6 +2073,18 @@ function DesignerSession({
                     : money(qty ? (hasQuantityErrors ? unit * qty : totalPrice(prints, quantities)) : unit)}
                 </strong>
               </div>
+              {quoteBreakdown && quoteReview && (
+                <dl className="review-costs footer-quote-breakdown">
+                  <div>
+                    <dt>{t('customer:review.items')}</dt>
+                    <dd><bdi>{quoteReviewMoney(quoteBreakdown.base, quoteReview.currency, quoteReview.exponent, formatLocale)}</bdi></dd>
+                  </div>
+                  <div>
+                    <dt>{t('customer:review.customizationPrice')}</dt>
+                    <dd><bdi>{quoteReviewMoney(quoteBreakdown.customization, quoteReview.currency, quoteReview.exponent, formatLocale)}</bdi></dd>
+                  </div>
+                </dl>
+              )}
               <div className="footer-buttons">
                 {step > 0 && (
                   <button

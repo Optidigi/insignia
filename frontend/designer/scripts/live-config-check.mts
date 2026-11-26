@@ -166,6 +166,23 @@ test('differing variant base prices produce the actual total while old demo conf
 test('quote review formatting keeps exact cents beyond numeric precision', () => {
   const formatted = quote.quoteReviewMoney('900719925474099199', 'EUR', 2, 'en-US');
   assert.equal(formatted, '€9,007,199,254,740,991.99');
+  assert.equal(quote.quoteReviewMoney('-25', 'EUR', 2, 'en-US'), '-€0.25');
+});
+
+test('quote review adds base subtotals and shows the signed difference including setup and credits', () => {
+  assert.deepEqual(
+    quote.quoteReviewBreakdown({
+      currency: 'EUR',
+      exponent: 2,
+      customizedQuantity: 3,
+      totalMinor: '975',
+      groups: [
+        { id: 'one', quantity: 1, baseTotalMinor: '400', totalMinor: '475' },
+        { id: 'two', quantity: 2, baseTotalMinor: '600', totalMinor: '500' },
+      ],
+    }),
+    { base: '1000', customization: '-25' },
+  );
 });
 
 test('merchant variant photo groups choose real row axes, captured photos and aligned placement geometry', () => {

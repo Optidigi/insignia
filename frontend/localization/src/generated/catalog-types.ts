@@ -841,6 +841,7 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.configRejection.planFeatureRequired': object;
   'editor:placementWorkflowPreview.configRejection.priceAmountInvalid': object;
   'editor:placementWorkflowPreview.configRejection.productIdentityChanged': object;
+  'editor:placementWorkflowPreview.configRejection.publicationAnchorConflict': object;
   'editor:placementWorkflowPreview.configRejection.publicationIncomplete': { reason: string };
   'editor:placementWorkflowPreview.configRejection.publicationUnavailable': object;
   'editor:placementWorkflowPreview.configRejection.reloadAndDiscard': object;
@@ -2494,6 +2495,7 @@ export interface AdminMessageTable {
   'settings:translations.fields.customer_review_artworkToFollow': object;
   'settings:translations.fields.customer_review_baseItem': object;
   'settings:translations.fields.customer_review_currentDesign': object;
+  'settings:translations.fields.customer_review_customizationPrice': object;
   'settings:translations.fields.customer_review_customizedProduct': object;
   'settings:translations.fields.customer_review_customPosition': object;
   'settings:translations.fields.customer_review_designTotals': object;
@@ -2875,6 +2877,7 @@ export interface CustomerMessageTable {
   'customer:review.artworkToFollow': object;
   'customer:review.baseItem': object;
   'customer:review.currentDesign': object;
+  'customer:review.customizationPrice': object;
   'customer:review.customizedProduct': object;
   'customer:review.customPosition': object;
   'customer:review.designTotals': object;

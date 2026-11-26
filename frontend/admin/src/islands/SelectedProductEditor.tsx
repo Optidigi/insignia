@@ -2496,8 +2496,9 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     try {
       result = await adapter.publish(publishReview.product, publishReview.revision);
     } catch (error) {
-      if (configRejectionFrom(error)) {
-        if (adapter.pending())
+      const rejection = configRejectionFrom(error);
+      if (rejection) {
+        if (adapter.pending() && rejection.code !== 'PUBLICATION_ANCHOR_CONFLICT')
           result = { status: 'pending' }; // The write may have committed: keep the pending flow.
         else {
           // Refused, not lost: close the review so the merchant can fix the edit the host's banner names.
@@ -2514,9 +2515,17 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
       setWriteBusy(false);
     }
     if (result.status === 'changed') {
-      setProduct(result.product);
+      const confirmedBindings = adapter.getBindings?.() ?? currentBindings.current;
+      commitPlacementDraftChange(
+        history.current,
+        { product: currentProduct.current, bindings: currentBindings.current },
+        { product: result.product, bindings: confirmedBindings },
+      );
+      currentBindings.current = confirmedBindings;
+      currentProduct.current = result.product;
+      renderProduct(result.product);
       setSaved(result.product);
-      savedBindings.current = adapter.getBindings?.() ?? currentBindings.current;
+      savedBindings.current = confirmedBindings;
       dispatchDialog({ type: 'dialog-closed', id: publishReview.id });
       setNotice({ kind: 'message', reason: 'draft-changed' });
       return;
