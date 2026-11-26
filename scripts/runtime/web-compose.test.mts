@@ -200,7 +200,7 @@ test('ordinary runtime overlays preserve canonical web boundaries and restrict w
       sslmode: 'disable',
       address: 'synthetic-address',
       major: 18,
-      schemaVersion: 43,
+      schemaVersion: 48,
     };
     const webEndpoint = { ...endpoint, role: 'synthetic_web' };
     const entry = fileURLToPath(new URL('../../apps/worker/dist/main.js', import.meta.url));

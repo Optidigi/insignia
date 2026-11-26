@@ -27,7 +27,7 @@
     "@insignia/shopify": "workspace:*",
     "@insignia/storage": "workspace:*",
     "pg": "8.23.1",
-    "pg-boss": "12.35.1",
+    "pg-boss": "12.40.0",
     "saxes": "6.0.0",
     "sharp": "0.35.5"
   },

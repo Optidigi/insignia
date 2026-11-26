@@ -8,3 +8,7 @@ allowBuilds:
   '@swc/core': false
 
 # Historical spike evidence is inert; maintained packages belong to this workspace.
+
+# Exact queue migration release selected in #670.
+minimumReleaseAgeExclude:
+  - pg-boss@12.40.0

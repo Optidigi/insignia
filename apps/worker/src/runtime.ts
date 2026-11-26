@@ -103,6 +103,8 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions): PgBossRuntim
         persistQueueStats: false,
         monitorVacuum: false,
         reindex: false,
+        // Restricted clients do not publish their connection or process metadata.
+        registerInstance: false,
       });
   function requireAdapter(adapter: QueueAdapter | undefined): QueueAdapter {
     if (!adapter) throw new Error('Missing queue adapter');

@@ -1,4 +1,4 @@
-export const QUEUE_SCHEMA_VERSION = 43;
+export const QUEUE_SCHEMA_VERSION = 48;
 export const WEBHOOK_QUEUE = 'insignia.shopify-webhook.v1';
 export const REFRESH_QUEUE = 'insignia.token-refresh.v1';
 export const QUEUE_POLICY = Object.freeze({
@@ -19,6 +19,7 @@ export function assertQueueContract(name: string, queue: unknown): void {
     row.name !== name ||
     row.table !== 'job_common' ||
     row.notify !== false ||
+    row.paused !== false ||
     row.deadLetter !== null ||
     row.heartbeatSeconds !== null ||
     row.retryDelayMax !== null ||

@@ -42,7 +42,7 @@ test('candidate guards reject source, Compose, image, endpoint and private parit
     sslmode: 'disable',
     address: '127.0.0.1',
     major: 18,
-    schemaVersion: 43,
+    schemaVersion: 48,
   };
   const candidate = {
     composeBytes,

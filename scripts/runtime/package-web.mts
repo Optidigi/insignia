@@ -58,7 +58,7 @@ function lstatIfPresent(path: string) {
 // resolve at the flattened Astro runtime root, including lazy API chunks.
 for (const [name, version] of [
   ['aws4fetch', '1.0.20'],
-  ['pg-boss', '12.35.1'],
+  ['pg-boss', '12.40.0'],
 ]) {
   const packageRoot = realpathSync(join(destination, 'node_modules', required(name)));
   if (relative(destination, packageRoot).startsWith('..')) throw new Error('Runtime dependency escaped destination');

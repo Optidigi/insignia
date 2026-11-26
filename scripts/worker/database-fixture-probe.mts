@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
+import { QUEUE_SCHEMA_VERSION } from '../../apps/worker/dist/queue-contract.js';
 
 const { Pool }: typeof import('pg') = createRequire(resolve('apps/worker/package.json'))('pg');
 const options = { connectionTimeoutMillis: 3000, query_timeout: 5000, statement_timeout: 4000 };
@@ -62,11 +63,11 @@ try {
     await assert.rejects(login.query(sql), { code: '42501' });
     denied.push({ sql, sqlstate: '42501' });
   }
-  assert.equal(
-    required((await login.query<{ version: number }>('select version from pgboss.version')).rows[0]).version,
-    43,
-  );
-  console.log(JSON.stringify({ serverVersion, currentUser, roleFlags, memberships, denied, schemaVersion: 43 }));
+  const schemaVersion = required(
+    (await login.query<{ version: number }>('select version from pgboss.version')).rows[0],
+  ).version;
+  assert.equal(schemaVersion, QUEUE_SCHEMA_VERSION);
+  console.log(JSON.stringify({ serverVersion, currentUser, roleFlags, memberships, denied, schemaVersion }));
 } finally {
   // The parent bounds the entire child lifetime, including both pool.end waits.
   try {

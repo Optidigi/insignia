@@ -18,7 +18,7 @@ async function fixture(parent: string) {
   await writeFile(join(worker, 'dist/main.js'), 'export {};\n');
   await writeFile(
     join(worker, 'dist/queue-contract.js'),
-    "export const QUEUE_SCHEMA_VERSION=43, WEBHOOK_QUEUE='insignia.shopify-webhook.v1';\n",
+    "export const QUEUE_SCHEMA_VERSION=48, WEBHOOK_QUEUE='insignia.shopify-webhook.v1';\n",
   );
   await writeFile(join(worker, 'node_modules/pg/package.json'), JSON.stringify({ name: 'pg', main: 'index.cjs' }));
   await writeFile(

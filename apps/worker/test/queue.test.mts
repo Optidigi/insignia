@@ -47,6 +47,7 @@ function fakeBoss(): FakeBoss {
         ...QUEUE_POLICY,
         table: 'job_common',
         notify: false,
+        paused: false,
         deadLetter: null,
         heartbeatSeconds: null,
         retryDelayMax: null,
@@ -90,7 +91,7 @@ function fakeBoss(): FakeBoss {
       calls.push(['offWork', name, options]);
     },
     async schemaVersion() {
-      return 43;
+      return 48;
     },
   };
 }
@@ -116,7 +117,7 @@ test('enqueue confirms exact inbox identity, including completed job replay', as
     ),
   );
   assert.deepEqual(required(boss.jobs.get(inboxId)).data, { inboxId });
-  assert.equal(await queue.schemaVersion(), 43);
+  assert.equal(await queue.schemaVersion(), 48);
   await queue.stop();
 });
 
@@ -315,7 +316,7 @@ test('queue policy drift, missing queue and wrong schema fail startup; later dri
   const boss = fakeBoss();
   boss.schemaVersion = async () => 42;
   await assert.rejects(createPgBossRuntime({ webhookHandoff: queueBoundaryHandoff, boss }).start(), /version differs/);
-  boss.schemaVersion = async () => 43;
+  boss.schemaVersion = async () => 48;
   const queue = createPgBossRuntime({ webhookHandoff: queueBoundaryHandoff, boss, credentialKeysReady: true });
   await queue.start();
   await queue.work({

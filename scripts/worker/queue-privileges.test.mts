@@ -119,6 +119,9 @@ test('separate owner installation and restricted queue roles preserve messages a
       persistQueueStats: false,
       monitorVacuum: false,
       reindex: false,
+      registerInstance: false,
+      superviseIntervalSeconds: 1,
+      monitorIntervalSeconds: 1,
     });
     boss.on('error', (error: Error) => {
       throw error;
@@ -145,6 +148,11 @@ test('separate owner installation and restricted queue roles preserve messages a
     assert.equal((await boss.findJobs(WEBHOOK_QUEUE, { id }))[0]?.state, 'completed');
     assert.equal(attempts, 2);
     assert.equal(await worker.checkDurableReady(), true);
+    assert.equal(
+      (await pool.query('select monitor_on is not null as monitored from pgboss.queue where name=$1', [WEBHOOK_QUEUE]))
+        .rows[0]?.monitored,
+      true,
+    );
     const consumerPool = new Pool({ connectionString: url.href });
     try {
       assert.equal((await consumerPool.query('select current_user')).rows[0].current_user, workerRole);
@@ -153,6 +161,9 @@ test('separate owner installation and restricted queue roles preserve messages a
         "select pgboss.create_queue('escape','{}')",
         'truncate pgboss.job',
         'update pgboss.queue set retry_limit=999',
+        'update pgboss.queue set paused_on=now()',
+        'select * from pgboss.instance',
+        'insert into pgboss.instance default values',
         'update pgboss.version set version=42',
         'delete from public.uninstall_delivery_authority',
         'select public.recover_uninstall_privacy(null::uuid,null::uuid)',
