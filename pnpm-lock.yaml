@@ -315,6 +315,9 @@ importers:
       '@types/pg':
         specifier: 8.23.1
         version: 8.23.1
+      pg-boss-v43:
+        specifier: npm:pg-boss@12.35.1
+        version: pg-boss@12.35.1
       playwright:
         specifier: 1.65.1
         version: 1.65.1
@@ -2995,6 +2998,11 @@ packages:
 
   pdf-lib@1.17.1:
     resolution: {integrity: sha512-V/mpyJAoTsN4cnP31vc0wfNA1+p20evqqnap0KLoRUN0Yk/p3wN52DOEsL4oBFcLdb76hlpKPtzJIgo67j/XLw==}
+
+  pg-boss@12.35.1:
+    resolution: {integrity: sha512-2eGu2HhelLE0jaifdEMMtuy1pgoF9fycs5deHEwQiaXUcxuPQ9udNxb27VquNO8XgYTM3b1cWnsfSuc8RzXuWw==}
+    engines: {node: '>=22.12.0'}
+    hasBin: true
 
   pg-boss@12.40.0:
     resolution: {integrity: sha512-iGnTn4NFSkDiPy10HgtGxpbAHabb3acro5VnbIpzR0O/hgGre8x7r70aN90U8/j3RS/NkLk/aVY6r+SsB80xvg==}
@@ -5950,6 +5958,15 @@ snapshots:
       '@pdf-lib/upng': 1.0.1
       pako: 1.0.11
       tslib: 1.14.1
+
+  pg-boss@12.35.1:
+    dependencies:
+      cron-parser: 5.10.6
+      pg: 8.23.1
+      rrule-temporal: 2.3.0
+      serialize-error: 13.1.0
+    transitivePeerDependencies:
+      - pg-native
 
   pg-boss@12.40.0(@opentelemetry/api@1.10.0):
     dependencies:

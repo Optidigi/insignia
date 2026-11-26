@@ -141,7 +141,16 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions): PgBossRuntim
             ? `has_table_privilege(current_user, '${schema}.job', 'DELETE') AND
           has_table_privilege(current_user, '${schema}.job_common', 'DELETE') AND
           has_column_privilege(current_user, '${schema}.version', 'flow_on', 'UPDATE') AND
-          has_column_privilege(current_user, '${schema}.queue', 'monitor_on', 'UPDATE')`
+          has_column_privilege(current_user, '${schema}.version', 'monitor_backoff_on', 'UPDATE') AND
+          has_column_privilege(current_user, '${schema}.queue', 'monitor_on', 'UPDATE') AND
+          has_column_privilege(current_user, '${schema}.queue', 'retained_count', 'UPDATE') AND
+          has_column_privilege(current_user, '${schema}.queue', 'retained_on', 'UPDATE') AND
+          has_table_privilege(current_user, '${schema}.instance', 'DELETE') AND
+          has_column_privilege(current_user, '${schema}.instance', 'id', 'UPDATE') AND
+          NOT EXISTS (
+            SELECT FROM unnest(ARRAY['id', 'started_on', 'stopped_on', 'heartbeat_on', 'heartbeat_seconds']) AS fields(name)
+            WHERE NOT has_column_privilege(current_user, '${schema}.instance', fields.name, 'SELECT')
+          )`
             : 'true'
         }) AS allowed`);
       if (rows.length !== 1 || rows[0]?.allowed !== true) throw new Error('Queue runtime privileges are incomplete');

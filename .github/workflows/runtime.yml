@@ -305,8 +305,10 @@ jobs:
           corepack pnpm exec dbmate create
           corepack pnpm db:migrate
           node --test apps/web/test/uninstall-authority.test.mts
-      - name: Built HTTP ingress with PostgreSQL and queue handoff
+      - name: Packaged HTTP ingress with PostgreSQL and upgraded queue handoff
         if: steps.changes.outputs.route == 'full'
+        env:
+          M5_WEB_PACKAGE: /tmp/insignia-m5-web
         working-directory: apps/web
         run: node --test test/shopify-webhook.test.mts
       - name: Admin editor and publication with PostgreSQL

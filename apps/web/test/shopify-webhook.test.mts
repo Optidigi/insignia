@@ -4,12 +4,82 @@ import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { createDurableCore } from '@insignia/database';
 import { Pool } from 'pg';
+import { PgBoss as Schema43PgBoss } from 'pg-boss-v43';
 import { installQueue } from '../../../scripts/database/install-queue.mts';
+import { QUEUE_POLICY, REFRESH_QUEUE, WEBHOOK_QUEUE } from '../../worker/dist/queue-contract.js';
 import { record, required, text } from './http-fixtures.mts';
 import { type BuiltProcess, startBuilt } from './support/built-process.mts';
 import { isolatedDatabase } from './support/isolated-database.mts';
 
-test('built HTTP ingress authenticates raw bytes and durably deduplicates through PostgreSQL and queue', {
+async function upgradeExistingQueue(connectionString: string) {
+  const owner = new Pool({ connectionString });
+  const oldQueue = new Schema43PgBoss({ connectionString, supervise: false, schedule: false });
+  const version = async () => (await owner.query('select version from pgboss.version')).rows[0]?.version;
+  const jobs = async () =>
+    (await owner.query('select name,id,state,data,retry_count,created_on,start_after from pgboss.job order by id'))
+      .rows;
+  try {
+    try {
+      await oldQueue.start();
+      assert.equal(await version(), 43);
+      await oldQueue.createQueue(WEBHOOK_QUEUE, QUEUE_POLICY);
+      await oldQueue.createQueue(REFRESH_QUEUE, QUEUE_POLICY);
+      assert.ok(await oldQueue.send(WEBHOOK_QUEUE, { inboxId: randomUUID() }));
+      const retry = await oldQueue.send(REFRESH_QUEUE, { shopId: randomUUID(), installationGeneration: 1 });
+      assert.ok(retry);
+      assert.equal((await oldQueue.fetch(REFRESH_QUEUE))[0]?.id, retry);
+      await oldQueue.fail(REFRESH_QUEUE, retry);
+    } finally {
+      await oldQueue.stop();
+    }
+    const expected = await jobs();
+    assert.deepEqual(expected.map(({ state }) => state).sort(), ['created', 'retry']);
+
+    // Fail after DDL and the first index build. The ledger, schema and jobs must roll back together.
+    await owner.query('create table pgboss.job_common_i14 (id integer)');
+    await assert.rejects(installQueue(connectionString, 'pgboss', 'upgrade-from-43'), { code: '42P07' });
+    assert.equal(await version(), 43);
+    assert.equal(
+      (await owner.query("select to_regclass('pgboss.job_common_i13') as previous_index")).rows[0]?.previous_index,
+      null,
+    );
+    assert.equal(
+      (
+        await owner.query(
+          "select 1 from information_schema.columns where table_schema='pgboss' and table_name='queue' and column_name='paused_on'",
+        )
+      ).rowCount,
+      0,
+    );
+    assert.deepEqual(await jobs(), expected);
+    await owner.query('drop table pgboss.job_common_i14');
+
+    await installQueue(connectionString, 'pgboss', 'upgrade-from-43');
+    assert.equal(await version(), 48);
+    assert.deepEqual(await jobs(), expected);
+    const indexes = await owner.query(`
+      select c.relname, i.indisready, i.indisvalid
+      from pg_index i join pg_class c on c.oid=i.indexrelid
+      where i.indrelid='pgboss.job_common'::regclass and c.relname ~ '^job_common_i1[3-7]$'
+      order by c.relname
+    `);
+    assert.deepEqual(
+      indexes.rows,
+      [13, 14, 15, 16, 17].map((n) => ({
+        relname: `job_common_i${n}`,
+        indisready: true,
+        indisvalid: true,
+      })),
+    );
+
+    // Only the seeded transport rows are synthetic. Leave the built process test its own inbox-linked jobs.
+    await owner.query('delete from pgboss.job where id = any($1::uuid[])', [expected.map(({ id }) => id)]);
+  } finally {
+    await owner.end();
+  }
+}
+
+test('built HTTP ingress authenticates raw bytes and durably deduplicates through the upgraded queue', {
   skip: !process.env.DATABASE_URL && process.env.INSIGNIA_REQUIRE_POSTGRES_TEST !== '1',
   timeout: 60_000,
 }, async (t) => {
@@ -17,14 +87,18 @@ test('built HTTP ingress authenticates raw bytes and durably deduplicates throug
   const database = await isolatedDatabase();
   t.after(() => database.close());
   const { connectionString } = database;
-  await installQueue(connectionString);
+  await upgradeExistingQueue(connectionString);
   const secret = 'synthetic-webhook-hmac-test-secret';
-  const server = await startBuilt('web', {
-    ...process.env,
-    DATABASE_URL: connectionString,
-    SHOPIFY_WEBHOOK_SECRET: secret,
-    INSIGNIA_METRICS_TOKEN: 'synthetic-metrics-token',
-  });
+  const server = await startBuilt(
+    'web',
+    {
+      ...process.env,
+      DATABASE_URL: connectionString,
+      SHOPIFY_WEBHOOK_SECRET: secret,
+      INSIGNIA_METRICS_TOKEN: 'synthetic-metrics-token',
+    },
+    { webPackage: process.env.M5_WEB_PACKAGE },
+  );
   const pool = new Pool({ connectionString });
   const core = createDurableCore(new Pool({ connectionString }));
   const domain = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;

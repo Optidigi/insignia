@@ -110,6 +110,23 @@ test('separate owner installation and restricted queue roles preserve messages a
     await producer.start();
     assert.equal((await producer.ensureWebhookEnqueued(id)).status, 'already_enqueued');
     url.username = workerRole;
+    await pool.query(`
+      revoke update(monitor_backoff_on) on pgboss.version from insignia_queue_consume;
+      revoke update(retained_count, retained_on) on pgboss.queue from insignia_queue_consume;
+      revoke all on pgboss.instance from insignia_queue_consume;
+    `);
+    const oldGrants = createPgBossRuntime({
+      webhookHandoff: queueBoundaryHandoff,
+      connectionString: url.href,
+      credentialKeysReady: true,
+    });
+    try {
+      await assert.rejects(oldGrants.start(), /Queue runtime privileges are incomplete/);
+      assert.equal(await oldGrants.checkDurableReady(), false);
+    } finally {
+      await oldGrants.stop();
+    }
+    await pool.query(await readFile(new URL('../worker/queue-roles.sql', import.meta.url), 'utf8'));
     const boss = new PgBoss({
       connectionString: url.href,
       migrate: false,
