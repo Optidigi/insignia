@@ -37,9 +37,7 @@
       "state": "available",
       "providerUpdatedAt": "2026-10-07T12:09:56.000Z",
       "effectiveVisibility": {
-        "publishedPublicationIds": [
-          "gid://shopify/Publication/339456917787"
-        ],
+        "publishedPublicationIds": ["gid://shopify/Publication/339456917787"],
         "onlineStore": {
           "publishedAtPresent": false,
           "urlPresent": false
@@ -69,9 +67,7 @@
       "state": "available",
       "providerUpdatedAt": "2026-10-07T12:09:57.000Z",
       "effectiveVisibility": {
-        "publishedPublicationIds": [
-          "gid://shopify/Publication/339456917787"
-        ],
+        "publishedPublicationIds": ["gid://shopify/Publication/339456917787"],
         "onlineStore": {
           "publishedAtPresent": false,
           "urlPresent": false
@@ -153,9 +149,7 @@
       "state": "available",
       "providerUpdatedAt": "2026-10-07T12:08:29.000Z",
       "effectiveVisibility": {
-        "publishedPublicationIds": [
-          "gid://shopify/Publication/339456917787"
-        ],
+        "publishedPublicationIds": ["gid://shopify/Publication/339456917787"],
         "onlineStore": {
           "publishedAtPresent": false,
           "urlPresent": false
