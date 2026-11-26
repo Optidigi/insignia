@@ -931,6 +931,29 @@ test('cart-line v3 candidate preserves identities and changes only theme and Fun
     } else if (module.handle !== 'insignia') assert.deepEqual(config, oldConfig);
   }
 });
+test('the dependency refresh selects the exact new Function build and retains the cart-line v3 queries', () => {
+  const runtime = resolveRuntimeReleaseProfile('native-dependency-refresh-4991bcf9');
+  const release = releaseProfile(runtime.name);
+  const previous = releaseProfile('native-designer-intent-8e69c5ef');
+  assert.equal(runtime.activeVersionRef, '1267604848641');
+  assert.equal(release.versionId, runtime.activeVersionRef);
+  assert.equal(release.functions.sourceCommit, runtime.functionsSourceCommit);
+  assert.equal(release.functions.sourceCommit, '4991bcf9043764aabf28b0c040d5b71609c7a8c0');
+  assert.deepEqual(release.versionIds, [...previous.versionIds, runtime.activeVersionRef]);
+  for (const kind of ['transform', 'validation'] as const) {
+    assert.equal(release.functions[kind].inputQuerySha256, previous.functions[kind].inputQuerySha256);
+    assert.notEqual(release.functions[kind].wasmSha256, previous.functions[kind].wasmSha256);
+  }
+  assert.equal(
+    release.functions.transform.wasmSha256,
+    '98f240a894be1860c8491f01c1004d673ebf7ddda52c86ecb8ca716834680b1a',
+  );
+  assert.equal(
+    release.functions.validation.wasmSha256,
+    '9eaf1dcb9004f484ae791ba99d0edbff27d9fe4991ee919fcffd7c716d9c7732',
+  );
+});
+
 const runtimeProfileNames = [
   'native-cart-line-v3-aa3b6166',
   'native-functions-renew-8fffc9de',

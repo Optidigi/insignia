@@ -43,6 +43,12 @@ import cartRepairBinding from '../../deployment/m5-runtime/native-cart-repair-re
 };
 import cartFixModules from '../../deployment/m5-runtime/native-cartfix-module-baseline.json' with { type: 'json' };
 import cartFixBinding from '../../deployment/m5-runtime/native-cartfix-release-binding.json' with { type: 'json' };
+import dependencyRefreshModules from '../../deployment/m5-runtime/native-dependency-refresh-module-baseline.json' with {
+  type: 'json',
+};
+import dependencyRefreshBinding from '../../deployment/m5-runtime/native-dependency-refresh-release-binding.json' with {
+  type: 'json',
+};
 import designerIntentModules from '../../deployment/m5-runtime/native-designer-intent-module-baseline.json' with {
   type: 'json',
 };
@@ -233,6 +239,18 @@ const cartLineV3Functions = {
     wasmSha256: '6c362b36a5cf3eba77dcf9accc64bf0ae3225d77c97dd01bcc9d3e0e1ea83de4',
   },
 };
+/** Both Function binaries are from the reviewed dependency refresh and foundation run 45805199245. */
+const dependencyRefreshFunctions = {
+  sourceCommit: '4991bcf9043764aabf28b0c040d5b71609c7a8c0',
+  transform: {
+    inputQuerySha256: '02ab5bcee805fba94dff9309a2e55cb1998651ca42fdba8564872ba891fd16ac',
+    wasmSha256: '98f240a894be1860c8491f01c1004d673ebf7ddda52c86ecb8ca716834680b1a',
+  },
+  validation: {
+    inputQuerySha256: '5867e61f07dbb4d6417df401b5ffbc47f0175eca1d00f7792621150713b18d7e',
+    wasmSha256: '9eaf1dcb9004f484ae791ba99d0edbff27d9fe4991ee919fcffd7c716d9c7732',
+  },
+};
 const oldIds = [
   '1163229200385',
   '1162611916801',
@@ -244,6 +262,15 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  'native-dependency-refresh-4991bcf9': {
+    versionId: dependencyRefreshBinding.versionId,
+    versionTag: dependencyRefreshBinding.versionTag,
+    versionIds: dependencyRefreshBinding.versionIds,
+    moduleHash: dependencyRefreshBinding.moduleHash,
+    modules: dependencyRefreshModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: dependencyRefreshFunctions,
+  },
   'native-designer-intent-8e69c5ef': {
     versionId: designerIntentBinding.versionId,
     versionTag: designerIntentBinding.versionTag,

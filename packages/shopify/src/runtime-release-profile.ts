@@ -1,6 +1,7 @@
 /** Deployment selects a closed reviewed target, never release authority.
  * Every consumer still independently reads and qualifies trusted release evidence. */
 export type RuntimeReleaseProfileName =
+  | 'native-dependency-refresh-4991bcf9'
   | 'native-designer-intent-8e69c5ef'
   | 'native-escape-once-bcb6cd16'
   | 'native-cart-repair-2ed66ade'
@@ -52,6 +53,11 @@ export type RuntimeReleaseProfileName =
   | 'lean-markets-7b17cd9'
   | 'lean-privacy-theme-23fd116';
 const profiles = Object.freeze({
+  'native-dependency-refresh-4991bcf9': Object.freeze({
+    name: 'native-dependency-refresh-4991bcf9' as const,
+    activeVersionRef: '1267604848641',
+    functionsSourceCommit: '4991bcf9043764aabf28b0c040d5b71609c7a8c0',
+  }),
   'native-designer-intent-8e69c5ef': Object.freeze({
     name: 'native-designer-intent-8e69c5ef' as const,
     activeVersionRef: '1266368151553',
