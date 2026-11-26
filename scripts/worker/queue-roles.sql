@@ -1,8 +1,8 @@
--- Separate owner operation AFTER install-queue.mjs. pg-boss 12.35.1 / schema 43 only.
+-- Separate owner operation AFTER install-queue.mts. pg-boss 12.40.0 / schema 48 only.
 -- No passwords, login provisioning, application-table grants, upgrades or destructive down.
 BEGIN;
 DO $$ BEGIN
-  IF (SELECT count(*) FROM pgboss.version) <> 1 OR (SELECT version FROM pgboss.version) <> 43 THEN
+  IF (SELECT count(*) FROM pgboss.version) <> 1 OR (SELECT version FROM pgboss.version) <> 48 THEN
     RAISE EXCEPTION 'unreviewed_queue_version';
   END IF;
   IF EXISTS (SELECT 1 FROM pg_namespace n WHERE n.nspname='pgboss' AND n.nspowner <> (SELECT oid FROM pg_roles WHERE rolname=current_user)) THEN
@@ -37,10 +37,16 @@ GRANT INSERT, UPDATE ON pgboss.job, pgboss.job_common TO insignia_queue_enqueue;
 GRANT INSERT, UPDATE, DELETE ON pgboss.job, pgboss.job_common TO insignia_queue_consume;
 GRANT SELECT, DELETE ON pgboss.job_dependency TO insignia_queue_consume;
 GRANT SELECT, INSERT, DELETE ON pgboss.warning TO insignia_queue_consume;
+-- Supervision prunes the instance registry even when registration is disabled.
+-- UPDATE(id) supplies the row-lock privilege used during pruning.
+GRANT DELETE ON pgboss.instance TO insignia_queue_consume;
+GRANT SELECT(id, started_on, stopped_on, heartbeat_on, heartbeat_seconds), UPDATE(id)
+  ON pgboss.instance TO insignia_queue_consume;
 GRANT UPDATE(flow_on, monitor_backoff_on) ON pgboss.version TO insignia_queue_consume;
 GRANT UPDATE(deferred_count, queued_count, ready_count, active_count, failed_count, total_count,
   created_delta, completed_delta, failed_delta, delta_on, delta_seconds, ready_history,
-  singletons_active, monitor_claim_on, monitor_on, maintain_on) ON pgboss.queue TO insignia_queue_consume;
+  singletons_active, monitor_claim_on, monitor_on, maintain_on, blocked_count,
+  retained_count, retained_on) ON pgboss.queue TO insignia_queue_consume;
 -- PUBLIC defaults for newly created objects owned by this installer are closed as well.
 ALTER DEFAULT PRIVILEGES IN SCHEMA pgboss REVOKE ALL ON TABLES FROM PUBLIC;
 ALTER DEFAULT PRIVILEGES IN SCHEMA pgboss REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;

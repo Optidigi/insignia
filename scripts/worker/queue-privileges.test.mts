@@ -110,6 +110,23 @@ test('separate owner installation and restricted queue roles preserve messages a
     await producer.start();
     assert.equal((await producer.ensureWebhookEnqueued(id)).status, 'already_enqueued');
     url.username = workerRole;
+    await pool.query(`
+      revoke update(monitor_backoff_on) on pgboss.version from insignia_queue_consume;
+      revoke update(retained_count, retained_on) on pgboss.queue from insignia_queue_consume;
+      revoke all on pgboss.instance from insignia_queue_consume;
+    `);
+    const oldGrants = createPgBossRuntime({
+      webhookHandoff: queueBoundaryHandoff,
+      connectionString: url.href,
+      credentialKeysReady: true,
+    });
+    try {
+      await assert.rejects(oldGrants.start(), /Queue runtime privileges are incomplete/);
+      assert.equal(await oldGrants.checkDurableReady(), false);
+    } finally {
+      await oldGrants.stop();
+    }
+    await pool.query(await readFile(new URL('../worker/queue-roles.sql', import.meta.url), 'utf8'));
     const boss = new PgBoss({
       connectionString: url.href,
       migrate: false,
@@ -119,6 +136,9 @@ test('separate owner installation and restricted queue roles preserve messages a
       persistQueueStats: false,
       monitorVacuum: false,
       reindex: false,
+      registerInstance: false,
+      superviseIntervalSeconds: 1,
+      monitorIntervalSeconds: 1,
     });
     boss.on('error', (error: Error) => {
       throw error;
@@ -145,6 +165,11 @@ test('separate owner installation and restricted queue roles preserve messages a
     assert.equal((await boss.findJobs(WEBHOOK_QUEUE, { id }))[0]?.state, 'completed');
     assert.equal(attempts, 2);
     assert.equal(await worker.checkDurableReady(), true);
+    assert.equal(
+      (await pool.query('select monitor_on is not null as monitored from pgboss.queue where name=$1', [WEBHOOK_QUEUE]))
+        .rows[0]?.monitored,
+      true,
+    );
     const consumerPool = new Pool({ connectionString: url.href });
     try {
       assert.equal((await consumerPool.query('select current_user')).rows[0].current_user, workerRole);
@@ -153,6 +178,9 @@ test('separate owner installation and restricted queue roles preserve messages a
         "select pgboss.create_queue('escape','{}')",
         'truncate pgboss.job',
         'update pgboss.queue set retry_limit=999',
+        'update pgboss.queue set paused_on=now()',
+        'select * from pgboss.instance',
+        'insert into pgboss.instance default values',
         'update pgboss.version set version=42',
         'delete from public.uninstall_delivery_authority',
         'select public.recover_uninstall_privacy(null::uuid,null::uuid)',

@@ -1,4 +1,5 @@
 import { type ChildProcess, spawn } from 'node:child_process';
+import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { stripVTControlCharacters } from 'node:util';
 
@@ -38,13 +39,16 @@ function reportedUrl(kind: keyof typeof entries, stdout: string): string | undef
 export async function startBuilt(
   kind: keyof typeof entries,
   env: NodeJS.ProcessEnv,
-  { reportWithinMs = 30_000 } = {},
+  { reportWithinMs = 30_000, webPackage }: { reportWithinMs?: number; webPackage?: string | undefined } = {},
 ): Promise<BuiltProcess> {
+  const packageDirectory = kind === 'web' && webPackage ? resolve(webPackage) : undefined;
   const child = spawn(
     process.execPath,
-    kind === 'web' ? [entries.web.pathname] : [entries.worker.pathname, '--port=0'],
+    kind === 'web'
+      ? [packageDirectory ? resolve(packageDirectory, 'dist/server/entry.mjs') : entries.web.pathname]
+      : [entries.worker.pathname, '--port=0'],
     {
-      cwd: new URL('../..', import.meta.url),
+      cwd: packageDirectory ?? new URL('../..', import.meta.url),
       env: kind === 'web' ? { ...env, HOST: '127.0.0.1', PORT: '0', ASTRO_NODE_LOGGING: 'enabled' } : env,
       stdio: ['ignore', 'pipe', 'pipe'],
     },

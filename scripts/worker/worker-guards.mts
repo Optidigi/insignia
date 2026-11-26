@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { loadCredentialKeys } from '../../apps/worker/dist/config.js';
+import { QUEUE_SCHEMA_VERSION } from '../../apps/worker/dist/queue-contract.js';
 import { workerInventoryMatches } from '../../scripts/runtime/worker-inventory.mts';
 import { object, required, text } from '../runtime/validation.mts';
 
@@ -157,7 +158,7 @@ export function qualifyWorkerCandidate({
       !endpoint ||
       JSON.stringify(endpoint) !== JSON.stringify(expectedEndpoint) ||
       endpoint.major !== 18 ||
-      endpoint.schemaVersion !== 43 ||
+      endpoint.schemaVersion !== QUEUE_SCHEMA_VERSION ||
       !webEndpoint ||
       JSON.stringify(webEndpoint) !== JSON.stringify(expectedWebEndpoint) ||
       ['hostname', 'port', 'database', 'address', 'major', 'schemaVersion', 'sslmode'].some(

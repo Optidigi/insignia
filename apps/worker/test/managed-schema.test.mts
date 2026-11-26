@@ -54,6 +54,7 @@ test('unknown schema upgrade fails closed and preserves an existing queued messa
     await assert.rejects(denied.start());
     await denied.stop();
     await assert.rejects(installQueue(process.env.DATABASE_URL, schema), /Unreviewed queue schema upgrade/);
+    await assert.rejects(installQueue(process.env.DATABASE_URL, schema, 'upgrade-from-43'), /Expected queue schema 43/);
     assert.deepEqual((await pool.query(`select id,state,data from ${schema}.job where id=$1`, [id])).rows, before);
     assert.equal((await pool.query(`select version from ${schema}.version`)).rows[0].version, 42);
   } finally {

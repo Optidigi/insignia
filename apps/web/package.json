@@ -27,7 +27,7 @@
     "astro": "7.4.13",
     "aws4fetch": "1.0.20",
     "pg": "8.23.1",
-    "pg-boss": "12.35.1",
+    "pg-boss": "12.40.0",
     "preact": "11.2.0",
     "@insignia/ui-localization": "workspace:*",
     "@insignia/ui-visualizer": "workspace:*"
@@ -38,6 +38,7 @@
     "@shopify/shopify-api": "15.1.2",
     "@types/node": "24.19.2",
     "@types/pg": "8.23.1",
+    "pg-boss-v43": "npm:pg-boss@12.35.1",
     "playwright": "1.65.1",
     "typescript": "6.0.3"
   }
