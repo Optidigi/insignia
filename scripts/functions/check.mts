@@ -16,7 +16,7 @@ export async function checkFunctions(): Promise<void> {
     execFileSync('cargo', args, { cwd: ROOT, stdio: 'inherit' });
   for (const target of TARGETS) await buildWasm(target);
   const runner = await ensurePinnedTool(
-    process.env.INSIGNIA_FUNCTION_RUNNER ?? join(ROOT, '.m1-artifacts/tools/function-runner-9.2.2'),
+    process.env.INSIGNIA_FUNCTION_RUNNER ?? join(ROOT, '.m1-artifacts/tools/function-runner-9.2.3'),
     'runner',
   );
   mkdirSync(join(ROOT, '.m1-artifacts'), { recursive: true });

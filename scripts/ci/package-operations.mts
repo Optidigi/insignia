@@ -77,7 +77,7 @@ export async function packageOperations({
   const require = createRequire(import.meta.url);
   const archiveManifest = jsonRecord(await readFile(require.resolve('tar-stream/package'), 'utf8'));
   assert.equal(archiveManifest.name, 'tar-stream');
-  assert.equal(archiveManifest.version, '3.2.2');
+  assert.equal(archiveManifest.version, '3.3.0');
   const archiveDirectory = join(output, 'node_modules/tar-stream');
   await mkdir(archiveDirectory, { recursive: true, mode: 0o700 });
   const bundle = await build({

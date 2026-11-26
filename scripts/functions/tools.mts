@@ -4,7 +4,7 @@ import { chmodSync, existsSync, linkSync, mkdirSync, mkdtempSync, rmSync, writeF
 import { dirname, join } from 'node:path';
 import { gunzipSync } from 'node:zlib';
 import { fileHash, hash } from './runtime.mts';
-export const RUNNER_SHA = '728bedbcf86f57680051208f9056642c9dfb07766a21891624bf18f372e4c29b';
+export const RUNNER_SHA = '53589b1c3ec4125ea6b85930ddb5aeeb6a13dd54c1fef0431b031b64d10237ee';
 export const TRAMPOLINE_SHA = '1b9e07e930353a21282820362e6d0fb475766f773d6ad27b79f295b9a628248c';
 export async function ensurePinnedTool(destination: string, kind: 'runner' | 'trampoline'): Promise<string> {
   assert(process.platform === 'linux' && process.arch === 'x64', 'Pinned tools require Linux x64');
@@ -13,7 +13,7 @@ export async function ensurePinnedTool(destination: string, kind: 'runner' | 'tr
     mkdirSync(dirname(destination), { recursive: true });
     const url =
       kind === 'runner'
-        ? 'https://github.com/Shopify/function-runner/releases/download/v9.2.2/function-runner-x86_64-linux-v9.2.2.gz'
+        ? 'https://github.com/Shopify/function-runner/releases/download/v9.2.3/function-runner-x86_64-linux-v9.2.3.gz'
         : // The release download URL of API asset 298980878 (same bytes); the API route is rate limited on CI runners.
           'https://github.com/Shopify/shopify-function-wasm-api/releases/download/shopify_function_trampoline/v2.0.1/shopify-function-trampoline-x86_64-linux-v2.0.1.gz';
     const response = await fetch(url);
@@ -40,7 +40,7 @@ export async function ensurePinnedTool(destination: string, kind: 'runner' | 'tr
     if (kind === 'runner')
       assert.equal(
         hash(compressed),
-        'd091bae3f6d17e4e92e3e6c4450ff1b80bd14dea02295608157e0297183236b4',
+        '23535ee1d331fa5e090d34fc6a5eacb419bf9fb2b5b254547f40a78a93305471',
         'Pinned runner archive drift',
       );
     const bytes = gunzipSync(compressed, { maxOutputLength: maximum });

@@ -18,7 +18,13 @@ services:
       NODE_ENV: production
     networks: [private]
     healthcheck:
-      test: [CMD, /usr/local/bin/node, -e, "fetch('http://127.0.0.1:4301/ready').then(r=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))"]
+      test:
+        [
+          CMD,
+          /usr/local/bin/node,
+          -e,
+          "fetch('http://127.0.0.1:4301/ready').then(r=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))",
+        ]
       interval: 15s
       timeout: 5s
       retries: 3

@@ -47,7 +47,21 @@ export function buyerCartCapacityExceeded(
 }
 const CART_CAPACITY_ISSUE = 'BUYER_CART_CAPACITY_EXCEEDED';
 type Issue = { code: string; path?: readonly PropertyKey[]; params?: unknown };
+/**
+ * Zod rejects an array over its `.max()` before parsing its elements, and that rejection aborts, so the
+ * whole-cart refinement never runs for it. Over 32 groups (each holds at least one variant) or over 32
+ * variants in one group is already more than one signed set can carry.
+ */
+function signedSetBound(issue: Issue): boolean {
+  const path = issue.path ?? [];
+  return (
+    issue.code === 'too_big' &&
+    ((path.length === 1 && path[0] === 'groups') ||
+      (path.length === 3 && path[0] === 'groups' && typeof path[1] === 'number' && path[2] === 'variants'))
+  );
+}
 function capacityKind(issue: Issue): BuyerCartCapacityExceeded | undefined {
+  if (signedSetBound(issue)) return 'SIGNED_SET';
   if (issue.code !== 'custom' || typeof issue.params !== 'object' || issue.params === null) return undefined;
   const params = issue.params as { reason?: unknown; kind?: unknown };
   return params.reason === CART_CAPACITY_ISSUE && (params.kind === 'SIGNED_SET' || params.kind === 'CART_LINES')
@@ -57,15 +71,10 @@ function capacityKind(issue: Issue): BuyerCartCapacityExceeded | undefined {
 export function isBuyerCartCapacityIssue(issue: Issue): boolean {
   return capacityKind(issue) !== undefined;
 }
-/** Bounds that a capacity issue always accompanies: too many groups, variants per group or ordinary lines. */
+/** A bound that a capacity issue always accompanies: too many ordinary lines. */
 function impliedByCapacity(issue: Issue): boolean {
   const path = issue.path ?? [];
-  return (
-    issue.code === 'too_big' &&
-    ((path.length === 1 && path[0] === 'groups') ||
-      (path.length === 3 && path[0] === 'groups' && typeof path[1] === 'number' && path[2] === 'variants') ||
-      (path.length === 2 && path[0] === 'capacity' && path[1] === 'ordinaryLineCount'))
-  );
+  return issue.code === 'too_big' && path.length === 2 && path[0] === 'capacity' && path[1] === 'ordinaryLineCount';
 }
 /**
  * The buyer API answers 422 CAPACITY_EXCEEDED only when every issue is the cart capacity or a bound it
@@ -77,7 +86,7 @@ export function buyerCartCapacityViolation(issues: readonly Issue[]): BuyerCartC
     return undefined;
   return kinds.includes('SIGNED_SET') ? 'SIGNED_SET' : 'CART_LINES';
 }
-// Runs after the continuable per-group and group-count bounds too, so any oversized cart carries the issue.
+// Runs after the continuable bounds too; an over-long `groups` or `variants` array aborts first and is itself the issue.
 export const BuyerDesiredSchema = z
   .strictObject({
     country: z.string().regex(/^[A-Z]{2}$/),

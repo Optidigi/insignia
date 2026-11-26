@@ -9,7 +9,7 @@ export interface ValidationIssue {
 
 interface ValidationSummaryProps {
   issues: ValidationIssue[];
-  summaryRef: RefObject<HTMLDivElement>;
+  summaryRef: RefObject<HTMLDivElement | null>;
   onNavigate: (issue: ValidationIssue) => void;
 }
 

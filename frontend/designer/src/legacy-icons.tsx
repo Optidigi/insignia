@@ -8,13 +8,13 @@
  * always means adding a component here, never installing a package.
  */
 
-import type { JSX } from "preact";
+import type { CSSProperties, SVGAttributes } from "preact";
 
 type IconProps = {
   size?: number;
-  style?: JSX.CSSProperties;
+  style?: CSSProperties;
   className?: string;
-} & Omit<JSX.SVGAttributes<SVGSVGElement>, "size" | "style" | "className">;
+} & Omit<SVGAttributes<SVGSVGElement>, "size" | "style" | "className">;
 
 const DEFAULT_SIZE = 18;
 

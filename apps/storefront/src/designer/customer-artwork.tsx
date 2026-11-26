@@ -34,7 +34,7 @@ function CustomerArtwork({ capability }: { capability: string }) {
   );
   const [failed, setFailed] = useState(false);
   const [open, setOpen] = useState(true);
-  const reading = useRef<AbortController>();
+  const reading = useRef<AbortController | undefined>(undefined);
   async function load() {
     reading.current?.abort();
     const controller = new AbortController();
