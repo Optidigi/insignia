@@ -48,30 +48,53 @@ function adminPages(root: string): string[] {
     .sort();
 }
 
-const pageRoots = [join(web, 'src/pages/admin'), join(repository, 'frontend/admin/src/pages/admin')];
-const hashes = (csp: string) => new Set(csp.match(/'sha256-[A-Za-z0-9+/=]+'/g)?.map((hash) => hash.slice(1, -1)));
+const webPages = join(web, 'src/pages/admin');
+const pageRoots = [webPages, join(repository, 'frontend/admin/src/pages/admin')];
+const redirects = new Map([
+  ['billing.astro', '/admin/settings/billing'],
+  ['privacy.astro', '/admin/settings/privacy'],
+  ['settings/methods.astro', '/admin/methods'],
+]);
+const clientDirectivesUsed = (source: string) =>
+  new Set((source.match(/\bclient:[\w-]+/g) ?? []).map((directive) => directive.slice('client:'.length)));
+
+function scriptHashes(csp: string, page: string): Set<string> {
+  assert.ok(!csp.includes(','), `${page} sends a single CSP policy`);
+  const directives = csp.split(';').map((directive) => directive.trim().split(/\s+/));
+  for (const name of ['script-src-elem', 'script-src', 'default-src']) {
+    const sources = directives.find(([directive]) => directive?.toLowerCase() === name);
+    if (sources)
+      return new Set(
+        sources.filter((source) => /^'sha256-[A-Za-z0-9+/=]+'$/.test(source)).map((source) => source.slice(1, -1)),
+      );
+  }
+  assert.fail(`${page} has no directive governing script elements`);
+}
 
 test('every admin page CSP allows the island runtime and the client directive bootstraps it uses, and nothing stale', async () => {
   const directives = builtClientDirectives();
   const island = sha256(await islandScript());
-  const polaris = directives.get('polaris');
-  const load = directives.get('load');
-  assert.ok(polaris && load, 'the build registers the polaris and load client directives');
   const known = new Set([island, ...[...directives.values()].map(sha256)]);
   let checked = 0;
   for (const root of pageRoots)
     for (const page of adminPages(root)) {
       const source = readFileSync(page, 'utf8');
-      const allowed = hashes(source);
-      if (!allowed.size) continue;
       const name = relative(repository, page);
-      checked++;
+      const used = clientDirectivesUsed(source);
+      if (redirects.has(relative(root, page)) && !used.size) continue;
+      const csp = source.match(/[`"](default-src [^`"]+)[`"]/)?.[1];
+      assert.ok(csp, `${name} declares a page CSP`);
+      const allowed = scriptHashes(csp, name);
       assert.ok(allowed.has(island), `${name} allows the Astro island runtime (${island})`);
-      assert.ok(allowed.has(sha256(polaris)), `${name} allows the polaris directive bootstrap`);
-      if (source.includes('client:load')) assert.ok(allowed.has(sha256(load)), `${name} allows the load bootstrap`);
+      // Keep checking the baseline polaris allowance, including on the static unavailable page.
+      for (const directive of new Set(['polaris', ...used])) {
+        const script = directives.get(directive);
+        assert.ok(script && allowed.has(sha256(script)), `${name} allows the ${directive} bootstrap`);
+      }
       for (const hash of allowed) assert.ok(known.has(hash), `${name} allows ${hash}, which no shipped script has`);
+      checked++;
     }
-  assert.ok(checked >= 20, `admin pages with a hashed script-src were found (${checked})`);
+  assert.ok(checked >= 20, `admin pages with hashed policies were found (${checked})`);
 });
 
 test('every inline script the built admin routes render is allowed by that response CSP', async (t) => {
@@ -102,31 +125,51 @@ test('every inline script the built admin routes render is allowed by that respo
     '[purchaseId]': '11111111-1111-4111-8111-111111111111',
     '[methodId]': '11111111-1111-4111-8111-111111111111',
   };
-  const routes = adminPages(join(web, 'src/pages/admin')).map(
-    (page) =>
-      `/admin/${relative(join(web, 'src/pages/admin'), page)
-        .replace(/\.astro$/, '')
-        .replace(/(^|\/)index$/, '')
-        .replace(/\[[A-Za-z]+\]/g, (segment) => sample[segment] ?? '1')}`,
-  );
-  const rendered = new Set<string>();
-  for (const route of routes) {
-    const response = await fetch(`${base}${route}?shop=fixture.myshopify.com&host=eA&embedded=1&locale=en`, {
-      redirect: 'manual',
-    });
+  const directives = builtClientDirectives();
+  const island = sha256(await islandScript());
+  const query = '?host=eA&shop=fixture.myshopify.com&embedded=1&locale=en';
+  for (const page of adminPages(webPages)) {
+    const file = relative(webPages, page);
+    const route = `/admin/${file
+      .replace(/\.astro$/, '')
+      .replace(/(^|\/)index$/, '')
+      .replace(/\[[A-Za-z]+\]/g, (segment) => sample[segment] ?? '1')}`;
+    const response: Response = await fetch(`${base}${route}${query}`, { redirect: 'manual' });
     const html = await response.text();
-    const allowed = hashes(response.headers.get('content-security-policy') ?? '');
+    const redirect = redirects.get(file);
+    if (redirect) {
+      assert.equal(response.status, 302, route);
+      assert.equal(response.headers.get('location'), redirect + query, route);
+      assert.equal(html, '', route);
+      continue;
+    }
+    // The signing page deliberately returns 404 without a signing owner. Its CSP is checked above.
+    if (file === 'signing.astro') {
+      assert.equal(response.status, 404, route);
+      assert.ok(!/<(?:script|astro-island)\b/.test(html), `${route} renders no scripts or islands`);
+      continue;
+    }
+    assert.equal(response.status, file === 'unavailable.astro' ? 503 : 200, route);
+    const csp = response.headers.get('content-security-policy');
+    assert.ok(csp, `${route} sends a CSP`);
+    const allowed = scriptHashes(csp, route);
+    const rendered = new Set<string>();
     for (const match of html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)) {
       const hash = sha256(match[1] ?? '');
       rendered.add(hash);
       assert.ok(allowed.has(hash), `${route} renders an inline script (${hash}) its CSP does not allow`);
     }
+    if (file === 'unavailable.astro') {
+      assert.match(html, /\bdata-admin-unavailable-page\b/, route);
+      continue;
+    }
+    assert.match(html, /<astro-island\b/, `${route} renders an island`);
+    assert.ok(rendered.has(island), `${route} renders the island runtime`);
+    const used = clientDirectivesUsed(readFileSync(page, 'utf8'));
+    assert.ok(used.size, `${route} declares a client directive`);
+    for (const directive of used) {
+      const script = directives.get(directive);
+      assert.ok(script && rendered.has(sha256(script)), `${route} renders the ${directive} bootstrap`);
+    }
   }
-  const directives = builtClientDirectives();
-  for (const [label, script] of [
-    ['island runtime', await islandScript()],
-    ['polaris bootstrap', directives.get('polaris') ?? ''],
-    ['load bootstrap', directives.get('load') ?? ''],
-  ] as const)
-    assert.ok(rendered.has(sha256(script)), `the built admin routes render the ${label} exactly as shipped`);
 });
