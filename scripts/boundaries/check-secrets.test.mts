@@ -24,9 +24,9 @@ test('secret provenance rejects an unused lazy storefront chunk, not only the bo
   }
 });
 
-test('sealed replay fixtures retain public identities but reject credential material', () => {
+test('recorded replay fixtures retain public identities but reject credential material', () => {
   const root = resolve(import.meta.dirname, '../..');
-  const probe = resolve(root, 'fixtures/shopify/availability-restore-v3/secret-probe.json');
+  const probe = resolve(root, 'scripts/runtime/fixtures/secret.probe');
   assert.equal(existsSync(probe), false);
   try {
     writeFileSync(probe, JSON.stringify({ token: ['sh', 'pat', '_synthetic'].join('') }));
@@ -37,7 +37,7 @@ test('sealed replay fixtures retain public identities but reject credential mate
     assert.notEqual(result.status, 0);
     assert.match(
       result.stderr,
-      /recorded fixture contains credential material: fixtures\/shopify\/availability-restore-v3\/secret-probe\.json/,
+      /recorded fixture contains credential material: scripts\/runtime\/fixtures\/secret\.probe/,
     );
   } finally {
     rmSync(probe, { force: true });

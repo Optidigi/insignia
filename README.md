@@ -1,50 +1,56 @@
 # Insignia
 
-Shopify product customization: a merchant App Home editor, separate buyer storefront, signed cart-line authorization and independent checkout validation. The [current specification](docs/architecture/implementation-plan.md) defines Lean V1. [Current state](docs/delivery/state.md) distinguishes integrated source, deployed artifacts, known defects and owner-held production gates.
+Insignia lets Shopify merchants sell customized products. Merchants configure artwork placements,
+decoration methods, and prices in Shopify admin. Buyers upload artwork and review a quote in the
+storefront Designer. Shopify Functions apply the signed price to the cart and validate it at checkout.
 
-## Designed UI handoff
+The app uses TypeScript, Astro, and Preact. PostgreSQL stores application data, pg-boss runs
+background jobs, and Rust implements the Shopify Functions.
 
-The UI and its optional demos are in [frontend](frontend/README.md). The selected components/reducers are composed with the authenticated backend in `apps/web` and `apps/storefront`. Consult [current state](docs/delivery/state.md) for the active assignment, deployed baseline and remaining qualification.
+## Where the code lives
+
+```text
+apps/
+  web/          Embedded merchant app and buyer API
+  storefront/   Theme integration, Designer host, and cart operations
+  worker/       Webhook processing, recovery, and background jobs
+frontend/       Merchant UI, buyer Designer, and translations
+extensions/     Shopify theme extension and Function entrypoints
+crates/         Rust Functions and cart authorization
+packages/       Pricing, application logic, and PostgreSQL and Shopify adapters
+```
 
 ## Start locally
 
-Use Node **24.22.3**, Corepack with **pnpm12.16.1** (`package.json`) and Rust **1.100.0** (`rust-toolchain.toml`). Rustfmt, Clippy and the `wasm32-unknown-unknown` target are declared by that file. The `.node-version` file supports version-manager selection. Confirm `node --version` before checks; Node also has exact runtime/Docker qualification pins, so upgrade those together rather than changing only `engines`. Git, the platform linker toolchain (`cc` on Linux) and network access to the pinned package/tool registries are installation prerequisites; a normal local check needs no Shopify or production credentials.
+Use the Node version in [.node-version](.node-version) and Corepack with the pnpm version in
+[package.json](package.json). The full checks also use the pinned [Rust toolchain](rust-toolchain.toml).
 
 ```sh
 corepack pnpm install --frozen-lockfile
 corepack pnpm build
-corepack pnpm check:types
-corepack pnpm test:unit
-corepack pnpm check:boundaries
-corepack pnpm check:secrets
+corepack pnpm dev:admin
 ```
 
-Build first: package export boundaries and secret checks inspect actual compiled package/storefront output. `check:types` checks the effective strict compiler projects listed in `scripts/boundaries/source-policy.json`; `check:source` rejects unapproved languages, uncovered source, broken current links and obsolete command/config targets. Generated JavaScript is output, not a second maintained implementation.
+Open the URL printed by `dev:admin`. It serves the merchant app on loopback with read-only fixture
+data. For the buyer Designer demo, run `corepack pnpm dev:ui:customer` and open `/scenarios` on the
+printed URL. See the [frontend guide](frontend/README.md) for UI ownership and preview options.
 
-## Preview merchant screens
+## Quick commands
 
-For the selected new UI, follow [frontend setup and demos](frontend/README.md). The existing backend-connected application has a separate preview: after `corepack pnpm build`, run `corepack pnpm dev:admin`. It starts a loopback-only preview of actual SSR with explicit synthetic read-only fixtures, no production credentials and no provider effects. Use `INSIGNIA_PREVIEW_STATE=normal|empty|denied|unavailable|loading` to inspect supported controlled states. These fixtures are local UI evidence, not native authentication or write acceptance.
+| Command | What it checks |
+| --- | --- |
+| `corepack pnpm build` | Build the workspace. Run this first before checks that consume compiled packages. |
+| `corepack pnpm check:types` | Type-check the workspace projects. |
+| `corepack pnpm test:unit` | Run the core package and worker tests. |
+| `corepack pnpm test:browser` | Run the web and storefront suites. See the [browser setup](frontend/README.md#checks). |
+| `corepack pnpm test:runtime` | Run the offline Shopify restore replay and runtime entry checks. |
+| `corepack pnpm test:database:isolated` | Run migrations and tests on a disposable [PostgreSQL 18 fixture](packages/database/README.md). |
+| `corepack pnpm check` | Run the full workspace checks, including Rust and browser coverage. |
 
-## Focused and integration checks
+## Project references
 
-Use the relevant package's test command or a specific `node --test` file for iteration. `corepack pnpm check:ui` runs all four frontend packages' tests and builds the customer library after the workspace build. Install the designer's pinned browser with `corepack pnpm --filter @insignia/designer exec playwright install chromium` as well as the web browser; the packages currently use different Playwright versions.
-
-`corepack pnpm check` is comprehensive local verification: style, builds, types, unit/runtime/operations, source/security boundaries, real Rust/Function vectors, frontend behavior/library and browser behavior. Foundation CI selects frontend-only main pushes and workspace/toolchain changes; existing database/runtime jobs retain their qualification responsibilities. It downloads verified pinned public Function tools when absent; no Shopify CLI/provider operation is part of this command.
-
-Browser checks require Chromium: `corepack pnpm --filter @insignia/web exec playwright install chromium` (Linux may need Playwright's documented system libraries or `--with-deps`). `corepack pnpm test:browser` covers web/storefront behavior with explicit local doubles. Native merchant authentication and provider mutations require their actual separate grants; synthetic fixtures never establish native acceptance.
-
-PostgreSQL qualification is separate. Install PostgreSQL18 server/client tools (`initdb`, `pg_ctl`, `createdb`, `psql`, `pg_dump`, `pg_restore`) and run `corepack pnpm test:database:isolated` as a non-root user. The [database adapter guide](packages/database/README.md) documents its owned temporary Unix-socket cluster, ambient-credential isolation, cleanup and focused commands. It migrates twice and runs database regression without selecting a native endpoint. Never point local tests at the deployed database. Runtime image/process checks additionally need a Docker daemon and their declared disposable artifact inputs; required CI preserves those boundaries.
-
-## Find the current responsibility
-
-- [AGENTS](AGENTS.md): engineering entry, contracts and scoped skills.
-- [Current specification](docs/architecture/implementation-plan.md): complete Lean behavior, architecture, contracts, rationale and merchant source inventory.
-- [Operating model](docs/delivery/operating-model.md): delivery conventions and effective resource permissions.
-- [Current state and action checklist](docs/delivery/state.md): deployed components, next assignment, defects and exact owner/operator obligations.
-- [Runtime/deployment procedure](deployment/m5-runtime/README.md): current image/Compose/recovery responsibilities and real resource gates.
-
-Maintained tools live under responsibility-named `scripts/{boundaries,ci,database,functions,operations,privacy,release,runtime,worker}`. Project skills live in `.agents/skills`; select their project paths explicitly when the host also advertises generic account skills. A fresh session should confirm its intended checkout/base and project skill paths before editing. Preserve other dirty worktrees and actual service dependencies.
-
-PR223 supplied the selected merchant/customer UI, now integrated and deployed through the qualified development releases recorded in current state; merchant UI is **owner-unaccepted**. Current component/runtime checks and earlier internal visual observations do not establish owner acceptance. The source inventory is in the specification; the action checklist owns the assignment.
-
-Superseded development records are in linked delivery history and Git history. Necessary current effect/retention records and curated fixtures retain their explicit purpose; no historical prompt needs to be replayed to start work.
+- [Specification](docs/architecture/implementation-plan.md) for app behavior and architecture
+- [Current assignment](docs/delivery/state.md#active-assignment) for release status and open work
+- [Shopify review checklist](docs/delivery/shopify-review-resubmission.md) for live review fixtures and evidence
+- [Deployment runbook](deployment/m5-runtime/README.md) for production operation and recovery
+- [Repository guidance](AGENTS.md) for engineering workflow and conventions

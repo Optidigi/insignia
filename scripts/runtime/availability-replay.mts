@@ -20,10 +20,10 @@ const { availabilityV3AcknowledgementQualified, sameAvailabilityV3 } = await imp
   '../../packages/application/dist/index.js'
 );
 const root = resolve(import.meta.dirname, '../..');
-const fixtureRoot = resolve(root, 'fixtures/shopify/availability-restore-v3');
-const bytes = (name: string) => readFileSync(resolve(fixtureRoot, name));
+const fixturePath = resolve(import.meta.dirname, 'fixtures/availability-restore-v3.json');
+const fixtureBytes = readFileSync(fixturePath);
+const fixture = object(JSON.parse(fixtureBytes.toString('utf8')));
 const hash = (data: string | Uint8Array) => createHash('sha256').update(data).digest('hex');
-const json = (name: string) => object(JSON.parse(bytes(name).toString('utf8')));
 const boolean = (value: unknown): boolean => {
   assert(typeof value === 'boolean');
   return value;
@@ -99,9 +99,7 @@ function snapshot(value: unknown): ProductAvailabilitySnapshotV3 {
   };
 }
 
-const qualification = json('live-run/qualification.json');
-const register = json('live-run/register.json');
-const rawHold = json('live-run/restore-intent.json');
+const rawHold = object(fixture.hold);
 assert.equal(rawHold.version, 'm5-availability-hold-v3');
 const claim = object(rawHold.restorationClaim),
   claimScope = object(claim.scope),
@@ -131,18 +129,15 @@ const hold: AvailabilityHoldV3 = {
   },
 };
 assert.deepEqual(hold, rawHold, 'decoded sealed hold retains every historical field');
-const restore = object(qualification.restore);
-const observe = object(qualification.observe);
-const manifest = json('canonical-run-manifest.json');
-for (const [name, entry] of Object.entries(manifest)) {
-  assert.equal(hash(bytes(`live-run/${name}`)), object(entry).sha256);
-}
-assert.equal(register.phase, 'CLOSED');
-assert.equal(qualification.outcome, 'STOPPED');
+const restore = object(fixture.restore);
+const provenance = object(fixture.provenance);
+const originalManifestSha256 = text(object(provenance.originalManifest).sha256);
+assert.match(text(provenance.sourceCommit), /^[a-f0-9]{40}$/);
+assert.match(originalManifestSha256, /^[a-f0-9]{64}$/);
+assert.equal(fixture.recordedPhase, 'CLOSED');
+assert.equal(fixture.historicalOutcome, 'STOPPED');
 assert.equal(restore.kind, 'CONFLICT');
-const captured = array(register.events)
-  .map(object)
-  .filter((e) => ['restore-read', 'restore-anchor', 'restore'].includes(text(e.operation)));
+const captured = array(fixture.events).map(object);
 assert.equal(captured.length, 7);
 assert.equal(captured.filter((e) => e.mutation).length, 1);
 const historicalAck = object(restore.acknowledgement);
@@ -198,7 +193,7 @@ const port = createShopifyAvailabilityHoldV3Port({
   timeoutMs: 30000,
   fetchImpl,
 });
-const result = await port.restore(hold.before.scope, hold, snapshot(observe.current), () => true);
+const result = await port.restore(hold.before.scope, hold, snapshot(fixture.observed), () => true);
 assert.equal(result.kind, 'RESTORED');
 assert(
   result.current && 'version' in result.current && result.current.version === 'm5-product-availability-snapshot-v3',
@@ -211,8 +206,7 @@ assert.equal(cursor, captured.length);
 assert.equal(restorationAttempts, 1);
 assert.equal(compensationAttempts, 0);
 assert.equal(ambientFetchAttempts, 0);
-for (const [name, entry] of Object.entries(manifest))
-  assert.equal(hash(bytes(`live-run/${name}`)), object(entry).sha256);
+assert.deepEqual(readFileSync(fixturePath), fixtureBytes, 'offline replay does not modify its fixture');
 const sourceFiles = [
   'packages/application/src/publication/availability-v3.ts',
   'packages/shopify/src/availability-hold-v3.ts',
@@ -227,7 +221,7 @@ console.log(
     {
       version: 'm5-017r-memory-replay-v1',
       kind: result.kind,
-      historicalLiveOutcome: qualification.outcome,
+      historicalLiveOutcome: fixture.historicalOutcome,
       historicalRestoreKind: restore.kind,
       exactSemanticReadbackEqualToBefore: true,
       effectivePublicationIds: result.current.effectiveVisibility.publishedPublicationIds,
@@ -236,8 +230,8 @@ console.log(
       memoryResponseInvocations: cursor,
       externalRequests: 0,
       ambientFetchAttempts,
-      canonicalBytesUnchanged: true,
-      canonicalManifestSha256: hash(bytes('canonical-run-manifest.json')),
+      fixtureBytesUnchanged: true,
+      canonicalManifestSha256: originalManifestSha256,
       originalAckRetainedExactly: true,
       result,
       replayedEvents,
