@@ -143,6 +143,19 @@ unverified.
 Production first publish took 25–38 s before #641; republish 9.3–10.1 s after. Production logs only
 reach back to container restarts, so a 48 h latency baseline needs persisted logs.
 
+### Deploy AW validation
+
+Shopify version `1267604848641` became active on 26 November. Deploy AW includes cart repair, storefront
+polish, publish recovery, and the one-time dependency update. The app still uses Shopify API 2026-07.
+Dependabot configuration is removed. pnpm stays at 12.16.1 for offline packaging, TypeScript stays on
+6.0.3 for the compiler API, and pg-boss stays on queue schema 43 pending issue #670.
+
+All 17 live Shopify CDN assets matched the qualified build. Web and the worker role read the same fresh
+release evidence. A Netherlands test fixture passed artwork upload, a signed EUR cart, and checkout with
+a EUR 50.00 subtotal. EUR v2 now binds the exact active Shopify version and Function source. Both fresh
+USD and EUR rounds and the quiet-host Lighthouse runs are in progress. See [deploy AW](state.md#deployed-identities)
+for the runtime identities and release receipts.
+
 ## Other review items
 
 | Requirement | Verified and remaining evidence |
