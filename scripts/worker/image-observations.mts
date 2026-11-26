@@ -120,12 +120,6 @@ export function assembleImageProcessProbe() {
   return stripTypeScriptTypes(readFileSync(new URL('./process-probe.mts', import.meta.url), 'utf8'), { mode: 'strip' });
 }
 
-export function assembleDatabaseFixtureProbe() {
-  return stripTypeScriptTypes(readFileSync(new URL('./database-fixture-probe.mts', import.meta.url), 'utf8'), {
-    mode: 'strip',
-  });
-}
-
 export function qualifyFixtureDatabase({
   container: containerInput,
   network: networkInput,

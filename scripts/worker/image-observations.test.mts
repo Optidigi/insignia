@@ -6,9 +6,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
+import { fileURLToPath } from 'node:url';
 import { required } from '../runtime/validation.mts';
 import {
-  assembleDatabaseFixtureProbe,
   assembleImageInventoryProbe,
   assembleImageProcessProbe,
   finalizeImageFixture,
@@ -136,16 +136,16 @@ test('synthetic database wait', { timeout: 80 }, async t => {
   assert.match(child.stdout, /finalization-after-cancelled-child/);
 });
 
-test('the exact assembled inventory and bounded database programs parse before execution', () => {
+test('the container probes parse and the database fixture resolves its imports before requiring an endpoint', () => {
   const source = readFileSync(new URL('../../scripts/runtime/worker-inventory.mts', import.meta.url), 'utf8');
-  for (const program of [
-    assembleImageInventoryProbe(source),
-    assembleDatabaseFixtureProbe(),
-    assembleImageProcessProbe(),
-  ]) {
+  for (const program of [assembleImageInventoryProbe(source), assembleImageProcessProbe()]) {
     const child = spawnSync(process.execPath, ['--input-type=module', '--check'], { input: program, encoding: 'utf8' });
     assert.equal(child.status, 0, child.stderr);
   }
+  const fixture = fileURLToPath(new URL('./database-fixture-probe.mts', import.meta.url));
+  const child = spawnSync(process.execPath, [fixture], { encoding: 'utf8', env: {} });
+  assert.equal(child.status, 1, child.stderr);
+  assert.match(child.stderr, /Error: Disposable fixture database endpoint required/);
 });
 
 const imageId = `sha256:${'a'.repeat(64)}`;

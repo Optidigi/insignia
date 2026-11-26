@@ -11,7 +11,8 @@ import { QUEUE_SCHEMA_VERSION } from '../../apps/worker/dist/queue-contract.js';
 
 const { Pool }: typeof import('pg') = createRequire(resolve('apps/worker/package.json'))('pg');
 const options = { connectionTimeoutMillis: 3000, query_timeout: 5000, statement_timeout: 4000 };
-const ownerUrl = required(process.env.DATABASE_URL);
+const ownerUrl = process.env.DATABASE_URL;
+if (!ownerUrl) throw new Error('Disposable fixture database endpoint required');
 const pool = new Pool({ ...options, connectionString: ownerUrl });
 let login: import('pg').Pool | undefined;
 try {

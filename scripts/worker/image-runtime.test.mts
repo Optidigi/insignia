@@ -5,11 +5,11 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
+import { QUEUE_SCHEMA_VERSION } from '../../apps/worker/dist/queue-contract.js';
 import { array, errorMessage, object, required } from '../runtime/validation.mts';
 import { exportWorkerImage } from './image-artifact.mts';
 import type { ImageCommandOptions } from './image-observations.mts';
 import {
-  assembleDatabaseFixtureProbe,
   assembleImageInventoryProbe,
   assembleImageProcessProbe,
   finalizeImageFixture,
@@ -200,13 +200,12 @@ test('actual built worker image qualifies OS isolation, frozen inventory, readin
       }),
     );
     receipt.database = JSON.parse(
-      await run(process.execPath, ['--input-type=module'], {
-        input: assembleDatabaseFixtureProbe(),
+      await run(process.execPath, [join(root, 'scripts/worker/database-fixture-probe.mts')], {
         env: ownerEnvironment,
         timeout: 45_000,
       }),
     );
-    receipt.controls.push('PG18-owner-install-schema43-restricted-consume-role');
+    receipt.controls.push(`PG18-owner-install-schema${QUEUE_SCHEMA_VERSION}-restricted-consume-role`);
     owned.worker = true;
     await docker([
       'create',
