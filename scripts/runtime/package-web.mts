@@ -38,8 +38,9 @@ cpSync(join(root, 'packages/database/migrations'), join(destination, 'migrations
 });
 // The flattened Astro adapter imports this dependency from the runtime root.
 // Reuse the production SDK already installed for @insignia/shopify.
-const sdk = join(store, '@shopify+shopify-api@15.1.2/node_modules/@shopify/shopify-api');
-if (object(JSON.parse(readFileSync(join(sdk, 'package.json'), 'utf8'))).version !== '15.1.2')
+const productionSdkVersion = '15.1.2';
+const sdk = join(store, `@shopify+shopify-api@${productionSdkVersion}/node_modules/@shopify/shopify-api`);
+if (object(JSON.parse(readFileSync(join(sdk, 'package.json'), 'utf8'))).version !== productionSdkVersion)
   throw new Error('Pinned production SDK required');
 const scope = join(destination, 'node_modules/@shopify');
 mkdirSync(scope, { recursive: true });
@@ -75,4 +76,4 @@ function validate(directory: string) {
   }
 }
 validate(destination);
-console.log(JSON.stringify({ runtime: 'web', productionSdkVersion: '15.1.2', newBuild: false, providerRequests: 0 }));
+console.log(JSON.stringify({ runtime: 'web', productionSdkVersion, newBuild: false, providerRequests: 0 }));
