@@ -19,8 +19,9 @@ Lighthouse baseline passed or are recorded with their limits in the
 **Deploy AW, 26 November.** Deploy AW includes the cart repair (#663), storefront polish (#664),
 tooling and dependency refresh (#666, #667, #669 and #671), and the accepted publish deadline (#668).
 Shopify is active on AW. USD is available in its primary Market. EUR uses release-level v2 qualification
-after a native Netherlands checkout on the new Functions. The two USD and EUR validation rounds are in progress.
-See the [current review validation](shopify-review-resubmission.md#deploy-aw-validation).
+after a native Netherlands checkout on the new Functions. Two native USD and EUR rounds used that same
+release and recorded seven paid Bogus orders. See the [current review validation](shopify-review-resubmission.md#deploy-aw-validation)
+for purchase and recovery evidence, the performance measurements, and the coverage gaps.
 
 **Next for the owner.** Resubmit in the Partner Dashboard after current validation. After approval,
 decide on relaxing the publish hold-safety steps (≤10 s first publish) and #637. Backups, secret
@@ -283,7 +284,9 @@ The Netherlands test fixture passed SVG upload, a EUR 25.00 unit quote, a two-it
 checkout subtotal on AW. The checkout was left unpaid and the cart was emptied. The web-only promotion restored
 EUR v2 at `11:53:58Z` with evidence `aw-eur-nl-bridge-20261126`. The final readback matched the database ledger,
 privileges, purchase facts, and router rules. The temporary encrypted checkpoints were disposed after readback.
-The production receipts are in `/srv/data/saas/insignia/releases/dependency-refresh-4991bcf9`.
+The production receipts are in `/srv/data/saas/insignia/releases/dependency-refresh-4991bcf9`. After the two native rounds,
+rewrite-dev had 21 test orders, 11 paid facts, 2 refund facts, 11 bindings, and 11 lines. The retained EUR
+fixture had 5 test orders, 5 paid facts, 0 refund facts, 5 bindings, and 5 lines.
 
 **Deploy AV** (25 Nov): main `8e69c5ef` (#654, #658, #659, #660) was staged as Shopify version
 `1266368151553` (`native-designer-intent-8e69c5ef`) at `15:04:56Z`. In the theme extension only
