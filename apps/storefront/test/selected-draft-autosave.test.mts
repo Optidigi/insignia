@@ -435,7 +435,8 @@ test('a cart line undone back to the cart saves the cart version, so reopening i
   assert.deepEqual(saves.at(-1)?.group.variants, [{ variantId: '101', quantity: 5 }]);
   reverted();
   await advance(12_000);
-  assert.equal(saves.length, 2);
+  await eventually(() => saves.length === 2, 'the reverted cart version is saved');
+  assert.equal(saves[1]?.expectedVersion, 1);
   assert.deepEqual(saves.at(-1)?.group.variants, [{ variantId: '101', quantity: 3 }]);
   assert.equal(shared.data.get(LATEST), undefined, 'a cart line is never offered as an unfinished new design');
 });
