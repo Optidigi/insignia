@@ -76,6 +76,11 @@ test('a copied publication anchor shows the support refusal and keeps custody of
 }, async (t) => {
   const f = await fixture(t);
   await f.page.route('**/api/admin/products/111/config', async (route) => {
+    if (route.request().method() === 'GET') {
+      const view = f.view();
+      required(view.config).publication.state = 'ABANDONED_RESTORED';
+      return route.fulfill({ json: view });
+    }
     if (route.request().method() !== 'POST') return route.fallback();
     const body = route.request().postDataJSON();
     if (body.action === 'reconcile') return route.fulfill({ json: { kind: 'resolved', publicationRecorded: true } });
@@ -83,12 +88,15 @@ test('a copied publication anchor shows the support refusal and keeps custody of
     return route.fulfill({ status: 422, json: { kind: 'invalid', code: 'PUBLICATION_ANCHOR_CONFLICT' } });
   });
   await f.open();
+  const restored = f.page.getByText('Publish again when you’re ready.', { exact: false });
+  await restored.waitFor();
   const modal = await openPublication(f.page);
   await modal.locator('s-button[slot="primary-action"]').click();
   await f.page
     .getByText('Contact support to fix this product’s Insignia fields in Shopify before publishing.')
     .waitFor();
   await modal.waitFor({ state: 'hidden' });
+  assert.equal(await restored.count(), 0);
   assert.equal(await f.page.getByRole('button', { name: 'Retry', exact: true }).count(), 0);
   assert.ok(await storedIntent(f.page));
 });
@@ -145,6 +153,16 @@ test('typed geometry reaches the selected owner before blur and remains exact af
   );
   assert.equal(f.read().selectedSetup?.product.views[0]?.placements[0]?.rect.centerX, 0.4);
   assert.equal(await horizontal.inputValue(), '40');
+});
+
+test('artwork dimensions explain the accepted range before applying the minimum', { timeout: 20000 }, async (t) => {
+  const f = await fixture(t);
+  await f.open();
+  await f.page.getByText('Width and height are kept between 2% and 100%.', { exact: true }).waitFor({ timeout: 3000 });
+  const width = f.page.getByRole('textbox', { name: 'Width', exact: true });
+  await width.fill('0');
+  await width.press('Tab');
+  assert.equal(await width.inputValue(), '2');
 });
 
 for (const invalid of ['-1', '1.001'])

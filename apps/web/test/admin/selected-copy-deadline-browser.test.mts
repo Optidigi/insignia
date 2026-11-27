@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { MerchantDraftSchema } from '@insignia/contracts';
+import { required } from './support/fixtures.mts';
 import { fixture, product } from './support/selected-browser.mts';
 
 test('built Copy action discovers twenty products within its deadline and hydrates only the selected target for review', {
@@ -9,6 +10,9 @@ test('built Copy action discovers twenty products within its deadline and hydrat
   const f = await fixture(t);
   await f.open();
   const ids = Array.from({ length: 20 }, (_, i) => `gid://shopify/Product/${222 + i}`);
+  const unavailableImage = 'https://cdn.shopify.com/qa/unavailable-product.jpg';
+  const destinationImage = { ...required(product.images?.[0]), url: unavailableImage };
+  await f.page.route(unavailableImage, (route) => route.fulfill({ status: 404 }));
   let details = 0;
   await f.page.route('**/api/admin/products?*', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 1700));
@@ -31,7 +35,15 @@ test('built Copy action discovers twenty products within its deadline and hydrat
     const id = `gid://shopify/Product/${new URL(route.request().url()).pathname.split('/').at(-2)}`;
     const index = ids.indexOf(id);
     await route.fulfill({
-      json: { product: { ...product, id, title: index < 3 ? 'Copy target' : `Copy target ${index}` }, config: null },
+      json: {
+        product: {
+          ...product,
+          id,
+          title: index < 3 ? 'Copy target' : `Copy target ${index}`,
+          images: [destinationImage],
+        },
+        config: null,
+      },
     });
   });
   const started = Date.now();
@@ -65,7 +77,9 @@ test('built Copy action discovers twenty products within its deadline and hydrat
         ?.querySelector('s-button[slot="primary-action"]')
         ?.hasAttribute('disabled'),
   );
-  await dialog.locator('.placement-setup-copy__destination').getByText('Copy target · #222', { exact: true }).waitFor();
+  const destination = dialog.locator('.placement-setup-copy__destination');
+  await destination.getByText('Copy target · #222', { exact: true }).waitFor();
+  await destination.locator('s-icon[type="product"]').waitFor({ timeout: 3000 });
   assert.equal(details, 1);
   assert.equal(f.mutations.length, 0);
 });

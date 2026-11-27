@@ -903,6 +903,7 @@ export interface AdminMessageTable {
   'editor:placementWorkflowPreview.expandCanvas': object;
   'editor:placementWorkflowPreview.expandView': { viewName: string };
   'editor:placementWorkflowPreview.garmentPreview': object;
+  'editor:placementWorkflowPreview.geometryDimensionRange': { formattedMax: string; formattedMin: string };
   'editor:placementWorkflowPreview.geometryLabels.centerX': object;
   'editor:placementWorkflowPreview.geometryLabels.centerY': object;
   'editor:placementWorkflowPreview.geometryLabels.height': object;

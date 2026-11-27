@@ -998,6 +998,7 @@
     "sharedArtworkArea": "Zone du visuel partagée",
     "useSharedArea": "Utiliser la zone partagée",
     "adjustForAppearance": "Ajuster pour {{appearanceName}}",
+    "geometryDimensionRange": "La largeur et la hauteur restent comprises entre {{formattedMin}} et {{formattedMax}}.",
     "geometryLabels": {
       "width": "Largeur",
       "height": "Hauteur",

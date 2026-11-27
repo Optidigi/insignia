@@ -354,8 +354,13 @@ function SelectedProductContainer({ productId }: { productId: string }) {
     }));
   const publicationProgressing = followUntil > 0 && !!client.current?.hasPendingPublication();
   const publicationNeedsReview = !!view?.config && isMerchantPublicationOperatorBlocked(view.config.publication.state);
-  /** #466: the server-projected abandoned-hold or support notice, shown whatever the local write state. */
-  const notice = view?.config ? publicationNotice(view.config.publication.state) : null;
+  const rejected = typeof remote === 'object' ? remote.rejection : null;
+  const state = view?.config?.publication.state;
+  // A current support refusal takes precedence over the older advice to publish again.
+  const notice =
+    state && !(state === 'ABANDONED_RESTORED' && rejected?.code === 'PUBLICATION_ANCHOR_CONFLICT')
+      ? publicationNotice(state)
+      : null;
   /** The existing review states stay in the write-state banner; a state with its own notice does not. */
   const reviewInBanner = publicationNeedsReview && !notice;
   async function retry() {
@@ -383,7 +388,6 @@ function SelectedProductContainer({ productId }: { productId: string }) {
     if (owned.hasPending() && rejection?.code !== 'PUBLICATION_ANCHOR_CONFLICT') return 'pending';
     return rejection ? { kind: 'rejected', rejection } : otherwise;
   }
-  const rejected = typeof remote === 'object' ? remote.rejection : null;
   const adapter: ProductEditorAdapter | null =
     initial && view && copyPorts
       ? {
@@ -394,6 +398,7 @@ function SelectedProductContainer({ productId }: { productId: string }) {
           settled,
           copyPorts,
           readOnly: !canEdit.current || currencyReview,
+          shopifyDraft: view.product.status === 'DRAFT',
           hasPublished: !!view.config?.publication.activeRevisionId,
           publicationFailed:
             !!view.config && isMerchantPublicationSettledFailure(view.config.publication.state) && !client.current?.hasPending(),
