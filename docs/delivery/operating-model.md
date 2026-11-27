@@ -46,6 +46,9 @@ Ordinary PRs keep Runtime receipts and logs. Full archives are retained for qual
 [Shopify version binding](../../deployment/m5-runtime/README.md#deploy-next).
 [Release image custody](../../.github/workflows/images.yml) publishes the qualified
 `main` archives to private GHCR and verifies their manifest digests.
+Production keeps the current running images and the data and configuration needed to run them.
+Use the repository's [artifact custody procedure](../../deployment/m5-runtime/README.md#production-artifact-custody)
+for streaming images, off-host rollback custody and post-deploy cleanup.
 
 ## UI state and effects
 
