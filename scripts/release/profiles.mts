@@ -114,6 +114,12 @@ import preReviewPerformanceModules from '../../deployment/m5-runtime/native-pre-
 import preReviewPerformanceBinding from '../../deployment/m5-runtime/native-pre-review-performance-e73f2a69-release-binding.json' with {
   type: 'json',
 };
+import qaGuidanceModules from '../../deployment/m5-runtime/native-qa-guidance-81434785-module-baseline.json' with {
+  type: 'json',
+};
+import qaGuidanceBinding from '../../deployment/m5-runtime/native-qa-guidance-81434785-release-binding.json' with {
+  type: 'json',
+};
 import recoveryModules from '../../deployment/m5-runtime/native-recovery-module-baseline.json' with { type: 'json' };
 import recoveryCandidate from '../../deployment/m5-runtime/native-recovery-release-binding.json' with { type: 'json' };
 import reinstallModules from '../../deployment/m5-runtime/native-reinstall-module-baseline.json' with { type: 'json' };
@@ -274,6 +280,15 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  'native-qa-guidance-81434785': {
+    versionId: qaGuidanceBinding.versionId,
+    versionTag: qaGuidanceBinding.versionTag,
+    versionIds: qaGuidanceBinding.versionIds,
+    moduleHash: qaGuidanceBinding.moduleHash,
+    modules: qaGuidanceModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: dependencyRefreshFunctions,
+  },
   'native-pre-review-performance-e73f2a69': {
     versionId: preReviewPerformanceBinding.versionId,
     versionTag: preReviewPerformanceBinding.versionTag,
