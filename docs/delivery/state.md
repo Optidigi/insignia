@@ -332,6 +332,15 @@ No migration or grant change was needed. Temporary image uploads filled the Insi
 Phase B. Removing those upload copies and streaming verified archives into Docker restored
 1.7 GiB of free space. The database and rollback images were preserved.
 
+**BA production storage cleanup (27 Nov).** Historical deployment files and inactive operator
+tools were copied to encrypted off-host custody and verified before cleanup. The rollback
+stack copy and retired inspector packages are preserved in the same custody. All 70 exported
+Insignia tags matched their Docker manifest digests. Removed 65 superseded tags and retained the
+five active Insignia tags. Insignia's encrypted volume went from 91% to 3% used, with about
+19 GiB available. The host root filesystem had about 90 GiB available after the image cleanup.
+Container identities and the live Compose digest matched the pre-cleanup snapshot. All seven
+containers and the active artwork inspector were healthy.
+
 **Deploy AZ (27 Nov).** Main runtime run `45991554687` qualified the verifier, web and worker
 from `7c70ae29`. All three were replaced and healthy by `11:47:43Z`. The encrypted checkpoint
 restored with matching roles, ACLs, schema 75, queue schema 48, and protected purchase facts. The
@@ -568,10 +577,16 @@ The signing wrapping key lives only in `runtime/signer-secrets/signing-wrap-keys
 
 **Customer artwork email** runs in development mode since 11 Nov `23:45:02Z`: recipient fixed to `admin@optidigi.nl`, no backfill (the two earlier PENDING notices stay untouched). Customer mode for real buyers stays disabled.
 
-**Custody locators** on prod (for an authorized operator; not fresh-clone prerequisites or execution authority):
-- Stack `/srv/saas/infra/stacks/insignia/`: `compose.yaml`, `.env` and `secrets/` (0600), `publication-hold.sh`.
-- Data on the encrypted volume `/srv/data/saas/insignia/`: `postgres/`, `runtime-state/`, `monitor/`, `artwork-inspector/` (current `96726b31` and rollback `5662e423` packages, `inspection.env`), `releases/` (deploy records `names-deploy-AB` (current release), `reinstall-deploy-W` (rollback release), `canonical-deploy-AC` (layout migration, with its staging), `archive-20261116-dev-data` (encrypted dev/test data from the cutover), `legacy-generic-removal-20261111` (final dump, compose file, env and crontab of the removed `insignia.optidigi.nl` stack)).
-- Operator tooling outside the stack: `~/.local/share/insignia/relay` (Cloudflare alert relay) and `~/.local/share/insignia/site` (insigniacustomizer.com), `~/.config/insignia/cloudflare-admin.token` and `selected-ui-checkpoint-recipient.pem` (checkpoint encryption public key). Next deploy folders start from `deploy-template-canonical` on the dev host.
+**Production custody for an authorized operator.**
+- Stack `/srv/saas/infra/stacks/insignia/` holds installed `compose.yaml`, `.env` and `secrets/`.
+- The encrypted volume holds `postgres/`, `runtime-state/`, `monitor/`, and the active artwork
+  inspector package and `inspection.env`. The former `releases/` directory is empty.
+- Historical references to release directories on `prod` record where the files were created.
+  Their current custody is the encrypted archive under
+  `~/.local/share/insignia/deployment-archive/prod-cleanup-20261127.tEgvx4` on the operator host.
+  It preserves the original paths of the releases, retired inspector packages, and moved operator tooling.
+- Run deployment tools from the canonical checkout. See the
+  [artifact custody procedure](../../deployment/m5-runtime/README.md#production-artifact-custody).
 - Cleanup after deploy AC (18 Nov `01:1xZ`): removed the old `runtime/` (split-project JSON, inline secrets, signer copies, `.pre-*` copies), old `monitor/`, all earlier deploy folders and dated work folders under `~/.local/share/insignia`, `~/insignia-artwork-releases`, all `~/insignia-*` run folders (incl. an October dev `database.dump`), the duplicated files in `~/.config/insignia/` and `production/`, the empty `/srv/insignia` mountpoint and the temporary `/etc` copies. Root disk 85% → 68%. The legacy stacks and the root backup script were not touched.
 - The host has no mutable checkout; services use immutable images and packages.
 
