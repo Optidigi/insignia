@@ -66,8 +66,8 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       );
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
-      expect(names).toHaveLength(75);
-      expect(names.slice(-22)).toEqual([
+      expect(names).toHaveLength(76);
+      expect(names.slice(-23)).toEqual([
         '20261111000100_buyer_visitor_address_limit.sql',
         '20261111000200_uninstall_destination_superseded.sql',
         '20261111000300_signing_key_retirement_window.sql',
@@ -90,6 +90,7 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         '20261123000100_shop_privacy_finalizer.sql',
         '20261123000200_shop_privacy_release_custody.sql',
         '20261126000100_bound_buyer_payload_cleanup.sql',
+        '20261128000100_free_plan_product.sql',
       ]);
       for (const file of names.slice(0, 20))
         await owner.query((await readFile(new URL(file, migrations), 'utf8')).split('-- migrate:down')[0]!);
@@ -177,7 +178,10 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       await owner.query(script); // Reapplication must retain the same bounded authority.
       expect((await web.query('SELECT current_user')).rows[0].current_user).toBe(login);
       // New store preferences/labels remain mutable projections, not owner-wide table powers.
-      await web.query('SELECT guidance,overlays FROM merchant_preferences LIMIT 0');
+      await web.query(
+        'SELECT guidance,overlays,free_product_id,free_product_generation FROM merchant_preferences LIMIT 0',
+      );
+      await web.query('UPDATE merchant_preferences SET free_product_id=free_product_id WHERE false');
       await web.query('UPDATE merchant_preferences SET updated_at=updated_at WHERE false');
       await web.query('SELECT order_name FROM purchase_order_labels LIMIT 0');
       await web.query('UPDATE purchase_order_labels SET observed_at=observed_at WHERE false');
