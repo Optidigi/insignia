@@ -1,5 +1,8 @@
 import type { PurchaseObservation } from '@insignia/application';
+import { Kysely, PostgresDialect } from 'kysely';
+import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { Database } from '../src/client/database.js';
 import { createPurchaseRepository } from '../src/repositories/purchase.js';
 import { createTestShop, openTestDatabase } from './support/postgres.js';
 
@@ -104,6 +107,35 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('whole-dataset purchase list q
     });
     const afterCancellation = await repo.statistics(scope, 'Europe/Amsterdam', new Date('2026-11-05T12:00:00Z'));
     expect(afterCancellation.reduce((sum, day) => sum + BigInt(day.orders), 0n)).toBe(3n);
+    const firstPage = await repo.listPage(scope, { sort: 'date-asc', before: null, limit: 2 });
+    expect(firstPage.purchases.map((row) => row.purchaseId)).toEqual([created[0], created[2]]);
+    expect(firstPage.nextCursor).toBe(created[2]);
+    expect(firstPage.purchases[0]?.observations).toMatchObject([{ cancelledAt: '2026-11-05T11:00:00.000Z' }]);
+    expect((await repo.get(scope, firstPage.purchases[0]!.purchaseId))?.observations).toHaveLength(2);
+    const lastPage = await repo.listPage(scope, { sort: 'date-asc', before: firstPage.nextCursor, limit: 2 });
+    expect(lastPage.purchases.map((row) => row.purchaseId)).toEqual([created[1], created[3]]);
+    expect(lastPage.nextCursor).toBeNull();
+    const statements: (readonly unknown[])[] = [];
+    const measured = new Kysely<Database>({
+      dialect: new PostgresDialect({ pool: new Pool({ connectionString: process.env.DATABASE_URL }) }),
+      log(event) {
+        if (event.level === 'query') statements.push(event.query.parameters);
+      },
+    });
+    try {
+      const measuredRepo = createPurchaseRepository(measured);
+      const small = await measuredRepo.listPage(scope, { sort: 'date-asc', before: null, limit: 1 });
+      const smallCost = statements.length;
+      expect(small.purchases).toHaveLength(1);
+      expect(statements.flat(2)).not.toContain(created[2]);
+      statements.length = 0;
+      const large = await measuredRepo.listPage(scope, { sort: 'date-asc', before: null, limit: 3 });
+      expect(large.purchases).toHaveLength(3);
+      expect(statements.flat(2)).not.toContain(created[3]);
+      expect(statements.length).toBeLessThanOrEqual(smallCost);
+    } finally {
+      await measured.destroy();
+    }
     // Owner decision, 18 November 2026: test orders count on Home; cancelled orders still do not.
     const test = inputs[1];
     if (!test) throw new Error('Expected second retained order');

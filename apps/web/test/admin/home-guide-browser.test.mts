@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import { gzipSync } from 'node:zlib';
 import { PurchaseListViewSchema } from '@insignia/contracts';
 import type { Page } from 'playwright';
 import { browserFixture, preferences, routePolaris } from './support/selected-browser.mts';
@@ -323,6 +325,27 @@ test('Home order tiles say that test orders count and cancelled orders do not, i
     await page.locator('s-tooltip').first().waitFor({ state: 'attached' });
     const shown = (await page.locator('s-tooltip').allTextContents()).map((text) => text.trim());
     assert.deepEqual(shown.slice(0, 2), definitions, locale);
+    const downloadedScripts = await page.evaluate(() => [
+      ...new Set(
+        performance
+          .getEntriesByType('resource')
+          .map(({ name }) => new URL(name))
+          .filter((url) => url.origin === location.origin)
+          .flatMap(({ pathname }) => /^\/_astro\/([\w.-]+\.js)$/.exec(pathname)?.[1] ?? []),
+      ),
+    ]);
+    const downloadedLanguages = downloadedScripts.flatMap(
+      (name) => /^admin-(de|es|fr|it|nl)\.[^.]+\.js$/.exec(name)?.[1] ?? [],
+    );
+    assert.deepEqual(downloadedLanguages, locale === 'en' ? [] : [locale]);
+    if (locale === 'en') {
+      const assets = await Promise.all(
+        downloadedScripts.map((name) => readFile(new URL(`../../dist/client/_astro/${name}`, import.meta.url))),
+      );
+      const bytes = assets.reduce((sum, asset) => sum + gzipSync(asset, { level: 9 }).length, 0);
+      t.diagnostic(`English Home local JavaScript: ${bytes} gzip bytes`);
+      assert.ok(bytes > 0 && bytes <= 200 * 1024, 'English Home must stay within its local JavaScript budget');
+    }
     await page.close();
   }
 });

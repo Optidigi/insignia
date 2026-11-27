@@ -225,11 +225,14 @@ export function merkleRootV3(records: readonly LineRecordV3[]): Buffer {
   const all = levels(records);
   return at(at(all, all.length - 1), 0);
 }
+function proofFromLevels(tree: readonly Buffer[][], index: number): Buffer[] {
+  return tree.slice(0, -1).map((level, k) => at(level, (index >> k) ^ 1));
+}
 /** Sibling hashes from leaf to root; bit k of the index selects the side at level k. */
 export function merkleProofV3(records: readonly LineRecordV3[], index: number): Buffer[] {
   const all = levels(records);
   unsigned(index, records.length - 1, 'index');
-  return all.slice(0, -1).map((level, k) => at(level, (index >> k) ^ 1));
+  return proofFromLevels(all, index);
 }
 /** Recompute the root from one record and its proof. Requires the proof length the count fixes. */
 export function proofRootV3(record: LineRecordV3, proof: readonly Uint8Array[], count: number): Buffer {
@@ -281,13 +284,17 @@ export function lineCarrierIncludedV3(carrier: LineCarrierV3): boolean {
     Buffer.from(carrier.header.rootHex, 'hex'),
   );
 }
+// The 177-byte prefix ends on a base64 boundary, so the tail encodes independently.
+function encodeLineTailV3(record: LineRecordV3, proof: readonly Uint8Array[]): string {
+  return Buffer.concat([encodeRecordV3(record), ...proof]).toString('base64url');
+}
 export function encodeLineCarrierV3(prefix: Uint8Array, record: LineRecordV3, proof: readonly Uint8Array[]): string {
   if (prefix.length !== PREFIX_V3_BYTES) throw new Error('invalid prefix');
   const header = decodeHeaderV3(prefix.subarray(0, HEADER_V3_BYTES));
   checkRecord(record, header.count);
   if (proof.length !== depthForCount(header.count) || proof.some((p) => p.length !== HASH_BYTES))
     throw new Error('invalid proof');
-  return Buffer.concat([prefix, encodeRecordV3(record), ...proof]).toString('base64url');
+  return Buffer.from(prefix).toString('base64url') + encodeLineTailV3(record, proof);
 }
 /** Short child reference written by Transform: base64url(set UUID bytes || index). */
 export function lineRefV3(setHex: string, index: number): string {
@@ -310,8 +317,15 @@ export async function issueLineSetV3(
 }> {
   unsigned(issuanceDay, U32 - 2, 'issuance day');
   if (claims.validThroughDay !== issuanceDay + 2) throw new Error('expiry must be D+2');
-  const header: HeaderV3 = { ...claims, count: records.length, rootHex: merkleRootV3(records).toString('hex') };
+  const tree = levels(records);
+  const header: HeaderV3 = {
+    ...claims,
+    count: records.length,
+    rootHex: at(at(tree, tree.length - 1), 0).toString('hex'),
+  };
   const message = lineV3SignBytes(header);
+  // Capture the records and proofs committed by the root before awaiting the signer.
+  const tails = records.map((record) => encodeLineTailV3(record, proofFromLevels(tree, record.index)));
   const result = await signer.signWholeQuote({
     message,
     keyId: header.keyId,
@@ -336,11 +350,11 @@ export async function issueLineSetV3(
     throw new Error('signer key validity does not cover D..D+2');
   if (!(result.signature instanceof Uint8Array) || result.signature.length !== SIGNATURE_BYTES)
     throw new Error('invalid Ed25519 signature');
-  const prefix = Buffer.concat([encodeHeaderV3(header), Buffer.from(result.signature)]);
+  const prefix = Buffer.concat([encodeHeaderV3(header), Buffer.from(result.signature)]).toString('base64url');
   return {
-    prefix: prefix.toString('base64url'),
+    prefix,
     header,
-    carriers: records.map((record) => encodeLineCarrierV3(prefix, record, merkleProofV3(records, record.index))),
+    carriers: tails.map((tail) => prefix + tail),
     keyId: result.keyId,
     publicKeyFingerprint: result.publicKeyFingerprint,
     firstValidDay: result.firstValidDay,

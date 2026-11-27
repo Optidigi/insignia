@@ -13,6 +13,7 @@ type Scenario = {
   readFails?: boolean;
   saves?: { key: string | null; body: unknown }[];
   locale?: string;
+  unavailableLocale?: string;
 };
 
 async function openSettings(t: Parameters<typeof browserFixture>[0], scenario: Scenario = {}): Promise<Page> {
@@ -28,6 +29,9 @@ async function openSettings(t: Parameters<typeof browserFixture>[0], scenario: S
   await routePolaris(page, source);
   await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) => route.fulfill({ body: '' }));
   await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
+  if (scenario.unavailableLocale) {
+    await page.route(`**/admin-${scenario.unavailableLocale}.*.js`, (route) => route.abort());
+  }
   let view = {
     ...preferences,
     canEdit: scenario.canEdit ?? true,
@@ -144,4 +148,25 @@ test('the choice reads in the merchant language', { timeout: 30000 }, async (t) 
   const control = emailSwitch(page, 'Klanten mailen als er een ontwerp ontbreekt');
   await control.click({ trial: true }); // enabled once the store choice is read
   assert.equal(await control.isChecked(), true);
+});
+
+test('changing app language downloads its catalog and keeps the current language if the next catalog is unavailable', {
+  timeout: 30000,
+}, async (t) => {
+  const page = await openSettings(t, { locale: 'en' });
+  const catalog = page.waitForResponse((response) => /\/admin-nl\.[^/]+\.js$/.test(new URL(response.url()).pathname));
+  await page.getByRole('combobox', { name: 'App language', exact: true }).selectOption('nl');
+  assert.equal((await catalog).ok(), true);
+  await emailSwitch(page, 'Klanten mailen als er een ontwerp ontbreekt').waitFor();
+  await page.route('**/admin-de.*.js', (route) => route.abort());
+  await page.getByRole('combobox', { name: 'Apptaal', exact: true }).selectOption('de');
+  await page.getByText('De taal kon niet worden gewijzigd. Probeer het opnieuw.', { exact: true }).waitFor();
+  assert.equal(await page.locator('html').getAttribute('lang'), 'nl');
+  assert.equal(await page.evaluate(() => localStorage.getItem('insignia.admin.language.v1')), 'nl');
+});
+
+test('an unavailable first catalog leaves Settings usable in English', { timeout: 30000 }, async (t) => {
+  const page = await openSettings(t, { locale: 'de', unavailableLocale: 'de' });
+  await emailSwitch(page).click({ trial: true });
+  assert.equal(await page.locator('html').getAttribute('lang'), 'en');
 });

@@ -48,6 +48,58 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable artwork ownership and
     ownedShops.length = 0;
   });
   afterAll(() => pool.end());
+  it('refuses a guest upload behind the shop lock, then admits a retry after the lock releases', async () => {
+    const db = await openTestDatabase();
+    const boundedPool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      options: '-c lock_timeout=100ms -c statement_timeout=4000ms',
+    });
+    const locker = await pool.connect();
+    try {
+      const { shopId } = await ownTestShop(db);
+      const scope = { shopId, installationGeneration: '1', ownerHash: 'a'.repeat(64), kind: 'guest' as const };
+      const store = createArtworkRepository(boundedPool);
+      const unexpected = async () => {
+        throw new Error('Unexpected artwork effect');
+      };
+      let grants = 0;
+      const uploader = createArtworkService({
+        store,
+        clock: () => now,
+        inspect: unexpected,
+        storage: {
+          read: unexpected,
+          putImmutable: unexpected,
+          remove: unexpected,
+          presignRead: unexpected,
+          presignUpload: async () => {
+            grants++;
+            return { url: 'https://storage.example/upload', headers: {} };
+          },
+        },
+      });
+      const declaration = { contentType: 'image/png', byteLength: 10 };
+      const begin = () => uploader.begin(scope, declaration, { boundLockWait: true });
+      await locker.query('BEGIN');
+      await locker.query('SELECT shop_id FROM shops WHERE shop_id=$1 FOR UPDATE', [shopId]);
+      // Customer-link uploads use guest ownership but retain their pool's timeout policy.
+      await expect(uploader.begin(scope, declaration)).rejects.toMatchObject({ code: '55P03' });
+      await expect(begin()).rejects.toMatchObject({ code: 'BUSY', retryAfterSeconds: 1 });
+      expect(grants).toBe(0);
+      expect((await boundedPool.query('SELECT asset_id FROM artwork_assets WHERE shop_id=$1', [shopId])).rows).toEqual(
+        [],
+      );
+      await locker.query('ROLLBACK');
+      const admission = await begin();
+      expect((await store.get(scope, admission.assetId))?.state).toBe('UPLOADING');
+      expect(grants).toBe(1);
+    } finally {
+      await locker.query('ROLLBACK');
+      locker.release();
+      await boundedPool.end();
+      await db.destroy();
+    }
+  });
   it('queues once, fences guest ownership and serializes competing inspection leases', async () => {
     const db = await openTestDatabase();
     try {

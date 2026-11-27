@@ -88,8 +88,9 @@ export type ArtworkRecord = {
   manifest: ArtworkManifest | null;
   rejection: string | null;
 };
+type ArtworkAdmissionOptions = { boundLockWait: true };
 export interface ArtworkStore {
-  create(input: ArtworkRecord): Promise<ArtworkRecord>;
+  create(input: ArtworkRecord, options?: ArtworkAdmissionOptions): Promise<ArtworkRecord>;
   get(scope: ArtworkScope, assetId: string): Promise<ArtworkRecord | null>;
   complete(scope: ArtworkScope, assetId: string, now: Date): Promise<ArtworkRecord>;
   claim(assetId: string, claimId: string, now: Date, until: Date): Promise<ArtworkRecord | null>;
@@ -145,8 +146,9 @@ export class ArtworkError extends Error {
       | 'NOT_USABLE'
       | 'UNAVAILABLE'
       | 'CONFLICT'
+      | 'BUSY'
       | 'RATE_LIMITED',
-    /** RATE_LIMITED only: seconds until the owner's quota admits another upload. */
+    /** Seconds to wait before retrying lock contention or an upload quota refusal. */
     readonly retryAfterSeconds?: number,
   ) {
     super(`Artwork: ${code}`);
@@ -218,7 +220,11 @@ export function createArtworkService(input: {
     return row;
   }
   return {
-    async begin(scope: ArtworkScope, declaration: { contentType: string; byteLength: number }) {
+    async begin(
+      scope: ArtworkScope,
+      declaration: { contentType: string; byteLength: number },
+      options?: ArtworkAdmissionOptions,
+    ) {
       if (
         !ARTWORK_MIME_TYPES.includes(declaration.contentType) ||
         !Number.isSafeInteger(declaration.byteLength) ||
@@ -256,7 +262,7 @@ export function createArtworkService(input: {
         manifest: null,
         rejection: null,
       };
-      const admitted = await input.store.create(record);
+      const admitted = await input.store.create(record, options);
       const upload = await input.storage.presignUpload({
         key: admitted.quarantineKey,
         contentType: admitted.declaredMime,

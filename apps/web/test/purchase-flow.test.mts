@@ -23,6 +23,7 @@ import {
   reconcilePurchase as reconcile,
   type VerifiedOrder,
 } from '@insignia/application';
+import { createPurchaseRepository } from '../../../packages/database/dist/repositories/purchase.js';
 import { createCustomerArtworkViewReader } from '../src/server/customer-artwork/view.ts';
 import { handlePurchaseRequest } from '../src/server/purchase/http.ts';
 import { createPurchaseServices } from '../src/server/purchase/service.ts';
@@ -268,6 +269,41 @@ test('actual quote/signing/PG purchase authority is independent from cart confir
   assert.equal(refunded.firstPaidAt, second.firstPaidAt);
   assert.equal(required(refunded.refunds[0]).amountMinor, '3000');
   assert.equal(record(record(required(refunded.bindings[0]).economics).economics).totalMinor, '9000');
+  let statements = 0;
+  const countedPurchases = createPurchaseRepository(
+    f.db.withPlugin({
+      transformQuery({ node }) {
+        statements++;
+        return node;
+      },
+      async transformResult({ result }) {
+        return result;
+      },
+    }),
+  );
+  const countedList = createPurchaseServices({
+    core: coreFixture({ purchases: countedPurchases }),
+    appOrigin: 'https://app.example.test',
+    authenticate: async () => f.actor,
+    clock: f.now,
+  });
+  assert.equal((await countedList.list(f.actor, { limit: 1, before: null })).items.length, 1);
+  const oneOrderStatements = statements;
+  statements = 0;
+  const listed = await countedList.list(f.actor, { limit: 20, before: null });
+  t.diagnostic(
+    `Orders with ready artwork used ${oneOrderStatements} SQL statements for one row and ${statements} for two`,
+  );
+  assert.ok(statements <= oneOrderStatements, 'hydration and artwork authorization should be page-batched');
+  assert.equal(listed.items.length, 2);
+  for (const item of listed.items) {
+    assert.equal(item.artworkState, 'READY');
+    const placement = required(required(item.groups[0]).placements[0]);
+    assert.equal(placement.currentAssetId, required(f.group.design.placements[0]).artwork.revisionId);
+    assert.equal(placement.expired, false);
+    assert.ok(placement.currentExpiresAt);
+    assert.equal(item.refunds.length, item.purchaseId === second.purchaseId ? 1 : 0);
+  }
   const original = await f.http(
     `${result.purchaseId}/artwork/${required(f.group.design.placements[0]).artwork.revisionId}/download`,
   );
@@ -407,6 +443,9 @@ test('merchant HTTP rejects forged tenant/body/origin and foreign asset; verifie
   const locked = await f.http(`${result.purchaseId}/lock`, { expectedVersion: 1 });
   assert.equal(locked.status, 200, await locked.clone().text());
   assert.equal((await locked.json()).artworkState, 'ARTWORK_LOCKED');
+  const listed = required((await f.services.list(f.actor, { limit: 20, before: null })).items[0]);
+  assert.equal(listed.artworkState, 'ARTWORK_LOCKED');
+  assert.equal(required(required(listed.groups[0]).placements[0]).currentAssetId, assetId);
   assert.equal((await f.http(`${result.purchaseId}/artwork`, { ...command, expectedVersion: 2 })).status, 409);
   assert.equal((await f.http(`${result.purchaseId}/artwork/${randomUUID()}/download`)).status, 410);
   const before = (await f.http(result.purchaseId).then((r) => r.json())).lines;

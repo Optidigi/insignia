@@ -61,6 +61,7 @@ export function createPurchaseServices(input: {
     actor: AdminActor,
     purchase: PurchaseRecord,
     names?: Record<string, string | null>,
+    options?: { deferArtworkAuthorization: true },
   ): Promise<PurchaseView> {
     const lines = purchase.bindings.flatMap((b) => b.lines.map(({ lineIndex, ...line }) => line));
     let presentation: import('@insignia/shopify').OrderPresentation | null = null;
@@ -112,7 +113,7 @@ export function createPurchaseServices(input: {
           const assetId =
             latest?.assetId ??
             (erasedVersion === 0 && placement.artwork.kind === 'revision' ? placement.artwork.revisionId : null);
-          if (assetId && !authorized.has(assetId))
+          if (!options?.deferArtworkAuthorization && assetId && !authorized.has(assetId))
             authorized.set(
               assetId,
               await store.getAuthorizedArtwork(scope(actor), { purchaseId: purchase.purchaseId, assetId }),
@@ -257,12 +258,7 @@ export function createPurchaseServices(input: {
           if ((await store.missingOrderNames(scope(actor), 1)).length) throw new Error('SEARCH_INCOMPLETE');
         }
       }
-      const rows = await store.list(scope(actor), {
-        ...query,
-        limit: query.limit + 1,
-        before: query.before,
-      });
-      const page = rows.slice(0, query.limit).filter((row): row is PurchaseRecord => row !== null);
+      const { purchases: page, nextCursor } = await store.listPage(scope(actor), query);
       let names: Record<string, string | null> = {};
       if (page.length > 0 && actor.canReadOrders && actor.expiresAtMs > now().getTime()) {
         try {
@@ -276,12 +272,35 @@ export function createPurchaseServices(input: {
         }
       }
       await currentAccess(actor);
-      const items = await Promise.all(page.map((row) => view(actor, row, names)));
+      const items = await Promise.all(page.map((row) => view(actor, row, names, { deferArtworkAuthorization: true })));
+      const requested = new Map<string, Set<string>>();
+      for (const item of items) {
+        const ids = new Set(
+          item.groups.flatMap((group) =>
+            group.placements.flatMap((placement) => (placement.currentAssetId ? [placement.currentAssetId] : [])),
+          ),
+        );
+        if (ids.size) requested.set(item.purchaseId, ids);
+      }
+      if (requested.size) {
+        const expirations = await store.getAuthorizedArtworkExpirations(scope(actor), requested);
+        for (const item of items) {
+          const owned = expirations.get(item.purchaseId);
+          if (!owned) continue;
+          for (const group of item.groups)
+            for (const placement of group.placements) {
+              const expiresAt = placement.currentAssetId ? owned.get(placement.currentAssetId) : undefined;
+              if (!expiresAt) continue;
+              placement.currentExpiresAt = expiresAt.toISOString();
+              placement.expired = expiresAt <= now();
+            }
+        }
+      }
       await currentAccess(actor);
       return {
         version: 'm8-purchase-list-v1' as const,
         items,
-        nextCursor: rows.length > query.limit ? page.at(-1)!.purchaseId : null,
+        nextCursor,
         ...(input.timeZone ? { timeZone: await input.timeZone(actor) } : {}),
       };
     },
