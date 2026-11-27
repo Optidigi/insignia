@@ -5,6 +5,7 @@ type Dependencies = Parameters<typeof handleShopifyWebhook>[1];
 import assert from 'node:assert/strict';
 import { createHmac, randomUUID } from 'node:crypto';
 import { test } from 'node:test';
+import { setTimeout as delay } from 'node:timers/promises';
 import { handleShopifyWebhook } from '../src/server/shopify-webhook.ts';
 
 test('HTTP 5xx after durable inbox commit leads to same-ID retry and a single queue handoff', async () => {
@@ -115,4 +116,60 @@ test('stream bound rejects a lying or absent Content-Length before trusted metad
   );
   assert.equal(response.status, 413);
   assert.equal(called, false);
+});
+
+test('an interrupted Shopify delivery releases its body reader before any handoff', async () => {
+  const abort = new AbortController();
+  let canceled = false;
+  const request = new Request('http://local/api/webhooks/shopify', {
+    method: 'POST',
+    body: new ReadableStream({
+      start(controller) {
+        controller.enqueue(new Uint8Array([123]));
+      },
+      cancel() {
+        canceled = true;
+      },
+    }),
+    signal: abort.signal,
+    // @ts-expect-error Node streaming RequestInit requires duplex; browser DOM declarations omit it.
+    duplex: 'half',
+  });
+  const outcome = handleShopifyWebhook(request, {
+    secrets: ['synthetic-secret'],
+    getHandoff() {
+      assert.fail('incomplete request must not reach handoff');
+    },
+  });
+  abort.abort();
+  const response = await Promise.race([outcome, delay(150, null, { ref: false })]);
+  assert.equal(response?.status, 503);
+  assert.equal(canceled, true);
+  assert.equal(request.body?.locked, false);
+});
+
+test('an incomplete Shopify body has a deadline even if transport cancellation is still pending', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let canceled = false;
+  const request = new Request('http://local/api/webhooks/shopify', {
+    method: 'POST',
+    body: new ReadableStream({
+      cancel() {
+        canceled = true;
+        return new Promise<void>(() => {});
+      },
+    }),
+    // @ts-expect-error Node streaming RequestInit requires duplex; browser DOM declarations omit it.
+    duplex: 'half',
+  });
+  const outcome = handleShopifyWebhook(request, {
+    secrets: ['synthetic-secret'],
+    getHandoff() {
+      assert.fail('incomplete request must not reach handoff');
+    },
+  });
+  t.mock.timers.tick(3_000);
+  assert.equal((await outcome).status, 503);
+  assert.equal(canceled, true);
+  assert.equal(request.body?.locked, false);
 });

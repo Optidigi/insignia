@@ -15,26 +15,39 @@ export class WebhookBodyTooLargeError extends Error {
   }
 }
 
+// Shopify allows five seconds for the whole delivery, including the durable handoff.
+const WEBHOOK_BODY_DEADLINE_MS = 3_000;
+
 /** Enforce the limit as the body streams; Content-Length is only a fast rejection. */
 export async function readBoundedWebhookBody(request: Request): Promise<Uint8Array> {
   const declared = request.headers.get('content-length');
   if (declared && Number(declared) > MAX_SHOPIFY_WEBHOOK_BODY_BYTES) throw new WebhookBodyTooLargeError();
   if (!request.body) return new Uint8Array();
   const reader = request.body.getReader();
+  const deadline = new AbortController();
+  const signal = AbortSignal.any([request.signal, deadline.signal]);
+  const stopReading = () => {
+    // A transport can take time to finish cancellation after pending reads have settled.
+    void reader.cancel().catch(() => {});
+  };
+  const timer = setTimeout(() => deadline.abort(new Error('Shopify webhook body deadline')), WEBHOOK_BODY_DEADLINE_MS);
+  signal.addEventListener('abort', stopReading, { once: true });
   const chunks: Uint8Array[] = [];
   let length = 0;
   try {
+    signal.throwIfAborted();
     while (true) {
       const next = await reader.read();
+      signal.throwIfAborted();
       if (next.done) break;
       length += next.value.byteLength;
-      if (length > MAX_SHOPIFY_WEBHOOK_BODY_BYTES) {
-        await reader.cancel().catch(() => {});
-        throw new WebhookBodyTooLargeError();
-      }
+      if (length > MAX_SHOPIFY_WEBHOOK_BODY_BYTES) throw new WebhookBodyTooLargeError();
       chunks.push(next.value);
     }
   } finally {
+    clearTimeout(timer);
+    signal.removeEventListener('abort', stopReading);
+    stopReading();
     reader.releaseLock();
   }
   const raw = new Uint8Array(length);
