@@ -580,6 +580,20 @@ export default function PlacementSetupCopyDialog({
     [snapshots, catalogRevision, example],
   );
   const targetById = useMemo(() => new Map(targetProducts.map((product) => [product.id, product])), [targetProducts]);
+  const duplicateTitles = useMemo(() => {
+    const seen = new Set<string>();
+    const duplicates = new Set<string>();
+    for (const { title } of catalog) {
+      if (seen.has(title)) duplicates.add(title);
+      seen.add(title);
+    }
+    return duplicates;
+  }, [catalog]);
+  function productLabel(id: string, title: string) {
+    if (!duplicateTitles.has(title)) return title;
+    const productNumber = /^gid:\/\/shopify\/Product\/([0-9]+)$/.exec(id)?.[1];
+    return `${title} · ${productNumber ? `#${productNumber}` : id}`;
+  }
   const sourceOptions = savedSources;
   const visibleTargets = useMemo(
     () =>
@@ -864,7 +878,7 @@ export default function PlacementSetupCopyDialog({
   function destinations() {
     return (
       <PlacementCopyDestinations
-        products={chosenTargets}
+        products={chosenTargets.map((product) => ({ ...product, title: productLabel(product.id, product.title) }))}
         total={selectedTargetIds.length}
         busy={busy}
         onChange={!source ? close : undefined}
@@ -880,27 +894,30 @@ export default function PlacementSetupCopyDialog({
           heading={translateUi('editor:placementSetupCopyDialog.someProductsCanTReceiveThisSetup')}
         >
           <div class="placement-setup-copy__blockers">
-            {preflightBlockers.map((blocker) => (
-              <div key={blocker.targetId} class="placement-setup-copy__blocker">
-                <div>
-                  <s-text type="strong">
-                    {targetById.get(blocker.targetId)?.title ??
-                      translateUi('editor:placementSetupCopyDialog.source.unavailableProduct')}
-                  </s-text>
-                  <s-text>{resultMessage(blocker.reason, translateUi)}</s-text>
+            {preflightBlockers.map((blocker) => {
+              const product = targetById.get(blocker.targetId) ?? catalog.find(({ id }) => id === blocker.targetId);
+              const label = product ? productLabel(product.id, product.title) : undefined;
+              return (
+                <div key={blocker.targetId} class="placement-setup-copy__blocker">
+                  <div>
+                    <s-text type="strong">
+                      {label ?? translateUi('editor:placementSetupCopyDialog.source.unavailableProduct')}
+                    </s-text>
+                    <s-text>{resultMessage(blocker.reason, translateUi)}</s-text>
+                  </div>
+                  <s-button
+                    variant="tertiary"
+                    accessibilityLabel={translateUi('editor:placementSetupCopyDialog.selection.removeFromSelection', {
+                      productName: label ?? blocker.targetId,
+                    })}
+                    disabled={busy}
+                    onClick={() => toggleTarget(blocker.targetId, false)}
+                  >
+                    {translateUi('editor:placementSetupCopyDialog.remove')}
+                  </s-button>
                 </div>
-                <s-button
-                  variant="tertiary"
-                  accessibilityLabel={translateUi('editor:placementSetupCopyDialog.selection.removeFromSelection', {
-                    productName: targetById.get(blocker.targetId)?.title ?? blocker.targetId,
-                  })}
-                  disabled={busy}
-                  onClick={() => toggleTarget(blocker.targetId, false)}
-                >
-                  {translateUi('editor:placementSetupCopyDialog.remove')}
-                </s-button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </s-banner>
       )
@@ -971,7 +988,7 @@ export default function PlacementSetupCopyDialog({
                     {productImage(source)}
                     <div>
                       <s-text color="subdued">{translateUi('editor:placementSetupCopyDialog.fromCurrentDraft')}</s-text>
-                      <s-text type="strong">{source.title}</s-text>
+                      <s-text type="strong">{productLabel(source.id, source.title)}</s-text>
                     </div>
                   </div>
                 )}
@@ -1047,13 +1064,14 @@ export default function PlacementSetupCopyDialog({
                     )}
                   >
                     {pageItems.map((product) => {
+                      const pickerLabel = productLabel(product.id, product.title);
                       if (!source)
                         return (
                           <s-clickable
                             key={product.id}
                             inlineSize="100%"
                             accessibilityLabel={translateUi('editor:placementSetupCopyDialog.selection.useSetupFrom', {
-                              productName: product.title,
+                              productName: pickerLabel,
                             })}
                             disabled={selectedTargetIds.includes(product.id) || product.configured === false}
                             onClick={() => chooseSource(product)}
@@ -1061,7 +1079,7 @@ export default function PlacementSetupCopyDialog({
                             <div class="placement-setup-copy__resource-row placement-setup-copy__source-row">
                               {productImage(product)}
                               <div class="placement-setup-copy__resource-copy">
-                                <s-text type="strong">{product.title}</s-text>
+                                <s-text type="strong">{pickerLabel}</s-text>
                                 <s-text color="subdued">
                                   {selectedTargetIds.includes(product.id)
                                     ? translateUi('editor:placementSetupCopyDialog.selection.selectedAsDestination')
@@ -1103,7 +1121,7 @@ export default function PlacementSetupCopyDialog({
                           }}
                         >
                           <s-checkbox
-                            label={product.title}
+                            label={pickerLabel}
                             labelAccessibilityVisibility="exclusive"
                             name="targetProducts"
                             checked={selected}
@@ -1111,7 +1129,7 @@ export default function PlacementSetupCopyDialog({
                             onChange={(event) => toggleTarget(product.id, event.currentTarget.checked)}
                           />
                           {productImage(product)}
-                          <span class="placement-setup-copy__product-title">{product.title}</span>
+                          <span class="placement-setup-copy__product-title">{pickerLabel}</span>
                           {readiness !== 'ready' && (
                             <s-badge tone="neutral">
                               {translateUi(
@@ -1217,6 +1235,7 @@ export default function PlacementSetupCopyDialog({
                 )}
                 <PlacementSetupCopyReview
                   source={activeSource}
+                  sourceLabel={productLabel(activeSource.id, activeSource.title)}
                   sourceKind={source ? 'current' : 'saved'}
                   selectedViewIds={selectedViewIds}
                   includeProductPrices={includeProductPrices}
@@ -1264,7 +1283,7 @@ export default function PlacementSetupCopyDialog({
                       <s-link
                         href={productEditorHref(copiedResults[0].targetId)}
                         accessibilityLabel={translateUi('editor:placementSetupCopyDialog.actions.reviewCopiedSetup', {
-                          productName: copiedResults[0].title,
+                          productName: productLabel(copiedResults[0].targetId, copiedResults[0].title),
                         })}
                       >
                         {translateUi('editor:placementSetupCopyDialog.reviewACopiedSetup')}
@@ -1281,7 +1300,7 @@ export default function PlacementSetupCopyDialog({
                       <div class="placement-setup-copy__result" key={result.targetId}>
                         {productImage(targetById.get(result.targetId))}
                         <div>
-                          <s-text type="strong">{result.title}</s-text>
+                          <s-text type="strong">{productLabel(result.targetId, result.title)}</s-text>
                           <s-paragraph>{resultMessage(result.reason, translateUi)}</s-paragraph>
                           {result.summary && (
                             <s-text color="subdued">

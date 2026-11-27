@@ -129,6 +129,29 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
     };
   }
 
+  it('reads and validates the effective revision in one database statement', async () => {
+    const value = await effectiveFixture();
+    let statements = 0;
+    const observed = database.withPlugin({
+      transformQuery({ node }) {
+        statements++;
+        return node;
+      },
+      async transformResult({ result }) {
+        return result;
+      },
+    });
+    const repo = new PgAcceptedQuoteRepository(observed);
+    expect(await repo.getEffective(value.shopId, value.productId)).toMatchObject({
+      configId: value.configId,
+      operationId: value.operationId,
+      config: { revisionId: value.revisionId, revisionContentHash: value.contentHash },
+    });
+    expect(statements).toBe(1);
+    expect(await repo.getEffective(value.shopId, randomUUID())).toBeNull();
+    expect(await repo.getEffective(randomUUID(), value.productId)).toBeNull();
+  });
+
   it('stores a non-metered quote, replays the same key, and forbids mutation', async () => {
     const value = await effectiveFixture();
     const quoteId = randomUUID();

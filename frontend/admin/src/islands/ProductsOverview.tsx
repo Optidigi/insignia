@@ -54,6 +54,12 @@ function ProductsOverview() {
     published: t('products:configuration.published'),
     unavailable: t('products:configuration.unavailable'),
   };
+  const shopifyStatusLabels = {
+    ACTIVE: t('products:shopifyStatus.active'),
+    ARCHIVED: t('products:shopifyStatus.archived'),
+    DRAFT: t('products:shopifyStatus.draft'),
+    UNLISTED: t('products:shopifyStatus.unlisted'),
+  };
   const configurationRef = useRef<ConfigurationFilter>('all');
   const [setupCopyAvailable, setSetupCopyAvailable] = useState(false);
   useEffect(() => {
@@ -435,6 +441,12 @@ function ProductsOverview() {
               {visible.map((product) => {
                 const id = productNumber(product.id);
                 const variantCount = productVariantCount(product);
+                const configuration = configurationState(product);
+                const { status } = product;
+                const shopifyStatus =
+                  status === 'ACTIVE' || status === 'ARCHIVED' || status === 'DRAFT' || status === 'UNLISTED'
+                    ? shopifyStatusLabels[status]
+                    : t('products:shopifyStatus.unknown');
                 if (!id) return null;
                 return (
                   <ResourceTableRow
@@ -493,13 +505,16 @@ function ProductsOverview() {
                       </AdminResourceName>
                     </ResourceTableCell>
                     <ResourceTableCell>
-                      {configurationState(product) === 'unavailable' ? (
-                        <s-text color="subdued">{configurationLabels.unavailable}</s-text>
-                      ) : (
-                        <s-badge tone={configurationState(product) === 'published' ? 'success' : 'neutral'}>
-                          {configurationLabels[configurationState(product)]}
-                        </s-badge>
-                      )}
+                      <s-stack gap="small-200" alignItems="start">
+                        {configuration === 'unavailable' ? (
+                          <s-text color="subdued">{configurationLabels.unavailable}</s-text>
+                        ) : (
+                          <s-badge tone={configuration === 'published' ? 'success' : 'neutral'}>
+                            {configurationLabels[configuration]}
+                          </s-badge>
+                        )}
+                        <s-text color="subdued">{shopifyStatus}</s-text>
+                      </s-stack>
                     </ResourceTableCell>
                     <ResourceTableCell>
                       <AdminValueSummary

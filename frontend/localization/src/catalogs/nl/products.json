@@ -32,6 +32,13 @@
     "published": "Gepubliceerd",
     "unavailable": "Niet beschikbaar"
   },
+  "shopifyStatus": {
+    "active": "Shopify: Actief",
+    "archived": "Shopify: Gearchiveerd",
+    "draft": "Shopify: Concept",
+    "unlisted": "Shopify: Niet vermeld",
+    "unknown": "Shopify: Onbekende status"
+  },
   "results": {
     "shown_one": "{{formattedCount}} product getoond op deze pagina.",
     "shown_other": "{{formattedCount}} producten getoond op deze pagina."

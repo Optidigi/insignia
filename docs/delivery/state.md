@@ -40,9 +40,10 @@ Active. Web and worker now log to the host journal. See [AY validation](shopify-
 `1268027162625`. Journal entries from AY and AZ are queryable for both web and worker after
 replacement. See [AZ validation](shopify-review-resubmission.md#deploy-az-validation).
 
-**Before resubmission.** Complete the native merchant and buyer walkthroughs on AZ and collect the
-48-hour logging baseline. Track remaining items in the
-[technical audit checklist](../backlog/technical-audit.md).
+**Before resubmission.** Qualify the post-AZ performance and stability candidate, then complete the
+native merchant and USD/EUR buyer walkthroughs on that candidate. Collect the 48-hour logging baseline.
+The isolated EUR Lighthouse run still needs storefront access in a dedicated profile. The
+[technical audit checklist](../backlog/technical-audit.md) records candidate changes and measurements.
 
 **Next for the owner.** Walk through the next qualified candidate in the merchant and storefront UI.
 Resubmit in the Partner Dashboard after reviewing the release and reviewer access instructions. The

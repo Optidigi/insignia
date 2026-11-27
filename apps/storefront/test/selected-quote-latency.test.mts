@@ -121,8 +121,10 @@ function fixture(options: {
   let failCartRead = false;
   let proposals = 0;
   let proposedGroups: unknown[] = [];
-  const route = (path: string, method: string) =>
-    path.endsWith('/sessions')
+  function route(path: string, method: string) {
+    const preview = /\/guest\/([^/]+)\/preview$/.exec(path)?.[1];
+    if (preview) return preview;
+    return path.endsWith('/sessions')
       ? 'sessions'
       : path.endsWith('/config')
         ? 'config'
@@ -137,6 +139,7 @@ function fixture(options: {
                 : path.endsWith('/cart-state')
                   ? 'cart-state'
                   : `${method === 'POST' ? 'write' : 'read'} ${path.split('/').at(-1)}`;
+  }
   const live = createLiveDesignerPorts({
     source,
     productId: '111',
@@ -159,7 +162,6 @@ function fixture(options: {
       if (held) await held.opened;
       init.signal?.throwIfAborted();
       log.push(`end ${name}`);
-      const body = fetchBody(init);
       if (name === 'sessions')
         return Response.json({
           capability: 'abc.def',
@@ -167,6 +169,16 @@ function fixture(options: {
           expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
         });
       if (name === 'config') return Response.json(options.config ?? source);
+      if (path.endsWith('/preview')) {
+        assert.equal(JSON.parse(String(init.body)).capability, 'abc.def');
+        if (name.endsWith('000002')) return Response.json({ error: 'expired' }, { status: 410 });
+        return Response.json({
+          url: `https://example.test/${name}.png`,
+          width: 100,
+          height: 100,
+          expiresAt: name.endsWith('000003') ? 'invalid expiry' : new Date(Date.now() + 3_600_000).toISOString(),
+        });
+      }
       if (name === 'cart-state')
         return Response.json({
           groups: options.cartGroups ?? [],
@@ -193,6 +205,7 @@ function fixture(options: {
         });
       if (name === 'confirm') return Response.json({ id: '22222222-2222-4222-8222-222222222222', status: 'APPLIED' });
       if (name === 'read cart.js' && failCartRead) return Response.json({ error: 'down' }, { status: 503 });
+      const body = fetchBody(init);
       if (name === 'write update.js' && body.attributes) Object.assign(attributes, body.attributes);
       if (name === 'write add.js')
         for (const item of body.items ?? [])
@@ -370,4 +383,52 @@ test('Add on a current prepared quote never reports "Preparing quote"; a failed 
   failing.failCartReads();
   await assert.rejects(withWindow(() => failing.live.ports.cart.commit(failing.request)));
   assert.deepEqual(failing.events, ['preparing'], 'a failure before issuance stays a preparation failure');
+});
+
+test('multi-artwork reopen overlaps at most four preview reads and retains only valid distinct previews', async () => {
+  const previews = Array.from({ length: 6 }, (_, i) => ({
+    id: `aaaaaaaa-aaaa-4aaa-8aaa-00000000000${i}`,
+    hold: gate(),
+  }));
+  const [first, ...others] = previews.map(({ id }) => id);
+  assert.ok(first);
+  const ids = [first, ...others];
+  const holds = previews.map(({ hold }) => hold);
+  const app = fixture({ held: Object.fromEntries(previews.map(({ id, hold }) => [id, hold])) });
+  const loaded = app.live.restoreArtwork({
+    productId: source.productId,
+    configRevisionId: source.revisionId,
+    revisionContentHash: source.contentHash,
+    design: {
+      placements: [...ids, first].map((revisionId, index) => ({
+        placementId: `placement-${index}`,
+        methodId: 'print',
+        stepId: 'small',
+        artwork: { kind: 'revision', revisionId },
+      })),
+      options: [],
+    },
+    variants: [],
+  });
+  const started = () => app.log.filter((entry) => entry.startsWith('start aaaaaaaa-'));
+  try {
+    await until(() => started().length >= 4);
+    assert.deepEqual(
+      started(),
+      ids.slice(0, 4).map((id) => `start ${id}`),
+    );
+    for (const hold of holds.slice(0, 4).reverse()) hold.open();
+    await until(() => started().length >= 6);
+    assert.deepEqual(
+      started(),
+      ids.map((id) => `start ${id}`),
+    );
+  } finally {
+    for (const hold of holds) hold.open();
+    await loaded;
+  }
+  assert.deepEqual(
+    (await loaded).map((asset) => asset.id),
+    ids.filter((_, index) => index !== 2 && index !== 3),
+  );
 });

@@ -19,9 +19,6 @@
     "test": "vitest run",
     "typecheck:test": "tsc -p tsconfig.test.json"
   },
-  "dependencies": {
-    "konva": "10.11.0"
-  },
   "devDependencies": {
     "typescript": "6.0.3",
     "vitest": "5.1.1"

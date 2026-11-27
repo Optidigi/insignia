@@ -32,6 +32,7 @@ const AUTOSAVE_SPACING_MS = 10_000;
 const AUTOSAVE_PAUSE_DEFAULT_MS = 60_000;
 /** Longest pause for one refusal, whatever `Retry-After` asks: a shorter wait than a visit, never a lasting stop. */
 const AUTOSAVE_PAUSE_MAX_MS = 300_000;
+const ARTWORK_RESTORE_CONCURRENCY = 4;
 /** A review row's name only when the product has a real title; the Designer words the fallback itself (#424). */
 const labelled = (label: string | undefined) => (label ? { label } : {});
 type Prepared = {
@@ -768,33 +769,39 @@ export function createLiveDesignerPorts(input: {
         ),
       ),
     ];
-    for (const id of ids) {
-      try {
-        const preview = await api.artwork<{ url: string; width: number; height: number; expiresAt: string }>(
-          `/api/artwork/${id}/preview`,
-          { signal },
-        );
-        if (
-          !/^https:\/\//.test(preview.url) ||
-          !Number.isFinite(preview.width) ||
-          !Number.isFinite(preview.height) ||
-          preview.width <= 0 ||
-          preview.height <= 0 ||
-          Date.parse(preview.expiresAt) <= Date.now()
-        )
-          continue;
-        assets.push({
-          id,
-          // Drafts keep IDs only, never file names; the Designer labels a nameless artwork in its current language.
-          name: '',
-          url: preview.url,
-          width: preview.width,
-          height: preview.height,
-          previewExpiresAt: preview.expiresAt,
-        });
-      } catch {
-        /* Missing/expired originals remain missing; no substituted preview or ownership is invented. */
-      }
+    for (let offset = 0; offset < ids.length && !signal?.aborted; offset += ARTWORK_RESTORE_CONCURRENCY) {
+      const batch = await Promise.all(
+        ids.slice(offset, offset + ARTWORK_RESTORE_CONCURRENCY).map(async (id) => {
+          try {
+            const preview = await api.artwork<{ url: string; width: number; height: number; expiresAt: string }>(
+              `/api/artwork/${id}/preview`,
+              { signal },
+            );
+            if (
+              !/^https:\/\//.test(preview.url) ||
+              !Number.isFinite(preview.width) ||
+              !Number.isFinite(preview.height) ||
+              preview.width <= 0 ||
+              preview.height <= 0 ||
+              !(Date.parse(preview.expiresAt) > Date.now())
+            )
+              return undefined;
+            return {
+              id,
+              // Drafts keep IDs only. The Designer labels a nameless artwork in its current language.
+              name: '',
+              url: preview.url,
+              width: preview.width,
+              height: preview.height,
+              previewExpiresAt: preview.expiresAt,
+            };
+          } catch {
+            // An unavailable artwork stays missing.
+            return undefined;
+          }
+        }),
+      );
+      assets.push(...batch.filter((asset) => asset !== undefined));
     }
     return assets;
   }

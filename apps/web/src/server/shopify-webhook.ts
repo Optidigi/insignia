@@ -7,6 +7,7 @@ import {
 } from '@insignia/application';
 import { InvalidShopifyWebhookError, MAX_SHOPIFY_WEBHOOK_BODY_BYTES, verifyShopifyWebhook } from '@insignia/shopify';
 import { recordSystemFailure, type SystemFailureRecorder } from './observability.ts';
+import { withRequestBodyReader } from './request-body.ts';
 
 export class WebhookBodyTooLargeError extends Error {
   constructor() {
@@ -20,30 +21,24 @@ export async function readBoundedWebhookBody(request: Request): Promise<Uint8Arr
   const declared = request.headers.get('content-length');
   if (declared && Number(declared) > MAX_SHOPIFY_WEBHOOK_BODY_BYTES) throw new WebhookBodyTooLargeError();
   if (!request.body) return new Uint8Array();
-  const reader = request.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let length = 0;
-  try {
+  return withRequestBodyReader(request.body, request.signal, async (reader) => {
+    const chunks: Uint8Array[] = [];
+    let length = 0;
     while (true) {
       const next = await reader.read();
       if (next.done) break;
       length += next.value.byteLength;
-      if (length > MAX_SHOPIFY_WEBHOOK_BODY_BYTES) {
-        await reader.cancel().catch(() => {});
-        throw new WebhookBodyTooLargeError();
-      }
+      if (length > MAX_SHOPIFY_WEBHOOK_BODY_BYTES) throw new WebhookBodyTooLargeError();
       chunks.push(next.value);
     }
-  } finally {
-    reader.releaseLock();
-  }
-  const raw = new Uint8Array(length);
-  let offset = 0;
-  for (const chunk of chunks) {
-    raw.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return raw;
+    const raw = new Uint8Array(length);
+    let offset = 0;
+    for (const chunk of chunks) {
+      raw.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return raw;
+  });
 }
 
 export async function handleShopifyWebhook(

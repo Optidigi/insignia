@@ -16,6 +16,7 @@ const products = [
   ...product,
   id: `gid://shopify/Product/${200 + index}`,
   title,
+  status: index === 1 ? 'ARCHIVED' : 'ACTIVE',
   configurationSummary:
     index % 2
       ? { state: 'published', methods: ['Print', 'Embroidery'], locations: ['Chest', 'Back'] }
@@ -29,6 +30,14 @@ async function openProducts(f: Awaited<ReturnType<typeof fixture>>, width: numbe
   await f.page.waitForFunction(() => document.documentElement.dataset.adminReady === 'true');
   await f.page.getByRole('link', { name: 'Plain tee' }).waitFor();
 }
+test('catalog rows distinguish Shopify product status from Insignia publication', { timeout: 30000 }, async (t) => {
+  const f = await fixture(t);
+  await openProducts(f, 1200, 800);
+  const row = f.page.getByRole('row').filter({ hasText: products[1]?.title });
+  assert.equal(await row.getByText('Published', { exact: true }).count(), 1);
+  assert.equal(await row.getByText('Shopify: Archived', { exact: true }).count(), 1);
+});
+
 const scrollerSelector = '#admin-route-content .resource-table-scroll';
 // The fade is a mask on the scroll region: a gradient with a `calc(100% - Npx)` stop while columns
 // are hidden to the right, a plain opaque gradient once the last column is in view, and none while

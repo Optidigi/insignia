@@ -18,7 +18,8 @@ assert.ok(
     entries.includes('apps/storefront/src') &&
     entries.includes('packages/domain/src'),
 );
-assert.ok(entries.includes('packages/visualizer/src'), 'visualizer source graph must be checked');
+const rendererSource = 'frontend/visualizer/src/renderer.ts';
+entries.push('frontend/visualizer/src');
 const depcruise = ['pnpm', 'exec', 'depcruise', '--config', '.dependency-cruiser.mts'];
 
 function run(command: string, args: string[], expected = 0) {
@@ -97,10 +98,12 @@ const graph = parseGraph(cruise(entries, 'json'));
 assert.ok(graph.modules.length >= 8, 'real source graph must be nonempty');
 
 const bySource = new Map(graph.modules.map((module) => [module.source, module]));
+assert.ok(bySource.has(rendererSource), 'production renderer source must be checked');
+const rendererOwner = /^frontend\/visualizer\/(?:src\/renderer\.ts|dist\/renderer\.js)$/;
 const konvaImport = /\b(?:from\s*|import\s*\(\s*|require\s*\(\s*)['"](?:konva(?:\/[^'"]*)?|react-konva)['"]/;
 function assertKonvaOwner(source: string, content: string) {
   assert.ok(
-    !konvaImport.test(content) || /^packages\/visualizer\/(?:src\/renderer\.ts|dist\/renderer\.js)$/.test(source),
+    !konvaImport.test(content) || rendererOwner.test(source),
     `${source} imports Konva outside the browser renderer`,
   );
 }
@@ -109,11 +112,7 @@ for (const module of graph.modules) {
     assertKonvaOwner(module.source, readFileSync(resolve(root, module.source), 'utf8'));
   for (const edge of module.dependencies) {
     if (edge.module === 'konva' || edge.module.startsWith('konva/'))
-      assert.match(
-        module.source,
-        /^packages\/visualizer\/(?:src\/renderer\.ts|dist\/renderer\.js)$/,
-        'Konva must remain in the renderer',
-      );
+      assert.match(module.source, rendererOwner, 'Konva must remain in the renderer');
     if (edge.module === '@shopify/shopify-api' || edge.module.startsWith('@shopify/shopify-api/')) {
       assert.ok(module.source.startsWith('packages/shopify/'), `${module.source} imports Shopify SDK outside adapter`);
     }
@@ -175,13 +174,13 @@ const probes: [string, string, string, number?][] = [
     'browser-does-not-import-server',
   ],
   [
-    'packages/visualizer/src/__boundary_probe.ts',
+    'frontend/visualizer/src/__boundary_probe.ts',
     "import {readFileSync} from 'node:fs'; export {readFileSync};",
     'browser-no-node-builtins',
   ],
   [
-    'packages/visualizer/src/__boundary_probe.ts',
-    "import {createCatalogReader} from '../../shopify/src/catalog.js'; export {createCatalogReader};",
+    'frontend/visualizer/src/__boundary_probe.ts',
+    "import {createCatalogReader} from '../../../packages/shopify/src/catalog.js'; export {createCatalogReader};",
     'visualizer-does-not-import-server',
   ],
   [
@@ -262,7 +261,7 @@ const probes: [string, string, string, number?][] = [
   ],
 ];
 assert.throws(
-  () => assertKonvaOwner('packages/visualizer/src/geometry.ts', "await import('konva')"),
+  () => assertKonvaOwner('frontend/visualizer/src/geometry.ts', "await import('konva')"),
   /Konva outside the browser renderer/,
 );
 // A real server composition package may use only the database package root.
@@ -346,10 +345,10 @@ try {
 // A browser island may reach the visualizer package and Konva through its renderer.
 assert.ok(!existsSync(webProbe));
 try {
-  writeFileSync(webProbe, "import {createVisualizer} from '@insignia/visualizer'; export {createVisualizer};");
+  writeFileSync(webProbe, "import {createVisualizer} from '@insignia/ui-visualizer'; export {createVisualizer};");
   const result = parseGraph(cruise([webProbe], 'json'));
   const island = result.modules.find((module) => module.source === 'apps/web/src/islands/__boundary_probe.ts');
-  assert.equal(island?.dependencies[0]?.module, '@insignia/visualizer');
+  assert.equal(island?.dependencies[0]?.module, '@insignia/ui-visualizer');
   assert.equal(result.summary.error, 0, 'browser visualizer import must pass boundaries');
   run('corepack', [
     'pnpm',

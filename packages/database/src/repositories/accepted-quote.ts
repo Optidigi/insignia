@@ -13,7 +13,7 @@ import {
 import { type Kysely, sql } from 'kysely';
 import type { Database } from '../client/database.js';
 import { runInsideFence } from '../client/fence-reads.js';
-import { createConfigRepository } from './config.js';
+import { validateStoredPublishedValue } from './config.js';
 
 type RevisionFence = {
   configId: string;
@@ -434,14 +434,23 @@ export class PgAcceptedQuoteRepository {
   }
 
   async getEffective(shopId: string, productId: string) {
-    const result = await sql<{ config_id: string; revision_id: string; operation_id: string }>`
+    const result = await sql<{
+      config_id: string;
+      revision_id: string;
+      operation_id: string;
+      schema_version: string | null;
+      published_value: unknown;
+      content_hash: string | null;
+    }>`
       SELECT c.config_id, c.effective_revision_id AS revision_id,
-        c.effective_operation_id AS operation_id
+        c.effective_operation_id AS operation_id, r.schema_version, r.published_value, r.content_hash
       FROM product_configs c
       JOIN shops s ON s.shop_id = c.shop_id
       JOIN installation_generations i ON i.shop_id = s.shop_id AND i.generation = s.current_generation
       JOIN publication_operations p ON p.shop_id = c.shop_id AND p.config_id = c.config_id
         AND p.operation_id = c.effective_operation_id
+      LEFT JOIN config_revisions r ON r.shop_id = c.shop_id AND r.config_id = c.config_id
+        AND r.revision_id = c.effective_revision_id
       WHERE c.shop_id = ${shopId} AND c.external_product_id = ${productId}
         AND i.deactivated_at IS NULL AND p.installation_generation = s.current_generation
         AND p.status = 'activated' AND p.revision_id = c.effective_revision_id
@@ -450,10 +459,19 @@ export class PgAcceptedQuoteRepository {
         AND p.observed_projection_digest = p.expected_projection_digest`.execute(this.database);
     const row = result.rows[0];
     if (!row) return null;
-    const revision = await createConfigRepository(this.database).getValidatedPublishedRevision(shopId, row.revision_id);
-    if (!revision || revision.configId !== row.config_id || revision.publishedValue.productId !== productId)
+    if (row.schema_version === null || row.content_hash === null)
       throw new Error('effective published revision integrity mismatch');
-    return { config: revision.publishedValue, configId: row.config_id, operationId: row.operation_id };
+    const config = validateStoredPublishedValue(
+      {
+        shopId,
+        revisionId: row.revision_id,
+        schemaVersion: row.schema_version,
+        publishedValue: row.published_value,
+        contentHash: row.content_hash,
+      },
+      productId,
+    );
+    return { config, configId: row.config_id, operationId: row.operation_id };
   }
 
   async accept<T extends StoredResult>(input: AcceptanceInput, commit: () => Promise<T>): Promise<T> {
