@@ -549,7 +549,6 @@ test('closing and reopening on the same page load restores the design without as
     await buildToReview(ui);
     await ui.getByRole('button', { name: 'Close customizer', exact: true }).click();
     await ui.getByRole('heading', { name: 'Close customization?', exact: true }).waitFor();
-    await ui.getByText('Your design will stay here while this page is open.', { exact: false }).waitFor();
     await ui.getByRole('button', { name: 'Close customization', exact: true }).click();
     await page.locator('iframe:not([hidden])').waitFor({ state: 'detached' });
     const reopened = await openDesigner(page);

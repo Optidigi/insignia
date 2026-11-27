@@ -310,7 +310,7 @@
   },
   "close": {
     "title": "Fermer la personnalisation ?",
-    "help": "Votre création reste disponible tant que cette page est ouverte. Fermer la personnalisation ne l’ajoute pas au panier.",
+    "help": "Votre création reste disponible tant que cette page est ouverte. Un brouillon enregistré peut aussi être disponible à votre retour. Fermer la personnalisation ne modifie pas votre panier.",
     "keepEditing": "Continuer à modifier",
     "leave": "Fermer la personnalisation"
   },

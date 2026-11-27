@@ -159,6 +159,12 @@ for (const engine of [chromium, firefox])
     await frame.locator('h1').click();
     await page.keyboard.press('Escape');
     await closeQuestion.waitFor();
+    await frame
+      .getByText(
+        'Your design stays available while this page is open. A saved draft may also be available when you return. Closing won’t change your cart.',
+        { exact: true },
+      )
+      .waitFor({ timeout: 2000 });
     await questionFocused();
     await page.keyboard.press('Escape');
     await closeQuestion.waitFor({ state: 'detached' });

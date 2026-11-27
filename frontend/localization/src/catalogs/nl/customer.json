@@ -303,7 +303,7 @@
   },
   "close": {
     "title": "Personalisatievenster sluiten?",
-    "help": "Je ontwerp blijft beschikbaar zolang deze pagina open is. Sluiten voegt het niet toe aan je winkelwagen.",
+    "help": "Je ontwerp blijft beschikbaar zolang deze pagina open is. Als je later terugkomt, is een opgeslagen concept mogelijk nog beschikbaar. Sluiten verandert je winkelwagen niet.",
     "keepEditing": "Verder ontwerpen",
     "leave": "Personalisatievenster sluiten"
   },

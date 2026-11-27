@@ -303,7 +303,7 @@
   },
   "close": {
     "title": "Close customization?",
-    "help": "Your design will stay here while this page is open. Closing will not add it to your cart.",
+    "help": "Your design stays available while this page is open. A saved draft may also be available when you return. Closing won’t change your cart.",
     "keepEditing": "Keep editing",
     "leave": "Close customization"
   },
