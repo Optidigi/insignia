@@ -261,6 +261,26 @@ remain open.
 The native merchant and buyer walkthroughs on AY and the 48-hour logging baseline remain open.
 The AX walkthrough above is evidence for its original backend and the same Shopify assets.
 
+### Deploy AZ validation
+
+Main `7c70ae29` kept Shopify version `1268027162625` and both Function modules. The exact
+Foundation artifacts matched AY's 17 qualified theme assets and both Wasm files. The verifier,
+web and worker were healthy by `11:47:43Z`. Post-deploy roles, ACLs, application schema 75,
+queue schema 48 and protected purchase facts matched the restore-verified checkpoint.
+
+Web and quiesced worker-role reads matched fresh release evidence for the USD and EUR fixtures.
+An initial extra reader reached the worker's four-connection role limit while the running
+worker held its two configured pools. The repeated read while quiesced passed and the worker
+resumed healthy. The pre-deploy checkpoint reproduced the worker's four held-obligation
+summaries. The AZ verifier scanned the same 1,011 phases in a median of 1,383 ms over
+three warm read-only scans. The AY serial scan measured 1,761 ms in the earlier comparison.
+These numbers cover settlement scanning.
+
+Stable-name journal queries returned both AY and AZ container records for web and worker.
+The query covered roughly eleven hours and contained two guest artwork timing events. The
+48-hour baseline and native merchant, duplicate-product, blank EUR Setup, and USD/EUR
+checkout walkthroughs remain open before resubmission.
+
 ## Other review items
 
 | Requirement | Verified and remaining evidence |
