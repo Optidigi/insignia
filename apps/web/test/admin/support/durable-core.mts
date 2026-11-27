@@ -108,6 +108,7 @@ export function fixtureCore(overrides: Overrides = {}): DurableCore {
       get: unexpected,
       list: unexpected,
       listPage: unexpected,
+      getAuthorizedArtworkExpirations: unexpected,
       getOffer: unexpected,
       appendArtwork: unexpected,
       lockArtwork: unexpected,

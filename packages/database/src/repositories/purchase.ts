@@ -207,6 +207,16 @@ export function webhookIdParsingSupported() {
     return false;
   }
 }
+function groupPurchaseRows<T extends { purchase_id: string }>(rows: T[]) {
+  const groups = new Map<string, T[]>();
+  for (const row of rows) {
+    const group = groups.get(row.purchase_id);
+    if (group) group.push(row);
+    else groups.set(row.purchase_id, [row]);
+  }
+  return groups;
+}
+
 export function createPurchaseRepository(db: Kysely<Database>) {
   /** null: the receipt is not (or no longer) hintable; 'unusable': it is, but its stored body can never yield a hint. */
   async function readHint(
@@ -273,39 +283,38 @@ export function createPurchaseRepository(db: Kysely<Database>) {
     return found === 'unusable' ? null : found;
   }
 
-  async function get(
-    scope: Scope,
-    id: string,
-    executor: Kysely<Database> = db,
-    options?: { latestObservationOnly: true },
-  ): Promise<PurchaseRecord | null> {
+  async function readOrders(scope: Scope, ids: readonly string[], executor: Kysely<Database>) {
+    if (!ids.length) return [];
     await active(executor, scope);
-    const order = (
-      await sql<{
-        purchase_id: string;
-        shop_id: string;
-        installation_generation: string;
-        order_id: string;
-        order_created_at: Date;
-        currency: string;
-        original_total_minor: string;
-        is_test: boolean | null;
-      }>`SELECT purchase_id::text,shop_id,installation_generation::text,order_id,order_created_at,currency,original_total_minor::text,is_test FROM purchase_orders WHERE shop_id=${scope.shopId} AND purchase_id=${id}::uuid`.execute(
-        executor,
-      )
-    ).rows[0];
-    if (!order) return null;
+    const orders = await sql<{
+      purchase_id: string;
+      shop_id: string;
+      installation_generation: string;
+      order_id: string;
+      order_created_at: Date;
+      currency: string;
+      original_total_minor: string;
+      is_test: boolean | null;
+    }>`SELECT purchase_id::text,shop_id,installation_generation::text,order_id,order_created_at,currency,original_total_minor::text,is_test FROM purchase_orders WHERE shop_id=${scope.shopId} AND purchase_id=ANY(${ids}::uuid[])`.execute(
+      executor,
+    );
+    return orders.rows;
+  }
+
+  async function readArtworkSources(purchaseIds: readonly string[], executor: Kysely<Database>) {
     const bindings = await sql<{
+      purchase_id: string;
       set_id: string;
       quote_id: string;
       economics: unknown;
       payload: PurchaseDesignPayload | null;
       expires_at: Date;
       erased_at: Date | null;
-    }>`SELECT b.set_id::text,b.quote_id::text,b.economics,CASE WHEN p.expires_at>clock_timestamp() AND EXISTS(SELECT 1 FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=p.shop_id AND s.current_generation=p.installation_generation AND i.deactivated_at IS NULL) THEN p.payload ELSE NULL END AS payload,p.expires_at,p.erased_at FROM purchase_bindings b JOIN purchase_design_payloads p USING(purchase_id,set_id) WHERE b.purchase_id=${id}::uuid ORDER BY b.set_id`.execute(
+    }>`SELECT b.purchase_id::text,b.set_id::text,b.quote_id::text,b.economics,CASE WHEN p.expires_at>clock_timestamp() AND EXISTS(SELECT 1 FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=p.shop_id AND s.current_generation=p.installation_generation AND i.deactivated_at IS NULL) THEN p.payload ELSE NULL END AS payload,p.expires_at,p.erased_at FROM purchase_bindings b JOIN purchase_design_payloads p USING(purchase_id,set_id) WHERE b.purchase_id=ANY(${purchaseIds}::uuid[]) ORDER BY b.set_id`.execute(
       executor,
     );
     const lines = await sql<{
+      purchase_id: string;
       set_id: string;
       line_id: string;
       line_index: number;
@@ -313,33 +322,11 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       variant_id: string;
       quantity: number;
       unit_price_minor: string;
-    }>`SELECT set_id::text,line_id,line_index,product_id,variant_id,quantity,unit_price_minor::text FROM purchase_lines WHERE purchase_id=${id}::uuid ORDER BY line_index`.execute(
-      executor,
-    );
-    const observations = await sql<{
-      source_updated_at: Date;
-      observed_at: Date;
-      financial_status: string;
-      cancelled_at: Date | null;
-      exception: string | null;
-    }>`SELECT source_updated_at,observed_at,financial_status,cancelled_at,exception FROM purchase_observations WHERE purchase_id=${id}::uuid ORDER BY source_updated_at DESC,observed_at DESC,observation_id DESC ${options?.latestObservationOnly ? sql`LIMIT 1` : sql``}`.execute(
-      executor,
-    );
-    const paid = (
-      await sql<{
-        occurred_at: Date;
-      }>`SELECT occurred_at FROM purchase_paid_facts WHERE purchase_id=${id}::uuid`.execute(executor)
-    ).rows[0];
-    const refunds = await sql<{
-      refund_id: string;
-      occurred_at: Date;
-      currency: string;
-      amount_minor: string;
-      lines: PurchaseObservation['order']['refunds'][number]['lines'];
-    }>`SELECT refund_id,occurred_at,currency,amount_minor::text,lines FROM purchase_refund_facts WHERE purchase_id=${id}::uuid ORDER BY occurred_at,refund_id`.execute(
+    }>`SELECT purchase_id::text,set_id::text,line_id,line_index,product_id,variant_id,quantity,unit_price_minor::text FROM purchase_lines WHERE purchase_id=ANY(${purchaseIds}::uuid[]) ORDER BY line_index`.execute(
       executor,
     );
     const events = await sql<{
+      purchase_id: string;
       event_id: string;
       version: number;
       kind: 'ATTACH' | 'LOCK';
@@ -348,103 +335,187 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       asset_id: string | null;
       expires_at: Date | null;
       erased_at: Date | null;
-    }>`SELECT event_id::text,version,kind,CASE WHEN expires_at>clock_timestamp() AND EXISTS(SELECT 1 FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=purchase_artwork_events.shop_id AND s.current_generation=purchase_artwork_events.installation_generation AND i.deactivated_at IS NULL) THEN group_index END AS group_index,CASE WHEN expires_at>clock_timestamp() AND EXISTS(SELECT 1 FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=purchase_artwork_events.shop_id AND s.current_generation=purchase_artwork_events.installation_generation AND i.deactivated_at IS NULL) THEN placement_id END AS placement_id,CASE WHEN expires_at>clock_timestamp() AND EXISTS(SELECT 1 FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=purchase_artwork_events.shop_id AND s.current_generation=purchase_artwork_events.installation_generation AND i.deactivated_at IS NULL) THEN asset_id::text END AS asset_id,expires_at,erased_at FROM purchase_artwork_events WHERE purchase_id=${id}::uuid ORDER BY version`.execute(
+    }>`SELECT purchase_id::text,event_id::text,version,kind,CASE WHEN expires_at>clock_timestamp() AND EXISTS(SELECT 1 FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=purchase_artwork_events.shop_id AND s.current_generation=purchase_artwork_events.installation_generation AND i.deactivated_at IS NULL) THEN group_index END AS group_index,CASE WHEN expires_at>clock_timestamp() AND EXISTS(SELECT 1 FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=purchase_artwork_events.shop_id AND s.current_generation=purchase_artwork_events.installation_generation AND i.deactivated_at IS NULL) THEN placement_id END AS placement_id,CASE WHEN expires_at>clock_timestamp() AND EXISTS(SELECT 1 FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=purchase_artwork_events.shop_id AND s.current_generation=purchase_artwork_events.installation_generation AND i.deactivated_at IS NULL) THEN asset_id::text END AS asset_id,expires_at,erased_at FROM purchase_artwork_events WHERE purchase_id=ANY(${purchaseIds}::uuid[]) ORDER BY version`.execute(
       executor,
     );
-    const artworkEvents = events.rows.map((e) => ({
-      eventId: e.event_id,
-      version: e.version,
-      kind: e.kind,
-      groupIndex: e.group_index,
-      placementId: e.placement_id,
-      assetId: e.asset_id,
-      expiresAt: e.expires_at?.toISOString() ?? null,
-      erasedAt: e.erased_at?.toISOString() ?? null,
-    }));
-    const result: PurchaseRecord = {
-      purchaseId: order.purchase_id,
-      shopId: order.shop_id,
-      installationGeneration: order.installation_generation,
-      orderId: order.order_id,
-      orderCreatedAt: order.order_created_at.toISOString(),
-      currency: order.currency,
-      originalTotalMinor: order.original_total_minor,
-      isTest: order.is_test,
-      bindings: bindings.rows.map((b) => ({
-        quoteId: b.quote_id,
-        authorizationSetId: b.set_id,
-        economics: b.economics,
-        designPayload: b.payload,
-        payloadExpiresAt: b.expires_at.toISOString(),
-        erasedAt: b.erased_at?.toISOString() ?? null,
-        lines: lines.rows
-          .filter((l) => l.set_id === b.set_id)
-          .map((l) => ({
-            orderLineId: l.line_id,
-            lineIndex: l.line_index,
-            productId: l.product_id,
-            variantId: l.variant_id,
-            quantity: l.quantity,
-            unitPriceMinor: l.unit_price_minor,
-          })),
-      })),
-      observations: observations.rows.map((o) => ({
-        sourceUpdatedAt: o.source_updated_at.toISOString(),
-        observedAt: o.observed_at.toISOString(),
-        financialStatus: o.financial_status,
-        cancelledAt: o.cancelled_at?.toISOString() ?? null,
-        exception: o.exception,
-      })),
-      firstPaidAt: paid?.occurred_at.toISOString() ?? null,
-      refunds: refunds.rows.map((r) => ({
-        refundId: r.refund_id,
-        occurredAt: r.occurred_at.toISOString(),
-        currency: r.currency,
-        amountMinor: r.amount_minor,
-        lines: r.lines,
-      })),
-      artworkEvents,
-      artworkVersion: artworkEvents.at(-1)?.version ?? 0,
-      artworkState: 'PENDING_ARTWORK',
-    };
-    result.artworkState = artworkEvents.some((e) => e.kind === 'LOCK')
-      ? 'ARTWORK_LOCKED'
-      : result.bindings.some((b) => !b.designPayload)
-        ? 'ERASED'
-        : (await ready(result, executor))
-          ? 'READY'
-          : artworkEvents.some((e) => e.kind === 'ATTACH' && e.assetId === null)
-            ? 'ERASED'
-            : 'PENDING_ARTWORK';
-    return result;
+    const bindingsById = groupPurchaseRows(bindings.rows);
+    const linesById = groupPurchaseRows(lines.rows);
+    const eventsById = groupPurchaseRows(events.rows);
+    const sources = new Map<string, Pick<PurchaseRecord, 'bindings' | 'artworkEvents'>>();
+    for (const id of purchaseIds) {
+      const artworkEvents = (eventsById.get(id) ?? []).map((e) => ({
+        eventId: e.event_id,
+        version: e.version,
+        kind: e.kind,
+        groupIndex: e.group_index,
+        placementId: e.placement_id,
+        assetId: e.asset_id,
+        expiresAt: e.expires_at?.toISOString() ?? null,
+        erasedAt: e.erased_at?.toISOString() ?? null,
+      }));
+      sources.set(id, {
+        artworkEvents,
+        bindings: (bindingsById.get(id) ?? []).map((b) => ({
+          quoteId: b.quote_id,
+          authorizationSetId: b.set_id,
+          economics: b.economics,
+          designPayload: b.payload,
+          payloadExpiresAt: b.expires_at.toISOString(),
+          erasedAt: b.erased_at?.toISOString() ?? null,
+          lines: (linesById.get(id) ?? [])
+            .filter((l) => l.set_id === b.set_id)
+            .map((l) => ({
+              orderLineId: l.line_id,
+              lineIndex: l.line_index,
+              productId: l.product_id,
+              variantId: l.variant_id,
+              quantity: l.quantity,
+              unitPriceMinor: l.unit_price_minor,
+            })),
+        })),
+      });
+    }
+    return sources;
   }
-  async function ready(record: PurchaseRecord, executor: Kysely<Database> = db) {
-    if (!record.bindings.length) return false;
+
+  async function getMany(
+    scope: Scope,
+    ids: readonly string[],
+    executor: Kysely<Database> = db,
+    options?: { latestObservationOnly: true },
+  ): Promise<Map<string, PurchaseRecord>> {
+    const orders = await readOrders(scope, ids, executor);
+    if (!orders.length) return new Map();
+    const purchaseIds = orders.map((order) => order.purchase_id);
+    const observations = await sql<{
+      purchase_id: string;
+      source_updated_at: Date;
+      observed_at: Date;
+      financial_status: string;
+      cancelled_at: Date | null;
+      exception: string | null;
+    }>`SELECT ${options?.latestObservationOnly ? sql`DISTINCT ON (o.purchase_id)` : sql``} o.purchase_id::text,source_updated_at,observed_at,financial_status,cancelled_at,exception FROM purchase_observations o WHERE o.purchase_id=ANY(${purchaseIds}::uuid[]) ORDER BY o.purchase_id,source_updated_at DESC,observed_at DESC,observation_id DESC`.execute(
+      executor,
+    );
+    const paid = await sql<{
+      purchase_id: string;
+      occurred_at: Date;
+    }>`SELECT purchase_id::text,occurred_at FROM purchase_paid_facts WHERE purchase_id=ANY(${purchaseIds}::uuid[])`.execute(
+      executor,
+    );
+    const refunds = await sql<{
+      purchase_id: string;
+      refund_id: string;
+      occurred_at: Date;
+      currency: string;
+      amount_minor: string;
+      lines: PurchaseObservation['order']['refunds'][number]['lines'];
+    }>`SELECT purchase_id::text,refund_id,occurred_at,currency,amount_minor::text,lines FROM purchase_refund_facts WHERE purchase_id=ANY(${purchaseIds}::uuid[]) ORDER BY occurred_at,refund_id`.execute(
+      executor,
+    );
+    const sourcesById = await readArtworkSources(purchaseIds, executor);
+    const records = new Map<string, PurchaseRecord>();
+    const readiness = new Map<PurchaseRecord, Set<string>>();
+    const observationsById = groupPurchaseRows(observations.rows);
+    const refundsById = groupPurchaseRows(refunds.rows);
+    const paidById = new Map(paid.rows.map((payment) => [payment.purchase_id, payment.occurred_at]));
+    for (const order of orders) {
+      const id = order.purchase_id;
+      const sources = sourcesById.get(id) ?? { bindings: [], artworkEvents: [] };
+      const { artworkEvents } = sources;
+      const result: PurchaseRecord = {
+        purchaseId: order.purchase_id,
+        shopId: order.shop_id,
+        installationGeneration: order.installation_generation,
+        orderId: order.order_id,
+        orderCreatedAt: order.order_created_at.toISOString(),
+        currency: order.currency,
+        originalTotalMinor: order.original_total_minor,
+        isTest: order.is_test,
+        observations: (observationsById.get(id) ?? []).map((o) => ({
+          sourceUpdatedAt: o.source_updated_at.toISOString(),
+          observedAt: o.observed_at.toISOString(),
+          financialStatus: o.financial_status,
+          cancelledAt: o.cancelled_at?.toISOString() ?? null,
+          exception: o.exception,
+        })),
+        firstPaidAt: paidById.get(id)?.toISOString() ?? null,
+        refunds: (refundsById.get(id) ?? []).map((r) => ({
+          refundId: r.refund_id,
+          occurredAt: r.occurred_at.toISOString(),
+          currency: r.currency,
+          amountMinor: r.amount_minor,
+          lines: r.lines,
+        })),
+        ...sources,
+        artworkVersion: artworkEvents.at(-1)?.version ?? 0,
+        artworkState: 'PENDING_ARTWORK',
+      };
+      if (artworkEvents.some((event) => event.kind === 'LOCK')) result.artworkState = 'ARTWORK_LOCKED';
+      else if (result.bindings.some((binding) => !binding.designPayload)) result.artworkState = 'ERASED';
+      else {
+        if (artworkEvents.some((event) => event.kind === 'ATTACH' && event.assetId === null))
+          result.artworkState = 'ERASED';
+        const ids = requiredArtworkIds(result);
+        if (ids) readiness.set(result, ids);
+      }
+      records.set(id, result);
+    }
+    const usable = await usableArtworkIds(
+      scope.shopId,
+      [...readiness.values()].flatMap((ids) => [...ids]),
+      executor,
+    );
+    for (const [record, ids] of readiness) {
+      if ([...ids].every((id) => usable.has(id))) record.artworkState = 'READY';
+    }
+    return records;
+  }
+
+  async function get(scope: Scope, id: string, executor: Kysely<Database> = db) {
+    return (await getMany(scope, [id], executor)).values().next().value ?? null;
+  }
+  function requiredArtworkIds(record: PurchaseRecord): Set<string> | null {
+    if (!record.bindings.length || record.bindings.some((binding) => !binding.designPayload)) return null;
+    const ids = new Set<string>();
     // After attachment linkage erasure we cannot safely infer which old source should resume.
     // A merchant must explicitly recollect the working slots; never restore an earlier choice silently.
     const erasedVersion = Math.max(
       0,
       ...record.artworkEvents.filter((e) => e.kind === 'ATTACH' && e.assetId === null).map((e) => e.version),
     );
-    if (record.bindings.some((binding) => !binding.designPayload)) return false;
     for (const [index, item] of purchaseDesigns(record).entries()) {
       if (!item.ordered) continue;
       for (const placement of item.group.design.placements) {
         const replacement = record.artworkEvents
           .filter((e) => e.kind === 'ATTACH' && e.groupIndex === index && e.placementId === placement.placementId)
           .at(-1);
-        if (erasedVersion > 0 && (!replacement || replacement.version <= erasedVersion)) return false;
+        if (erasedVersion > 0 && (!replacement || replacement.version <= erasedVersion)) return null;
         const assetId =
           replacement?.assetId ?? (placement.artwork.kind === 'revision' ? placement.artwork.revisionId : null);
-        if (!assetId) return false;
-        const found =
-          await sql`SELECT 1 FROM artwork_assets WHERE asset_id=${assetId}::uuid AND shop_id=${record.shopId} AND state='USABLE' AND expires_at>clock_timestamp()`.execute(
-            executor,
-          );
-        if (!found.rows.length) return false;
+        if (!assetId) return null;
+        ids.add(assetId.toLowerCase());
       }
     }
-    return true;
+    return ids;
+  }
+  async function usableArtworkIds(shopId: string, ids: readonly string[], executor: Kysely<Database>) {
+    if (!ids.length) return new Set<string>();
+    const result = await sql<{ asset_id: string }>`SELECT asset_id::text FROM artwork_assets
+      WHERE asset_id=ANY(${[...new Set(ids)]}::uuid[]) AND shop_id=${shopId} AND state='USABLE' AND expires_at>clock_timestamp()`.execute(
+      executor,
+    );
+    return new Set(result.rows.map((row) => row.asset_id));
+  }
+  function referencedArtworkIds(record: Pick<PurchaseRecord, 'bindings' | 'artworkEvents'>, now: Date) {
+    const ids = new Set<string>();
+    for (const { group, ordered } of purchaseDesigns(record))
+      if (ordered)
+        for (const { artwork } of group.design.placements) if (artwork.kind === 'revision') ids.add(artwork.revisionId);
+    for (const event of record.artworkEvents)
+      if (event.kind === 'ATTACH' && event.assetId && event.expiresAt && new Date(event.expiresAt) > now)
+        ids.add(event.assetId);
+    return ids;
   }
   async function listPurchaseIds(scope: PurchaseScope, input: Partial<PurchaseListQuery>, includeSentinel = false) {
     await active(db, scope);
@@ -801,9 +872,12 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       const { limit } = input;
       const ids = await listPurchaseIds(scope, input, true);
       const pageIds = ids.slice(0, limit);
-      const purchases = await Promise.all(pageIds.map((id) => get(scope, id, db, { latestObservationOnly: true })));
+      const purchases = await getMany(scope, pageIds, db, { latestObservationOnly: true });
       return {
-        purchases: purchases.filter((purchase) => purchase !== null),
+        purchases: pageIds.flatMap((id) => {
+          const purchase = purchases.get(id);
+          return purchase ? [purchase] : [];
+        }),
         nextCursor: ids.length > limit ? (pageIds.at(-1) ?? null) : null,
       };
     },
@@ -1039,19 +1113,50 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       });
       return (await get(scope, input.purchaseId)) ?? fail('NOT_FOUND');
     },
+    async getAuthorizedArtworkExpirations(scope: PurchaseScope, requested: ReadonlyMap<string, ReadonlySet<string>>) {
+      if (scope.kind !== 'merchant') fail('INVALID');
+      // A separate read after projecting the list checks that the retained artwork references still exist.
+      const orders = await readOrders(scope, [...requested.keys()], db);
+      if (!orders.length) return new Map<string, Map<string, Date>>();
+      const records = await readArtworkSources(
+        orders.map((order) => order.purchase_id),
+        db,
+      );
+      const at = new Date();
+      const permitted = new Map<string, string[]>();
+      const assetIds = new Set<string>();
+      for (const [purchaseId, record] of records) {
+        const references = referencedArtworkIds(record, at);
+        const ids = [...(requested.get(purchaseId) ?? [])].filter((id) => references.has(id));
+        permitted.set(purchaseId, ids);
+        for (const id of ids) assetIds.add(id.toLowerCase());
+      }
+      if (!assetIds.size) return new Map<string, Map<string, Date>>();
+      const found = await sql<{
+        asset_id: string;
+        expires_at: Date;
+      }>`SELECT asset_id::text,expires_at FROM artwork_assets
+        WHERE asset_id=ANY(${[...assetIds]}::uuid[]) AND shop_id=${scope.shopId} AND state='USABLE' AND expires_at>clock_timestamp()`.execute(
+        db,
+      );
+      const expirations = new Map(found.rows.map((row) => [row.asset_id, row.expires_at]));
+      const result = new Map<string, Map<string, Date>>();
+      for (const [purchaseId, ids] of permitted) {
+        const owned = new Map<string, Date>();
+        for (const id of ids) {
+          const expiresAt = expirations.get(id.toLowerCase());
+          if (expiresAt) owned.set(id, expiresAt);
+        }
+        result.set(purchaseId, owned);
+      }
+      return result;
+    },
     async getAuthorizedArtwork(scope: PurchaseScope, input: { purchaseId: string; assetId: string }) {
       if (scope.kind !== 'merchant') fail('INVALID');
-      const record = await get(scope, input.purchaseId);
-      if (!record) return null;
-      const original = purchaseDesigns(record).some(
-        ({ group, ordered }) =>
-          ordered &&
-          group.design.placements.some((p) => p.artwork.kind === 'revision' && p.artwork.revisionId === input.assetId),
-      );
-      const attached = record.artworkEvents.some(
-        (e) => e.kind === 'ATTACH' && e.assetId === input.assetId && e.expiresAt && new Date(e.expiresAt) > new Date(),
-      );
-      if (!original && !attached) return null;
+      const [order] = await readOrders(scope, [input.purchaseId], db);
+      if (!order) return null;
+      const sources = (await readArtworkSources([order.purchase_id], db)).get(order.purchase_id);
+      if (!sources || !referencedArtworkIds(sources, new Date()).has(input.assetId)) return null;
       const row = (
         await sql<{
           asset_id: string;
