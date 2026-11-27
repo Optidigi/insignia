@@ -47,10 +47,12 @@ release evidence at `13:25:05Z`. Shopify served all 17 staged assets byte for by
 USD and EUR test stores each reached checkout with one signed line and the expected subtotal, and
 both carts were emptied. See [BA validation](shopify-review-resubmission.md#deploy-ba-validation).
 
-**Before resubmission.** Complete the native duplicate-product refusal and blank EUR Setup
-walkthroughs, collect the 48-hour logging baseline, and review reviewer access. The isolated EUR
-Lighthouse run still needs storefront access in a dedicated profile. The
-[technical audit checklist](../backlog/technical-audit.md) records deployed changes and measurements.
+**Before resubmission.** The exact reviewer checkout, native duplicate-product refusal, blank EUR
+Setup and EUR Market repair passed on BA in the first validation pass. Round 1 remains open for
+independent merchant access, the 48-hour logging baseline and isolated EUR Lighthouse. Finish
+the agreed two consecutive clean rounds before owner review and resubmission. See
+[Round 1 evidence](shopify-review-resubmission.md#ba-validation-round-1) and the
+[technical audit checklist](../backlog/technical-audit.md).
 
 **Next for the owner.** Walk through BA in the merchant and storefront UI.
 Resubmit in the Partner Dashboard after reviewing the release and reviewer access instructions. The
