@@ -793,6 +793,7 @@ test('a provider read failure logs which fixed provider kind failed; the respons
       409,
     ],
     [new ShopifyAdminUnavailableError('Catalog read timed out', 'timeout'), 'shopify_admin.timeout', 409],
+    [new ShopifyAdminUnavailableError('Catalog read failed', 'network'), 'shopify_admin.network', 409],
     [new ShopifyAdminUnavailableError('Catalog read failed'), 'shopify_admin.unavailable', 409],
   ] as const;
   for (const [error, providerKind, status] of cases) {

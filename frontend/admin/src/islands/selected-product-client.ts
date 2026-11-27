@@ -478,14 +478,28 @@ export function createSelectedProductClient(input: {
       ) {
         const original = pending();
         if (original) {
+          const journal = input.storage.getItem(key());
+          const releaseOriginal = () => {
+            if (!disposed && input.storage.getItem(key()) === journal) input.storage.removeItem(key());
+          };
           try {
             const recorded = await resolveOperation(asMarker(original));
-            if (!recorded || original.stage !== 'publish') input.storage.removeItem(key());
+            if (!recorded || original.stage !== 'publish') releaseOriginal();
           } catch {
             // A rejected duplicate cannot prove a concurrent original did not commit. Keep custody until the barrier settles.
-            // The first dispatch of a key has no earlier attempt: the server's own 422 is its final answer, so a
-            // fence that cannot be sent must not leave a rejected save looking like a lost one.
-            if (!resumed && original.stage !== 'publish' && configRejectionFrom(error)) input.storage.removeItem(key());
+            const rejection = configRejectionFrom(error);
+            // A preflight refusal is final for a new publication key with no recorded acceptance.
+            // A resumed key or known revision still needs the durable barrier.
+            if (
+              !resumed &&
+              rejection &&
+              (original.stage !== 'publish' ||
+                (!original.acceptedRevisionId &&
+                  rejection.code === 'PUBLICATION_UNAVAILABLE' &&
+                  'noEffect' in error &&
+                  error.noEffect === true))
+            )
+              releaseOriginal();
           }
         }
       }

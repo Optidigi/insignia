@@ -431,6 +431,7 @@ export const BUYER_PROVIDER_KINDS = [
     'throttled',
     'http_5xx',
     'internal_server_error',
+    'network',
     'unavailable',
   ] as const),
 ];

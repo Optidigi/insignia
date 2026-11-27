@@ -227,11 +227,21 @@ async function inspectPhase(path: string) {
 /** Only own phase names are inspected; no unrelated captures are opened. */
 export async function inspectPriorCollectorSettlement(parent: string) {
   await privateDirectory(parent);
+  const names = (await readdir(parent)).filter((name) => name === PREFIX || name.startsWith(`${PREFIX}-`));
   const phases = [];
-  for (const name of await readdir(parent)) {
-    if (name !== PREFIX && !name.startsWith(`${PREFIX}-`)) continue;
-    if (name !== PREFIX && !UUID.test(name.slice(PREFIX.length + 1))) throw new Error('prior_settlement_unknown');
-    phases.push(await inspectPhase(join(parent, name)));
+  const batchSize = 4;
+  for (let offset = 0; offset < names.length; offset += batchSize) {
+    // Drain every check in the batch before the caller can release its exclusive launch lock.
+    const checked = await Promise.allSettled(
+      names.slice(offset, offset + batchSize).map(async (name) => {
+        if (name !== PREFIX && !UUID.test(name.slice(PREFIX.length + 1))) throw new Error('prior_settlement_unknown');
+        return inspectPhase(join(parent, name));
+      }),
+    );
+    for (const result of checked) {
+      if (result.status === 'rejected') throw result.reason;
+      phases.push(result.value);
+    }
   }
   return phases;
 }

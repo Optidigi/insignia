@@ -86,6 +86,27 @@ test('an earlier complete append reservation without settlement blocks every fre
     await rm(parent, { recursive: true, force: true });
   }
 });
+test('settlement checks retain every phase across batches and stop on a later missing receipt', async () => {
+  const parent = await mkdtemp(join(tmpdir(), 'insignia-owner-launch-'));
+  try {
+    const names = [];
+    for (let n = 1; n <= 5; n++) {
+      const id = `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+      const name = `m5-trusted-release-collector-native-run-20261011-${id}`;
+      const phase = join(parent, name);
+      names.push(name);
+      await writeCollectorRecords(phase, id, operations);
+      await writeFile(join(phase, 'receipt.json'), JSON.stringify(closed()), { mode: 0o600 });
+    }
+    const phases = await inspectPriorCollectorSettlement(parent);
+    assert.deepEqual(phases.map(({ phase }) => phase).sort(), names);
+    assert.ok(phases.every(({ appendReserved, settled }) => appendReserved && settled));
+    await rm(join(parent, required(names.at(-1)), 'receipt.json'));
+    await assert.rejects(inspectPriorCollectorSettlement(parent), /prior_settlement_unknown/);
+  } finally {
+    await rm(parent, { recursive: true, force: true });
+  }
+});
 test('only exact known settled receipts permit a distinct fresh intent; ambiguous, foreign and symlink receipts stop', async () => {
   for (const value of [closed(), closed(true), { ...closed(), token: 'synthetic-forbidden' }, null]) {
     const parent = await mkdtemp(join(tmpdir(), 'insignia-owner-launch-'));

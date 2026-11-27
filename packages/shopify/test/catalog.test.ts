@@ -1,5 +1,34 @@
 import { describe, expect, it } from 'vitest';
-import { createCatalogReader } from '../src/catalog.js';
+import { createCatalogReader, createCatalogTransport } from '../src/catalog.js';
+
+it('reports a failed catalog connection or interrupted response as retryable without exposing transport details', async () => {
+  const failure = new TypeError('private transport details');
+  const requests: (typeof fetch)[] = [
+    () => {
+      throw failure;
+    },
+    async () => {
+      throw failure;
+    },
+    async () =>
+      new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.error(failure);
+          },
+        }),
+      ),
+  ];
+  for (const fetchImpl of requests) {
+    const reader = createCatalogTransport({ shop: 'example.myshopify.com', accessToken: 'synthetic', fetchImpl });
+    await expect(reader.read('list', { first: 1 })).rejects.toMatchObject({
+      name: 'ShopifyAdminUnavailableError',
+      reason: 'network',
+      transient: true,
+      message: 'Catalog read failed',
+    });
+  }
+});
 
 const id = 'gid://shopify/Product/42';
 const product = {

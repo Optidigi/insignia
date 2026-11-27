@@ -2,6 +2,7 @@
 
 Work the owner has deferred, to pick up later. Each item says what to do, why, and what is decided so far.
 Current status and deployed identities stay in [state.md](../delivery/state.md).
+The [technical audit checklist](technical-audit.md) tracks every item from the 26 November report.
 
 ## Dependency updates
 
@@ -63,10 +64,14 @@ Added 25 Nov 2026 from the 24–25 Nov hardening pass ([evidence](../delivery/sh
   availability hint on AX. The split-inventory fixture showed the variant as
   unavailable on the Netherlands product page. The alternate Storefront API probe returned
   `Online Store channel is locked` for both countries. AX verified the sold-out warning before artwork and cleared the hint after stock restoration.
-- #643 Misleading cart messages after compensated partial adds and throttled witness reads (fix in PR #659).
-- #651 Flaky selected-repair Escape test (fix in PR #654).
-- #653 Storefront performance: idle Designer prewarm (~200 KB JS + 234 KB CSS), USD TBT +238 ms, USD footer
-  CLS 0.15. Lighthouse 25 Nov: USD −7.0 points (pass is 6, Shopify's limit 10), EUR −1.5.
+- #653 The isolated EUR Lighthouse series is still open. Use the [AW measurements](../delivery/shopify-review-resubmission.md#deploy-aw-validation) for the more recent USD results.
+
+**Shipped fixes.**
+
+- #643 Cart messages after compensated partial adds and throttled witness reads were fixed in #659 and released in AV.
+- #651 The selected-repair Escape test was fixed in #654 and released in AV.
+- #653 AY retains intent-only Designer loading.
+- Guest artwork upload admission uses a two-second shop-lock timeout on AY ([#683](https://github.com/Optidigi/insignia/pull/683)).
 
 **Fixed (owner approval 25 Nov 2026).** A publish step that started on a 25–30 s-old release record could be
 refused mid-step; #641 and #650 narrowed the window. PR #658 closes it: a step reuses a record only while it
@@ -79,8 +84,6 @@ stays fresh for another 7 s (its measured write budget), otherwise it joins or r
   rounds but allowed a policy write after the pending registration disappeared. The trial was reverted
   and the registration-drift regression was retained. Owner decision 3 keeps the current hold checks
   through approval. Production p95 remains unverified.
-- The guest artwork upload shop-lock wait is unbounded (other buyer waits are bounded at 2 s by #639).
 - Catalog-transport network failures are not typed yet: they return 503 instead of BUSY.
 - A persistent Shopify INTERNAL_SERVER_ERROR now shows as BUSY (warn) rather than unavailable (error) since #647.
-- Persist production logs: on 24 Nov they reached back only to container restarts, so no 48 h latency
-  baseline exists.
+- AY sends web and worker logs to journald. Verify retention across a replacement and collect the 48-hour baseline.

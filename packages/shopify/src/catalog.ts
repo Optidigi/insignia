@@ -414,12 +414,19 @@ export function createCatalogTransport(input: {
       let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
       return withAdminDeadline(
         async (signal) => {
-          const response = await (input.fetchImpl ?? fetch)(`https://${input.shop}/admin/api/2026-07/graphql.json`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': input.accessToken },
-            body: JSON.stringify({ query, variables }),
-            signal,
-          });
+          const body = JSON.stringify({ query, variables });
+          let response: Response;
+          try {
+            response = await (input.fetchImpl ?? fetch)(`https://${input.shop}/admin/api/2026-07/graphql.json`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': input.accessToken },
+              body,
+              signal,
+            });
+          } catch (error) {
+            if (signal.aborted) throw error;
+            throw new ShopifyAdminUnavailableError('Catalog read failed', 'network');
+          }
           if (transientStatus(response.status))
             throw new ShopifyAdminUnavailableError(
               'Catalog read failed',
@@ -439,8 +446,9 @@ export function createCatalogTransport(input: {
               chunks.push(part.value);
             }
           } catch (error) {
-            await reader.cancel().catch(() => {});
-            throw error;
+            void reader.cancel().catch(() => {});
+            if (error instanceof CatalogReadError || signal.aborted) throw error;
+            throw new ShopifyAdminUnavailableError('Catalog read failed', 'network');
           } finally {
             reader.releaseLock();
           }

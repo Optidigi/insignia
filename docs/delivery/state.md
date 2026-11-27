@@ -34,6 +34,10 @@ batches Orders reads and loads the selected admin locale on demand. The qualifie
 and both Function modules match AX byte for byte, so Shopify version `1268027162625` remains
 Active. Web and worker now log to the host journal. See [AY validation](shopify-review-resubmission.md#deploy-ay-validation).
 
+**Before resubmission.** The owner chose another stability pass. Track the remaining items in the
+[technical audit checklist](../backlog/technical-audit.md). Qualify the exact final backend and run
+the merchant and buyer walkthroughs before submission.
+
 **Next for the owner.** Walk through the next qualified candidate in the merchant and storefront UI.
 Resubmit in the Partner Dashboard after reviewing the release and reviewer access instructions. The
 [#656 benchmark](../backlog/README.md#after-the-hardening-pass-25-nov-2026) supports keeping the

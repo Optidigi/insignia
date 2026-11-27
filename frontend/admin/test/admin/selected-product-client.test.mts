@@ -517,6 +517,68 @@ test('a publication validation rejection is durably fenced before local custody 
   assert.equal(client.hasPending(), false);
 });
 
+test('a definite first publish refusal stays actionable when reconciliation is unavailable', async () => {
+  const f = fixture();
+  let saved = false;
+  const refusal = Object.assign(new Error('The Shopify product needs support'), {
+    status: 422,
+    code: 'PUBLICATION_UNAVAILABLE',
+    noEffect: true,
+  });
+  const client = createSelectedProductClient({
+    productId: product.id,
+    storage: f.storage,
+    newKey: () => key,
+    request: async (path, init) => {
+      if (path.endsWith('preferences')) return preferences;
+      if (init?.method === 'PUT') {
+        saved = true;
+        return { kind: 'saved', draftVersion: '2' };
+      }
+      if (init && JSON.parse(String(init.body)).action === 'reconcile') throw new Error('Reconciliation unavailable');
+      if (init) throw refusal;
+      return configView(saved ? '2' : '1');
+    },
+  });
+  await client.load();
+  await assert.rejects(client.publish(setup), (error) => error === refusal);
+  assert.equal(client.hasPending(), false);
+});
+
+test('a first publish refusal preserves the scrubbed intent when reconciliation denies access', async () => {
+  const f = fixture();
+  let saved = false;
+  const refusal = Object.assign(new Error('The Shopify product needs support'), {
+    status: 422,
+    code: 'PUBLICATION_UNAVAILABLE',
+    noEffect: true,
+  });
+  const client = createSelectedProductClient({
+    productId: product.id,
+    storage: f.storage,
+    newKey: () => key,
+    request: async (path, init) => {
+      if (path.endsWith('preferences')) return preferences;
+      if (init?.method === 'PUT') {
+        saved = true;
+        return { kind: 'saved', draftVersion: '2' };
+      }
+      if (init && JSON.parse(String(init.body)).action === 'reconcile')
+        throw Object.assign(new Error('Denied'), { status: 403 });
+      if (init) throw refusal;
+      return configView(saved ? '2' : '1');
+    },
+  });
+  await client.load();
+  await assert.rejects(client.publish(setup), (error) => error === refusal);
+  const stored = f.storage.getItem(`insignia:selected-product-write:v1:${preferences.shop}:${product.id}`);
+  assert.ok(stored);
+  const marker = JSON.parse(stored);
+  assert.equal(marker.key, key);
+  assert.equal(marker.requiresReconciliation, true);
+  assert.equal('setup' in marker, false);
+});
+
 test('expired ambiguous publication reconciles absent and committed original intents before choosing a retry', async () => {
   for (const recorded of [false, true]) {
     const f = fixture();

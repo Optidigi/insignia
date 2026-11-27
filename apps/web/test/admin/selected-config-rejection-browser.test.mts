@@ -307,6 +307,66 @@ test('a rejection after the publication was recorded keeps the review open on it
   await retry(f.page).first().waitFor();
 });
 
+test('a first publish preflight refusal still shows its message when the reconciliation request fails', {
+  timeout: 30000,
+}, async (t) => {
+  const f = await fixture(t);
+  await f.page.route('**/api/admin/products/111/config', (route) => {
+    if (publishRequest(route))
+      return route.fulfill({
+        status: 422,
+        json: { kind: 'invalid', code: 'PUBLICATION_UNAVAILABLE', noEffect: true, message: 'Publish refused' },
+      });
+    if (route.request().method() === 'POST' && route.request().postDataJSON().action === 'reconcile')
+      return route.fulfill({ status: 503, json: { error: 'Reconciliation unavailable' } });
+    return route.fallback();
+  });
+  await f.open();
+  await editName(f.page, 'Definite refusal');
+  const modal = await confirmPublish(f.page);
+  await f.page.getByText('Publishing isn’t available for this store right now', { exact: false }).first().waitFor();
+  await modal.waitFor({ state: 'hidden' });
+  assert.equal(await retry(f.page).count(), 0);
+  assert.equal(await storedIntent(f.page), null);
+});
+
+for (const pause of ['inherited defaults', 'publication eligibility'] as const) {
+  test(`publish paused for ${pause} leaves the confirmed draft clean`, { timeout: 30000 }, async (t) => {
+    const f = await fixture(t, { shopifyModal: true });
+    await f.page.route('**/api/admin/products/111/config', (route) => {
+      const view = f.view();
+      const saved = structuredClone(f.read());
+      if (route.request().method() !== 'GET' || view.config?.draftVersion !== '2' || !saved.selectedSetup)
+        return route.fallback();
+      if (pause === 'publication eligibility')
+        return route.fulfill({
+          json: {
+            ...view,
+            config: {
+              ...view.config,
+              publishEligibility: { allowed: false, reason: 'Subscription verification unavailable' },
+            },
+          },
+        });
+      const [first] = saved.selectedSetup.product.views;
+      assert.ok(first);
+      first.name = 'Saved with inherited defaults';
+      return route.fulfill({ json: { ...view, config: { ...view.config, draft: saved } } });
+    });
+    await f.open();
+    await editName(f.page, 'Saved before review');
+    const modal = await confirmPublish(f.page);
+    const message =
+      pause === 'inherited defaults' ? 'Inherited defaults changed.' : 'Subscription verification unavailable';
+    await f.page.getByText(message, { exact: false }).first().waitFor();
+    await modal.waitFor({ state: 'hidden' });
+    assert.equal(await storedIntent(f.page), null);
+    assert.equal(f.mutations.filter((mutation) => JSON.parse(mutation.body).action === 'publish').length, 0);
+    assert.equal(await nameField(f.page).inputValue(), 'Saved before review');
+    await f.page.locator('[data-shopify-host-save-bar]').waitFor({ state: 'detached' });
+  });
+}
+
 for (const [name, lose] of [
   ['a 503', (route: Route) => route.fulfill({ status: 503, json: { error: 'Admin service unavailable' } })],
   ['a network failure', (route: Route) => route.abort('timedout')],

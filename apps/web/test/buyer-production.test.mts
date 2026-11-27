@@ -979,7 +979,11 @@ test('catalog rejects missing credentials, foreign credential tenant and foreign
   input.fetchImpl = async () => {
     throw new Error('synthetic provider outage');
   };
-  await assert.rejects(services.config(new Request(signed())), /synthetic provider outage/);
+  await assert.rejects(services.config(new Request(signed())), {
+    name: 'ShopifyAdminUnavailableError',
+    reason: 'network',
+    message: 'Catalog read failed',
+  });
 });
 
 test('generation drift during credential acquisition and readiness failures remain explicit unavailable states', async () => {
