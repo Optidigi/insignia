@@ -1,6 +1,6 @@
 /** Why a Shopify Admin read was unavailable: a fixed, data-free vocabulary for diagnostics. */
-export type ShopifyAdminUnavailableReason = 'timeout' | 'throttled' | 'http_5xx' | 'internal_server_error';
-/** A Shopify Admin request timed out, was throttled or hit a Shopify 5xx; a later retry can succeed. */
+export type ShopifyAdminUnavailableReason = 'timeout' | 'throttled' | 'http_5xx' | 'internal_server_error' | 'network';
+/** A Shopify Admin request encountered a transient provider or transport failure. */
 export class ShopifyAdminUnavailableError extends Error {
   readonly transient = true;
   constructor(

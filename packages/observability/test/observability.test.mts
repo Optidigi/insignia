@@ -931,6 +931,8 @@ test('a buyer failure names its provider failure kind from a finite vocabulary, 
   assert.equal(parseRecord(lastLine(output)).providerKind, 'catalog.graphql_error');
   logger.warn('buyer_request_rejected', { ...base, providerKind: 'shopify_admin.internal_server_error' });
   assert.equal(parseRecord(lastLine(output)).providerKind, 'shopify_admin.internal_server_error');
+  logger.warn('buyer_request_rejected', { ...base, providerKind: 'shopify_admin.network' });
+  assert.equal(parseRecord(lastLine(output)).providerKind, 'shopify_admin.network');
   // An unlisted kind is omitted; the failure itself is still logged.
   output = '';
   // @ts-expect-error Deliberately inject an unlisted kind to prove runtime omission.
