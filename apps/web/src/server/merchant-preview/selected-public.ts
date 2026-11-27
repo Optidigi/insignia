@@ -5,6 +5,7 @@ export function publicSelectedSetup(
   selected: SelectedProductSetup,
   geometry: GeometryV1,
   imageUrls: Readonly<Record<string, string>>,
+  allowsDeferredArtwork = true,
 ): SelectedProductSetup {
   validateGeometry(geometry);
   const unavailable = (): never => {
@@ -65,6 +66,7 @@ export function publicSelectedSetup(
         if (!placement) return unavailable();
         return {
           ...placement,
+          logoLaterAllowed: placement.logoLaterAllowed && allowsDeferredArtwork,
           sizes: placement.sizes.map((size) => ({
             ...size,
             prices: Object.fromEntries(

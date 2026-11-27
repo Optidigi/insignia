@@ -1,4 +1,11 @@
 {
+  "freeProduct": {
+    "choose": "Scegli il prodotto per Free",
+    "explanation": "Con Free, solo il prodotto selezionato accetta nuove personalizzazioni. Gli ordini esistenti e i carrelli validi mantengono le loro condizioni.",
+    "confirm": "Usa questo prodotto",
+    "saved": "Prodotto Free selezionato.",
+    "failed": "Impossibile selezionare il prodotto Free. Verifica il piano e riprova."
+  },
   "pageTitle": "Prodotti",
   "actions": {
     "viewInShopify": "Visualizza in Shopify",

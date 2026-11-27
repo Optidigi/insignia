@@ -433,6 +433,8 @@ export function createProductionAdminServices(
           appId: appGid,
           policy: policy.catalog,
           now: entitlementClock,
+          readFreeProduct: (actor) =>
+            core.preferences.readFreeProduct(actor.tenantShopId, actor.installationGeneration),
           async current(actor) {
             await active(actor);
             grant(actor);
@@ -692,7 +694,7 @@ export function createProductionAdminServices(
             inspect: (bytes) => inspectArtworkPrivately(required(env, 'ARTWORK_WORKER_READY_SOCKET'), bytes),
           })
         : undefined,
-    async eligibility(actor, draft: MerchantDraft) {
+    async eligibility(actor, draft: MerchantDraft, productId) {
       if (!partner || !policy || !appGid) return { allowed: false, reason: 'Publication policy is not configured' };
       await active(actor);
       const raw = await partner.read({ appId: appGid, shopId: actor.shopId });
@@ -724,7 +726,21 @@ export function createProductionAdminServices(
         entitlement.recognizedPolicyId !== null &&
         entitlement.qualifyingUsageDisposition === 'NOT_METERED' &&
         needed.every((feature) => entitlement.features.includes(feature));
-      return { allowed, reason: allowed ? null : 'Current subscription does not grant every configured feature' };
+      if (!allowed) return { allowed: false, reason: 'Current subscription does not grant every configured feature' };
+      if (entitlement.features.includes('m5.one-product')) {
+        const selected = await core.preferences.readFreeProduct(actor.tenantShopId, actor.installationGeneration);
+        if (
+          selected !== null
+            ? productId !== `gid://shopify/Product/${selected}`
+            : await core.configs.hasPublished(actor.tenantShopId)
+        )
+          return {
+            allowed: false,
+            reason: 'Free supports one live customizable product. Choose this product for Free or upgrade.',
+          };
+        return { allowed: true, reason: null, singleProduct: true };
+      }
+      return { allowed: true, reason: null };
     },
     publication: (actor) => activation(actor).publications,
     activation,
@@ -1185,6 +1201,37 @@ export function createProductionAdminServices(
     catalog: { list: catalog.list, get: catalog.get },
     configs: {
       ...service,
+      async chooseFreeProduct(actor, productId, expectedProductId) {
+        if (!actor.canReadOrders || !actor.canEdit || !billing) return 'denied';
+        const view = await billing(actor);
+        if (
+          !view.newActionsAllowed ||
+          (view.plan?.name !== 'Insignia Free' && view.pendingPlan?.name !== 'Insignia Free')
+        )
+          return 'denied';
+        const numeric = /^gid:\/\/shopify\/Product\/([1-9][0-9]{0,19})$/.exec(productId)?.[1];
+        if (!numeric) return 'missing';
+        return core.transactions.run(async (tx) => {
+          const scope = await core.tenants.lockActiveAuthorizationScope(tx, {
+            shopId: actor.tenantShopId,
+            installationGeneration: actor.installationGeneration,
+          });
+          if (
+            !scope ||
+            scope.shopDomain !== actor.shop ||
+            `gid://shopify/Shop/${scope.shopifyShopId}` !== actor.shopId ||
+            actor.expiresAtMs <= Date.now()
+          )
+            return 'denied';
+          const config = await core.configs.getByProductForUpdate(tx, actor.tenantShopId, numeric);
+          if (!config) return 'missing';
+          const current = await core.preferences.readFreeProduct(actor.tenantShopId, actor.installationGeneration, tx);
+          if (current === numeric) return 'selected';
+          if (current !== expectedProductId) return 'conflict';
+          await core.preferences.chooseFreeProduct(tx, actor.tenantShopId, actor.installationGeneration, numeric);
+          return 'selected';
+        });
+      },
       async publish(actor, productId, data) {
         const end = releaseCollector && publishReleaseRefresh ? publicationRelease.begin(actor) : () => {};
         try {

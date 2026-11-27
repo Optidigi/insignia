@@ -14,6 +14,11 @@ function managementUrl(shop: string): string | null {
 
 type BoundSubscription = ActiveSubscriptionSnapshot & { tenantShopId: string; installationGeneration: string };
 const logger = createObservability().logger;
+const monthlyPlans: ReadonlyMap<string, NonNullable<BillingView['plan']>> = new Map([
+  ['insignia-free', { name: 'Insignia Free', monthlyAmount: '0.00' }],
+  ['insignia-standard', { name: 'Insignia Standard', monthlyAmount: '49.99' }],
+  ['insignia-pro', { name: 'Insignia Pro', monthlyAmount: '69.99' }],
+]);
 
 export function createMerchantBillingReader(ports: {
   appId: string;
@@ -22,6 +27,7 @@ export function createMerchantBillingReader(ports: {
   /** Verify the current installation and staff grant before and after the provider read. */
   current(actor: AdminActor): Promise<void>;
   read(actor: AdminActor): Promise<BoundSubscription>;
+  readFreeProduct?(actor: AdminActor): Promise<string | null>;
 }): (actor: AdminActor) => Promise<BillingView> {
   return async (actor) => {
     await ports.current(actor);
@@ -51,6 +57,16 @@ export function createMerchantBillingReader(ports: {
     const recognized = fresh && projection.recognizedPolicyId !== null;
     const billingPeriod = recognized ? snapshot?.billingPeriod : null;
     const item = recognized ? snapshot?.items[0] : null;
+    const plan = item ? (monthlyPlans.get(item.handle) ?? null) : null;
+    const pending = fresh ? projection.pendingProviderUpdate : null;
+    const pendingHandle =
+      pending?.billingPeriod === 'EVERY_30_DAYS' && pending.itemHandles.length === 1
+        ? pending.itemHandles[0]
+        : undefined;
+    const pendingPlan =
+      pendingHandle && ports.policy.plans.some((entry) => entry.planHandle === pendingHandle)
+        ? (monthlyPlans.get(pendingHandle) ?? null)
+        : null;
     const recurringPrice =
       item?.price.kind === 'flat' && billingPeriod
         ? { amount: item.price.amount, currency: item.price.currency, billingPeriod }
@@ -71,12 +87,27 @@ export function createMerchantBillingReader(ports: {
       scheduledCancellation: fresh && projection.scheduledCancellation,
       pendingChange: fresh && projection.pendingProviderUpdate !== null,
       newActionsAllowed: recognized && projection.qualifyingUsageDisposition === 'NOT_METERED',
+      ...(plan && { plan }),
+      ...(pendingPlan && { pendingPlan }),
+      ...(ports.policy.plans.some((entry) => entry.planHandle === 'insignia-pro') && {
+        productionTools: recognized && projection.features.includes('m5.production-tools'),
+      }),
+      ...((plan?.monthlyAmount === '0.00' || pendingPlan?.monthlyAmount === '0.00') &&
+        ports.readFreeProduct && {
+          freeProductId: await ports.readFreeProduct(actor),
+        }),
       // The nominal Standard rate is known for the 30-day option.
       standardPrice:
-        !snapshot || billingPeriod === 'ANNUAL' ? null : { amount: '49.99', currency: 'USD', intervalDays: 30 },
+        !snapshot || billingPeriod === 'ANNUAL' || (plan && plan.monthlyAmount !== '49.99')
+          ? null
+          : { amount: '49.99', currency: 'USD', intervalDays: 30 },
       recurringPrice,
       // Shopify charges development stores $0 for a recognized paid plan.
-      developmentTerms: recognized && recurringPrice?.currency === 'USD' && /^0(?:\.0+)?$/.test(recurringPrice.amount),
+      developmentTerms:
+        recognized &&
+        plan?.monthlyAmount !== '0.00' &&
+        recurringPrice?.currency === 'USD' &&
+        /^0(?:\.0+)?$/.test(recurringPrice.amount),
       managementUrl: managementUrl(actor.shop),
     };
   };

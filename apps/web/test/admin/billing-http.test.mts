@@ -80,3 +80,40 @@ test('provider failure is unavailable rather than an invented inactive subscript
   assert.equal(response.status, 503);
   assert.equal(JSON.stringify(await response.json()).includes('private provider detail'), false);
 });
+
+test('the Free product choice requires a fresh owner session and an explicit previous choice', async () => {
+  const productId = 'gid://shopify/Product/7';
+  const route = { kind: 'config', productId } as const;
+  let owner = false;
+  let calls = 0;
+  const services = adminServices({
+    authenticate: async () => ({ ...actor, canEdit: true, canReadOrders: owner }),
+    catalog: {
+      get: async () => ({ id: productId, title: 'Fixture', status: 'ACTIVE', imageUrl: null, variants: [] }),
+    },
+    configs: {
+      chooseFreeProduct: async (_actor, product, expected) => {
+        calls++;
+        assert.equal(product, productId);
+        assert.equal(expected, '2');
+        return 'conflict';
+      },
+    },
+  });
+  const choose = (body: Record<string, unknown>) =>
+    new Request('https://app.example/api/admin/products/7/config', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer synthetic',
+        Origin: 'https://app.example',
+        'Content-Type': 'application/json',
+        'Idempotency-Key': 'free-choice-1',
+      },
+      body: JSON.stringify({ action: 'choose-free-product', ...body }),
+    });
+  assert.equal((await handleAdminRequest(choose({}), services, route)).status, 422);
+  assert.equal((await handleAdminRequest(choose({ expectedProductId: '2' }), services, route)).status, 403);
+  owner = true;
+  assert.equal((await handleAdminRequest(choose({ expectedProductId: '2' }), services, route)).status, 409);
+  assert.equal(calls, 1);
+});

@@ -40,6 +40,22 @@ export function createMerchantPreferencesRepository(db: DatabaseExecutor) {
   }
   return {
     read,
+    async readFreeProduct(shopId: string, generation: string): Promise<string | null> {
+      const result = await sql<{ free_product_id: string }>`
+        SELECT free_product_id FROM merchant_preferences
+        WHERE shop_id=${shopId} AND free_product_generation=${generation}::bigint
+      `.execute(db);
+      return result.rows[0]?.free_product_id ?? null;
+    },
+    async chooseFreeProduct(shopId: string, generation: string, productId: string): Promise<void> {
+      await sql`
+        INSERT INTO merchant_preferences (shop_id, free_product_id, free_product_generation)
+        VALUES (${shopId}, ${productId}, ${generation}::bigint)
+        ON CONFLICT(shop_id) DO UPDATE
+        SET free_product_id=excluded.free_product_id, free_product_generation=excluded.free_product_generation,
+            updated_at=clock_timestamp()
+      `.execute(db);
+    },
     async readWording(scope: { shopId: string; installationGeneration: string }) {
       const row = (
         await sql<{

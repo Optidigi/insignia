@@ -1,0 +1,24 @@
+{
+  "policyVersion": "monthly-plans-v1",
+  "maxAgeMs": 65000,
+  "plans": [
+    {
+      "planHandle": "insignia-free",
+      "policyId": "monthly-free",
+      "features": ["m5.configure", "m5.required", "m5.production-options", "m5.pricing", "m5.one-product"],
+      "billing": "recurring-only"
+    },
+    {
+      "planHandle": "insignia-standard",
+      "policyId": "monthly-standard",
+      "features": ["m5.configure", "m5.required", "m5.production-options", "m5.pricing"],
+      "billing": "recurring-only"
+    },
+    {
+      "planHandle": "insignia-pro",
+      "policyId": "monthly-pro",
+      "features": ["m5.configure", "m5.required", "m5.logo-later", "m5.production-options", "m5.pricing", "m5.production-tools"],
+      "billing": "recurring-only"
+    }
+  ]
+}

@@ -265,7 +265,11 @@ export function createMerchantConfigService(input: {
     get(actor: Actor, productId: string): Promise<CatalogProduct | null>;
     shopCurrency(actor: Actor): Promise<string>;
   };
-  eligibility(actor: Actor, draft: MerchantDraft): Promise<{ allowed: boolean; reason: string | null }>;
+  eligibility(
+    actor: Actor,
+    draft: MerchantDraft,
+    productId: string,
+  ): Promise<{ allowed: boolean; reason: string | null; singleProduct?: boolean }>;
   /** Internal preparation on an eligible new publish command only. Reads, saves
    * and durable-request replay must never initialize technical resources.
    * `resend`: preparation needs the session token itself (first signing key) and the request's token
@@ -453,7 +457,7 @@ export function createMerchantConfigService(input: {
               }
             : draft.shopCurrency !== currentShopCurrency
               ? { allowed: false, reason: 'Shop currency changed. Review amounts and adopt the current shop currency.' }
-              : await input.eligibility(actor, draft);
+              : await input.eligibility(actor, draft, productId);
       } catch (error) {
         eligibility = {
           allowed: false,
@@ -703,17 +707,17 @@ export function createMerchantConfigService(input: {
       const catalogProduct = await publicationStage('product-read', () => product(actor, productId));
       if (data.authority) await core.transactions.run((tx) => currentLocked(actor, tx, data.authority));
       const allowed = new Map<string, number>();
-      async function eligible(draft: MerchantDraft) {
+      async function eligible(draft: MerchantDraft): ReturnType<typeof input.eligibility> {
         const key = sha256CanonicalJson(draft);
         const checkedAt = Date.now();
         const reused = allowed.get(key);
         if (reused !== undefined && checkedAt - reused < PUBLICATION_ELIGIBILITY_REUSE_MS)
           return { allowed: true, reason: null };
-        const result = await publicationStage('eligibility', () => input.eligibility(actor, draft)).catch(() => ({
-          allowed: false,
-          reason: 'Entitlement unavailable',
-        }));
-        if (result.allowed) allowed.set(key, checkedAt);
+        const result = await publicationStage('eligibility', () => input.eligibility(actor, draft, productId)).catch(
+          (): Awaited<ReturnType<typeof input.eligibility>> => ({ allowed: false, reason: 'Entitlement unavailable' }),
+        );
+        // Free also depends on the merchant's current local product choice.
+        if (result.allowed && !result.singleProduct) allowed.set(key, checkedAt);
         else allowed.delete(key);
         return result;
       }
@@ -922,6 +926,22 @@ export function createMerchantConfigService(input: {
             const geometry = draft.geometry as GeometryV1;
             if (geometry.views.length === 0 || draft.placements.length === 0 || draft.methods.length === 0)
               return 'invalid';
+            if (eligibility.singleProduct) {
+              const selected = await core.preferences.readFreeProduct(
+                actor.tenantShopId,
+                actor.installationGeneration,
+                tx,
+              );
+              const numericProductId = productNumber(productId);
+              if (selected !== null && selected !== numericProductId) return 'free-product';
+              if (selected === null)
+                await core.preferences.chooseFreeProduct(
+                  tx,
+                  actor.tenantShopId,
+                  actor.installationGeneration,
+                  numericProductId,
+                );
+            }
             const revisionId = randomUUID();
             const published = draftPublished(draft, actor, productId, revisionId);
             const { revisionContentHash: _discard, ...content } = published;
@@ -981,6 +1001,13 @@ export function createMerchantConfigService(input: {
       }
       if (resultRef === 'conflict') return { kind: 'conflict', message: 'Draft changed. Reload before publication.' };
       if (resultRef === 'open') return { kind: 'conflict', message: 'A publication request is already in progress' };
+      if (resultRef === 'free-product')
+        return {
+          kind: 'invalid',
+          code: 'PLAN_FEATURE_REQUIRED',
+          noEffect: true,
+          message: 'Free supports one live customizable product. Choose this product for Free or upgrade.',
+        };
       if (resultRef === 'invalid')
         return {
           kind: 'invalid',

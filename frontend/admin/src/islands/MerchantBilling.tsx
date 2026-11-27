@@ -60,7 +60,12 @@ function MerchantBilling() {
           ? translateUi('settings:merchantBilling.noActiveSubscription')
           : translateUi('settings:merchantBilling.notVerified');
   const recognized = view?.status === 'active' || view?.status === 'trial';
-  const standardPrice = recognized && view.developmentTerms ? view.standardPrice : null;
+  const standardPrice =
+    recognized && view.developmentTerms
+      ? view.plan && view.recurringPrice?.billingPeriod === 'EVERY_30_DAYS'
+        ? { amount: view.plan.monthlyAmount, currency: 'USD', intervalDays: 30 }
+        : view.standardPrice
+      : null;
   const managementLabel =
     view?.status === 'inactive'
       ? translateUi('settings:merchantBilling.choosePlan')
@@ -75,7 +80,7 @@ function MerchantBilling() {
       <s-section
         heading={
           recognized
-            ? translateUi('settings:merchantBilling.standardPlanName')
+            ? (view.plan?.name ?? translateUi('settings:merchantBilling.standardPlanName'))
             : translateUi('settings:merchantBilling.subscriptionStatus')
         }
       >
@@ -146,7 +151,9 @@ function MerchantBilling() {
                   {standardPrice && (
                     <div>
                       <dt>
-                        <s-text color="subdued">{translateUi('settings:merchantBilling.standardPlanPrice')}</s-text>
+                        <s-text color="subdued">
+                          {view.plan?.name ?? translateUi('settings:merchantBilling.standardPlanPrice')}
+                        </s-text>
                       </dt>
                       <dd>
                         {translateUi('settings:merchantBilling.standardRate', {
@@ -245,6 +252,7 @@ function MerchantBilling() {
                 {view.pendingChange && (
                   <s-stack gap="small">
                     <s-badge>{translateUi('settings:merchantBilling.changePending')}</s-badge>
+                    {view.pendingPlan && <s-text>{view.pendingPlan.name}</s-text>}
                     <s-paragraph>
                       {translateUi(
                         'settings:merchantBilling.aSubscriptionChangeIsPendingInShopifyYourCurrentAccessContinuesToFollowTheConfirmedSubscri',
@@ -253,6 +261,12 @@ function MerchantBilling() {
                   </s-stack>
                 )}
               </div>
+            )}
+            {view.freeProductId !== undefined && (
+              <s-banner tone={view.freeProductId === null ? 'warning' : 'info'}>
+                <s-paragraph>{translateUi('products:freeProduct.explanation')}</s-paragraph>
+                <s-link href="/admin/products">{translateUi('products:freeProduct.choose')}</s-link>
+              </s-banner>
             )}
             {!view.newActionsAllowed && (
               <s-banner

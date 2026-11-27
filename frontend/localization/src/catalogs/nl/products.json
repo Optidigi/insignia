@@ -1,4 +1,11 @@
 {
+  "freeProduct": {
+    "choose": "Product voor Free kiezen",
+    "explanation": "Met Free kan alleen het geselecteerde product nieuwe personalisaties ontvangen. Bestaande bestellingen en geldige winkelwagens behouden hun voorwaarden.",
+    "confirm": "Dit product gebruiken",
+    "saved": "Free-product geselecteerd.",
+    "failed": "Het Free-product kon niet worden geselecteerd. Controleer je abonnement en probeer het opnieuw."
+  },
   "pageTitle": "Producten",
   "actions": {
     "viewInShopify": "Bekijken in Shopify",

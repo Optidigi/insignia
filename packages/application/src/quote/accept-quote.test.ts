@@ -158,6 +158,24 @@ function fixture() {
 }
 
 describe('acceptQuote', () => {
+  it('admits new Free quotes only for the chosen product and preserves an exact accepted replay', async () => {
+    const { ports, saved } = fixture();
+    const tenant = await ports.tenant.getActive('shop', '1');
+    if (!tenant) throw new Error('fixture tenant unavailable');
+    const entitlement = await ports.entitlement.getFresh(tenant);
+    vi.mocked(ports.entitlement.getFresh).mockResolvedValue({ ...entitlement, freeProductId: 'product' });
+    const original = await acceptQuote(request, ports);
+    vi.mocked(ports.store.findCompleted).mockImplementation(async ({ idempotencyKey }) =>
+      idempotencyKey === request.idempotencyKey ? original : null,
+    );
+    vi.mocked(ports.entitlement.getFresh).mockResolvedValue({ ...entitlement, freeProductId: 'different-product' });
+    const replay = await acceptQuote(request, ports);
+    expect(replay.quote).toEqual(original.quote);
+    await expect(acceptQuote({ ...request, idempotencyKey: 'tier-changed-key' }, ports)).rejects.toMatchObject({
+      code: 'ENTITLEMENT_DENIED',
+    });
+    expect(saved).toHaveLength(1);
+  });
   it('default issuance rejects advanced setup pricing without a profile switch', async () => {
     const { ports, saved } = fixture();
     const rule = config.pricingRules[0];
@@ -413,6 +431,14 @@ describe('acceptQuote', () => {
       configId: 'cfg',
       operationId: 'op',
     });
+    const tenant = await ports.tenant.getActive('shop', '1');
+    if (!tenant) throw new Error('fixture tenant unavailable');
+    const entitlement = await ports.entitlement.getFresh(tenant);
+    vi.mocked(ports.entitlement.getFresh).mockResolvedValueOnce({ ...entitlement, allowsDeferredArtwork: false });
+    await expect(acceptQuote({ ...request, groups: [{ group: deferred }] }, ports)).rejects.toMatchObject({
+      code: 'ENTITLEMENT_DENIED',
+    });
+    expect(ports.artwork.readUsability).not.toHaveBeenCalled();
     vi.mocked(ports.artwork.readUsability).mockImplementation(async (input) =>
       input.choices.map((choice) => ({
         ...choice,

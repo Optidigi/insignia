@@ -59,6 +59,9 @@ export type QuoteEntitlement = {
   recognizedPolicyId: string | null;
   policyVersion: string;
   trial: boolean;
+  /** undefined means the plan does not have a single-product limit. */
+  freeProductId?: string | null;
+  allowsDeferredArtwork?: boolean;
   qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME' | 'WAIVE_TRIAL' | 'NOT_METERED' | 'DENY';
 };
 export type QuoteRequest = {
@@ -740,6 +743,13 @@ async function prepareValidatedQuote(
   ]);
   const entitlement = settledValue(entitlementResult);
   requireEntitlement(entitlement);
+  if (entitlement.freeProductId !== undefined && products.some((id) => id !== entitlement.freeProductId))
+    throw new BuyerRejectedError('ENTITLEMENT_DENIED', 'Free plan product selection required');
+  if (
+    entitlement.allowsDeferredArtwork === false &&
+    artworkChoices(groups).some((choice) => choice.kind === 'deferred')
+  )
+    throw new BuyerRejectedError('ENTITLEMENT_DENIED', 'Artwork is required before checkout on this plan');
   const shop = settledValue(shopResult);
   if (
     shop.shopId !== tenant.shopId ||
