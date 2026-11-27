@@ -128,7 +128,7 @@ services:
       INSIGNIA_M8_PURCHASE_ENABLED: '1'
       INSIGNIA_PARTNER_ACCESS_TOKEN: '${INSIGNIA_PARTNER_ACCESS_TOKEN:?}'
       INSIGNIA_PARTNER_ORGANIZATION_ID: '4697030'
-      INSIGNIA_RELEASE_PROFILE: native-review-readiness-849a38e1
+      INSIGNIA_RELEASE_PROFILE: native-pre-review-performance-e73f2a69
       INSIGNIA_SHOPIFY_APP_ID: '429028933633'
       NODE_ENV: production
       PORT: '3000'
@@ -138,7 +138,7 @@ services:
       INSIGNIA_CUSTOMER_EMAIL_ENABLED: '1'
       CUSTOMER_ARTWORK_EMAIL_PROFILE: /run/insignia/customer-artwork-email.json
       INSIGNIA_STORE_SETUP_ENABLED: '1'
-      INSIGNIA_EUR_NL_QUALIFICATION: '{"version":"eur-qualification-v2","activeVersionRef":"1268027162625","functionsSourceCommit":"4991bcf9043764aabf28b0c040d5b71609c7a8c0","qualifiedAt":"2026-11-26T17:03:02Z","evidenceRef":"ax-eur-nl-checkout-20261126","countries":["AT","BE","HR","CY","EE","FI","FR","DE","GR","IE","IT","LV","LT","LU","MT","NL","PT","SK","SI","ES"]}'
+      INSIGNIA_EUR_NL_QUALIFICATION: '{"version":"eur-qualification-v2","activeVersionRef":"1269249933313","functionsSourceCommit":"4991bcf9043764aabf28b0c040d5b71609c7a8c0","qualifiedAt":"2026-11-26T17:03:02Z","evidenceRef":"ax-eur-nl-checkout-20261126","countries":["AT","BE","HR","CY","EE","FI","FR","DE","GR","IE","IT","LV","LT","LU","MT","NL","PT","SK","SI","ES"]}'
       CUSTOMER_ARTWORK_EMAIL_QUALIFICATION_PROFILE: /run/insignia/customer-email-qualification.json
     healthcheck:
       test:
@@ -150,7 +150,7 @@ services:
       interval: 15s
       retries: 3
       start_period: 15s
-    image: 'insignia/web:7c70ae29'
+    image: 'insignia/web:c4375cb3'
     init: true
     labels:
       traefik.docker.network: proxy
@@ -239,7 +239,7 @@ services:
       INSIGNIA_CREDENTIAL_KEY_BASE64: '${INSIGNIA_CREDENTIAL_KEY_BASE64:?}'
       INSIGNIA_CREDENTIAL_KEY_ID: '${INSIGNIA_CREDENTIAL_KEY_ID:?}'
       INSIGNIA_M8_PURCHASE_ENABLED: '1'
-      INSIGNIA_RELEASE_PROFILE: native-review-readiness-849a38e1
+      INSIGNIA_RELEASE_PROFILE: native-pre-review-performance-e73f2a69
       INSIGNIA_SHOPIFY_APP_ID: '429028933633'
       NODE_ENV: production
       SHOPIFY_CLIENT_ID: 1443cf6d03d39edae7c101a943c5c684
@@ -257,7 +257,7 @@ services:
       interval: 15s
       retries: 3
       start_period: 15s
-    image: 'insignia/worker:7c70ae29'
+    image: 'insignia/worker:c4375cb3'
     networks:
       worker-egress: null
       private: null
@@ -287,9 +287,9 @@ services:
     cpus: 1
     command:
     - --manifest-sha256
-    - 635be0019e8646a0b040dc1e36cf9757949acfc8f073b124f21d961f4d41beda
-    - native-review-readiness-849a38e1
-    image: 'insignia/verifier:7c70ae29'
+    - a8f0526a5e3e7fe0ed1ba3b17c8c3a58799123a1a0775f0d3efdf0d78c07ed14
+    - native-pre-review-performance-e73f2a69
+    image: 'insignia/verifier:c4375cb3'
     init: true
     mem_limit: '536870912'
     memswap_limit: '536870912'
