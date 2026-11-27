@@ -108,6 +108,12 @@ import performanceModules from '../../deployment/m5-runtime/native-performance-m
 import performanceCandidate from '../../deployment/m5-runtime/native-performance-release-binding.json' with {
   type: 'json',
 };
+import preReviewPerformanceModules from '../../deployment/m5-runtime/native-pre-review-performance-e73f2a69-module-baseline.json' with {
+  type: 'json',
+};
+import preReviewPerformanceBinding from '../../deployment/m5-runtime/native-pre-review-performance-e73f2a69-release-binding.json' with {
+  type: 'json',
+};
 import recoveryModules from '../../deployment/m5-runtime/native-recovery-module-baseline.json' with { type: 'json' };
 import recoveryCandidate from '../../deployment/m5-runtime/native-recovery-release-binding.json' with { type: 'json' };
 import reinstallModules from '../../deployment/m5-runtime/native-reinstall-module-baseline.json' with { type: 'json' };
@@ -268,6 +274,15 @@ const oldIds = [
 ] as const;
 
 const profiles = {
+  'native-pre-review-performance-e73f2a69': {
+    versionId: preReviewPerformanceBinding.versionId,
+    versionTag: preReviewPerformanceBinding.versionTag,
+    versionIds: preReviewPerformanceBinding.versionIds,
+    moduleHash: preReviewPerformanceBinding.moduleHash,
+    modules: preReviewPerformanceModules,
+    grants: [...grants, 'read_orders', 'read_app_proxy', 'write_app_proxy', 'read_markets'],
+    functions: dependencyRefreshFunctions,
+  },
   'native-review-readiness-849a38e1': {
     versionId: reviewReadinessBinding.versionId,
     versionTag: reviewReadinessBinding.versionTag,
