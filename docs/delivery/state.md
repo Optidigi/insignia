@@ -28,8 +28,13 @@ unchanged AW Functions. The release passed merchant republish, the stock warning
 EUR Designer → signed cart → checkout checks. EUR v2 is active.
 See [AX validation](shopify-review-resubmission.md#deploy-ax-validation).
 
-**Next for the owner.** Walk through the running merchant and storefront UI. Resubmit in the
-Partner Dashboard after reviewing the release and reviewer access instructions. The
+**Next candidate, 27 November.** The owner chose to qualify a performance and stability release
+before resubmitting. The first changes cover cart authorization work, guest artwork admission,
+Orders reads and admin localization. Durable web and worker logging is part of the deployment
+qualification. AX remains the running release.
+
+**Next for the owner.** Walk through the next qualified candidate in the merchant and storefront UI.
+Resubmit in the Partner Dashboard after reviewing the release and reviewer access instructions. The
 [#656 benchmark](../backlog/README.md#after-the-hardening-pass-25-nov-2026) supports keeping the
 existing publish hold checks. Backups, secret rotation and the shop-erasure purge still come
 before the first real merchant.
