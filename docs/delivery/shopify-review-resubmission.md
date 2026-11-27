@@ -246,6 +246,21 @@ The USD reviewer storefront opened Designer in a signed-out session using the fi
 The owner account opened the embedded merchant editor. Shopify reviewer-account access is still
 unverified. The AX receipts are in `/srv/data/saas/insignia/releases/review-readiness-849a38e1`.
 
+### Deploy AY validation
+
+The 27 November backend rollout of `254da5c0` kept Shopify version `1268027162625` and both
+Function modules. The Foundation build matched the 17 qualified AX theme assets and both Wasm
+files byte for byte. The verifier, web and worker passed startup checks. Web and worker independently
+read the same fresh release record for each of the USD and EUR fixtures. Roles, application schema
+75, queue schema 48 and purchase facts matched the pre-deploy checkpoint. The web guest artwork
+route returned its expected 401 for an unverified request and logged the refusal through journald.
+Worker startup records also reached journald. The four error-level startup summaries reflected
+held uninstall and privacy obligations reproduced from the pre-deploy checkpoint. Those obligations
+remain open.
+
+The native merchant and buyer walkthroughs on AY and the 48-hour logging baseline remain open.
+The AX walkthrough above is evidence for its original backend and the same Shopify assets.
+
 ## Other review items
 
 | Requirement | Verified and remaining evidence |

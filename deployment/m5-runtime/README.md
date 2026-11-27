@@ -11,7 +11,7 @@ This directory retains the deployment configuration/data boundary; its `m5` name
 
 ## Current state
 
-As of 26 November 2026 (production on host alias `prod`, deploy AX). [Delivery state](../../docs/delivery/state.md#deployed-identities) holds the exact image digests and custody locators.
+As of 27 November 2026 (production on host alias `prod`, deploy AY backend and AX Shopify version). [Delivery state](../../docs/delivery/state.md#deployed-identities) holds the exact image digests and custody locators.
 - **Release profile.** `native-review-readiness-849a38e1` binds sole active version `1268027162625`. Web, worker, verifier, and EUR v2 use this version. Shopify's manifest declares the production R2 origin. For each release, read the asset URL from a live Shopify product page and compare the CDN bytes with the qualified build. See the [release binding](native-review-readiness-849a38e1-release-binding.json) and [module baseline](native-review-readiness-849a38e1-module-baseline.json).
 - **Production database (16 Nov 2026):** fresh, data `/srv/data/saas/insignia/postgres` on the LUKS2 volume, container `insignia-database` (10.0.7.250, aliases `database` and `insignia-rewrite-m5-019-database`; the other clients use `database`, the verifier the pinned old alias). Artwork bucket `insignia-production` (EU), prefix `artwork`. Details in [delivery state](../../docs/delivery/state.md#production-cutover-16-november-2026).
 - **Functions.** AW rebuilt both cart-line v3 Functions from `4991bcf9`. They use the existing registrations, queries, and API version 2026-07. The current pins are in [Deployed identities](../../docs/delivery/state.md#deployed-identities).

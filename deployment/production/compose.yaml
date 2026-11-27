@@ -150,7 +150,7 @@ services:
       interval: 15s
       retries: 3
       start_period: 15s
-    image: 'insignia/web:1c40efb9'
+    image: 'insignia/web:254da5c0'
     init: true
     labels:
       traefik.docker.network: proxy
@@ -257,7 +257,7 @@ services:
       interval: 15s
       retries: 3
       start_period: 15s
-    image: 'insignia/worker:1c40efb9'
+    image: 'insignia/worker:254da5c0'
     networks:
       worker-egress: null
       private: null
@@ -287,9 +287,9 @@ services:
     cpus: 1
     command:
     - --manifest-sha256
-    - 6a39b4b64420b809f53d0434169668b5540c7cee4159902162e1ec679b5d87dc
+    - 5dc5f264c75fbe0f9c3d86a82fe0dab835680d9e9cd6155adb6a8c4a92a851be
     - native-review-readiness-849a38e1
-    image: 'insignia/verifier:1c40efb9'
+    image: 'insignia/verifier:254da5c0'
     init: true
     mem_limit: '536870912'
     memswap_limit: '536870912'
