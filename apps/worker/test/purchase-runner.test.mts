@@ -79,7 +79,7 @@ function unpreparedRunner(
     core: durableCoreFixture({
       purchases: {
         claimPurchaseReconciliationHint: async () => hint,
-        claimPurchaseDiscovery: async () => [claim],
+        claimPurchaseDiscovery: async (_limit, seen = []) => (seen.includes(claim.shopId) ? [] : [claim]),
         completePurchaseDiscovery: async () => {
           calls.push('complete');
         },

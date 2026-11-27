@@ -9,16 +9,20 @@ export type PurchaseDiscoveryClaim = {
   cursor: string | null;
   claimToken: string;
 };
+export function assertPurchaseDiscoveryBudget(limit: number): void {
+  if (!Number.isInteger(limit) || limit < 1 || limit > 20) throw new Error('INVALID_DISCOVERY_BUDGET');
+}
 /** Fixed windows survive page retries. Provider errors never change watermarks. */
 export function createPurchaseCursorRepository(db: Kysely<Database>) {
   return {
-    async claimPurchaseDiscovery(limit = 5): Promise<PurchaseDiscoveryClaim[]> {
-      if (!Number.isInteger(limit) || limit < 1 || limit > 20) throw new Error('INVALID_DISCOVERY_BUDGET');
+    async claimPurchaseDiscovery(limit = 5, visitedShops: readonly string[] = []): Promise<PurchaseDiscoveryClaim[]> {
+      assertPurchaseDiscoveryBudget(limit);
       return db.transaction().execute(async (tx) => {
         await sql`INSERT INTO purchase_reconciliation_cursors(shop_id,installation_generation)
       SELECT s.shop_id,s.current_generation FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation
       JOIN shop_credentials c ON c.shop_id=s.shop_id AND c.installation_generation=s.current_generation
       WHERE i.deactivated_at IS NULL AND c.state IN ('active','refresh-in-progress') AND 'read_orders'=ANY(string_to_array(c.scopes,','))
+      AND NOT (s.shop_id=ANY(${visitedShops}::text[]))
       AND NOT EXISTS(SELECT 1 FROM purchase_reconciliation_cursors p WHERE p.shop_id=s.shop_id AND p.installation_generation=s.current_generation)
       ORDER BY s.shop_id LIMIT ${limit} ON CONFLICT DO NOTHING`.execute(tx);
         const rows = await sql<{
@@ -30,6 +34,7 @@ export function createPurchaseCursorRepository(db: Kysely<Database>) {
       JOIN shop_credentials c ON c.shop_id=p.shop_id AND c.installation_generation=p.installation_generation
       WHERE i.deactivated_at IS NULL AND c.state IN ('active','refresh-in-progress') AND 'read_orders'=ANY(string_to_array(c.scopes,','))
        AND p.next_attempt_at<=clock_timestamp() AND (p.claim_until IS NULL OR p.claim_until<=clock_timestamp())
+       AND NOT (p.shop_id=ANY(${visitedShops}::text[]))
       ORDER BY p.next_attempt_at,p.shop_id LIMIT ${limit} FOR UPDATE OF p SKIP LOCKED`.execute(tx);
         const claims: PurchaseDiscoveryClaim[] = [];
         for (const row of rows.rows) {
