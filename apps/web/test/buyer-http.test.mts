@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { setTimeout as delay } from 'node:timers/promises';
 import {
   BuyerAcceptanceDeclinedError,
   BuyerRejectedError,
@@ -84,6 +85,42 @@ test('buyer rejects oversized bodies before authentication and never copies an u
   assert.equal(result.status, 400);
   assert.equal(verified, 0);
 });
+test('an interrupted quote body releases its reader before buyer authentication', async () => {
+  const abort = new AbortController();
+  let verified = 0;
+  let canceled = false;
+  const request = new Request('https://app.invalid/v1/quote-proposals', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: new ReadableStream({
+      cancel() {
+        canceled = true;
+      },
+    }),
+    signal: abort.signal,
+    // @ts-expect-error Node streaming RequestInit requires duplex; browser DOM declarations omit it.
+    duplex: 'half',
+  });
+  const outcome = handleBuyerRequest(
+    request,
+    buyerFixture({
+      guest: {
+        verify: async () => {
+          verified++;
+          return null;
+        },
+      },
+    }),
+    'quote-proposals',
+  );
+  abort.abort();
+  const result = await Promise.race([outcome, delay(150, null, { ref: false })]);
+  assert.equal(result?.status, 400);
+  assert.equal(verified, 0);
+  assert.equal(canceled, true);
+  assert.equal(request.body?.locked, false);
+});
+
 test('buyer refuses unsigned tenant fields and capability-less private requests', async () => {
   const services = buyerFixture({ guest: { verify: async () => null } });
   assert.equal((await handleBuyerRequest(post({ shopId: 'attacker' }), services, 'quote-proposals')).status, 401);

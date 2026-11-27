@@ -8,19 +8,22 @@ import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { handleShopifyWebhook } from '../src/server/shopify-webhook.ts';
 
-test('HTTP 5xx after durable inbox commit leads to same-ID retry and a single queue handoff', async () => {
-  const secret = 'synthetic-secret';
-  const body = Buffer.from('{"one":1}');
-  const domain = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
-  const id = randomUUID();
-  const headers = {
+function webhookHeaders(secret: string, body: Uint8Array, id = randomUUID()) {
+  return {
     'X-Shopify-Hmac-Sha256': createHmac('sha256', secret).update(body).digest('base64'),
-    'X-Shopify-Shop-Domain': domain,
+    'X-Shopify-Shop-Domain': `m${randomUUID().replaceAll('-', '')}.myshopify.com`,
     'X-Shopify-Topic': 'app/uninstalled',
     'X-Shopify-API-Version': '2026-07',
     'X-Shopify-Webhook-Id': id,
     'X-Shopify-Triggered-At': new Date().toISOString(),
   };
+}
+
+test('HTTP 5xx after durable inbox commit leads to same-ID retry and a single queue handoff', async () => {
+  const secret = 'synthetic-secret';
+  const body = Buffer.from('{"one":1}');
+  const id = randomUUID();
+  const headers = webhookHeaders(secret, body, id);
   const rows = new Map<string, Awaited<ReturnType<NonNullable<Dependencies['ingress']>['receive']>>>();
   let receives = 0;
   let enqueues = 0;
@@ -120,12 +123,16 @@ test('stream bound rejects a lying or absent Content-Length before trusted metad
 
 test('an interrupted Shopify delivery releases its body reader before any handoff', async () => {
   const abort = new AbortController();
+  const secret = 'synthetic-secret';
+  const body = Buffer.from('{}');
   let canceled = false;
+  let handoffs = 0;
   const request = new Request('http://local/api/webhooks/shopify', {
     method: 'POST',
+    headers: webhookHeaders(secret, body),
     body: new ReadableStream({
       start(controller) {
-        controller.enqueue(new Uint8Array([123]));
+        controller.enqueue(body);
       },
       cancel() {
         canceled = true;
@@ -136,24 +143,33 @@ test('an interrupted Shopify delivery releases its body reader before any handof
     duplex: 'half',
   });
   const outcome = handleShopifyWebhook(request, {
-    secrets: ['synthetic-secret'],
+    secrets: [secret],
     getHandoff() {
-      assert.fail('incomplete request must not reach handoff');
+      handoffs++;
+      throw new Error('unexpected handoff');
     },
   });
   abort.abort();
   const response = await Promise.race([outcome, delay(150, null, { ref: false })]);
   assert.equal(response?.status, 503);
   assert.equal(canceled, true);
+  assert.equal(handoffs, 0);
   assert.equal(request.body?.locked, false);
 });
 
 test('an incomplete Shopify body has a deadline even if transport cancellation is still pending', async (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
+  const secret = 'synthetic-secret';
+  const body = Buffer.from('{}');
   let canceled = false;
+  let handoffs = 0;
   const request = new Request('http://local/api/webhooks/shopify', {
     method: 'POST',
+    headers: webhookHeaders(secret, body),
     body: new ReadableStream({
+      start(controller) {
+        controller.enqueue(body);
+      },
       cancel() {
         canceled = true;
         return new Promise<void>(() => {});
@@ -163,13 +179,15 @@ test('an incomplete Shopify body has a deadline even if transport cancellation i
     duplex: 'half',
   });
   const outcome = handleShopifyWebhook(request, {
-    secrets: ['synthetic-secret'],
+    secrets: [secret],
     getHandoff() {
-      assert.fail('incomplete request must not reach handoff');
+      handoffs++;
+      throw new Error('unexpected handoff');
     },
   });
   t.mock.timers.tick(3_000);
   assert.equal((await outcome).status, 503);
   assert.equal(canceled, true);
+  assert.equal(handoffs, 0);
   assert.equal(request.body?.locked, false);
 });
