@@ -11,7 +11,7 @@ This directory retains the deployment configuration/data boundary; its `m5` name
 
 ## Current state
 
-As of 26 November 2026 (production on host alias `prod`, deploy AX). [Delivery state](../../docs/delivery/state.md#deployed-identities) holds the exact image digests and custody locators.
+As of 27 November 2026 (production on host alias `prod`, deploy AY backend and AX Shopify version). [Delivery state](../../docs/delivery/state.md#deployed-identities) holds the exact image digests and custody locators.
 - **Release profile.** `native-review-readiness-849a38e1` binds sole active version `1268027162625`. Web, worker, verifier, and EUR v2 use this version. Shopify's manifest declares the production R2 origin. For each release, read the asset URL from a live Shopify product page and compare the CDN bytes with the qualified build. See the [release binding](native-review-readiness-849a38e1-release-binding.json) and [module baseline](native-review-readiness-849a38e1-module-baseline.json).
 - **Production database (16 Nov 2026):** fresh, data `/srv/data/saas/insignia/postgres` on the LUKS2 volume, container `insignia-database` (10.0.7.250, aliases `database` and `insignia-rewrite-m5-019-database`; the other clients use `database`, the verifier the pinned old alias). Artwork bucket `insignia-production` (EU), prefix `artwork`. Details in [delivery state](../../docs/delivery/state.md#production-cutover-16-november-2026).
 - **Functions.** AW rebuilt both cart-line v3 Functions from `4991bcf9`. They use the existing registrations, queries, and API version 2026-07. The current pins are in [Deployed identities](../../docs/delivery/state.md#deployed-identities).
@@ -196,6 +196,15 @@ For an existing selected-UI installation, apply [the order-label grant delta](or
 ## Preserve the existing topology
 
 [deployment/production/compose.yaml](../production/compose.yaml) is the whole production runtime: database, signer, web, worker, verifier and the two monitor services in project `insignia`. Its secrets come from the stack's `.env` and `secrets/` in existing custody; do not create substitute credentials. A deploy changes only image tags, `INSIGNIA_RELEASE_PROFILE` and the verifier command (plus a reviewed environment change); any other delta is a reviewed change to this file first. The reviewed web command is `/usr/local/bin/node /srv/insignia/web/dist/server/entry.mjs`, with `init: true`, nonprivileged user and bounded stop grace. The generated application `.mjs` is a build artifact. [The Compose control](../../scripts/runtime/production-compose.test.mts) renders it and checks identities, custody paths, the signer boundary, routing and command/init semantics. Preserve `Host(app.insigniacustomizer.com)`, TLS, the database's address/aliases and the data binds. Changing the project name, `down -v` or creating containers while the data volume is unmounted (refused by `create_host_path: false`) would violate that boundary.
+
+Web and worker send their existing structured output to the host's persistent journal. Before
+deploying that logging configuration, verify that Docker supports `journald` and that the host
+journal uses persistent storage. Keep the host's existing size and access limits. Use
+`journalctl CONTAINER_NAME=insignia-web --since '48 hours ago'` and the equivalent for
+`insignia-worker` from an authorized operator account. At the first later replacement, verify that
+entries from both container IDs remain queryable by the stable name. The 48-hour baseline is
+available only after that observation window has elapsed and retention covers it. Preserve the
+application's existing redaction when aggregating latency and error classes.
 
 The worker runs on the private network plus its own outbound bridge (`insignia_worker-egress`); it adds no proxy network, capabilities or writable code mount, and publishes only its health port on host loopback `127.0.0.1:9464` for the heartbeat. The historical split-project files ([compose.yaml](compose.yaml) over [the canonical base](../m5-019r/compose.yaml), [scripts/worker/worker-compose.yaml](../../scripts/worker/worker-compose.yaml) with [worker-compose.yaml](worker-compose.yaml)) and their render controls describe the pre-AC layout only. The runtime guard checks independently rendered Compose against actual image/executable inventory and private same-database observations. The [pg-boss upgrade runbook](pg-boss-48.md) covers the owner migration, grants, and restore rehearsal for #670.
 
