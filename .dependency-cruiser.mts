@@ -20,13 +20,15 @@ export default {
     {
       name: 'visualizer-does-not-import-server',
       severity: 'error',
-      from: { path: '^packages/visualizer/src/' },
+      from: { path: '^(packages/visualizer|frontend/visualizer)/src/' },
       to: { path: '^(apps/|packages/(shopify|storage|database|observability|signer|cart-authorization)/)' },
     },
     {
       name: 'browser-no-node-builtins',
       severity: 'error',
-      from: { path: '^(apps/storefront/src/|apps/web/src/islands/|packages/contracts/src/|packages/visualizer/src/)' },
+      from: {
+        path: '^(apps/storefront/src/|apps/web/src/islands/|packages/contracts/src/|packages/visualizer/src/|frontend/visualizer/src/)',
+      },
       to: { dependencyTypes: ['core'] },
     },
     {

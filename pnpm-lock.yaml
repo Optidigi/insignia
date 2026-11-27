@@ -649,10 +649,6 @@ importers:
         version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/visualizer:
-    dependencies:
-      konva:
-        specifier: 10.11.0
-        version: 10.11.0
     devDependencies:
       typescript:
         specifier: 6.0.3
