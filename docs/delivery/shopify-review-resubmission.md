@@ -341,6 +341,24 @@ Round 1 is open. Independent merchant access reached Shopify sign-in. The 48-hou
 has yet to elapse, and a dedicated EUR Lighthouse profile still needs storefront access.
 Round 2 starts after the required checks close.
 
+### Deploy BB release validation
+
+The combined Designer and merchant fixes passed Foundation and Runtime on main `81434785`.
+All 17 staged theme assets matched that qualified storefront build. The inactive version readback
+matched BA outside the theme assets, including both Function binaries and scope configuration.
+The binding [#695](https://github.com/Optidigi/insignia/pull/695) merged as `658fab8a`, with the
+same tree and parents as Runtime `46047054191`. Both isolated checkpoint restores matched
+schema 75, queue schema 48, roles, ACLs, protected purchase facts and queue jobs. Live readback
+matched the protected facts after the backend rollout.
+
+Shopify showed `1269561884673` as sole Active in the exact 61-version inventory at `18:21:50Z`.
+EUR v2 changed only its active-version reference. Web and worker independently agreed on
+fresh release records for both test stores by `18:22:12Z`. All seven Insignia containers were healthy.
+The rollout used no migrations or grant changes.
+
+The focused native Shopify review checks and both broad QA rounds are pending on BB.
+BA evidence remains in the preceding sections.
+
 ## Other review items
 
 | Requirement | Verified and remaining evidence |
