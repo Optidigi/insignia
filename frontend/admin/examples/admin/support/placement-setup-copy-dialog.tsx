@@ -918,14 +918,6 @@ export default function PlacementSetupCopyDialog({
                 </div>
               );
             })}
-                  disabled={busy}
-                  onClick={() => toggleTarget(blocker.targetId, false)}
-                >
-                  {translateUi('editor:placementSetupCopyDialog.remove')}
-                </s-button>
-              </div>
-              );
-            })}
           </div>
         </s-banner>
       )
