@@ -14,6 +14,7 @@
     },
     "./admin": {
       "types": "./dist/admin.d.ts",
+      "insignia-lazy-admin-locales": "./dist/admin-browser.js",
       "import": "./dist/admin.js",
       "default": "./dist/admin.js"
     },

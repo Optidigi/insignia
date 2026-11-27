@@ -119,7 +119,7 @@ function safeFallback(engine: I18nextStringRuntime): string {
 
 /** Creates a request- or component-scoped synchronous i18next translator. */
 export function createFixedTranslator<MessageTable extends object>(
-  catalogs: Readonly<Record<SupportedLanguage, TranslationCatalog>>,
+  catalogs: Readonly<Partial<Record<SupportedLanguage, TranslationCatalog>> & { en: TranslationCatalog }>,
   namespaces: readonly string[],
   parameterContracts: RuntimeParameterContracts,
   requestedLocale: LocaleInput,

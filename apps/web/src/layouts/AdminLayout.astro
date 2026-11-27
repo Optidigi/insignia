@@ -38,9 +38,11 @@ const { t } = localization;
     {apiKey && <script is:inline src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>}
     <script>
       import { installAdminNavigation } from '../../../../frontend/admin/src/shared/admin-navigation';
+      if (document.documentElement.dataset.adminReady !== 'true') installAdminNavigation();
+    </script>
+    <script>
       import { installAdminLocalization } from '../../../../frontend/admin/src/shared/admin-i18n';
       installAdminLocalization(document);
-      if (document.documentElement.dataset.adminReady !== 'true') installAdminNavigation();
     </script>
     <script is:inline async src="https://cdn.shopify.com/shopifycloud/polaris-2.0.js"></script>
   </head>

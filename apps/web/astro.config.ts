@@ -49,5 +49,13 @@ export default defineConfig({
   ],
   server: { host: '127.0.0.1' },
   // Keep compiled page scripts external so the strict script-src policy remains valid.
-  vite: { build: { assetsInlineLimit: (filePath) => (filePath.endsWith('.js') ? false : undefined) } },
+  vite: {
+    build: { assetsInlineLimit: (filePath) => (filePath.endsWith('.js') ? false : undefined) },
+    environments: {
+      client: {
+        // Only this client build opts into async catalogs. SSR and the standalone preview use the synchronous entry.
+        resolve: { conditions: ['insignia-lazy-admin-locales', 'module', 'browser', 'development|production'] },
+      },
+    },
+  },
 });
