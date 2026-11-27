@@ -41,6 +41,23 @@ export interface RevisionRecord {
   createdAt: Date;
 }
 
+export function validateStoredPublishedValue(
+  revision: Pick<RevisionRecord, 'shopId' | 'revisionId' | 'schemaVersion' | 'publishedValue' | 'contentHash'>,
+  productId: string | undefined,
+) {
+  if (revision.schemaVersion !== 'm2-published-config-v1') throw new Error('unsupported published config version');
+  const value = validatePublishedConfig(PublishedConfigSchema.parse(revision.publishedValue));
+  if (
+    value.shopId !== revision.shopId ||
+    value.revisionId !== revision.revisionId ||
+    value.productId !== productId ||
+    value.revisionContentHash !== revision.contentHash ||
+    revisionContentHash(value) !== revision.contentHash
+  )
+    throw new Error('invalid published revision content');
+  return value;
+}
+
 function mapConfig(row: {
   shop_id: string;
   config_id: string;
@@ -258,24 +275,13 @@ export function createConfigRepositoryInternal(executor: DatabaseExecutor) {
     async getValidatedPublishedRevision(shopId: string, revisionId: string) {
       const revision = await getRevision(shopId, revisionId);
       if (!revision) return null;
-      if (revision.schemaVersion !== 'm2-published-config-v1') throw new Error('unsupported published config version');
-      const value = validatePublishedConfig(PublishedConfigSchema.parse(revision.publishedValue));
       const config = await executor
         .selectFrom('product_configs')
         .select('external_product_id')
         .where('shop_id', '=', shopId)
         .where('config_id', '=', revision.configId)
         .executeTakeFirst();
-      if (
-        value.shopId !== shopId ||
-        value.revisionId !== revisionId ||
-        !config ||
-        value.productId !== config.external_product_id ||
-        value.revisionContentHash !== revision.contentHash ||
-        revisionContentHash(value) !== revision.contentHash
-      )
-        throw new Error('invalid published revision content');
-      return { ...revision, publishedValue: value };
+      return { ...revision, publishedValue: validateStoredPublishedValue(revision, config?.external_product_id) };
     },
   };
 }
