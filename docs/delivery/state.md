@@ -56,8 +56,9 @@ See [BB release validation](shopify-review-resubmission.md#deploy-bb-release-val
 **Before resubmission.** BB passed the focused Shopify walkthrough and both consecutive merchant
 and storefront QA rounds with no new confirmed functional regression. See
 [BB native QA](shopify-review-resubmission.md#deploy-bb-native-qa) for coverage limits and
-the publication hold observation. Independent merchant access, the 48-hour logging baseline and
-isolated EUR Lighthouse remain open before owner review and resubmission. See the
+the publication hold observation. The isolated EUR Lighthouse check completed with a weighted
+0.8-point drop. Independent merchant access and the 48-hour logging baseline remain open
+before owner review and resubmission. See the
 [technical audit checklist](../backlog/technical-audit.md).
 
 **Next for the owner.** Resubmit in the Partner Dashboard after reviewing the validated release
