@@ -9,6 +9,66 @@ import { durableCoreFixture } from './support/durable-core-fixture.mts';
 import { orderFixture } from './support/order-fixture.mts';
 import { purchaseFixture } from './support/purchase-role-fixture.mts';
 
+test('each shop gets a fresh discovery lease and at most one page per pass', async () => {
+  const claims = Array.from({ length: 5 }, (_, index) => ({
+    shopId: `shop-${index}`,
+    installationGeneration: '1',
+    since: '2026-10-12T00:00:00.000Z',
+    until: '2026-10-13T00:00:00.000Z',
+    cursor: 'page-1',
+    claimToken: `claim-${index}`,
+  }));
+  let clock = 0;
+  const leases = new Map<string, number>();
+  const completed: string[] = [];
+  const failed: string[] = [];
+  const runner = createPurchaseRunner({
+    core: durableCoreFixture({
+      purchases: {
+        async claimPurchaseDiscovery(limit = 5, seen: readonly string[] = []) {
+          const next = claims.filter((claim) => !seen.includes(claim.shopId)).slice(0, limit);
+          for (const claim of next) leases.set(claim.shopId, clock + 600_000);
+          return next;
+        },
+        async completePurchaseDiscovery(claim) {
+          if ((leases.get(claim.shopId) ?? 0) <= clock) throw new Error('STALE_DISCOVERY_CLAIM');
+          completed.push(claim.shopId);
+        },
+        async failPurchaseDiscovery(claim) {
+          failed.push(claim.shopId);
+        },
+        async reconcile() {
+          return { kind: 'not_customized' };
+        },
+      },
+    }),
+    orders: {
+      async changes(claim) {
+        return {
+          ...claim,
+          orders: Array.from({ length: 20 }, (_, index) => ({
+            orderId: `gid://shopify/Order/${index + 1}`,
+            updatedAt: claim.since,
+          })),
+          observedAt: claim.until,
+          nextCursor: 'page-2',
+        };
+      },
+      async read(target) {
+        clock += 9_000;
+        return orderFixture({ ...target, lines: [] });
+      },
+    },
+  });
+  assert.equal(await runner.discoverChanges(), 100);
+  assert.deepEqual(
+    completed,
+    claims.map((claim) => claim.shopId),
+  );
+  assert.deepEqual(failed, []);
+  assert.equal(clock, 900_000);
+});
+
 test('a failed order within a discovered page retains the durable window; retry finishes only after every fact is stored', async () => {
   const claim = {
     shopId: 'shop',
@@ -22,8 +82,8 @@ test('a failed order within a discovered page retains the durable window; retry 
   let failing = true;
   const core = durableCoreFixture({
     purchases: {
-      async claimPurchaseDiscovery() {
-        return [claim];
+      async claimPurchaseDiscovery(_limit, seen = []) {
+        return seen.includes(claim.shopId) ? [] : [claim];
       },
       async completePurchaseDiscovery(x) {
         calls.push(['complete', x]);

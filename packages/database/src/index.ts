@@ -25,7 +25,7 @@ export {
   PurchaseStateError,
   webhookIdParsingSupported,
 } from './repositories/purchase.js';
-export type { PurchaseDiscoveryClaim } from './repositories/purchase-cursors.js';
+export { assertPurchaseDiscoveryBudget, type PurchaseDiscoveryClaim } from './repositories/purchase-cursors.js';
 export type {
   AcquisitionAttempt,
   AcquisitionIdentity,
