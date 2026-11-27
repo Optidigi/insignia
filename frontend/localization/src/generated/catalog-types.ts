@@ -2040,6 +2040,11 @@ export interface AdminMessageTable {
   'products:results.shown': { count: number; formattedCount: string };
   'products:search': object;
   'products:selection.selected': { count: number; formattedCount: string };
+  'products:shopifyStatus.active': object;
+  'products:shopifyStatus.archived': object;
+  'products:shopifyStatus.draft': object;
+  'products:shopifyStatus.unknown': object;
+  'products:shopifyStatus.unlisted': object;
   'products:summary.methods': object;
   'products:summary.noneConfigured': object;
   'products:summary.printLocations': object;

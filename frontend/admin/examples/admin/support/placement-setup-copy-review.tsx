@@ -7,6 +7,7 @@ import type { EditorView, PlacementProduct } from './placement-workflow-model.mt
 
 export interface PlacementSetupCopyReviewProps {
   source: PlacementProduct;
+  sourceLabel: string;
   sourceKind: 'current' | 'saved';
   children?: ComponentChildren;
   selectedViewIds: string[];
@@ -157,6 +158,7 @@ function ViewRow({
 
 export default function PlacementSetupCopyReview({
   source,
+  sourceLabel,
   sourceKind,
   children,
   selectedViewIds,
@@ -220,7 +222,7 @@ export default function PlacementSetupCopyReview({
             </span>
           )}
           <div class="placement-setup-copy-review__source-copy">
-            <s-text type="strong">{source.title}</s-text>
+            <s-text type="strong">{sourceLabel}</s-text>
             <s-text color="subdued">
               {translateUi(
                 sourceKind === 'current'

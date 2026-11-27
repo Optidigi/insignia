@@ -33,6 +33,13 @@
     "published": "Publicado",
     "unavailable": "No disponible"
   },
+  "shopifyStatus": {
+    "active": "Shopify: Activo",
+    "archived": "Shopify: Archivado",
+    "draft": "Shopify: Borrador",
+    "unlisted": "Shopify: No listado",
+    "unknown": "Shopify: Estado desconocido"
+  },
   "results": {
     "shown_one": "Se muestra {{formattedCount}} producto en esta página.",
     "shown_other": "Se muestran {{formattedCount}} productos en esta página.",

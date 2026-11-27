@@ -17,7 +17,7 @@ test('built Copy action discovers twenty products within its deadline and hydrat
         products: ids.map((id, i) => ({
           ...product,
           id,
-          title: `Copy target ${i}`,
+          title: i < 3 ? 'Copy target' : `Copy target ${i}`,
           configurationSummary: { state: i === 0 ? 'draft' : 'not_configured', methods: [], locations: [] },
         })),
         nextCursor: null,
@@ -29,8 +29,9 @@ test('built Copy action discovers twenty products within its deadline and hydrat
     details++;
     await new Promise((resolve) => setTimeout(resolve, 2000));
     const id = `gid://shopify/Product/${new URL(route.request().url()).pathname.split('/').at(-2)}`;
+    const index = ids.indexOf(id);
     await route.fulfill({
-      json: { product: { ...product, id, title: `Copy target ${ids.indexOf(id)}` }, config: null },
+      json: { product: { ...product, id, title: index < 3 ? 'Copy target' : `Copy target ${index}` }, config: null },
     });
   });
   const started = Date.now();
@@ -41,6 +42,10 @@ test('built Copy action discovers twenty products within its deadline and hydrat
   const dialog = f.page.locator('s-modal').filter({ has: f.page.locator('.placement-setup-copy') });
   const target = dialog.locator('s-checkbox[name="targetProducts"]').first();
   await target.waitFor({ state: 'attached' });
+  const labels = await dialog
+    .locator('s-checkbox[name="targetProducts"]')
+    .evaluateAll((items) => items.map((item) => item.getAttribute('label')));
+  assert.deepEqual(labels.slice(0, 3), ['Copy target · #222', 'Copy target · #223', 'Copy target · #224']);
   assert.equal(await target.evaluate((checkbox: HTMLElementTagNameMap['s-checkbox']) => checkbox.disabled), false);
   assert.ok(Date.now() - started < 10000);
   assert.equal(details, 0, 'Discovery must not hydrate unselected products');
@@ -60,6 +65,7 @@ test('built Copy action discovers twenty products within its deadline and hydrat
         ?.querySelector('s-button[slot="primary-action"]')
         ?.hasAttribute('disabled'),
   );
+  await dialog.locator('.placement-setup-copy__destination').getByText('Copy target · #222', { exact: true }).waitFor();
   assert.equal(details, 1);
   assert.equal(f.mutations.length, 0);
 });
@@ -75,6 +81,7 @@ test('overview-selected targets hydrate alongside the chosen saved source before
       json: {
         products: [
           { ...product, configurationSummary: { state: 'draft', methods: ['Printing'], locations: ['Right chest'] } },
+          { ...product, id: 'gid://shopify/Product/333' },
           {
             ...product,
             id: targetId,
@@ -105,6 +112,7 @@ test('overview-selected targets hydrate alongside the chosen saved source before
   const savedSource = dialog.locator('s-clickable').first();
   await savedSource.waitFor({ state: 'attached' });
   assert.equal(reads.length, 0);
+  assert.match((await savedSource.getAttribute('accessibilitylabel')) ?? '', /#111/);
   await savedSource.evaluate((button: HTMLElement) => button.click());
   await dialog.locator('.placement-setup-copy__review').waitFor();
   await f.page.waitForFunction(
@@ -118,6 +126,7 @@ test('overview-selected targets hydrate alongside the chosen saved source before
   assert.deepEqual(reads.sort(), ['/api/admin/products/111/config', '/api/admin/products/222/config']);
   assert.ok((await dialog.innerText()).includes('Front'));
   assert.ok((await dialog.innerText()).includes('Overview target'));
+  assert.ok((await dialog.innerText()).includes(`${product.title} · #111`));
   assert.equal(f.mutations.length, 0);
 });
 

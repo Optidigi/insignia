@@ -4292,6 +4292,9 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                   ) : (
                     renderMethodSettings()
                   )}
+                  {placementSetupIssue(product, placement) === 'price-required' && (
+                    <s-text tone="warning">{placementSetupIssueText('price-required', translateUi)}</s-text>
+                  )}
                   {!!product.methods.length && !placement.methodIds.length && (
                     <s-text tone="warning">
                       {translateUi('editor:placementWorkflowPreview.chooseAMethodBeforeOfferingThisPlacement')}

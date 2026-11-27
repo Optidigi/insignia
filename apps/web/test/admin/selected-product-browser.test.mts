@@ -701,3 +701,15 @@ test('unsaved merchant preview accepts a viewBox-only SVG without production upl
   assert.deepEqual(requests, [], 'preview artwork stays browser-local');
   await preview.close();
 });
+
+test('the placement settings explain when an assigned method has no offered price', { timeout: 30000 }, async (t) => {
+  const initial = structuredClone(draft);
+  initial.pricingRules = [];
+  const setup = required(initial.selectedSetup);
+  setup.product.methods = [{ id: methodId, name: 'Printing', explanation: '', pricing: 'product', amount: '' }];
+  setup.methodBindings = {};
+  const f = await fixture(t, { initialDraft: MerchantDraftSchema.parse(initial) });
+  await f.open();
+  await f.page.getByText('Add a price for at least one available method and size.', { exact: true }).waitFor();
+  assert.equal(f.mutations.length, 0);
+});
