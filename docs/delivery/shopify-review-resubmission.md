@@ -386,6 +386,27 @@ inheritance were outside the demonstrated coverage.
 Independent reviewer access, the 48-hour log baseline, and isolated EUR Lighthouse remain open.
 The private receipts are in the operator's BB focused and broad QA run directories.
 
+### Final reviewer walkthrough and billing retest
+
+On 27 November, two more runs on BB took the exact USD reviewer fixture through artwork
+upload, one signed line with two $15.00 units, and $30.00 Shopify checkout. Checkout reentry
+worked in both runs. One Preview action needed a second click. The available request trace
+did not establish a cause. Both carts were verified empty. No payment or order was submitted.
+The owner session opened product Setup and the Insignia Orders search. Independent reviewer
+access is still unverified. Insignia requires Shopify's store-owner role for Orders and
+artwork, so a regular staff invitation would leave those screens untested.
+
+On the disposable billing dev store, Standard switched from annual to monthly and back
+to annual. Shopify explicitly marked both approvals free to test. Both the embedded Billing
+screen and Shopify's installed-app settings showed the effective cadence at zero cost.
+Shopify's current charges page showed a zero running total. The store finished on its
+original annual test plan. Paid charge history and Shopify's treatment of same-plan cadence
+switches under requirement 1.2.3 remain open.
+
+The isolated EUR Lighthouse run still needs visitor access inside its dedicated profile.
+A fresh visitor session reached the storefront password page. The offline harness checks
+and probe of the dedicated browser runner passed.
+
 ## Other review items
 
 | Requirement | Verified and remaining evidence |
