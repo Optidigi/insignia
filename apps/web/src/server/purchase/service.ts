@@ -257,12 +257,7 @@ export function createPurchaseServices(input: {
           if ((await store.missingOrderNames(scope(actor), 1)).length) throw new Error('SEARCH_INCOMPLETE');
         }
       }
-      const rows = await store.list(scope(actor), {
-        ...query,
-        limit: query.limit + 1,
-        before: query.before,
-      });
-      const page = rows.slice(0, query.limit).filter((row): row is PurchaseRecord => row !== null);
+      const { purchases: page, nextCursor } = await store.listPage(scope(actor), query);
       let names: Record<string, string | null> = {};
       if (page.length > 0 && actor.canReadOrders && actor.expiresAtMs > now().getTime()) {
         try {
@@ -281,7 +276,7 @@ export function createPurchaseServices(input: {
       return {
         version: 'm8-purchase-list-v1' as const,
         items,
-        nextCursor: rows.length > query.limit ? page.at(-1)!.purchaseId : null,
+        nextCursor,
         ...(input.timeZone ? { timeZone: await input.timeZone(actor) } : {}),
       };
     },

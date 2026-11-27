@@ -104,6 +104,14 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('whole-dataset purchase list q
     });
     const afterCancellation = await repo.statistics(scope, 'Europe/Amsterdam', new Date('2026-11-05T12:00:00Z'));
     expect(afterCancellation.reduce((sum, day) => sum + BigInt(day.orders), 0n)).toBe(3n);
+    const firstPage = await repo.listPage(scope, { sort: 'date-asc', before: null, limit: 2 });
+    expect(firstPage.purchases.map((row) => row.purchaseId)).toEqual([created[0], created[2]]);
+    expect(firstPage.nextCursor).toBe(created[2]);
+    expect(firstPage.purchases[0]?.observations).toMatchObject([{ cancelledAt: '2026-11-05T11:00:00.000Z' }]);
+    expect((await repo.get(scope, firstPage.purchases[0]!.purchaseId))?.observations).toHaveLength(2);
+    const lastPage = await repo.listPage(scope, { sort: 'date-asc', before: firstPage.nextCursor, limit: 2 });
+    expect(lastPage.purchases.map((row) => row.purchaseId)).toEqual([created[1], created[3]]);
+    expect(lastPage.nextCursor).toBeNull();
     // Owner decision, 18 November 2026: test orders count on Home; cancelled orders still do not.
     const test = inputs[1];
     if (!test) throw new Error('Expected second retained order');

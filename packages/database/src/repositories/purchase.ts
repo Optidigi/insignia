@@ -7,6 +7,7 @@ import {
   type QuoteAuthorizationSet,
   type QuoteRequest,
 } from '@insignia/application';
+import type { PurchaseListQuery } from '@insignia/contracts';
 import { normalizeCustomizationGroups, type PublishedConfig } from '@insignia/domain';
 import { type Kysely, sql } from 'kysely';
 import type { Database } from '../client/database.js';
@@ -272,7 +273,12 @@ export function createPurchaseRepository(db: Kysely<Database>) {
     return found === 'unusable' ? null : found;
   }
 
-  async function get(scope: Scope, id: string, executor: Kysely<Database> = db): Promise<PurchaseRecord | null> {
+  async function get(
+    scope: Scope,
+    id: string,
+    executor: Kysely<Database> = db,
+    options?: { latestObservationOnly: true },
+  ): Promise<PurchaseRecord | null> {
     await active(executor, scope);
     const order = (
       await sql<{
@@ -316,7 +322,7 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       financial_status: string;
       cancelled_at: Date | null;
       exception: string | null;
-    }>`SELECT source_updated_at,observed_at,financial_status,cancelled_at,exception FROM purchase_observations WHERE purchase_id=${id}::uuid ORDER BY source_updated_at DESC,observed_at DESC,observation_id DESC`.execute(
+    }>`SELECT source_updated_at,observed_at,financial_status,cancelled_at,exception FROM purchase_observations WHERE purchase_id=${id}::uuid ORDER BY source_updated_at DESC,observed_at DESC,observation_id DESC ${options?.latestObservationOnly ? sql`LIMIT 1` : sql``}`.execute(
       executor,
     );
     const paid = (
@@ -439,6 +445,16 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       }
     }
     return true;
+  }
+  async function listPurchaseIds(scope: PurchaseScope, input: Partial<PurchaseListQuery>, includeSentinel = false) {
+    await active(db, scope);
+    const limit = input.limit ?? 25;
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) fail('INVALID');
+    return createPurchaseListRepository(db).listIds(scope.shopId, {
+      ...input,
+      before: input.before ?? null,
+      limit: limit + Number(includeSentinel),
+    });
   }
   return {
     ...createPurchaseCursorRepository(db),
@@ -777,16 +793,19 @@ export function createPurchaseRepository(db: Kysely<Database>) {
       await active(db, scope);
       return createPurchaseListRepository(db).statistics(scope.shopId, timeZone, observedAt);
     },
-    async list(scope: PurchaseScope, input: Partial<import('@insignia/contracts').PurchaseListQuery> = {}) {
-      await active(db, scope);
-      const limit = input.limit ?? 25;
-      if (!Number.isInteger(limit) || limit < 1 || limit > 100) fail('INVALID');
-      const ids = await createPurchaseListRepository(db).listIds(scope.shopId, {
-        ...input,
-        before: input.before ?? null,
-        limit,
-      });
+    async list(scope: PurchaseScope, input: Partial<PurchaseListQuery> = {}) {
+      const ids = await listPurchaseIds(scope, input);
       return Promise.all(ids.map((id) => get(scope, id)));
+    },
+    async listPage(scope: PurchaseScope, input: PurchaseListQuery) {
+      const { limit } = input;
+      const ids = await listPurchaseIds(scope, input, true);
+      const pageIds = ids.slice(0, limit);
+      const purchases = await Promise.all(pageIds.map((id) => get(scope, id, db, { latestObservationOnly: true })));
+      return {
+        purchases: purchases.filter((purchase) => purchase !== null),
+        nextCursor: ids.length > limit ? (pageIds.at(-1) ?? null) : null,
+      };
     },
     async getOffer(input: {
       shopId: string;

@@ -158,7 +158,7 @@ test('purchase listing batches optional order names once and never performs per-
   const record = purchaseRecord({ ...view, bindings: [], observations: [], artworkEvents: [] });
   let batches = 0;
   const services = createPurchaseServices({
-    core: coreFixture({ purchases: { list: async () => [record, record] } }),
+    core: coreFixture({ purchases: { listPage: async () => ({ purchases: [record, record], nextCursor: id }) } }),
     appOrigin: 'https://insignia.example',
     authenticate: async () => actor,
     orderNames: async (_actor, ids) => {
@@ -171,6 +171,7 @@ test('purchase listing batches optional order names once and never performs per-
     },
   });
   const result = await services.list(actor, { limit: 10, before: null });
+  assert.equal(result.nextCursor, id);
   assert.equal(batches, 1);
   assert.deepEqual(
     result.items.map((item) => item.orderName),
@@ -190,7 +191,9 @@ test('expiry or installation/grant loss during optional label reads cannot retur
         throw Error('Optional read failed');
       };
       const services = createPurchaseServices({
-        core: coreFixture({ purchases: { get: async () => record, list: async () => [record] } }),
+        core: coreFixture({
+          purchases: { get: async () => record, listPage: async () => ({ purchases: [record], nextCursor: null }) },
+        }),
         appOrigin: 'https://insignia.example',
         authenticate: async () => current,
         assertCurrentAccess: async () => {
@@ -216,7 +219,7 @@ test('expiry or installation/grant loss during optional label reads cannot retur
 test('empty retained order list does not query Shopify for labels', async () => {
   let calls = 0;
   const services = createPurchaseServices({
-    core: coreFixture({ purchases: { list: async () => [] } }),
+    core: coreFixture({ purchases: { listPage: async () => ({ purchases: [], nextCursor: null }) } }),
     appOrigin: 'https://insignia.example',
     authenticate: async () => actor,
     orderNames: async () => {
@@ -279,11 +282,12 @@ test('search reconciles one bounded label batch and refuses to claim complete re
           assert.equal(names[record.orderId], '#1001');
           missing = false;
         },
-        list: async (_scope, query) => {
+        listPage: async (_scope, query) => {
           pages++;
           if (!query) throw new Error('Expected full-dataset search query');
           assert.equal(query.q, '#1001');
-          return [record];
+          assert.equal(query.limit, 10);
+          return { purchases: [record], nextCursor: null };
         },
       },
     }),
@@ -315,7 +319,7 @@ test('needs-review follows the newest observation: an earlier exception a later 
   const listed = async (observations: ReturnType<typeof observation>[]) => {
     const record = purchaseRecord({ ...view, bindings: [], observations: observations as never, artworkEvents: [] });
     const services = createPurchaseServices({
-      core: coreFixture({ purchases: { list: async () => [record] } }),
+      core: coreFixture({ purchases: { listPage: async () => ({ purchases: [record], nextCursor: null }) } }),
       appOrigin: 'https://insignia.example',
       authenticate: async () => actor,
       orderNames: async () => ({}),
