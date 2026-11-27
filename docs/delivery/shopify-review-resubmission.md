@@ -308,6 +308,39 @@ No payment was submitted. Both test carts were empty at the end. The native dupl
 refusal and blank EUR Setup checks, the 48-hour log baseline, isolated EUR Lighthouse and
 reviewer access remain open.
 
+### BA validation round 1
+
+Round 1 started on 27 November. Shopify readback still showed version `1269249933313` as sole Active.
+The running BA image and Compose identities matched the deployment record. Foundation and
+Runtime had passed on the release tree.
+
+- A signed-out browser opened the exact USD reviewer product `10645326954779`, added artwork
+  and reviewed two units at $15.00 each. Shopify checkout showed $30.00 with one signed line.
+  A separate 390-pixel viewport passed keyboard open, Escape and focus return.
+- The EUR fixture reached checkout at €25.00. Switching NL to DE retained the signed cart
+  line and blocked checkout until review. After the buyer accepted the €25.00 total again,
+  the cart carried a replacement authorization and checkout opened normally. Canada returned
+  the country-or-currency explanation before artwork entry. No payment was submitted.
+  Both test carts were empty at cleanup, and the EUR session returned to NL.
+- The retained EUR duplicate `16266402726218` showed the Insignia-field support refusal and
+  closed publish review without a Retry prompt. It had no effective publication or durable
+  publication operation before or after the test.
+- New labelled Shopify Draft fixture `16269466141002` reached the inherited-defaults pause.
+  The unsaved banner cleared, and the image measurement, placement and €5.00 price survived
+  reload. The first successful publish took 11,644 ms. Republish after a placement label edit
+  took 9,202 ms. These are individual native timings. The Shopify product remains Draft.
+- Shopify's current-installation readback showed `read_orders` and no `read_all_orders` on both
+  the USD reviewer and EUR hardening test shops. The focused local buyer and merchant suites
+  passed 40 tests. All 315 Function replays passed against the deployed Wasm. Peak instruction
+  count was 8.51 million against 11 million, and peak linear memory was 1,600 KiB.
+
+Receipts are on the operator host under `~/insignia-qa/runs/2026-11-27-ba-round1.J33L9D`.
+The Function receipt is in `~/insignia-qa/runs/2026-11-27-ba-functions.0MUegl`.
+
+Round 1 is open. Independent merchant access reached Shopify sign-in. The 48-hour journal window
+has yet to elapse, and a dedicated EUR Lighthouse profile still needs storefront access.
+Round 2 starts after the required checks close.
+
 ## Other review items
 
 | Requirement | Verified and remaining evidence |
@@ -315,7 +348,7 @@ reviewer access remain open.
 | 1.1.9 Buyer consent | AX showed the item subtotal, customization subtotal and quote before **Add to cart** in USD and EUR. The signed cart and native checkout subtotals matched. The expired quote browser regression requires a new acceptance when terms change. Shopify has yet to confirm how it classifies Insignia's Cart Transform price under the fee guidance. |
 | 1.2.2 Billing lifecycle | On 26 November, the new Basic dev store `insignia-billing-qa-1126` declined Standard and Insignia showed **No active subscription** with a link back to plan selection. The store approved the $0 annual plan, uninstalled, and reinstalled. Shopify retained the trial with cancellation scheduled. The merchant reapproved via **Manage plan in Shopify** and the cancellation notice cleared. Shopify showed €0/year after trial. The disposable store remains installed on the $0 plan. No payment or order was made. The dev-host receipt is in `~/insignia-qa/runs/2026-11-26-billing-lifecycle.QJ2UbX/receipt.md`. |
 | 1.2.3 Plan changes | **Settings → Billing → Manage plan** opens Shopify's selector for Standard at $49.99 every 30 days or $449.99 per year with identical features. Both no-charge switches passed on 23 November. On 24 November, Shopify admin **Settings → Apps → Insignia** showed **Insignia Standard · $0/month** on rewrite-dev. The owner confirmed there is no eligible billed installation for paid invoice evidence. Shopify's acceptance of switching billing periods under this requirement is open. |
-| 3.2.1 Older order scope | The active scope baseline excludes `read_all_orders`. The 19 November fresh installation verified the required grant and recent orders. The old EUR review installation may still show a historical grant. |
+| 3.2.1 Older order scope | The active scope baseline excludes `read_all_orders`. The 19 November fresh installation verified the required grant and recent orders. BA readback on 27 November confirmed `read_orders` without `read_all_orders` on the two tested shops. The older EUR review installation was outside that readback. |
 | 2.1.1 Customized product | Version `1265289363457` passed the reviewer fixture through Bogus order #1015 and the Canada explanation on 25 November. The AW validation is tracked above. |
 | 4.5.4 and 4.5.5 Access | On 24 November the listing form showed the app-account exemption selected. The saved private instructions direct reviewers through Shopify admin and give the test storefront, access instructions, expected cart total and both prices. The storefront path and Designer opened in a signed-out session on AX. Access to the merchant admin using the reviewer's own Shopify account remains unverified. |
 
