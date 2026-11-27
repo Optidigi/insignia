@@ -290,6 +290,54 @@ test('purchase discovery and storage failures never suppress purchase private cl
   assert.ok(input.errors.some((x) => x.metadata?.errorClass === 'PURCHASE_DISCOVERY_UNAVAILABLE'));
 });
 
+test('slow purchase discovery allows another cleanup tick and shutdown drains the purchase pass', async () => {
+  const input = fixture();
+  let releaseDiscovery = () => {};
+  let markStarted = () => {};
+  const discovery = new Promise<void>((resolve) => {
+    releaseDiscovery = resolve;
+  });
+  const started = new Promise<void>((resolve) => {
+    markStarted = resolve;
+  });
+  let discoveries = 0;
+  let cleanups = 0;
+  input.purchases = {
+    async recover() {},
+    async discoverChanges() {
+      discoveries++;
+      markStarted();
+      await discovery;
+    },
+  };
+  input.core.purchases.cleanupDue = async () => ++cleanups;
+  const worker = createWorkerReconciliation(input);
+  const first = worker.runOnce();
+  await started;
+  let stopped = false;
+  let shutdown: Promise<void> | undefined;
+  try {
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(cleanups, 1);
+    void worker.runOnce();
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(cleanups, 2);
+    assert.equal(discoveries, 1);
+    shutdown = worker.stop().then(() => {
+      stopped = true;
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(stopped, false);
+    await worker.runOnce();
+    assert.equal(cleanups, 2);
+  } finally {
+    releaseDiscovery();
+    await first;
+    await (shutdown ?? worker.stop());
+  }
+  assert.equal(stopped, true);
+});
+
 test('usage failure cannot suppress private cleanup and shutdown drains usage', async () => {
   const input = fixture();
   let cleaned = 0,
