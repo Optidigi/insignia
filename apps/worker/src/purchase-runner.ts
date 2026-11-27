@@ -1,5 +1,5 @@
 import { type PurchasePorts, reconcilePurchase, type VerifiedOrder } from '@insignia/application';
-import { type DurableCore, webhookIdParsingSupported } from '@insignia/database';
+import { assertPurchaseDiscoveryBudget, type DurableCore, webhookIdParsingSupported } from '@insignia/database';
 import type { ShopifyOrderChangesPage, ShopifyOrderChangesTarget } from '@insignia/shopify';
 
 type OrderTarget = { shopId: string; installationGeneration: string; orderId: string };
@@ -89,9 +89,13 @@ export function createPurchaseRunner(input: {
     processInbox,
     async discoverChanges(limit = 5) {
       if (!input.orders.changes) return 0;
-      const claims = await input.core.purchases.claimPurchaseDiscovery(limit);
+      assertPurchaseDiscoveryBudget(limit);
+      const visitedShops: string[] = [];
       let processed = 0;
-      for (const claim of claims) {
+      while (visitedShops.length < limit) {
+        const [claim] = await input.core.purchases.claimPurchaseDiscovery(1, visitedShops);
+        if (!claim) break;
+        visitedShops.push(claim.shopId);
         try {
           const page = await input.orders.changes(claim);
           if (

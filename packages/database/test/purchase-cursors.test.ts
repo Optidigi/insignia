@@ -34,6 +34,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable missing-webhook disco
       'STALE_DISCOVERY_CLAIM',
     );
     await repository.completePurchaseDiscovery({ ...retry, nextCursor: 'next' });
+    expect((await repository.claimPurchaseDiscovery(20, [shopId])).some((x) => x.shopId === shopId)).toBe(false);
     const next = (await repository.claimPurchaseDiscovery(20)).find((x) => x.shopId === shopId)!;
     expect(next.cursor).toBe('next');
     expect(next.since).toBe(claim.since);
@@ -55,5 +56,17 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable missing-webhook disco
     await expect(repository.completePurchaseDiscovery({ ...stale, nextCursor: null })).rejects.toThrow(
       'STALE_DISCOVERY_CLAIM',
     );
+  });
+  it('seeds an eligible new shop when an already visited shop has no cursor', async () => {
+    const shops = [await createTestShop(db), await createTestShop(db)].sort((a, b) => a.shopId.localeCompare(b.shopId));
+    const [visited, eligible] = shops;
+    if (!visited || !eligible) throw new Error('Missing test shops');
+    for (const { shopId, generation } of shops)
+      await sql`INSERT INTO shop_credentials(shop_id,installation_generation,state,access_expires_at,refresh_expires_at,scopes,wrapping_key_id,access_envelope,refresh_envelope)
+        VALUES(${shopId},${generation}::bigint,'active',clock_timestamp()+interval '1 hour',clock_timestamp()+interval '1 day','read_orders','synthetic','{}','{}')`.execute(
+        db,
+      );
+    const claims = await createPurchaseCursorRepository(db).claimPurchaseDiscovery(1, [visited.shopId]);
+    expect(claims.map((claim) => claim.shopId)).toEqual([eligible.shopId]);
   });
 });
