@@ -102,7 +102,6 @@
 .placement-setup-copy__resource-row > s-icon,
 .placement-setup-copy__resource-row > s-badge,
 .placement-setup-copy__source-context > s-thumbnail,
-.placement-setup-copy__destination > s-thumbnail,
 .placement-setup-copy__result > s-thumbnail,
 .placement-setup-copy__result > s-badge {
   flex: none;
@@ -170,6 +169,13 @@
 
 .placement-setup-copy__destination {
   gap: 8px;
+}
+.placement-setup-copy__destination img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  border-radius: inherit;
 }
 .placement-setup-copy__destination-browser {
   display: grid;

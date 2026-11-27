@@ -230,15 +230,18 @@ test('an accepted publication left in progress continues automatically until Pub
         return;
       }
     }
-    if (sends >= 3 && request.method() === 'GET') {
+    if (request.method() === 'GET') {
       const view = f.view();
+      view.product = { ...view.product, status: 'DRAFT' };
       const config = required(view.config);
-      config.publication = {
-        ...config.publication,
-        state: 'ACTIVE',
-        activeRevisionId: 'revision-selected-111',
-      };
-      config.publishedSetup = MerchantDraftSchema.parse(config.draft).selectedSetup ?? null;
+      if (sends >= 3) {
+        config.publication = {
+          ...config.publication,
+          state: 'ACTIVE',
+          activeRevisionId: 'revision-selected-111',
+        };
+        config.publishedSetup = MerchantDraftSchema.parse(config.draft).selectedSetup ?? null;
+      }
       return route.fulfill({ json: view });
     }
     return route.fallback();
@@ -252,6 +255,7 @@ test('an accepted publication left in progress continues automatically until Pub
   await modal.getByRole('button', { name: 'Publish', exact: true }).click();
   await f.page.getByText('Published', { exact: true }).first().waitFor({ timeout: 20000 });
   await modal.waitFor({ state: 'hidden' });
+  await f.page.getByText('Shopify: Draft', { exact: true }).waitFor({ timeout: 3000 });
   assert.equal(sends, 3);
   assert.equal(await f.page.getByRole('button', { name: 'Retry', exact: true }).count(), 0);
   assert.equal(await f.page.getByText(/could not be confirmed/).count(), 0);

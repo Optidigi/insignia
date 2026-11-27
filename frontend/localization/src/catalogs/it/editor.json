@@ -1000,6 +1000,7 @@
     "sharedArtworkArea": "Area della grafica condivisa",
     "useSharedArea": "Usa l'area condivisa",
     "adjustForAppearance": "Modifica per {{appearanceName}}",
+    "geometryDimensionRange": "La larghezza e l’altezza restano comprese tra il {{formattedMin}} e il {{formattedMax}}.",
     "geometryLabels": {
       "width": "Larghezza",
       "height": "Altezza",

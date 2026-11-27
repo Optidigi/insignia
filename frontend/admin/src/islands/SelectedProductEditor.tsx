@@ -100,7 +100,7 @@ import type { PlacementPreviewState } from '../../examples/admin/support/placeme
 import type { PublishPlacementPreviewResult } from '../../examples/admin/support/placement-publication.mts';
 import type { PlacementMethodCatalog } from './selected-method-choices.ts';
 import type { PlacementSetupCopyPorts } from '../../examples/admin/support/placement-setup-copy-dialog.tsx';
-import type { EditorProductImage, EditorMethod, MethodDraftBinding } from '@insignia/contracts';
+import { minimumRectSize, type EditorProductImage, type EditorMethod, type MethodDraftBinding } from '@insignia/contracts';
 /** Typed decimal text as a number; NaN keeps schema checks failing for text the shared parser rejects. */
 const decimalOrNaN = (text: string): number => parseDecimalNumber(text) ?? Number.NaN;
 type MethodBindings = Record<string, MethodDraftBinding>;
@@ -115,6 +115,7 @@ export interface ProductEditorAdapter {
   currency: string;
   selectionScope: string;
   readOnly?: boolean;
+  shopifyDraft?: boolean;
   hasPublished?: boolean;
   publicationBlocked?: boolean;
   publicationFailed?: boolean;
@@ -3078,6 +3079,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                   }),
                 })}
               </span>
+              {adapter.shopifyDraft && <s-badge>{translateUi('products:shopifyStatus.draft')}</s-badge>}
               <s-button
                 variant="tertiary"
                 icon="menu-horizontal"
@@ -3934,6 +3936,12 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
                     </s-text>
                   )}
 
+                  <s-text color="subdued">
+                    {translateUi('editor:placementWorkflowPreview.geometryDimensionRange', {
+                      formattedMin: new Intl.NumberFormat(formatLocale, { style: 'percent' }).format(minimumRectSize),
+                      formattedMax: new Intl.NumberFormat(formatLocale, { style: 'percent' }).format(1),
+                    })}
+                  </s-text>
                   <div class="placement-fields-grid">
                     {(
                       [

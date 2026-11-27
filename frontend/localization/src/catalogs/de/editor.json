@@ -973,6 +973,7 @@
     "sharedArtworkArea": "Gemeinsamer Motivbereich",
     "useSharedArea": "Gemeinsamen Bereich verwenden",
     "adjustForAppearance": "Für {{appearanceName}} anpassen",
+    "geometryDimensionRange": "Breite und Höhe bleiben zwischen {{formattedMin}} und {{formattedMax}}.",
     "geometryLabels": {
       "width": "Breite",
       "height": "Höhe",

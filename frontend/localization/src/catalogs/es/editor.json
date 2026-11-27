@@ -1095,6 +1095,7 @@
     "sharedArtworkArea": "Área del diseño compartida",
     "useSharedArea": "Usar área compartida",
     "adjustForAppearance": "Ajustar para {{appearanceName}}",
+    "geometryDimensionRange": "La anchura y la altura se mantienen entre el {{formattedMin}} y el {{formattedMax}}.",
     "geometryLabels": {
       "width": "Ancho",
       "height": "Alto",

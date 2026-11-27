@@ -973,6 +973,7 @@
     "sharedArtworkArea": "Shared artwork area",
     "useSharedArea": "Use shared area",
     "adjustForAppearance": "Adjust for {{appearanceName}}",
+    "geometryDimensionRange": "Width and height are kept between {{formattedMin}} and {{formattedMax}}.",
     "geometryLabels": {
       "width": "Width",
       "height": "Height",

@@ -928,6 +928,7 @@ export const adminParameterContracts = {
   'editor:placementWorkflowPreview.expandCanvas': {},
   'editor:placementWorkflowPreview.expandView': { viewName: 'string' },
   'editor:placementWorkflowPreview.garmentPreview': {},
+  'editor:placementWorkflowPreview.geometryDimensionRange': { formattedMax: 'string', formattedMin: 'string' },
   'editor:placementWorkflowPreview.geometryLabels.centerX': {},
   'editor:placementWorkflowPreview.geometryLabels.centerY': {},
   'editor:placementWorkflowPreview.geometryLabels.height': {},

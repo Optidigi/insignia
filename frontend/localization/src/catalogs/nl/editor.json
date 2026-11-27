@@ -252,6 +252,7 @@
     "sharedArtworkArea": "Gedeeld ontwerpgebied",
     "useSharedArea": "Gedeeld gebied gebruiken",
     "adjustForAppearance": "Aanpassen voor {{appearanceName}}",
+    "geometryDimensionRange": "De breedte en hoogte blijven tussen {{formattedMin}} en {{formattedMax}}.",
     "geometryLabels": {
       "width": "Breedte",
       "height": "Hoogte",

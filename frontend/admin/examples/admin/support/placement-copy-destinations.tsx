@@ -3,6 +3,19 @@ import { useState } from 'preact/hooks';
 import { useAdminLocale } from '../../../src/shared/admin-i18n.js';
 import type { PlacementProduct } from './placement-workflow-model.mts';
 
+function DestinationImage({ url }: { url?: string }) {
+  const [failedUrl, setFailedUrl] = useState<string>();
+  return (
+    <span class="placement-setup-copy__product-image" aria-hidden="true">
+      {url && url !== failedUrl ? (
+        <img src={url} alt="" width="40" height="40" onError={() => setFailedUrl(url)} />
+      ) : (
+        <s-icon type="product" />
+      )}
+    </span>
+  );
+}
+
 export default function PlacementCopyDestinations({
   products,
   total,
@@ -27,11 +40,7 @@ export default function PlacementCopyDestinations({
     <div class="placement-setup-copy__destination-list">
       {filtered.slice(start, start + pageSize).map((product) => (
         <div class="placement-setup-copy__destination" key={product.id}>
-          {product.images[0] ? (
-            <s-thumbnail src={product.images[0].url} alt="" size="small" />
-          ) : (
-            <s-icon type="product" />
-          )}
+          <DestinationImage url={product.images[0]?.url} />
           <s-text>{product.title}</s-text>
         </div>
       ))}
