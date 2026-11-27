@@ -84,6 +84,6 @@ stays fresh for another 7 s (its measured write budget), otherwise it joins or r
   rounds but allowed a policy write after the pending registration disappeared. The trial was reverted
   and the registration-drift regression was retained. Owner decision 3 keeps the current hold checks
   through approval. Production p95 remains unverified.
-- Catalog-transport network failures are not typed yet: they return 503 instead of BUSY.
+- AZ classifies catalog transport failures as retryable on safe reads ([#686](https://github.com/Optidigi/insignia/pull/686)).
 - A persistent Shopify INTERNAL_SERVER_ERROR now shows as BUSY (warn) rather than unavailable (error) since #647.
-- AY sends web and worker logs to journald. Verify retention across a replacement and collect the 48-hour baseline.
+- AZ verified journald retention across replacement for web and worker. Collect the 48-hour baseline.
