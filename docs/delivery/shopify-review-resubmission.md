@@ -281,6 +281,33 @@ The query covered roughly eleven hours and contained two guest artwork timing ev
 48-hour baseline and native merchant, duplicate-product, blank EUR Setup, and USD/EUR
 checkout walkthroughs remain open before resubmission.
 
+### Deploy BA validation
+
+[#688](https://github.com/Optidigi/insignia/pull/688) merged as `e73f2a69`. The
+[#689 binding](https://github.com/Optidigi/insignia/pull/689) merged as `c4375cb3` with the same
+tree and parents as Runtime `46004394586`. Production is healthy on the new web, worker and
+verifier images. Application schema 75, queue schema 48, roles and protected purchase facts matched
+the restore-verified checkpoint. The worker reported the held privacy and uninstall obligations
+tracked on AZ.
+
+Shopify confirmed `1269249933313` as sole Active in the 60-version inventory. Both cart Functions
+still match AX byte for byte. A live USD product page loaded the new asset prefix. Fetching all
+17 assets in that browser returned HTTP 200 and matched the staged SHA-256 for each file. Web and
+worker independently read the same fresh release evidence for each of USD and EUR by
+`13:25:05Z`, about 19 minutes after candidate creation began. EUR v2 now uses the BA version.
+
+- **USD buyer.** Uploaded the test SVG and reached a $25.00 quote. After reloading, the Designer
+  offered the saved design and fetched the artwork preview successfully. One signed v3 line
+  reached Shopify checkout at $25.00.
+- **EUR buyer.** Uploaded the test SVG, received a €25.00 quote and reached Shopify checkout at
+  €25.00 with one signed v3 line.
+- **Merchant.** The live Products list showed `Published` and `Shopify: Active` separately
+  for the USD test product.
+
+No payment was submitted. Both test carts were empty at the end. The native duplicate-product
+refusal and blank EUR Setup checks, the 48-hour log baseline, isolated EUR Lighthouse and
+reviewer access remain open.
+
 ## Other review items
 
 | Requirement | Verified and remaining evidence |
