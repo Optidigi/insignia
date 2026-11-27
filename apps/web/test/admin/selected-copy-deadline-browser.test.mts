@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { MerchantDraftSchema } from '@insignia/contracts';
+import { required } from './support/fixtures.mts';
 import { fixture, product } from './support/selected-browser.mts';
 
 test('built Copy action discovers twenty products within its deadline and hydrates only the selected target for review', {
@@ -10,6 +11,7 @@ test('built Copy action discovers twenty products within its deadline and hydrat
   await f.open();
   const ids = Array.from({ length: 20 }, (_, i) => `gid://shopify/Product/${222 + i}`);
   const unavailableImage = 'https://cdn.shopify.com/qa/unavailable-product.jpg';
+  const destinationImage = { ...required(product.images?.[0]), url: unavailableImage };
   await f.page.route(unavailableImage, (route) => route.fulfill({ status: 404 }));
   let details = 0;
   await f.page.route('**/api/admin/products?*', async (route) => {
@@ -38,7 +40,7 @@ test('built Copy action discovers twenty products within its deadline and hydrat
           ...product,
           id,
           title: index < 3 ? 'Copy target' : `Copy target ${index}`,
-          images: [{ ...product.images[0], url: unavailableImage }],
+          images: [destinationImage],
         },
         config: null,
       },
