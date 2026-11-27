@@ -356,8 +356,35 @@ EUR v2 changed only its active-version reference. Web and worker independently a
 fresh release records for both test stores by `18:22:12Z`. All seven Insignia containers were healthy.
 The rollout used no migrations or grant changes.
 
-The focused native Shopify review checks and both broad QA rounds are pending on BB.
-BA evidence remains in the preceding sections.
+### Deploy BB native QA
+
+The focused run exercised the exact USD reviewer fixture. Two signed units reached Shopify
+checkout at $30.00. The EUR fixture reached checkout at €25.00. The Netherlands-to-Germany
+switch blocked the old authorization until the buyer reaccepted €25.00. Canada showed the
+expected restriction before artwork entry. Both carts were verified empty.
+
+Both broad rounds used BB. In each round the USD shopper reached checkout at $69.00 with two
+signed lines for three items, and verified an empty cart after cleanup. Both first-time merchants
+published fresh, labelled Insignia setups while the Shopify products stayed Draft.
+Returning-merchant checks confirmed save and reload, republish, the copy thumbnail fallback,
+configured-destination protection, and the expected refusal without stale retry advice.
+No payment or order was submitted.
+
+Round 2 reopened the retained refusal fixture before the previous unprepared request had
+expired. Publish was disabled for the specified 10-minute window. The reopened editor gave
+no reason during that window. After expiry, Publish became available, and the expected refusal
+reproduced with no effective publication or durable operation. Track the missing explanation
+as a UI follow-up. The existing publication guard behaved as specified.
+
+No 503 or confirmed functional regression surfaced in the sampled traffic. Preview could
+not attribute resource 401s or a single stalled checkout reentry click that succeeded on the
+next attempt. The live artwork picker name remained unverified in Preview. Four isolated
+buyer recovery tests and 14 browser accessible-name cases passed on the exact BB assets.
+Native fault recovery, successful copying to a disposable destination and populated method-default
+inheritance were outside the demonstrated coverage.
+
+Independent reviewer access, the 48-hour log baseline, and isolated EUR Lighthouse remain open.
+The private receipts are in the operator's BB focused and broad QA run directories.
 
 ## Other review items
 

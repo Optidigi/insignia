@@ -53,11 +53,11 @@ are deployed together. [#695](https://github.com/Optidigi/insignia/pull/695) bou
 `1269561884673`. Web and worker agreed on fresh release evidence for USD and EUR at `18:22:12Z`.
 See [BB release validation](shopify-review-resubmission.md#deploy-bb-release-validation).
 
-**Before resubmission.** BA passed the focused reviewer scenarios. Its broader walkthrough found
-five guidance and presentation issues addressed in BB. Repeat the focused Shopify walkthrough and
-complete two consecutive clean merchant and storefront rounds on BB. The clean-round count is zero
-of two. Independent merchant access, the 48-hour logging baseline and isolated EUR Lighthouse
-remain open before owner review and resubmission. See the
+**Before resubmission.** BB passed the focused Shopify walkthrough and both consecutive merchant
+and storefront QA rounds with no new confirmed functional regression. See
+[BB native QA](shopify-review-resubmission.md#deploy-bb-native-qa) for coverage limits and
+the publication hold observation. Independent merchant access, the 48-hour logging baseline and
+isolated EUR Lighthouse remain open before owner review and resubmission. See the
 [technical audit checklist](../backlog/technical-audit.md).
 
 **Next for the owner.** Resubmit in the Partner Dashboard after reviewing the validated release
