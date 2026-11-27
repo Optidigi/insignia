@@ -1,4 +1,11 @@
 {
+  "freeProduct": {
+    "choose": "Choose product for Free",
+    "explanation": "Only the selected product can accept new customizations on Free. Existing orders and valid carts retain their terms.",
+    "confirm": "Use this product",
+    "saved": "Free product selected.",
+    "failed": "Could not select the Free product. Check the current plan and try again."
+  },
   "pageTitle": "Products",
   "actions": {
     "viewInShopify": "View in Shopify",

@@ -1,10 +1,12 @@
 import {
   type ArtworkScope,
   BuyerRejectedError,
+  bindProviderSubscription,
   createArtworkUsabilityPort,
   type EntitlementPolicyConfig,
   type FunctionArtifactReadinessPorts,
   type KeyScope,
+  projectEntitlement,
   type QuoteAuthorityPorts,
   type QuoteRenewalStore,
 } from '@insignia/application';
@@ -419,6 +421,27 @@ export function createProductionBuyerServices(input: ProductionBuyerInputs) {
     guest,
     ports,
     releaseRefresh: input.releaseRefresh,
+    ...(input.entitlementPolicy.plans.some((plan) => plan.planHandle === 'insignia-pro') && {
+      async presentationAccess(scope) {
+        const current = await active(scope);
+        const identity = {
+          appId: `gid://shopify/App/${appId}`,
+          shopId: `gid://shopify/Shop/${current.shopifyShopId}`,
+          tenantShopId: scope.shopId,
+          installationGeneration: scope.installationGeneration,
+        };
+        const raw = await input.readSubscription({ appId: identity.appId, shopId: identity.shopId });
+        const bound = await bindProviderSubscription(raw, identity, input.core.tenants);
+        const access = projectEntitlement(bound, input.entitlementPolicy, { ...identity, now: clock() });
+        const selected = access.features.includes('m5.one-product')
+          ? await input.core.preferences.readFreeProduct(scope.shopId, scope.installationGeneration)
+          : scope.productId;
+        return {
+          allowed: access.qualifyingUsageDisposition === 'NOT_METERED' && selected === scope.productId,
+          allowsDeferredArtwork: access.features.includes('m5.logo-later'),
+        };
+      },
+    }),
     visitorKey: createVisitorKey(secret),
     clock,
     previewImages:

@@ -94,6 +94,11 @@ type BuyerQuotePorts = QuoteAuthorityPorts & { renewalStore?: QuoteRenewalStore 
 export function createBuyerServices(input: {
   core: DurableCore;
   guest: GuestAuthority;
+  presentationAccess?(scope: {
+    shopId: string;
+    installationGeneration: string;
+    productId: string;
+  }): Promise<{ allowed: boolean; allowsDeferredArtwork: boolean }>;
   ports(scope: ArtworkScope): BuyerQuotePorts;
   catalog(
     scope: { shopId: string; installationGeneration: string },
@@ -366,6 +371,10 @@ export function createBuyerServices(input: {
       // Selection reads complete published/contextual facts. Purchase authority is
       // checked by proposal/acceptance, not by opening the editor. Provider reads are reused for
       // 30 s per exact revision and country; proposal and acceptance re-check and re-price.
+      const access = await input.presentationAccess?.(scope);
+      if (access && !access.allowed)
+        throw new BuyerRejectedError('ENTITLEMENT_DENIED', 'This product is unavailable for new customization');
+      const allowsDeferredArtwork = access?.allowsDeferredArtwork !== false;
       const { checkConfigMarket } = input;
       const loaded = await configCache.read(
         scope.shopId,
@@ -482,7 +491,9 @@ export function createBuyerServices(input: {
       const title = catalog.title ?? selected?.product.title;
       if (contextual && !wording) throw new Error('Customer wording unavailable');
       return {
-        ...(selected ? { selectedSetup: publicSelectedSetup(selected, geometry, imageUrls) } : {}),
+        ...(selected
+          ? { selectedSetup: publicSelectedSetup(selected, geometry, imageUrls, allowsDeferredArtwork) }
+          : {}),
         ...(contextual
           ? { wording, ...(typeof title === 'string' && title.trim() && title.length <= 256 ? { title } : {}) }
           : {}),
@@ -492,7 +503,11 @@ export function createBuyerServices(input: {
         revisionId: config.revisionId,
         contentHash: config.revisionContentHash,
         methods: config.methods.map((v) => ({ id: v.id, label: label('methods', v.id) })),
-        placements: config.placements.map((v) => ({ ...v, label: label('placements', v.id) })),
+        placements: config.placements.map((v) => ({
+          ...v,
+          logoLaterAllowed: v.logoLaterAllowed && allowsDeferredArtwork,
+          label: label('placements', v.id),
+        })),
         steps: geometry.steps.map((v) => ({ id: v.id, label: label('steps', v.id) })),
         options: config.productionOptions.map((v) => ({
           id: v.id,

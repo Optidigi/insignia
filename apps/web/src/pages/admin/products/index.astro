@@ -3,6 +3,8 @@ import ProductsOverview from '../../../../../../frontend/admin/src/islands/Produ
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 import { adminFrameAncestors } from '../../../server/admin/frame-ancestors';
 
+import { monthlyBillingEnabled } from '../../../server/admin/monthly-billing';
+
 const apiKey = process.env.SHOPIFY_CLIENT_ID;
 const csp =
   `default-src 'none'; script-src 'self' https://cdn.shopify.com 'sha256-7Kx2FI/YDPBd7xu2wdR0JpTXl3VRA74S2DMe071cLSA=' 'sha256-xKBggZ2csD5Lp4tQr9izOLUTCZc1Nf4gged/rUHQ2+Y='; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; font-src https://cdn.shopify.com; img-src 'self' https: data: blob:; connect-src 'self' https://cdn.shopify.com/shopifycloud/admin-ui-foundations/icons/ https://cdn.shopify.com/shopifycloud/admin-ui-foundations/experimental/; ${adminFrameAncestors(Astro.url)}; base-uri 'none'; form-action 'self'`;
@@ -12,5 +14,5 @@ Astro.response.headers.set('Referrer-Policy', 'no-referrer');
 if (!apiKey || !/^[A-Za-z0-9_-]{1,128}$/.test(apiKey)) return Astro.rewrite('/admin/unavailable');
 ---
 <AdminLayout titleKey="admin-shell:titles.products" apiKey={apiKey}>
-    <ProductsOverview locale={Astro.url.searchParams.get('locale')} client:polaris />
+    <ProductsOverview monthlyBilling={monthlyBillingEnabled()} locale={Astro.url.searchParams.get('locale')} client:polaris />
 </AdminLayout>

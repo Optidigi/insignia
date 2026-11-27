@@ -15,10 +15,9 @@ import { useAdminLocale, withAdminLocale } from '../shared/admin-i18n';
 import { useAdminPageReady } from '../shared/admin-page-ready';
 import { authenticatedJson } from '../shared/admin-request';
 import type { CatalogProduct } from '../shared/admin-view';
-import { installSelectedProductActions } from './selected-product-actions';
 import { productConfigurationCsv } from '../shared/product-configuration-export';
 import { isProductCursorStack, productConfigHref, productCursorTrail } from '../shared/products-return-path';
-
+import { useMonthlyBilling } from '../shared/use-monthly-billing.js';
 import {
   type ConfigurationFilter,
   initialProductsState,
@@ -26,6 +25,7 @@ import {
   productsReducer,
   productVariantCount,
 } from './products-overview-state';
+import { installSelectedProductActions } from './selected-product-actions';
 
 type ConfigurationState = 'not_configured' | 'draft' | 'published' | 'unavailable';
 function configurationState(product: CatalogProduct): ConfigurationState {
@@ -43,7 +43,12 @@ function isConfigurationFilter(value: string): value is ConfigurationFilter {
 }
 const productNumber = (id: string) => /^gid:\/\/shopify\/Product\/([1-9][0-9]*)$/.exec(id)?.[1];
 
-function ProductsOverview() {
+function ProductsOverview({ monthlyBilling = false }: { monthlyBilling?: boolean }) {
+  const billing = useMonthlyBilling(monthlyBilling);
+  const [freeChoiceStatus, setFreeChoiceStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const freeChoiceBusy = useRef(false);
+  const productionTools = useRef(billing.productionTools);
+  productionTools.current = billing.productionTools;
   const { t, formatLocale } = useAdminLocale();
   const [flow, dispatch] = useReducer(productsReducer, undefined, initialProductsState);
   const { catalog: state, configurationFilter, search, appliedSearch, cursors, selectedIds, selectionNotice } = flow;
@@ -66,8 +71,12 @@ function ProductsOverview() {
     let disposeActions: (() => void) | undefined;
     if (document.documentElement.dataset.previewSetupCopy === 'true') setSetupCopyAvailable(true);
     else {
-      try { disposeActions = installSelectedProductActions(); setSetupCopyAvailable(true); }
-      catch { setSetupCopyAvailable(false); }
+      try {
+        disposeActions = installSelectedProductActions(() => productionTools.current);
+        setSetupCopyAvailable(true);
+      } catch {
+        setSetupCopyAvailable(false);
+      }
     }
     const previewError = (event: Event) => {
       if (!(event instanceof CustomEvent)) return;
@@ -77,7 +86,10 @@ function ProductsOverview() {
       }
     };
     document.addEventListener('insignia:customer-preview-error', previewError);
-    return () => { document.removeEventListener('insignia:customer-preview-error', previewError); disposeActions?.(); };
+    return () => {
+      document.removeEventListener('insignia:customer-preview-error', previewError);
+      disposeActions?.();
+    };
   }, []);
   const selectionControl = useRef<HTMLElementTagNameMap['s-checkbox']>(null);
   const bulkSelectionControl = useRef<HTMLElementTagNameMap['s-checkbox']>(null);
@@ -240,8 +252,41 @@ function ProductsOverview() {
       dispatch({ type: 'selection-notice', reason: 'summary-download-failed' });
     }
   }
+  async function chooseFreeProduct() {
+    const expectedProductId = billing.view?.freeProductId;
+    const id = selected.length === 1 ? productNumber(selected[0]!.id) : null;
+    if (!id || expectedProductId === undefined || freeChoiceBusy.current) return;
+    freeChoiceBusy.current = true;
+    setFreeChoiceStatus('saving');
+    try {
+      await authenticatedJson(
+        `/api/admin/products/${id}/config`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+          body: JSON.stringify({ action: 'choose-free-product', expectedProductId }),
+        },
+        true,
+      );
+      document
+        .getElementById('choose-free-product-modal')
+        ?.dispatchEvent(Object.assign(new Event('command'), { command: '--hide' }));
+      setFreeChoiceStatus('saved');
+    } catch {
+      setFreeChoiceStatus('error');
+    } finally {
+      billing.refresh();
+      freeChoiceBusy.current = false;
+    }
+  }
+  const canChooseFreeProduct =
+    billing.view?.freeProductId !== undefined &&
+    selected.length === 1 &&
+    ['draft', 'published'].includes(configurationState(selected[0]!)) &&
+    productNumber(selected[0]!.id) !== billing.view.freeProductId;
+
   function copySetupFromProduct() {
-    if (!setupCopyAvailable || !selected.length) return;
+    if (!billing.productionTools || !setupCopyAvailable || !selected.length) return;
     document.dispatchEvent(
       new CustomEvent('insignia:copy-product-setup', {
         detail: { targetIds: selected.map((product) => product.id) },
@@ -271,13 +316,18 @@ function ProductsOverview() {
         </span>
       </div>
       <div class="resource-selection-actions resource-selection-desktop">
-        {setupCopyAvailable && (
+        {setupCopyAvailable && billing.productionTools && (
           <AdminActionChip
             accessibilityLabel={t('products:actions.copySetupAccessible')}
             onClick={copySetupFromProduct}
           >
             {t('products:actions.copySetup')}
           </AdminActionChip>
+        )}
+        {canChooseFreeProduct && (
+          <s-button commandFor="choose-free-product-modal" command="--show">
+            {t('products:freeProduct.choose')}
+          </s-button>
         )}
         <AdminActionChip accessibilityLabel={t('products:actions.downloadSummary')} onClick={downloadSummary}>
           {t('products:actions.downloadSummary')}
@@ -299,8 +349,13 @@ function ProductsOverview() {
           commandFor="products-mobile-selection-actions"
         />
         <s-menu id="products-mobile-selection-actions" accessibilityLabel={t('products:actions.selectionActions')}>
-          {setupCopyAvailable && (
+          {setupCopyAvailable && billing.productionTools && (
             <s-button onClick={copySetupFromProduct}>{t('products:actions.copySetupAccessible')}</s-button>
+          )}
+          {canChooseFreeProduct && (
+            <s-button commandFor="choose-free-product-modal" command="--show">
+              {t('products:freeProduct.choose')}
+            </s-button>
           )}
           <s-button onClick={downloadSummary}>{t('products:actions.downloadSummary')}</s-button>
           {setupCopyAvailable && selected.length === 1 && (
@@ -323,6 +378,22 @@ function ProductsOverview() {
       <s-button slot="secondary-actions" href="shopify://admin/products" target="_top">
         {t('products:actions.viewInShopify')}
       </s-button>
+      {freeChoiceStatus === 'saved' && <s-banner tone="success">{t('products:freeProduct.saved')}</s-banner>}
+      <s-modal id="choose-free-product-modal" heading={t('products:freeProduct.choose')}>
+        <s-paragraph>{t('products:freeProduct.explanation')}</s-paragraph>
+        {freeChoiceStatus === 'error' && <s-banner tone="critical">{t('products:freeProduct.failed')}</s-banner>}
+        <s-button slot="secondary-actions" commandFor="choose-free-product-modal" command="--hide">
+          {t('common:actions.cancel')}
+        </s-button>
+        <s-button
+          slot="primary-action"
+          variant="primary"
+          disabled={!canChooseFreeProduct || freeChoiceStatus === 'saving'}
+          onClick={() => void chooseFreeProduct()}
+        >
+          {t('products:freeProduct.confirm')}
+        </s-button>
+      </s-modal>
       <s-box padding="none" accessibilityRole="region" accessibilityLabel={t('products:table.region')}>
         <s-box paddingBlock="small">
           <AdminIndexToolbar

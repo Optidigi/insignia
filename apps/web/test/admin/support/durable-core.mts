@@ -61,7 +61,14 @@ export function fixtureCore(overrides: Overrides = {}): DurableCore {
       delete: unexpected,
       ...overrides.methodCatalog,
     },
-    preferences: { read: unexpected, readWording: unexpected, save: unexpected, ...overrides.preferences },
+    preferences: {
+      read: unexpected,
+      readWording: unexpected,
+      save: unexpected,
+      readFreeProduct: unexpected,
+      chooseFreeProduct: unexpected,
+      ...overrides.preferences,
+    },
     customerArtwork: {
       issue: unexpected,
       resolve: unexpected,

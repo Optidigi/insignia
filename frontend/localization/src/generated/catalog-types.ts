@@ -2037,6 +2037,11 @@ export interface AdminMessageTable {
   'products:filter.editConfiguration': object;
   'products:filter.onThisPage': { configuration: string };
   'products:filter.products': object;
+  'products:freeProduct.choose': object;
+  'products:freeProduct.confirm': object;
+  'products:freeProduct.explanation': object;
+  'products:freeProduct.failed': object;
+  'products:freeProduct.saved': object;
   'products:pageTitle': object;
   'products:results.shown': { count: number; formattedCount: string };
   'products:search': object;

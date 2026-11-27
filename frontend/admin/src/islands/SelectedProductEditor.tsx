@@ -117,6 +117,7 @@ export interface ProductEditorAdapter {
   readOnly?: boolean;
   shopifyDraft?: boolean;
   hasPublished?: boolean;
+  setupCopyAllowed?: boolean;
   publicationBlocked?: boolean;
   publicationFailed?: boolean;
   /** A publish request ended without an answer and is being followed until it settles. */
@@ -1796,6 +1797,7 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
     );
   }
   function openSetupCopy() {
+    if (adapter.setupCopyAllowed === false) return;
     const candidate = prepareSelectionChange();
     if (!candidate) return;
     const problems: Record<string, PlacementValidationError> = validatePlacementProduct(candidate);
@@ -2914,7 +2916,10 @@ export function PlacementEditor({ initial, adapter }: { initial: PlacementProduc
             <s-button href={storefrontProductTestSetupHref(product.id) ?? '/admin/settings/storefront#test-product'}>
               {translateUi('editor:placementWorkflowPreview.testOnYourStore')}
             </s-button>
-            <s-button disabled={!product.views.length || calibrationEditing} onClick={openSetupCopy}>
+            <s-button
+              disabled={adapter.setupCopyAllowed === false || !product.views.length || calibrationEditing}
+              onClick={openSetupCopy}
+            >
               {translateUi('editor:placementWorkflowPreview.copySetupToProducts')}
             </s-button>
             <s-button

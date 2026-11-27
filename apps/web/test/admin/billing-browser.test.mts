@@ -137,6 +137,16 @@ test('merchant billing shows current monthly and annual terms, links Shopify man
   await page.getByText('per year', { exact: true }).waitFor();
   assert.equal(await page.getByText('Standard plan price', { exact: true }).count(), 0);
 
+  view.plan = { name: 'Insignia Pro', monthlyAmount: '69.99' };
+  view.pendingPlan = { name: 'Insignia Free', monthlyAmount: '0.00' };
+  view.recurringPrice = { amount: '0.00', currency: 'USD', billingPeriod: 'EVERY_30_DAYS' };
+  await page.reload();
+  await page.getByRole('heading', { name: 'Insignia Pro', exact: true }).waitFor();
+  await page.getByText('Insignia Free', { exact: true }).waitFor();
+  await page.getByText(/^USD\s69\.99 per 30 days$/).waitFor();
+  delete view.plan;
+  delete view.pendingPlan;
+
   view.status = 'inactive';
   view.currentCycle = null;
   view.pendingChange = false;
@@ -151,5 +161,5 @@ test('merchant billing shows current monthly and annual terms, links Shopify man
   const inactiveManagement = page.getByRole('link', { name: 'Choose a plan in Shopify', exact: true });
   assert.equal(await inactiveManagement.getAttribute('href'), view.managementUrl);
   assert.equal(await inactiveManagement.getAttribute('target'), '_top');
-  assert.equal(calls, 6);
+  assert.equal(calls, 7);
 });

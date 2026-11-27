@@ -13,7 +13,7 @@ import { sessionStore } from '../shared/browser-storage';
 
 const productId = (value: unknown): value is string => typeof value === 'string' && /^gid:\/\/shopify\/Product\/[1-9][0-9]*$/.test(value);
 /** Real host bridge for the selected Products actions. Demo bridges are installed only by their own host. */
-export function installSelectedProductActions(): () => void {
+export function installSelectedProductActions(canCopy: () => boolean = () => true): () => void {
   const storage = sessionStore();
   const mount = document.createElement('div');
   mount.dataset.selectedProductActions = 'true';
@@ -21,7 +21,7 @@ export function installSelectedProductActions(): () => void {
   let open = false, disposed = false;
   const reportPreviewFailure = () => document.dispatchEvent(new CustomEvent('insignia:customer-preview-error', { detail: { reason: 'preview-failed' } }));
   const copy = (event: Event) => {
-    if (disposed || open || !(event instanceof CustomEvent)) return;
+    if (disposed || open || !canCopy() || !(event instanceof CustomEvent)) return;
     const value: unknown = event.detail;
     if (!value || typeof value !== 'object' || !('targetIds' in value) || !Array.isArray(value.targetIds) || !value.targetIds.length || value.targetIds.length > 100 || !value.targetIds.every(productId) || new Set(value.targetIds).size !== value.targetIds.length) return;
     const targetIds: string[] = value.targetIds;

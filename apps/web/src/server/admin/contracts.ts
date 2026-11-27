@@ -136,6 +136,11 @@ export interface AdminServices {
   };
   /** Commands own M2 validation, M3 CAS/idempotency and M4 publication. */
   configs: {
+    chooseFreeProduct?(
+      actor: AdminActor,
+      productId: string,
+      expectedProductId: string | null,
+    ): Promise<'selected' | 'denied' | 'missing' | 'conflict'>;
     reconcile?(
       actor: AdminActor,
       productId: string,

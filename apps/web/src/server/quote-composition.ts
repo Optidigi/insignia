@@ -128,13 +128,22 @@ export function createQuoteAuthorityPorts(input: {
           },
           input.core.tenants,
         );
-        return projectEntitlement(bound, input.entitlementPolicy, {
+        const entitlement = projectEntitlement(bound, input.entitlementPolicy, {
           appId: input.appId,
           shopId: tenant.shopifyShopGid,
           tenantShopId: tenant.shopId,
           installationGeneration: tenant.installationGeneration,
           now: clock(),
         });
+        const singleProduct = entitlement.features.includes('m5.one-product');
+        const tieredCatalog = input.entitlementPolicy.plans.some((plan) => plan.planHandle === 'insignia-pro');
+        return {
+          ...entitlement,
+          ...(singleProduct && {
+            freeProductId: await input.core.preferences.readFreeProduct(tenant.shopId, tenant.installationGeneration),
+          }),
+          ...(tieredCatalog && { allowsDeferredArtwork: entitlement.features.includes('m5.logo-later') }),
+        };
       },
     },
     publication: {

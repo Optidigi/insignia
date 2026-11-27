@@ -3,6 +3,8 @@ import OrdersOverview from '../../../../../../frontend/admin/src/islands/OrdersO
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 import { adminFrameAncestors } from '../../../server/admin/frame-ancestors';
 
+import { monthlyBillingEnabled } from '../../../server/admin/monthly-billing';
+
 const apiKey = process.env.SHOPIFY_CLIENT_ID;
 let storageOrigin = '';
 try {
@@ -24,5 +26,5 @@ Astro.response.headers.set('Referrer-Policy', 'no-referrer');
 if (!apiKey || !/^[A-Za-z0-9_-]{1,128}$/.test(apiKey)) return Astro.rewrite('/admin/unavailable');
 ---
 <AdminLayout titleKey="admin-shell:titles.orders" apiKey={apiKey}>
-<OrdersOverview locale={Astro.url.searchParams.get('locale')} client:polaris />
+<OrdersOverview monthlyBilling={monthlyBillingEnabled()} locale={Astro.url.searchParams.get('locale')} client:polaris />
 </AdminLayout>

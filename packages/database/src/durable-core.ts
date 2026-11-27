@@ -130,6 +130,13 @@ export interface DurableCore {
     delete(transaction: DurableTransaction, shopId: string, id: string, version: string): Promise<boolean>;
   };
   readonly preferences: {
+    readFreeProduct(shopId: string, generation: string, transaction?: DurableTransaction): Promise<string | null>;
+    chooseFreeProduct(
+      transaction: DurableTransaction,
+      shopId: string,
+      generation: string,
+      productId: string,
+    ): Promise<void>;
     readWording(
       transaction: DurableTransaction,
       scope: { shopId: string; installationGeneration: string },
@@ -610,6 +617,10 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       delete: (tx, shopId, id, version) => createMethodCatalogRepository(resolve(tx)).delete(shopId, id, version),
     },
     preferences: {
+      readFreeProduct: (shopId, generation, tx) =>
+        createMerchantPreferencesRepository(tx ? resolve(tx) : database).readFreeProduct(shopId, generation),
+      chooseFreeProduct: (tx, shopId, generation, productId) =>
+        createMerchantPreferencesRepository(resolve(tx)).chooseFreeProduct(shopId, generation, productId),
       readWording: (tx, scope) => createMerchantPreferencesRepository(resolve(tx)).readWording(scope),
       read: (tx, shopId, shop, authority) =>
         createMerchantPreferencesRepository(resolve(tx)).read(shopId, shop, authority),

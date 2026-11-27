@@ -408,6 +408,20 @@ Use Shopify App Pricing authoritative subscription state through the isolated ad
 
 Qualify actual recurring-only provider configuration and its supported billing-management/selection route before enabling it under a scoped effect grant. Use recurring-only entitlement recognition; the [17 October native billing lifecycle](../delivery/evidence/lean-v1/native-billing-lifecycle-2026-10-17.json) qualifies bounded zero-dollar development cancellation/reapproval, not a paid invoice or natural trial completion. Switching off usage dispatch alone does not qualify a provider contract. Read authoritative contract/trial/cancellation state through the supported Shopify adapter and keep a versioned feature mapping. Redirect parameters alone grant no entitlement. Server-side publication/new-offer/acceptance/renewal checks enforce supported features and Lean scope; UI hiding is insufficient.
 
+The owner-approved monthly catalog supersedes the earlier single-plan offering once qualified
+and enabled. Free supports one live customizable product. Standard at USD $49.99 every
+30 days extends the core workflow across the catalog. Pro at USD $69.99 every 30 days adds
+artwork after checkout, setup copying and batch production tools. New subscriptions use
+the three distinct Shopify App Pricing handles without an annual option. Existing contracts
+keep their observed terms until Shopify reports a change.
+
+A Free product reservation is scoped to the installation and recorded under its existing
+authorization lock. A store with an existing published catalog selects the product explicitly.
+The store owner can choose it before a scheduled change to Free takes effect. The current plan
+controls new checkout authorization. Previously accepted signed carts, fulfilled or pending
+orders, and retained order artwork keep their original access and terms. See the
+[monthly plan rollout](../../deployment/m8-journey/monthly-plan-rollout.md).
+
 ### 6.7 Trial, inactive contract and historical access
 
 The 14-day trial follows authoritative provider timestamps; do not reset it locally on selection, reinstall or restart. Qualify cancellation, stale/unknown state, reauthorization and new-action eligibility. Without a valid active trial/paid entitlement, stop new issuance/renewal while preserving valid old offers through their original expiry and authorized historical purchase/artwork access within retention. Required products never silently become plain purchases.

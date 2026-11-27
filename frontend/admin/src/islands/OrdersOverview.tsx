@@ -28,6 +28,7 @@ import { type ArtworkFilter, artworkStatus, orderMethods, parseArtworkFilter } f
 import { isOrderCursorStack, orderCursorTrail, orderDetailHref } from '../shared/orders-return-path';
 import { formatShopDateTime, PurchaseListViewSchema } from '../shared/purchase-presentation.ts';
 import { localizedPurchaseMoney } from '../shared/purchase-view.js';
+import { useMonthlyBilling } from '../shared/use-monthly-billing.js';
 
 import { initialOrdersState, ordersReducer, type ServerQuery } from './orders-overview-state';
 
@@ -137,7 +138,11 @@ function rememberQuery(cursors: (string | undefined)[], artwork: string, search 
   history.replaceState({ ...state, insigniaOrderCursors: cursors[0] === undefined ? cursors.slice(1) : null }, '', url);
 }
 
-function OrdersOverview({ supportsServerQueries = true }: { supportsServerQueries?: boolean }) {
+function OrdersOverview({
+  supportsServerQueries = true,
+  monthlyBilling = false,
+}: { supportsServerQueries?: boolean; monthlyBilling?: boolean }) {
+  const { productionTools } = useMonthlyBilling(monthlyBilling);
   // Production queries cover the whole retained matching dataset; local examples remain isolated.
   const serverQueries =
     supportsServerQueries ||
@@ -337,10 +342,10 @@ function OrdersOverview({ supportsServerQueries = true }: { supportsServerQuerie
       </div>
       <div class="resource-selection-actions orders-selection-actions">
         <div class="orders-export-action" ref={productionAction}>
-          <BatchProductionSheets purchases={selected} disabled={busy || status !== 'ready'} deny={denyBulk} compact />
+          <BatchProductionSheets purchases={selected} disabled={!productionTools || busy || status !== 'ready'} deny={denyBulk} compact />
         </div>
         <div class="orders-export-action" ref={archiveAction}>
-          <ArtworkArchiveDownload purchases={selected} disabled={busy || status !== 'ready'} deny={denyBulk} compact />
+          <ArtworkArchiveDownload purchases={selected} disabled={!productionTools || busy || status !== 'ready'} deny={denyBulk} compact />
         </div>
         <div class="orders-mobile-selection-actions">
           <AdminActionChip
@@ -352,7 +357,7 @@ function OrdersOverview({ supportsServerQueries = true }: { supportsServerQuerie
           />
           <s-menu id="orders-mobile-selection-actions" accessibilityLabel={t('orders:actions.selectionActions')}>
             <s-button
-              disabled={busy || status !== 'ready'}
+              disabled={!productionTools || busy || status !== 'ready'}
               onClick={() =>
                 productionAction.current
                   ?.querySelector<HTMLElement>(
@@ -364,7 +369,7 @@ function OrdersOverview({ supportsServerQueries = true }: { supportsServerQuerie
               {t('orders:actions.productionSheets')}
             </s-button>
             <s-button
-              disabled={busy || status !== 'ready'}
+              disabled={!productionTools || busy || status !== 'ready'}
               onClick={() =>
                 archiveAction.current
                   ?.querySelector<HTMLElement>(

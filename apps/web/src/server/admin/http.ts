@@ -392,6 +392,23 @@ export async function handleAdminRequest(
       return configRejected(services, 'command', 'INVALID_COMMAND', { error: 'Invalid command' });
     const source = await services.catalog.get(actor, route.productId);
     if (!source || source.id !== route.productId) return adminJson(404, { error: 'Product not found' });
+    if (request.method === 'POST' && body.action === 'choose-free-product') {
+      if (
+        Object.keys(body).length !== 2 ||
+        (body.expectedProductId !== null &&
+          (typeof body.expectedProductId !== 'string' || !/^[1-9][0-9]{0,19}$/.test(body.expectedProductId)))
+      )
+        return adminJson(422, { error: 'Invalid Free product choice' });
+      const fresh = await authenticateAdmin(request, services, true);
+      if (fresh instanceof Response) return fresh;
+      if (fresh.tenantShopId !== actor.tenantShopId || fresh.staffId !== actor.staffId || !fresh.canReadOrders)
+        return adminJson(403, { error: 'Store owner access required' });
+      const result = await services.configs.chooseFreeProduct?.(fresh, route.productId, body.expectedProductId);
+      if (result === 'selected') return adminJson(200, { selected: true });
+      if (result === 'missing') return adminJson(404, { error: 'Save the product setup before selecting it' });
+      if (result === 'conflict') return adminJson(409, { error: 'Free product changed. Reload and try again.' });
+      return adminJson(403, { error: 'Current Free plan and store owner access required' });
+    }
     if (request.method === 'POST' && body.action === 'reconcile') {
       const authority = request.headers.get('X-Insignia-Setup-Authority') ?? '';
       if (

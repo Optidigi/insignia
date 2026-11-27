@@ -47,6 +47,7 @@ import {
   publicationNotice,
 } from './publication-state';
 import { sessionStore } from '../shared/browser-storage';
+import { useMonthlyBilling } from '../shared/use-monthly-billing.js';
 
 /** `rejected`: the server refused the write and nothing is pending, so the merchant fixes the edit and saves anew. */
 type Remote = 'idle' | 'pending' | 'failed' | 'conflict' | { kind: 'rejected'; rejection: ConfigRejection };
@@ -60,7 +61,8 @@ const PUBLICATION_POLL_MS = 5_000;
 /** Nothing is pending, but another session can still save, publish or change the product, shop or permissions; a
  * slow read notices that (and a lost session) without hammering the API. */
 const IDLE_POLL_MS = 30_000;
-function SelectedProductContainer({ productId }: { productId: string }) {
+function SelectedProductContainer({ productId, monthlyBilling = false }: { productId: string; monthlyBilling?: boolean }) {
+  const billing = useMonthlyBilling(monthlyBilling);
   const { t } = useAdminLocale();
   const [initial, setInitial] = useState<PlacementProduct | null>(null);
   const [view, setView] = useState<ConfigView | null>(null);
@@ -398,6 +400,7 @@ function SelectedProductContainer({ productId }: { productId: string }) {
           settled,
           copyPorts,
           readOnly: !canEdit.current || currencyReview,
+          setupCopyAllowed: billing.productionTools,
           shopifyDraft: view.product.status === 'DRAFT',
           hasPublished: !!view.config?.publication.activeRevisionId,
           publicationFailed:

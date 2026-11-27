@@ -131,6 +131,31 @@ test('annual development terms show the provider zero without a nominal plan pri
   assert.equal(result.standardPrice, null);
 });
 
+test('billing identifies the effective Pro plan while a downgrade to Free is pending', async () => {
+  const source = snapshot({
+    items: [{ ...snapshot().items[0]!, handle: 'insignia-pro' }],
+    pendingUpdate: { billingPeriod: 'EVERY_30_DAYS', itemHandles: ['insignia-free'] },
+  });
+  const result = await createMerchantBillingReader({
+    appId: 'gid://shopify/App/2',
+    policy: {
+      ...policy,
+      plans: [
+        { ...policy.plans[0]!, planHandle: 'insignia-pro', policyId: 'pro' },
+        { ...policy.plans[0]!, planHandle: 'insignia-free', policyId: 'free' },
+      ],
+    },
+    now: () => at,
+    current: async () => {},
+    read: async () => source,
+  })(actor);
+  assert.equal(result.plan?.name, 'Insignia Pro');
+  assert.equal(result.plan?.monthlyAmount, '69.99');
+  assert.equal(result.pendingPlan?.name, 'Insignia Free');
+  assert.equal(result.pendingChange, true);
+  assert.equal(result.newActionsAllowed, true);
+});
+
 test('installation change during provider observation rejects the entire display', async () => {
   let calls = 0;
   await assert.rejects(
