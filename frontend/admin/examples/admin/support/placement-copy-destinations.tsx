@@ -5,14 +5,10 @@ import type { PlacementProduct } from './placement-workflow-model.mts';
 
 function DestinationImage({ url }: { url?: string }) {
   const [failedUrl, setFailedUrl] = useState<string>();
-  return (
-    <span class="placement-setup-copy__product-image" aria-hidden="true">
-      {url && url !== failedUrl ? (
-        <img src={url} alt="" width="40" height="40" onError={() => setFailedUrl(url)} />
-      ) : (
-        <s-icon type="product" />
-      )}
-    </span>
+  return url && url !== failedUrl ? (
+    <s-thumbnail src={url} alt="" size="small" onError={() => setFailedUrl(url)} />
+  ) : (
+    <s-icon type="product" />
   );
 }
 
