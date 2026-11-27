@@ -303,7 +303,7 @@
   },
   "close": {
     "title": "Personalisierung schließen?",
-    "help": "Ihr Entwurf bleibt erhalten, solange diese Seite geöffnet ist. Beim Schließen wird er nicht zum Warenkorb hinzugefügt.",
+    "help": "Ihr Entwurf bleibt verfügbar, solange diese Seite geöffnet ist. Ein gespeicherter Entwurf kann bei Ihrer Rückkehr noch verfügbar sein. Beim Schließen bleibt Ihr Warenkorb unverändert.",
     "keepEditing": "Weiter bearbeiten",
     "leave": "Personalisierung schließen"
   },

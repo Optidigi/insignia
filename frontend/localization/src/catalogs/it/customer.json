@@ -310,7 +310,7 @@
   },
   "close": {
     "title": "Chiudere la personalizzazione?",
-    "help": "La tua personalizzazione resta disponibile finché questa pagina è aperta. Chiudendo, non verrà aggiunta al carrello.",
+    "help": "La tua personalizzazione resta disponibile finché questa pagina è aperta. Una bozza salvata potrebbe essere disponibile al tuo ritorno. Chiudere non modifica il carrello.",
     "keepEditing": "Continua a modificare",
     "leave": "Chiudi personalizzazione"
   },

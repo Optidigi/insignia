@@ -310,7 +310,7 @@
   },
   "close": {
     "title": "¿Cerrar la personalización?",
-    "help": "Tu personalización seguirá disponible mientras esta página esté abierta. Al cerrar, no se añadirá al carrito.",
+    "help": "Tu personalización seguirá disponible mientras esta página esté abierta. Si hay un borrador guardado, es posible que puedas retomarlo cuando vuelvas. Al cerrar, tu carrito no cambia.",
     "keepEditing": "Seguir editando",
     "leave": "Cerrar personalización"
   },
