@@ -403,9 +403,23 @@ Shopify's current charges page showed a zero running total. The store finished o
 original annual test plan. Paid charge history and Shopify's treatment of same-plan cadence
 switches under requirement 1.2.3 remain open.
 
-The isolated EUR Lighthouse run still needs visitor access inside its dedicated profile.
-A fresh visitor session reached the storefront password page. The offline harness checks
-and probe of the dedicated browser runner passed.
+### Deploy BB isolated EUR Lighthouse
+
+On 27 November, a dedicated signed-out visitor profile on the EUR hardening storefront
+completed three mobile loaded/blocked Lighthouse pairs per page. The live CDN matched
+all 17 qualified BB assets. All 18 accepted runs completed without Lighthouse slow-load warnings.
+
+| Page | Weight | Loaded | Assets blocked | Difference |
+| --- | ---: | ---: | ---: | ---: |
+| Home | 17% | 91 | 91 | 0 |
+| Product | 40% | 78 | 80 | −2 |
+| Collection | 43% | 91 | 91 | 0 |
+| Weighted | 100% | 85.8 | 86.6 | −0.8 |
+
+The local comparison was within Shopify's 10-point benchmark. Blocking the exact BB
+asset prefix preserved the theme and app's inline markup, so this comparison measures
+the loaded assets' impact. Shopify's before-and-after install test can capture other changes.
+The private receipt and run summaries are under the final BB QA performance run directory.
 
 ## Other review items
 
