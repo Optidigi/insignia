@@ -283,6 +283,32 @@ test('an exhausted upload quota is a 429 with its code and Retry-After, which th
 });
 
 const failureAssetId = 'ae771020-1f54-47ab-a8af-48b1eb7de3d2';
+test('storefront guest upload requests the lock bound and reports a retryable refusal without an upload grant', async () => {
+  const lines: Record<string, unknown>[] = [];
+  const response = await handleArtworkRequest(
+    request({ capability: 'synthetic', contentType: 'image/png', byteLength: 108 }),
+    {
+      ...services,
+      verifyGuest: async () => ({ kind: 'guest', shopId: 't', installationGeneration: '1', ownerHash: 'a'.repeat(64) }),
+      artwork: artworkFixture({
+        begin: async (_scope, _declaration, options) => {
+          assert.deepEqual(options, { boundLockWait: true });
+          throw new ArtworkError('BUSY', 1);
+        },
+      }),
+    },
+    { kind: 'begin', audience: 'guest' },
+    (value) => lines.push({ ...value }),
+  );
+  assert.equal(response.status, 409);
+  assert.equal(response.headers.get('Retry-After'), '1');
+  const body = await response.json();
+  assert.equal(body.code, 'BUSY');
+  assert.equal(body.retryable, true);
+  assert.equal(body.assetId, undefined);
+  assert.equal(lines[0]?.failure, 'BUSY');
+});
+
 const failureSecret = 'password=SECRET-9f2c for alpha.myshopify.com gid://shopify/Product/10485042479387';
 const merchantPreview = () =>
   new Request(`https://app.example.test/api/artwork/${failureAssetId}/preview`, {

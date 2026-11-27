@@ -531,6 +531,7 @@ export const ARTWORK_REQUEST_FAILURES = [
   'EXPIRED',
   'NOT_USABLE',
   'CONFLICT',
+  'BUSY',
   'RATE_LIMITED',
   'UNAVAILABLE',
 ] as const;

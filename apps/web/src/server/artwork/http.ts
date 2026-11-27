@@ -164,7 +164,12 @@ async function respondArtwork(
       if (!services.ensureInspectionReady) return adminJson(503, { error: 'Artwork inspection unavailable' });
       await services.ensureInspectionReady();
       note.failure = undefined;
-      return adminJson(201, noteResult(note, await services.artwork.begin(scope, body)));
+      const admission = await services.artwork.begin(
+        scope,
+        body,
+        route.audience === 'guest' ? { boundLockWait: true } : undefined,
+      );
+      return adminJson(201, noteResult(note, admission));
     }
     if (!ASSET.test(route.assetId)) {
       note.failure = 'NOT_FOUND';
@@ -187,6 +192,7 @@ async function respondArtwork(
       EXPIRED: 410,
       NOT_USABLE: 409,
       CONFLICT: 409,
+      BUSY: 409,
       // 4xx so Shopify's app proxy passes the code and Retry-After through to the storefront.
       RATE_LIMITED: 429,
       UNAVAILABLE: 503,
@@ -194,6 +200,7 @@ async function respondArtwork(
     const response = adminJson(status, {
       code,
       error: code === 'UNAVAILABLE' ? 'Artwork unavailable' : `Artwork ${code.toLowerCase().replaceAll('_', ' ')}`,
+      ...(code === 'BUSY' ? { retryable: true } : {}),
     });
     if (error instanceof ArtworkError && error.retryAfterSeconds)
       response.headers.set('Retry-After', String(error.retryAfterSeconds));

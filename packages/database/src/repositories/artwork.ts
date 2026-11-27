@@ -177,7 +177,7 @@ export function createArtworkRepository(pool: Pool, database: Kysely<Database> =
     );
   }
   return {
-    async create(input) {
+    async create(input, options) {
       if (
         ![input.collectedAt, input.uploadUntil, input.expiresAt].every(
           (date) => date instanceof Date && Number.isFinite(+date),
@@ -198,6 +198,7 @@ export function createArtworkRepository(pool: Pool, database: Kysely<Database> =
       )
         fail('INVALID_INPUT');
       return transaction(async (c) => {
+        if (options?.boundLockWait) await c.query("SET LOCAL lock_timeout = '2s'");
         if (!(await lockTenant(c, input.shopId, input.installationGeneration))) fail('NOT_FOUND');
         // An abandoned upload stops counting when its upload link expires; completion is refused after it.
         const unfinished = `((state='UPLOADING' AND upload_until>$2) OR (state IN ('QUEUED','INSPECTING','PROMOTING') AND expires_at>$2 AND collected_at>$2::timestamptz-interval '24 hours'))`;
@@ -264,6 +265,10 @@ export function createArtworkRepository(pool: Pool, database: Kysely<Database> =
           ],
         );
         return map(r.rows[0] ?? fail('CONFLICT'));
+      }).catch((error: unknown) => {
+        if (options?.boundLockWait && error && typeof error === 'object' && 'code' in error && error.code === '55P03')
+          fail('BUSY', 1);
+        throw error;
       });
     },
     async get(scope, id) {
