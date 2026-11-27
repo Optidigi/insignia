@@ -112,6 +112,11 @@ test('production compose keeps the live identities, custody paths and service bo
     assert.equal(rendered.volumes, undefined, 'no named volumes: data lives on the encrypted volume');
     const services = object(rendered.services);
     const service = (name: string) => object(services[name]);
+    const journalServices = Object.entries(services)
+      .filter(([, config]) => object(object(config).logging ?? {}).driver === 'journald')
+      .map(([name]) => name)
+      .sort();
+    assert.deepEqual(journalServices, ['web', 'worker']);
     assert.deepEqual(Object.keys(services).sort(), [
       'database',
       'heartbeat',

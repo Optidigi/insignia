@@ -101,6 +101,8 @@ services:
         create_host_path: false
   web:
     container_name: insignia-web
+    logging:
+      driver: journald
     cap_drop:
     - ALL
     command:
@@ -225,6 +227,8 @@ services:
         create_host_path: false
   worker:
     container_name: insignia-worker
+    logging:
+      driver: journald
     cap_drop:
     - ALL
     command:
