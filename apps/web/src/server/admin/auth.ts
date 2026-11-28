@@ -101,12 +101,17 @@ export const PUBLICATION_GRANT_MARGIN_MS = 30_000;
 export interface AdminAuthenticationOptions {
   /** Staff-sensitive: exchange again and reuse no remembered grant or installation. */
   fresh?: boolean;
+  /** Editor read recovery. Verify the exact existing installation without reconciling it. */
+  recoverFrom?: AdminActor;
   /** Owner decision (25 Nov 2026), publish only: with `fresh`, the actor's authority
    * (`expiresAtMs`) runs until this time instead of ending with the App Bridge session token.
    * The token must still be valid when the request authenticates, and the authority never
    * outlasts the online staff grant (less PUBLICATION_GRANT_MARGIN_MS) its writes use. */
   authorityUntilMs?: number;
 }
+
+/** The session is valid, but the editor read can no longer use its original authority. */
+export class AdminRecoveryAuthorityError extends Error {}
 
 /** The actor's authority deadline. By default it ends with the session token or the online grant,
  * whichever comes first; a fresh publish request may instead run to `authorityUntilMs` (its accepted
@@ -220,7 +225,11 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
     if (transientFailure(error)) throw new AdminAuthenticationBusyError();
     throw new Error('Authentication unavailable');
   }
-  return async (request: Request, options: AdminAuthenticationOptions = {}): Promise<AdminAuthentication<G> | null> => {
+  return async (
+    request: Request,
+    options: AdminAuthenticationOptions = {},
+    rejectedOnlineGrant?: G,
+  ): Promise<AdminAuthentication<G> | null> => {
     const authorization = request.headers.get('Authorization');
     const match = /^Bearer ([^\s]{1,8192})$/.exec(authorization ?? '');
     if (!match) {
@@ -250,14 +259,25 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
       diagnostic('SESSION_IDENTITY_REJECTED');
       return null;
     }
+    const recovery = options.recoverFrom;
+    if (
+      recovery &&
+      (!rejectedOnlineGrant ||
+        identity.shop !== recovery.shop ||
+        identity.staffId !== recovery.staffId ||
+        identity.sessionId !== recovery.sessionId)
+    )
+      throw new AdminRecoveryAuthorityError();
     const reuse = !!cache && !!port.confirmInstallation && !options.fresh;
     let installation: AdminInstallation | undefined;
-    if (reuse) {
+    if (reuse && !recovery) {
       const cached = cache.installations.get(identity.shop);
       if (cached && current - cached.observedAtMs < ADMIN_INSTALLATION_REUSE_MS && current >= cached.observedAtMs) {
         const confirmed = await port.confirmInstallation!(cached.installation).catch(() => false);
-        if (confirmed && cache.installations.get(identity.shop) === cached) installation = cached.installation;
-        else cache.forgetShop(identity.shop);
+        if (cache.installations.get(identity.shop) === cached) {
+          if (confirmed) installation = cached.installation;
+          else cache.forgetShop(identity.shop);
+        }
       } else if (cached) cache.installations.delete(identity.shop);
     }
     const grantKey = `${identity.shop}\n${identity.staffId}\n${identity.sessionId}`;
@@ -270,27 +290,34 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
       const cached = cache.grants.get(grantKey);
       // An entry past its reuse limits stays until replaced, so a newer exchange
       // is published to it at once (#480); forgetShop alone deletes grants.
-      if (cached && reusable(cached, current)) grant = cached.grant;
+      if (
+        cached &&
+        reusable(cached, current) &&
+        (!recovery || (cached.grant !== rejectedOnlineGrant && !cache.pendingGrants.has(grantKey)))
+      )
+        grant = cached.grant;
     }
     let reusedGrant = grant !== undefined;
     async function exchangeGrant(): Promise<G> {
       try {
-        // A new online exchange for a staff session revokes that session's previous online
-        // token (observed in production, #480). A verified result therefore replaces a
-        // remembered grant for the same shop, staff and session before the shared exchange
-        // settles, so a caller never finds the exchange finished but its grant unpublished.
-        // New entries still wait for every check below.
+        // Only the exchange publishes its verified grant. Installation checks can finish
+        // out of order and must never republish a superseded grant.
         const exchange = async () => {
+          const startedAt = now();
+          if (startedAt >= identity.expiresAtMs) throw new AdminOnlineIdentityError('ONLINE_EXCHANGE_REFRESH_REQUIRED');
           const exchanged = await port.exchangeOnlineGrant(match![1]!, identity);
-          if (cache?.grants.has(grantKey) && grantMatches(exchanged)) cache.rememberGrant(grantKey, exchanged, current);
+          if (grantMatches(exchanged)) cache?.rememberGrant(grantKey, exchanged, startedAt);
           return exchanged;
         };
-        // A fresh request always starts its own exchange, but publishes it per session so a
-        // concurrent replacement joins it rather than revoking its token with another.
         if (!cache) return await exchange();
-        return reuse
-          ? await share(cache.pendingGrants, grantKey, exchange).promise
-          : await start(cache.pendingGrants, grantKey, exchange);
+        const previous = cache.pendingGrants.get(grantKey);
+        if (reuse && previous) return await previous.promise;
+        // Shopify revokes the session's prior token on issuance (#480). Fresh actions
+        // still get their own exchange, after any older exchange has finished issuing.
+        return await start(cache.pendingGrants, grantKey, async () => {
+          if (previous) await previous.promise.catch(() => {});
+          return exchange();
+        });
       } catch (error) {
         diagnostic(
           error instanceof AdminOnlineIdentityError ? error.stage : 'ONLINE_EXCHANGE_FAILED',
@@ -312,6 +339,7 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
     if (!grant) grant = await exchangeGrant();
     if (!grantMatches(grant)) {
       diagnostic('ONLINE_GRANT_MISMATCH');
+      if (recovery) throw new AdminRecoveryAuthorityError();
       return null;
     }
     diagnostic(reusedGrant ? 'ONLINE_GRANT_REUSED_SUCCEEDED' : 'ONLINE_EXCHANGE_SUCCEEDED');
@@ -323,12 +351,12 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
       const readsStartedAt = now();
       const remainingBudget = () => INSTALLATION_READ_BUDGET_MS - (now() - readsStartedAt);
       let refreshed = false;
-      for (let attempt = 1; !installation && attempt <= 3; attempt++) {
+      for (let attempt = 1; !installation && attempt <= (recovery ? 1 : 3); attempt++) {
         let joined = false;
         try {
           const budgetMs = remainingBudget();
           const read = () => port.readInstallation(grant!, budgetMs);
-          if (reuse && attempt === 1) {
+          if (reuse && !recovery && attempt === 1) {
             const pending = share(cache.pendingInstallations, identity.shop, read);
             joined = pending.joined;
             installation = await pending.promise;
@@ -354,7 +382,12 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
             !transient &&
             (error instanceof AdminOnlineIdentityError ||
               (error instanceof AdminInstallationReconciliationError && error.providerCode === 'HTTP_401'));
-          if (transient || !(rejectedGrant ? !refreshed : joined) || remainingBudget() < MIN_INSTALLATION_ATTEMPT_MS)
+          if (
+            recovery ||
+            transient ||
+            !(rejectedGrant ? !refreshed : joined) ||
+            remainingBudget() < MIN_INSTALLATION_ATTEMPT_MS
+          )
             unavailable(error);
           if (rejectedGrant) {
             refreshed = true;
@@ -382,6 +415,7 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
       !Array.isArray(installation.grantedScopes)
     ) {
       diagnostic('INSTALLATION_PROVIDER_SHAPE_OR_IDENTITY_MISMATCH');
+      if (recovery) throw new AdminRecoveryAuthorityError();
       return null;
     }
     if (
@@ -390,18 +424,24 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
       !/^[1-9][0-9]*$/.test(installation.installationGeneration)
     ) {
       diagnostic('CURRENT_INSTALLATION_MISSING_OR_INACTIVE');
+      if (recovery) throw new AdminRecoveryAuthorityError();
       return null;
     }
     if (!installation.installationId || installation.installationId !== installation.trustedInstallationId) {
       diagnostic('CURRENT_INSTALLATION_ID_MISMATCH');
+      if (recovery) throw new AdminRecoveryAuthorityError();
       return null;
     }
+    if (
+      recovery &&
+      (installation.shopId !== recovery.shopId ||
+        installation.tenantShopId !== recovery.tenantShopId ||
+        installation.installationId !== recovery.installationId ||
+        installation.installationGeneration !== recovery.installationGeneration)
+    )
+      throw new AdminRecoveryAuthorityError();
     diagnostic('TENANT_RECONCILIATION_SUCCEEDED');
-    if (cache) {
-      // Only checked facts are kept; a fresh request refreshes them for later reuse.
-      if (!reusedInstallation) cache.rememberInstallation(identity.shop, installation, current);
-      if (!reusedGrant) cache.rememberGrant(grantKey, grant, current);
-    }
+    if (cache && !recovery && !reusedInstallation) cache.rememberInstallation(identity.shop, installation, current);
     const canRead = [grant.appScopes, grant.userScopes, installation.grantedScopes].every((scopes) =>
       READ.some((scope) => scopes.includes(scope)),
     );

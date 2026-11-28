@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { AdminOnlineIdentityError } from '@insignia/shopify';
+import { AdminOnlineIdentityError, CatalogReadError, createCatalogTransport } from '@insignia/shopify';
 import { handleAdminRequest } from '../../src/server/admin/http.ts';
 import { adminServices } from './support/fixtures.mts';
 
@@ -82,6 +82,86 @@ test('read requires current verified staff and exact shop, even on deep links', 
   });
   assert.equal(ok.status, 200);
   assert.equal(ok.headers.get('cache-control'), 'private, no-store');
+});
+
+test('editor GET refreshes a Shopify-rejected online grant once for the same staff session', async (t) => {
+  for (const scenario of [
+    { name: 'recovers', first: 401, second: 200, status: 200, attempts: 2 },
+    { name: 'does not loop', first: 401, second: 401, status: 503, attempts: 2 },
+    { name: 'rejects a changed installation', first: 401, second: 200, generation: '2', status: 403, attempts: 1 },
+    { name: 'rejects a changed session', first: 401, second: 200, session: 'different', status: 403, attempts: 1 },
+    { name: 'refreshes an expired session', first: 401, second: 200, expired: true, status: 401, attempts: 1 },
+    { name: 'honors a revoked read grant', first: 401, second: 200, canRead: false, status: 403, attempts: 1 },
+    { name: 'keeps permanent provider denials', first: 403, second: 200, status: 503, attempts: 1 },
+  ])
+    await t.test(scenario.name, async () => {
+      const recoveries: boolean[] = [];
+      const providerCalls: string[] = [];
+      const replacement = {
+        ...identity,
+        installationGeneration: scenario.generation ?? identity.installationGeneration,
+        sessionId: scenario.session ?? identity.sessionId,
+        canRead: scenario.canRead ?? identity.canRead,
+      };
+      const h = deps({
+        authenticate: async (_request, options) => {
+          recoveries.push(options?.recoverFrom === identity);
+          return options?.recoverFrom ? (scenario.expired ? null : replacement) : identity;
+        },
+      });
+      const view = await h.services.configs.read(identity, productId);
+      h.services.catalog.get = async (actor) => {
+        const token = actor === replacement ? 'replacement' : 'original';
+        const transport = createCatalogTransport({
+          shop: actor.shop,
+          accessToken: token,
+          fetchImpl: async (_url, init) => {
+            providerCalls.push(new Headers(init?.headers).get('X-Shopify-Access-Token') ?? '');
+            const status = token === 'original' ? scenario.first : scenario.second;
+            return new Response(JSON.stringify({ data: {} }), { status });
+          },
+        });
+        await transport.read('detail', { id: productId });
+        return view.product;
+      };
+      const response = await handleAdminRequest(request('/api/admin/products/10485042479387/config'), h.services, {
+        kind: 'config',
+        productId,
+      });
+      assert.equal(response.status, scenario.status);
+      assert.deepEqual(recoveries, scenario.first === 401 ? [false, true] : [false]);
+      assert.deepEqual(providerCalls, scenario.attempts === 2 ? ['original', 'replacement'] : ['original']);
+      if (scenario.status === 200) assert.deepEqual(await response.json(), view);
+    });
+});
+
+test('a Shopify-rejected online grant during publish does not replay the command', async () => {
+  let attempts = 0;
+  const refreshes: boolean[] = [];
+  const h = deps({
+    authenticate: async (_request, options) => {
+      refreshes.push(options?.fresh === true);
+      return identity;
+    },
+    configs: {
+      publish: async () => {
+        attempts++;
+        throw new CatalogReadError('http_error', 'Catalog read failed', 401);
+      },
+    },
+  });
+  const response = await handleAdminRequest(
+    request('/api/admin/products/10485042479387/config', 'POST', {
+      action: 'publish',
+      configId: 'config-1',
+      draftVersion: '1',
+    }),
+    h.services,
+    { kind: 'config', productId },
+  );
+  assert.equal(response.status, 503);
+  assert.equal(attempts, 1);
+  assert.deepEqual(refreshes, [false, true]);
 });
 
 test('mutation refuses cross-origin and staff denial before invoking command', async () => {

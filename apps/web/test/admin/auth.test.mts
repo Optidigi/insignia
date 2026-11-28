@@ -9,6 +9,7 @@ import {
   AdminInstallationReconciliationError,
   createAdminAuthenticationCache,
   createAdminAuthenticator,
+  createAdminGrantAuthenticator,
   PUBLICATION_GRANT_MARGIN_MS,
 } from '../../src/server/admin/auth.ts';
 import { required } from './support/fixtures.mts';
@@ -611,19 +612,25 @@ function revokingSession() {
   let exchanges = 0;
   let release: (() => void) | undefined;
   let releaseExchange: (() => void) | undefined;
+  let afterRead: (() => Promise<void>) | undefined;
+  let confirm: (() => Promise<boolean>) | undefined;
   let gated = false;
   let failGated = false;
   let exchangeGated = false;
+  let beforeIssue: (() => Promise<void>) | undefined;
   const budgets: number[] = [];
   let onRead: (() => void) | undefined;
   const events: { stage: string; providerCode?: string }[] = [];
   const cache = createAdminAuthenticationCache<TokenGrant>();
   const revoked = () => new AdminOnlineIdentityError('INSTALLATION_PROVIDER_READ_FAILED', { providerCode: 'HTTP_401' });
-  const auth = createAdminAuthenticator<TokenGrant>(
+  const authenticate = createAdminGrantAuthenticator<TokenGrant>(
     {
       verifySessionToken: async () => ({ ...identity, expiresAtMs: clock + 60_000 }),
       exchangeOnlineGrant: async () => {
         exchanges++;
+        const issue = beforeIssue;
+        beforeIssue = undefined;
+        await issue?.();
         // Shopify revokes the previous token when it mints the new one, before answering.
         const token = ++current;
         if (exchangeGated) {
@@ -638,6 +645,8 @@ function revokingSession() {
         budgets.push(budgetMs ?? Number.NaN);
         onRead?.();
         if (online.token !== current) throw revoked(); // provider read
+        const finish = afterRead;
+        afterRead = undefined;
         if (gated) {
           gated = false;
           await new Promise<void>((resolve) => {
@@ -649,16 +658,22 @@ function revokingSession() {
         // Later stage on the same online token (uninstall enrollment in production).
         if (online.token !== current)
           throw new AdminInstallationReconciliationError('UNINSTALL_ENROLLMENT_FAILED', { providerCode: 'HTTP_401' });
+        await finish?.();
         return installation;
       },
-      confirmInstallation: async () => true,
+      async confirmInstallation() {
+        const check = confirm;
+        confirm = undefined;
+        return check ? check() : true;
+      },
     },
     () => clock,
     (stage, detail) => events.push({ stage, ...detail }),
     cache,
   );
   return {
-    auth,
+    authenticate,
+    auth: async (...args: Parameters<typeof authenticate>) => (await authenticate(...args))?.actor ?? null,
     events,
     cache,
     budgets,
@@ -666,8 +681,17 @@ function revokingSession() {
     onRead(hook: (() => void) | undefined) {
       onRead = hook;
     },
+    afterNextRead(hook: () => Promise<void>) {
+      afterRead = hook;
+    },
+    onNextConfirmation(hook: () => Promise<boolean>) {
+      confirm = hook;
+    },
     gateNextExchange() {
       exchangeGated = true;
+    },
+    beforeNextIssue(hook: () => Promise<void>) {
+      beforeIssue = hook;
     },
     releaseExchange: () => releaseExchange?.(),
     advance(ms: number) {
@@ -770,6 +794,134 @@ test('#480 review: a reused grant refused while a fresh exchange is in flight jo
   );
   assert.ok(results.every((result) => result.status === 'fulfilled' && result.value?.canEdit === true));
   // One exchange besides the first request: the reused request joined billing's.
+  assert.equal(h.exchanges(), 2);
+});
+
+test('editor recovery reuses the newer grant or joins its exchange without revoking it', async (t) => {
+  for (const inFlight of [false, true]) {
+    await t.test(inFlight ? 'joins pending exchange' : 'reuses completed exchange', async () => {
+      const h = revokingSession();
+      const original = required(await h.authenticate(request));
+      if (inFlight) h.gateNextExchange();
+      const fresh = h.authenticate(request, { fresh: true });
+      if (inFlight) await new Promise((resolve) => setTimeout(resolve, 0));
+      else await fresh;
+      const retry = h.authenticate(request, { recoverFrom: original.actor }, original.grant);
+      if (inFlight) h.releaseExchange();
+      const publish = required(await fresh);
+      const recovered = required(await retry);
+      assert.equal(recovered.grant, publish.grant);
+      assert.equal(h.exchanges(), 2);
+      assert.equal(required(await h.authenticate(request)).grant, publish.grant);
+    });
+  }
+});
+
+test('a late editor recovery cannot rewind the grant cache after publish exchanges', async () => {
+  const h = revokingSession();
+  const original = required(await h.authenticate(request));
+  const atDurableRead = Promise.withResolvers<void>();
+  const finishDurableRead = Promise.withResolvers<void>();
+  h.afterNextRead(() => {
+    atDurableRead.resolve();
+    return finishDurableRead.promise;
+  });
+  const recovery = h.authenticate(request, { recoverFrom: original.actor }, original.grant);
+  await atDurableRead.promise;
+  const publish = required(await h.authenticate(request, { fresh: true }));
+  finishDurableRead.resolve();
+  await recovery;
+  assert.equal(required(await h.authenticate(request)).grant, publish.grant);
+  assert.equal(h.exchanges(), 3);
+});
+
+test('editor recovery leaves an overlapping installation confirmation and publish grant intact', async () => {
+  const h = revokingSession();
+  const original = required(await h.authenticate(request));
+  const publish = required(await h.authenticate(request, { fresh: true }));
+  const atConfirmation = Promise.withResolvers<void>();
+  const finishConfirmation = Promise.withResolvers<boolean>();
+  h.onNextConfirmation(() => {
+    atConfirmation.resolve();
+    return finishConfirmation.promise;
+  });
+  const waiting = h.authenticate(request);
+  await atConfirmation.promise;
+  const recovered = required(await h.authenticate(request, { recoverFrom: original.actor }, original.grant));
+  assert.equal(recovered.grant, publish.grant);
+  finishConfirmation.resolve(true);
+  assert.equal(required(await waiting).grant, publish.grant);
+  assert.equal(h.exchanges(), 2);
+});
+
+test('an ordinary reader sharing editor recovery cannot put the superseded grant back', async () => {
+  const h = revokingSession();
+  const original = required(await h.authenticate(request));
+  h.advance(ADMIN_GRANT_REUSE_MAX_MS);
+  h.gateNextExchange();
+  const recovery = h.authenticate(request, { recoverFrom: original.actor }, original.grant);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const ordinary = h.authenticate(request);
+  const atDurableRead = Promise.withResolvers<void>();
+  const finishDurableRead = Promise.withResolvers<void>();
+  let reads = 0;
+  h.onRead(() => {
+    if (++reads === 2)
+      h.afterNextRead(() => {
+        atDurableRead.resolve();
+        return finishDurableRead.promise;
+      });
+  });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  h.releaseExchange();
+  await atDurableRead.promise;
+  await recovery;
+  const publish = required(await h.authenticate(request, { fresh: true }));
+  finishDurableRead.resolve();
+  assert.ok(await ordinary);
+  assert.equal(required(await h.authenticate(request)).grant, publish.grant);
+  assert.equal(h.exchanges(), 3);
+});
+
+test('a fresh publish exchange waits behind a dispatched editor recovery exchange', async () => {
+  const h = revokingSession();
+  const original = required(await h.authenticate(request));
+  const atExchange = Promise.withResolvers<void>();
+  const issueRecovery = Promise.withResolvers<void>();
+  h.beforeNextIssue(() => {
+    atExchange.resolve();
+    return issueRecovery.promise;
+  });
+  const recovery = h.authenticate(request, { recoverFrom: original.actor }, original.grant);
+  await atExchange.promise;
+  const publish = h.authenticate(request, { fresh: true });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const exchangesBeforeRelease = h.exchanges();
+  issueRecovery.resolve();
+  const results = await Promise.allSettled([recovery, publish]);
+  assert.equal(exchangesBeforeRelease, 2);
+  assert.equal(results[1].status, 'fulfilled');
+  const active = required(await publish);
+  assert.equal(active.grant.token, 3);
+  assert.equal(required(await h.authenticate(request)).grant, active.grant);
+});
+
+test('a queued publish does not exchange an expired App Bridge session token', async () => {
+  const h = revokingSession();
+  const original = required(await h.authenticate(request));
+  const atExchange = Promise.withResolvers<void>();
+  const issueRecovery = Promise.withResolvers<void>();
+  h.beforeNextIssue(() => {
+    atExchange.resolve();
+    return issueRecovery.promise;
+  });
+  const recovery = h.authenticate(request, { recoverFrom: original.actor }, original.grant);
+  await atExchange.promise;
+  const publish = h.authenticate(request, { fresh: true });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  h.advance(60_000);
+  issueRecovery.resolve();
+  await Promise.all([recovery, assert.rejects(publish, { stage: 'ONLINE_EXCHANGE_REFRESH_REQUIRED' })]);
   assert.equal(h.exchanges(), 2);
 });
 

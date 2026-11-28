@@ -5,7 +5,7 @@ import {
   transientStatus,
   withAdminDeadline,
 } from './admin-deadline.js';
-/** A catalog read Shopify answered but a retry cannot fix; `kind` is a fixed, data-free diagnostic. */
+/** A non-transient catalog failure. An HTTP 401 requires a different credential. */
 export class CatalogReadError extends Error {
   constructor(
     readonly kind:
@@ -17,6 +17,7 @@ export class CatalogReadError extends Error {
       | 'graphql_error'
       | 'invalid_shape',
     message: string,
+    readonly status?: number,
   ) {
     super(message);
   }
@@ -432,7 +433,7 @@ export function createCatalogTransport(input: {
               'Catalog read failed',
               response.status === 429 ? 'throttled' : 'http_5xx',
             );
-          if (!response.ok) throw new CatalogReadError('http_error', 'Catalog read failed');
+          if (!response.ok) throw new CatalogReadError('http_error', 'Catalog read failed', response.status);
           reader = response.body?.getReader();
           if (!reader) throw new CatalogReadError('missing_body', 'Catalog response body missing');
           const chunks: Uint8Array[] = [];
