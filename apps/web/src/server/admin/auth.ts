@@ -300,26 +300,24 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
     let reusedGrant = grant !== undefined;
     async function exchangeGrant(): Promise<G> {
       try {
-        // A new online exchange for a staff session revokes that session's previous online
-        // token (observed in production, #480). A verified result therefore replaces a
-        // remembered grant for the same shop, staff and session before the shared exchange
-        // settles, so a caller never finds the exchange finished but its grant unpublished.
-        // New entries still wait for every check below.
-        let pending: Pending<G> | undefined;
+        // Only the exchange publishes its verified grant. Installation checks can finish
+        // out of order and must never republish a superseded grant.
         const exchange = async () => {
+          const startedAt = now();
+          if (startedAt >= identity.expiresAtMs) throw new AdminOnlineIdentityError('ONLINE_EXCHANGE_REFRESH_REQUIRED');
           const exchanged = await port.exchangeOnlineGrant(match![1]!, identity);
-          if (cache?.grants.has(grantKey) && cache.pendingGrants.get(grantKey) === pending && grantMatches(exchanged))
-            cache.rememberGrant(grantKey, exchanged, current);
+          if (grantMatches(exchanged)) cache?.rememberGrant(grantKey, exchanged, startedAt);
           return exchanged;
         };
-        // A fresh request always starts its own exchange, but publishes it per session so a
-        // concurrent replacement joins it rather than revoking its token with another.
         if (!cache) return await exchange();
-        const exchanging = reuse
-          ? share(cache.pendingGrants, grantKey, exchange).promise
-          : start(cache.pendingGrants, grantKey, exchange);
-        pending = cache.pendingGrants.get(grantKey);
-        return await exchanging;
+        const previous = cache.pendingGrants.get(grantKey);
+        if (reuse && previous) return await previous.promise;
+        // Shopify revokes the session's prior token on issuance (#480). Fresh actions
+        // still get their own exchange, after any older exchange has finished issuing.
+        return await start(cache.pendingGrants, grantKey, async () => {
+          if (previous) await previous.promise.catch(() => {});
+          return exchange();
+        });
       } catch (error) {
         diagnostic(
           error instanceof AdminOnlineIdentityError ? error.stage : 'ONLINE_EXCHANGE_FAILED',
@@ -443,11 +441,7 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
     )
       throw new AdminRecoveryAuthorityError();
     diagnostic('TENANT_RECONCILIATION_SUCCEEDED');
-    if (cache && !recovery) {
-      // Only checked facts are kept; a fresh request refreshes them for later reuse.
-      if (!reusedInstallation) cache.rememberInstallation(identity.shop, installation, current);
-      if (!reusedGrant) cache.rememberGrant(grantKey, grant, current);
-    }
+    if (cache && !recovery && !reusedInstallation) cache.rememberInstallation(identity.shop, installation, current);
     const canRead = [grant.appScopes, grant.userScopes, installation.grantedScopes].every((scopes) =>
       READ.some((scope) => scopes.includes(scope)),
     );
