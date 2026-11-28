@@ -9,6 +9,7 @@ import {
   AdminInstallationReconciliationError,
   createAdminAuthenticationCache,
   createAdminAuthenticator,
+  createAdminGrantAuthenticator,
   PUBLICATION_GRANT_MARGIN_MS,
 } from '../../src/server/admin/auth.ts';
 import { required } from './support/fixtures.mts';
@@ -619,7 +620,7 @@ function revokingSession() {
   const events: { stage: string; providerCode?: string }[] = [];
   const cache = createAdminAuthenticationCache<TokenGrant>();
   const revoked = () => new AdminOnlineIdentityError('INSTALLATION_PROVIDER_READ_FAILED', { providerCode: 'HTTP_401' });
-  const auth = createAdminAuthenticator<TokenGrant>(
+  const authenticate = createAdminGrantAuthenticator<TokenGrant>(
     {
       verifySessionToken: async () => ({ ...identity, expiresAtMs: clock + 60_000 }),
       exchangeOnlineGrant: async () => {
@@ -658,7 +659,8 @@ function revokingSession() {
     cache,
   );
   return {
-    auth,
+    authenticate,
+    auth: async (...args: Parameters<typeof authenticate>) => (await authenticate(...args))?.actor ?? null,
     events,
     cache,
     budgets,
@@ -771,6 +773,26 @@ test('#480 review: a reused grant refused while a fresh exchange is in flight jo
   assert.ok(results.every((result) => result.status === 'fulfilled' && result.value?.canEdit === true));
   // One exchange besides the first request: the reused request joined billing's.
   assert.equal(h.exchanges(), 2);
+});
+
+test('editor recovery reuses the newer grant or joins its exchange without revoking it', async (t) => {
+  for (const inFlight of [false, true]) {
+    await t.test(inFlight ? 'joins pending exchange' : 'reuses completed exchange', async () => {
+      const h = revokingSession();
+      const original = required(await h.authenticate(request));
+      if (inFlight) h.gateNextExchange();
+      const fresh = h.authenticate(request, { fresh: true });
+      if (inFlight) await new Promise((resolve) => setTimeout(resolve, 0));
+      else await fresh;
+      const retry = h.authenticate(request, { recoverFrom: original.actor }, original.grant);
+      if (inFlight) h.releaseExchange();
+      const publish = required(await fresh);
+      const recovered = required(await retry);
+      assert.equal(recovered.grant, publish.grant);
+      assert.equal(h.exchanges(), 2);
+      assert.equal(required(await h.authenticate(request)).grant, publish.grant);
+    });
+  }
 });
 
 test("#480 review: a waiter that joined another staff member's refused read retries with its own grant", async () => {

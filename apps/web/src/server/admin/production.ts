@@ -882,6 +882,20 @@ export function createProductionAdminServices(
       authenticationLogger.info('publication_request_timing', { publicationTiming });
     },
     async authenticate(request, options = {}) {
+      const recovery = options.recoverFrom;
+      const rejectedGrant = recovery && grants.get(recovery);
+      if (recovery) {
+        if (!rejectedGrant) return null;
+        const current = await core.tenants.getManagedInstallationState(recovery.shop);
+        if (
+          !current?.active ||
+          current.shopId !== recovery.tenantShopId ||
+          current.currentGeneration !== recovery.installationGeneration ||
+          current.externalInstallationId !== recovery.installationId ||
+          `gid://shopify/Shop/${current.shopifyShopId}` !== recovery.shopId
+        )
+          return null;
+      }
       const correlationId = randomUUID();
       const diagnostic: AdminAuthenticationDiagnostic = (authStage, detail) =>
         detail?.providerCode
@@ -908,6 +922,24 @@ export function createProductionAdminServices(
           },
           async readInstallation(online, budgetMs = INSTALLATION_READ_BUDGET_MS): Promise<AdminInstallation> {
             const readDeadline = Date.now() + budgetMs;
+            if (recovery) {
+              // Recovery is evidence about the existing installation only. It cannot bootstrap,
+              // reenroll webhooks or reconcile a provider installation the original read did not use.
+              const provider = await shopify.readInstallation(online, readDeadline - Date.now());
+              diagnostic('INSTALLATION_PROVIDER_READ_SUCCEEDED');
+              const current = await core.tenants.getManagedInstallationState(online.shop);
+              return {
+                shop: provider.shop,
+                shopId: provider.shopId,
+                installationId: provider.installationId,
+                trustedInstallationId: current?.externalInstallationId ?? '',
+                tenantShopId: current?.shopId ?? '',
+                installationGeneration: current?.currentGeneration ?? '',
+                active: current?.active === true && `gid://shopify/Shop/${current.shopifyShopId}` === provider.shopId,
+                grantedScopes: provider.grantedScopes,
+                ianaTimezone: provider.ianaTimezone,
+              };
+            }
             // Capture durable state before provider IO. A stale observation may
             // not reverse a generation committed while that IO was in flight.
             const expected = await core.tenants.getManagedInstallationState(online.shop).catch(() => {
@@ -996,7 +1028,7 @@ export function createProductionAdminServices(
         diagnostic,
         authenticationCache,
       );
-      const authenticated = await authenticator(request, options);
+      const authenticated = await authenticator(request, options, rejectedGrant);
       const actor = authenticated?.actor ?? null;
       const online = authenticated?.grant;
       if (actor && online) {
@@ -1004,7 +1036,7 @@ export function createProductionAdminServices(
         requestTokens.set(actor, request.headers.get('Authorization')!.slice(7));
         const merchantTimezone = authenticated.installation.ianaTimezone;
         if (merchantTimezone) merchantTimezones.set(actor, merchantTimezone);
-        if (offlineBootstrap && actor.canRead && online.accountOwner === true) {
+        if (!recovery && offlineBootstrap && actor.canRead && online.accountOwner === true) {
           const scope = await core.tenants.getActiveAuthorizationScope({
             shopId: actor.tenantShopId,
             installationGeneration: actor.installationGeneration,

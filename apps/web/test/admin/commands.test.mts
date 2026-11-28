@@ -94,7 +94,7 @@ test('editor GET refreshes a Shopify-rejected online grant once for the same sta
     { name: 'keeps permanent provider denials', first: 403, second: 200, status: 503, attempts: 1 },
   ])
     await t.test(scenario.name, async () => {
-      const refreshes: boolean[] = [];
+      const recoveries: boolean[] = [];
       const providerCalls: string[] = [];
       const replacement = {
         ...identity,
@@ -104,8 +104,8 @@ test('editor GET refreshes a Shopify-rejected online grant once for the same sta
       };
       const h = deps({
         authenticate: async (_request, options) => {
-          refreshes.push(options?.fresh === true);
-          return options?.fresh ? replacement : identity;
+          recoveries.push(options?.recoverFrom === identity);
+          return options?.recoverFrom ? replacement : identity;
         },
       });
       const view = await h.services.configs.read(identity, productId);
@@ -128,7 +128,7 @@ test('editor GET refreshes a Shopify-rejected online grant once for the same sta
         productId,
       });
       assert.equal(response.status, scenario.status);
-      assert.deepEqual(refreshes, scenario.first === 401 ? [false, true] : [false]);
+      assert.deepEqual(recoveries, scenario.first === 401 ? [false, true] : [false]);
       assert.deepEqual(providerCalls, scenario.attempts === 2 ? ['original', 'replacement'] : ['original']);
       if (scenario.status === 200) assert.deepEqual(await response.json(), view);
     });

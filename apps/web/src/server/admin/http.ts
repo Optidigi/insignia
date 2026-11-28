@@ -11,7 +11,7 @@ import type { ConfigRejectionCode } from '../../shared/config-rejection.ts';
 import { PUBLICATION_REQUEST_DEADLINE_MS } from '../merchant-config.ts';
 import { SelectedSetupAuthorityError } from '../selected-product.ts';
 import { selectedMediaUrlsValid } from '../selected-product-media-urls.ts';
-import { AdminAuthenticationBusyError } from './auth.ts';
+import { AdminAuthenticationBusyError, type AdminAuthenticationOptions } from './auth.ts';
 import { CatalogQueryError } from './catalog-query.ts';
 import type { AdminActor, AdminServices, CommandOutcome, ConfigRejectionAction } from './contracts.js';
 import { MethodAuthorizationError, MethodCurrencyConflictError } from './methods.ts';
@@ -160,15 +160,11 @@ function outcome(services: AdminServices, action: ConfigRejectionAction, result:
 async function authenticateAdmin(
   request: Request,
   services: AdminServices,
-  fresh: boolean,
-  authorityUntilMs?: number,
+  options?: AdminAuthenticationOptions,
 ): Promise<AdminActor | Response> {
   let actor: AdminActor | null;
   try {
-    actor = await services.authenticate(
-      request,
-      fresh ? { fresh: true, ...(authorityUntilMs === undefined ? {} : { authorityUntilMs }) } : undefined,
-    );
+    actor = await services.authenticate(request, options);
   } catch (error) {
     if (error instanceof AdminOnlineIdentityError && error.stage === 'ONLINE_EXCHANGE_REFRESH_REQUIRED') {
       const response = adminJson(401, { error: 'Authentication required' });
@@ -179,6 +175,7 @@ async function authenticateAdmin(
     return adminJson(503, { error: 'Authentication unavailable' });
   }
   if (!validActor(actor, Date.now())) {
+    if (options?.recoverFrom) return adminJson(403, { error: 'Current product read permission required' });
     if (actor !== null) services.recordAuthenticationRejection?.('AUTHENTICATED_ACTOR_REJECTED');
     return adminJson(401, { error: 'Authentication required' });
   }
@@ -255,7 +252,7 @@ export async function handleAdminRequest(
   const authenticated = await authenticateAdmin(
     request,
     services,
-    route.kind === 'billing' || route.kind === 'signing',
+    route.kind === 'billing' || route.kind === 'signing' ? { fresh: true } : undefined,
   );
   if (authenticated instanceof Response) return authenticated;
   const actor = authenticated;
@@ -393,7 +390,7 @@ export async function handleAdminRequest(
         if (!(error instanceof CatalogReadError) || error.kind !== 'http_error' || error.status !== 401) throw error;
         // A concurrent online exchange can revoke a cached grant after authentication. Only this
         // read is repeated, after Shopify and the app both recheck the original staff session.
-        const refreshed = await authenticateAdmin(request, services, true);
+        const refreshed = await authenticateAdmin(request, services, { recoverFrom: actor });
         if (refreshed instanceof Response) return refreshed;
         if (
           !refreshed.canRead ||
@@ -428,7 +425,7 @@ export async function handleAdminRequest(
           (typeof body.expectedProductId !== 'string' || !/^[1-9][0-9]{0,19}$/.test(body.expectedProductId)))
       )
         return adminJson(422, { error: 'Invalid Free product choice' });
-      const fresh = await authenticateAdmin(request, services, true);
+      const fresh = await authenticateAdmin(request, services, { fresh: true });
       if (fresh instanceof Response) return fresh;
       if (fresh.tenantShopId !== actor.tenantShopId || fresh.staffId !== actor.staffId || !fresh.canReadOrders)
         return adminJson(403, { error: 'Store owner access required' });
@@ -489,7 +486,10 @@ export async function handleAdminRequest(
         // that starts with a valid session token may then finish its steps on that online grant after
         // the token expires, until PUBLICATION_REQUEST_DEADLINE_MS after it was accepted (owner, 25 Nov 2026).
         const fresh = await publicationStage('authentication', () =>
-          authenticateAdmin(request, services, true, acceptedAtMs + PUBLICATION_REQUEST_DEADLINE_MS),
+          authenticateAdmin(request, services, {
+            fresh: true,
+            authorityUntilMs: acceptedAtMs + PUBLICATION_REQUEST_DEADLINE_MS,
+          }),
         );
         if (fresh instanceof Response) return fresh;
         if (fresh.shop !== actor.shop || fresh.staffId !== actor.staffId || fresh.tenantShopId !== actor.tenantShopId)

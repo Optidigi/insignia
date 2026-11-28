@@ -101,6 +101,8 @@ export const PUBLICATION_GRANT_MARGIN_MS = 30_000;
 export interface AdminAuthenticationOptions {
   /** Staff-sensitive: exchange again and reuse no remembered grant or installation. */
   fresh?: boolean;
+  /** Editor read recovery. Verify the exact existing installation without reconciling it. */
+  recoverFrom?: AdminActor;
   /** Owner decision (25 Nov 2026), publish only: with `fresh`, the actor's authority
    * (`expiresAtMs`) runs until this time instead of ending with the App Bridge session token.
    * The token must still be valid when the request authenticates, and the authority never
@@ -220,7 +222,11 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
     if (transientFailure(error)) throw new AdminAuthenticationBusyError();
     throw new Error('Authentication unavailable');
   }
-  return async (request: Request, options: AdminAuthenticationOptions = {}): Promise<AdminAuthentication<G> | null> => {
+  return async (
+    request: Request,
+    options: AdminAuthenticationOptions = {},
+    rejectedOnlineGrant?: G,
+  ): Promise<AdminAuthentication<G> | null> => {
     const authorization = request.headers.get('Authorization');
     const match = /^Bearer ([^\s]{1,8192})$/.exec(authorization ?? '');
     if (!match) {
@@ -250,9 +256,18 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
       diagnostic('SESSION_IDENTITY_REJECTED');
       return null;
     }
+    const recovery = options.recoverFrom;
+    if (
+      recovery &&
+      (!rejectedOnlineGrant ||
+        identity.shop !== recovery.shop ||
+        identity.staffId !== recovery.staffId ||
+        identity.sessionId !== recovery.sessionId)
+    )
+      return null;
     const reuse = !!cache && !!port.confirmInstallation && !options.fresh;
     let installation: AdminInstallation | undefined;
-    if (reuse) {
+    if (reuse && !recovery) {
       const cached = cache.installations.get(identity.shop);
       if (cached && current - cached.observedAtMs < ADMIN_INSTALLATION_REUSE_MS && current >= cached.observedAtMs) {
         const confirmed = await port.confirmInstallation!(cached.installation).catch(() => false);
@@ -270,7 +285,12 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
       const cached = cache.grants.get(grantKey);
       // An entry past its reuse limits stays until replaced, so a newer exchange
       // is published to it at once (#480); forgetShop alone deletes grants.
-      if (cached && reusable(cached, current)) grant = cached.grant;
+      if (
+        cached &&
+        reusable(cached, current) &&
+        (!recovery || (cached.grant !== rejectedOnlineGrant && !cache.pendingGrants.has(grantKey)))
+      )
+        grant = cached.grant;
     }
     let reusedGrant = grant !== undefined;
     async function exchangeGrant(): Promise<G> {
@@ -323,12 +343,12 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
       const readsStartedAt = now();
       const remainingBudget = () => INSTALLATION_READ_BUDGET_MS - (now() - readsStartedAt);
       let refreshed = false;
-      for (let attempt = 1; !installation && attempt <= 3; attempt++) {
+      for (let attempt = 1; !installation && attempt <= (recovery ? 1 : 3); attempt++) {
         let joined = false;
         try {
           const budgetMs = remainingBudget();
           const read = () => port.readInstallation(grant!, budgetMs);
-          if (reuse && attempt === 1) {
+          if (reuse && !recovery && attempt === 1) {
             const pending = share(cache.pendingInstallations, identity.shop, read);
             joined = pending.joined;
             installation = await pending.promise;
@@ -354,7 +374,12 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
             !transient &&
             (error instanceof AdminOnlineIdentityError ||
               (error instanceof AdminInstallationReconciliationError && error.providerCode === 'HTTP_401'));
-          if (transient || !(rejectedGrant ? !refreshed : joined) || remainingBudget() < MIN_INSTALLATION_ATTEMPT_MS)
+          if (
+            recovery ||
+            transient ||
+            !(rejectedGrant ? !refreshed : joined) ||
+            remainingBudget() < MIN_INSTALLATION_ATTEMPT_MS
+          )
             unavailable(error);
           if (rejectedGrant) {
             refreshed = true;
@@ -396,6 +421,14 @@ export function createAdminGrantAuthenticator<G extends OnlineAdminGrant>(
       diagnostic('CURRENT_INSTALLATION_ID_MISMATCH');
       return null;
     }
+    if (
+      recovery &&
+      (installation.shopId !== recovery.shopId ||
+        installation.tenantShopId !== recovery.tenantShopId ||
+        installation.installationId !== recovery.installationId ||
+        installation.installationGeneration !== recovery.installationGeneration)
+    )
+      return null;
     diagnostic('TENANT_RECONCILIATION_SUCCEEDED');
     if (cache) {
       // Only checked facts are kept; a fresh request refreshes them for later reuse.
