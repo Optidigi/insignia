@@ -150,7 +150,7 @@ services:
       interval: 15s
       retries: 3
       start_period: 15s
-    image: 'insignia/web:9387f43b'
+    image: 'insignia/web:f9e09522'
     init: true
     labels:
       traefik.docker.network: proxy
