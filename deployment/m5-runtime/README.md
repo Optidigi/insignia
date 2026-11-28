@@ -11,7 +11,7 @@ This directory retains the deployment configuration/data boundary; its `m5` name
 
 ## Current state
 
-As of 28 November 2026 (production on host alias `prod`, deploy BC). [Delivery state](../../docs/delivery/state.md#deployed-identities) holds the exact image digests and custody locators.
+As of 28 November 2026 (production on host alias `prod`, deploy BD). [Delivery state](../../docs/delivery/state.md#deployed-identities) holds the exact image digests and custody locators.
 - **Release profile.** `native-qa-guidance-81434785` binds sole active version `1269561884673`. Web, worker, verifier, and EUR v2 use this version. Shopify's manifest declares the production R2 origin. For each release, read the asset URL from a live Shopify product page and compare the CDN bytes with the qualified build. See the [release binding](native-qa-guidance-81434785-release-binding.json) and [module baseline](native-qa-guidance-81434785-module-baseline.json).
 - **Production database (16 Nov 2026):** fresh, data `/srv/data/saas/insignia/postgres` on the LUKS2 volume, container `insignia-database` (10.0.7.250, aliases `database` and `insignia-rewrite-m5-019-database`; the other clients use `database`, the verifier the pinned old alias). Artwork bucket `insignia-production` (EU), prefix `artwork`. Details in [delivery state](../../docs/delivery/state.md#production-cutover-16-november-2026).
 - **Functions.** AW rebuilt both cart-line v3 Functions from `4991bcf9`. They use the existing registrations, queries, and API version 2026-07. The current pins are in [Deployed identities](../../docs/delivery/state.md#deployed-identities).
@@ -63,13 +63,11 @@ Rewrite-dev deploys and theme releases run autonomously under the standing 13 No
 4. Replace the verifier (re-pinning its code manifest), then web (`--no-deps`), then the worker, under the current profile. Leave the signer and inspector alone unless their code changed.
 5. Read back: no error-level lines, fresh web and quiesced worker reads of the same release record, expected ACL digests and unchanged protected facts.
 
-**Shopify plan changes.** Deploy a web image that recognizes the annual Standard contract before
-enabling the annual option on Shopify's existing Standard plan. The monthly and annual options
-share the `insignia-standard` handle and entitlement policy. On an authorized test store, verify
-that both switching directions return to Insignia with the correct effective Shopify cadence,
-price and access. Read the Shopify charge history for both changes. See the
-[resubmission checklist](../../docs/delivery/shopify-review-resubmission.md) for the review fixture and
-evidence. Shopify plan pricing is managed in the Partner Dashboard.
+**Shopify plan changes.** Follow the [monthly plan rollout](../m8-journey/monthly-plan-rollout.md)
+for plan handles, listing pricing, legacy annual contracts and downgrade behavior. Verify effective
+pricing and access on the authorized test store. The
+[resubmission checklist](../../docs/delivery/shopify-review-resubmission.md#deploy-bd-native-validation)
+records the latest no-charge Shopify test approvals and storefront checks.
 
 **Migration 65: abandoned publication hold release (#466 part B).** Deployed 14 November 2026 (deploy D). The [design record](../../docs/architecture/design-466-abandoned-hold-release.md) holds the states and the fence.
 1. Apply `20261114000100_publication_abandonment.sql` through the schema owner (schema 64 to 65) before any image. It adds the progress phase `abandoned`, the activation kinds `ABANDON_CLAIMED`/`ABANDON_RESTORED`, their triggers, the owner-only append-only `m5_publication_abandonment_audit`, and `m5_operator_claim_abandoned_hold(...)` for part A's command (EXECUTE revoked from PUBLIC; granted only if the operator role already exists). It creates no role. Running images never produce the new states, so it can go first.
