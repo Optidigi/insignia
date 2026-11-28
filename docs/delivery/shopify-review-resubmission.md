@@ -442,6 +442,30 @@ on one signed v3 line. The cart was verified empty after cleanup. The live trans
 did not exercise publishing on Free, Pro batch production, or a deferred paid-to-Free
 change. Those cases have supporting local checks and remain separate from this provider receipt.
 
+### Deploy BD native validation
+
+On 28 November, [#702](https://github.com/Optidigi/insignia/pull/702) replaced only web
+with main `f9e09522` from [Runtime run 46151931497](https://github.com/Optidigi/insignia/actions/runs/46151931497).
+The CI archive and native image matched manifest `sha256:e400ce77f3d2118e50aadd28fdb759d54f8243215b7937a3b4d644b0611a17ea`.
+The restore-verified checkpoint matched live schema 76, queue schema 48, roles and protected
+purchase facts after both rounds. Shopify version `1269561884673` and the existing EUR binding
+continued to serve signed checkout. The web service was healthy and public liveness returned 200
+at 14:05 UTC. The prior web image is in verified off-host custody.
+
+Two sequential owner-session rounds on rewrite-dev opened the exact direct editor URL that had
+failed on BC. Direct navigation, reload, Free publication of the selected disposable product
+and refusal of the second product all worked. Each round switched Standard → Free → Pro →
+Standard through Shopify's no-charge test approval. Each already-signed USD reviewer cart
+still reached checkout at USD 30.00 after downgrading to Free. Pro artwork-later reached checkout
+at USD 25.00 in both rounds. Both Pro exports prepared two pages for historical test orders #1020
+and #1021, and Standard still showed the historical order as Paid with batch tools disabled.
+The EUR hardening product separately reached checkout at EUR 25.00 using the same deployed web.
+
+QA restored monthly Standard and the fixture settings, emptied both storefront carts, and
+stopped before payment. A sample of 879 structured web records contained no application request
+failure events and one expected Free-tier entitlement denial. The two rounds do not verify an
+independent Shopify reviewer login or the full 48-hour journal window.
+
 ## Other review items
 
 | Requirement | Verified and remaining evidence |
