@@ -90,6 +90,7 @@ test('editor GET refreshes a Shopify-rejected online grant once for the same sta
     { name: 'does not loop', first: 401, second: 401, status: 503, attempts: 2 },
     { name: 'rejects a changed installation', first: 401, second: 200, generation: '2', status: 403, attempts: 1 },
     { name: 'rejects a changed session', first: 401, second: 200, session: 'different', status: 403, attempts: 1 },
+    { name: 'refreshes an expired session', first: 401, second: 200, expired: true, status: 401, attempts: 1 },
     { name: 'honors a revoked read grant', first: 401, second: 200, canRead: false, status: 403, attempts: 1 },
     { name: 'keeps permanent provider denials', first: 403, second: 200, status: 503, attempts: 1 },
   ])
@@ -105,7 +106,7 @@ test('editor GET refreshes a Shopify-rejected online grant once for the same sta
       const h = deps({
         authenticate: async (_request, options) => {
           recoveries.push(options?.recoverFrom === identity);
-          return options?.recoverFrom ? replacement : identity;
+          return options?.recoverFrom ? (scenario.expired ? null : replacement) : identity;
         },
       });
       const view = await h.services.configs.read(identity, productId);

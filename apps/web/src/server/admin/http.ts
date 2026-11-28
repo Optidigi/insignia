@@ -11,7 +11,7 @@ import type { ConfigRejectionCode } from '../../shared/config-rejection.ts';
 import { PUBLICATION_REQUEST_DEADLINE_MS } from '../merchant-config.ts';
 import { SelectedSetupAuthorityError } from '../selected-product.ts';
 import { selectedMediaUrlsValid } from '../selected-product-media-urls.ts';
-import { AdminAuthenticationBusyError, type AdminAuthenticationOptions } from './auth.ts';
+import { AdminAuthenticationBusyError, type AdminAuthenticationOptions, AdminRecoveryAuthorityError } from './auth.ts';
 import { CatalogQueryError } from './catalog-query.ts';
 import type { AdminActor, AdminServices, CommandOutcome, ConfigRejectionAction } from './contracts.js';
 import { MethodAuthorizationError, MethodCurrencyConflictError } from './methods.ts';
@@ -166,6 +166,8 @@ async function authenticateAdmin(
   try {
     actor = await services.authenticate(request, options);
   } catch (error) {
+    if (options?.recoverFrom && error instanceof AdminRecoveryAuthorityError)
+      return adminJson(403, { error: 'Current product read permission required' });
     if (error instanceof AdminOnlineIdentityError && error.stage === 'ONLINE_EXCHANGE_REFRESH_REQUIRED') {
       const response = adminJson(401, { error: 'Authentication required' });
       response.headers.set('X-Shopify-Retry-Invalid-Session-Request', '1');
@@ -175,7 +177,6 @@ async function authenticateAdmin(
     return adminJson(503, { error: 'Authentication unavailable' });
   }
   if (!validActor(actor, Date.now())) {
-    if (options?.recoverFrom) return adminJson(403, { error: 'Current product read permission required' });
     if (actor !== null) services.recordAuthenticationRejection?.('AUTHENTICATED_ACTOR_REJECTED');
     return adminJson(401, { error: 'Authentication required' });
   }

@@ -50,6 +50,7 @@ import {
   type AdminAuthenticationDiagnostic,
   type AdminInstallation,
   AdminInstallationReconciliationError,
+  AdminRecoveryAuthorityError,
   createAdminAuthenticationCache,
   createAdminGrantAuthenticator,
   PUBLICATION_GRANT_MARGIN_MS,
@@ -885,7 +886,8 @@ export function createProductionAdminServices(
       const recovery = options.recoverFrom;
       const rejectedGrant = recovery && grants.get(recovery);
       if (recovery) {
-        if (!rejectedGrant) return null;
+        if (recovery.expiresAtMs <= Date.now()) return null;
+        if (!rejectedGrant) throw new AdminRecoveryAuthorityError();
         const current = await core.tenants.getManagedInstallationState(recovery.shop);
         if (
           !current?.active ||
@@ -894,7 +896,7 @@ export function createProductionAdminServices(
           current.externalInstallationId !== recovery.installationId ||
           `gid://shopify/Shop/${current.shopifyShopId}` !== recovery.shopId
         )
-          return null;
+          throw new AdminRecoveryAuthorityError();
       }
       const correlationId = randomUUID();
       const diagnostic: AdminAuthenticationDiagnostic = (authStage, detail) =>

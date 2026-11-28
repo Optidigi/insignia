@@ -612,6 +612,8 @@ function revokingSession() {
   let exchanges = 0;
   let release: (() => void) | undefined;
   let releaseExchange: (() => void) | undefined;
+  let afterRead: (() => Promise<void>) | undefined;
+  let confirm: (() => Promise<boolean>) | undefined;
   let gated = false;
   let failGated = false;
   let exchangeGated = false;
@@ -639,6 +641,8 @@ function revokingSession() {
         budgets.push(budgetMs ?? Number.NaN);
         onRead?.();
         if (online.token !== current) throw revoked(); // provider read
+        const finish = afterRead;
+        afterRead = undefined;
         if (gated) {
           gated = false;
           await new Promise<void>((resolve) => {
@@ -650,9 +654,14 @@ function revokingSession() {
         // Later stage on the same online token (uninstall enrollment in production).
         if (online.token !== current)
           throw new AdminInstallationReconciliationError('UNINSTALL_ENROLLMENT_FAILED', { providerCode: 'HTTP_401' });
+        await finish?.();
         return installation;
       },
-      confirmInstallation: async () => true,
+      async confirmInstallation() {
+        const check = confirm;
+        confirm = undefined;
+        return check ? check() : true;
+      },
     },
     () => clock,
     (stage, detail) => events.push({ stage, ...detail }),
@@ -667,6 +676,12 @@ function revokingSession() {
     exchanges: () => exchanges,
     onRead(hook: (() => void) | undefined) {
       onRead = hook;
+    },
+    afterNextRead(hook: () => Promise<void>) {
+      afterRead = hook;
+    },
+    onNextConfirmation(hook: () => Promise<boolean>) {
+      confirm = hook;
     },
     gateNextExchange() {
       exchangeGated = true;
@@ -793,6 +808,43 @@ test('editor recovery reuses the newer grant or joins its exchange without revok
       assert.equal(required(await h.authenticate(request)).grant, publish.grant);
     });
   }
+});
+
+test('a late editor recovery cannot rewind the grant cache after publish exchanges', async () => {
+  const h = revokingSession();
+  const original = required(await h.authenticate(request));
+  const atDurableRead = Promise.withResolvers<void>();
+  const finishDurableRead = Promise.withResolvers<void>();
+  h.afterNextRead(() => {
+    atDurableRead.resolve();
+    return finishDurableRead.promise;
+  });
+  const recovery = h.authenticate(request, { recoverFrom: original.actor }, original.grant);
+  await atDurableRead.promise;
+  const publish = required(await h.authenticate(request, { fresh: true }));
+  finishDurableRead.resolve();
+  await recovery;
+  assert.equal(required(await h.authenticate(request)).grant, publish.grant);
+  assert.equal(h.exchanges(), 3);
+});
+
+test('editor recovery leaves an overlapping installation confirmation and publish grant intact', async () => {
+  const h = revokingSession();
+  const original = required(await h.authenticate(request));
+  const publish = required(await h.authenticate(request, { fresh: true }));
+  const atConfirmation = Promise.withResolvers<void>();
+  const finishConfirmation = Promise.withResolvers<boolean>();
+  h.onNextConfirmation(() => {
+    atConfirmation.resolve();
+    return finishConfirmation.promise;
+  });
+  const waiting = h.authenticate(request);
+  await atConfirmation.promise;
+  const recovered = required(await h.authenticate(request, { recoverFrom: original.actor }, original.grant));
+  assert.equal(recovered.grant, publish.grant);
+  finishConfirmation.resolve(true);
+  assert.equal(required(await waiting).grant, publish.grant);
+  assert.equal(h.exchanges(), 2);
 });
 
 test("#480 review: a waiter that joined another staff member's refused read retries with its own grant", async () => {

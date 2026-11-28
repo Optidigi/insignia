@@ -17,6 +17,7 @@ type Model = {
   /** Like Shopify (#480): a new online exchange revokes the session's previous online token. */
   revokeOnExchange: boolean;
   currentToken: string;
+  rejectProductRead: (() => void) | null;
 };
 type Fixture = {
   core: DurableCore;
@@ -64,7 +65,11 @@ async function fixture(run: (fixture: Fixture) => Promise<void>) {
   const output = new URL('../../.astro/m5-managed-bootstrap.mjs', import.meta.url);
   await mkdir(new URL('../../.astro/', import.meta.url), { recursive: true });
   await build({
-    entryPoints: [new URL('../../src/server/admin/production.ts', import.meta.url).pathname],
+    stdin: {
+      contents:
+        "export { createProductionAdminServices } from './production.ts'; export { handleAdminRequest } from './http.ts';",
+      resolveDir: new URL('../../src/server/admin/', import.meta.url).pathname,
+    },
     outfile: output.pathname,
     platform: 'node',
     format: 'esm',
@@ -72,16 +77,7 @@ async function fixture(run: (fixture: Fixture) => Promise<void>) {
     packages: 'external',
   });
   const { createProductionAdminServices } = await builtProduction(output.href);
-  const httpOutput = new URL('../../.astro/m5-bootstrap-http.mjs', import.meta.url);
-  await build({
-    entryPoints: [new URL('../../src/server/admin/http.ts', import.meta.url).pathname],
-    outfile: httpOutput.pathname,
-    platform: 'node',
-    format: 'esm',
-    bundle: true,
-    packages: 'external',
-  });
-  const { handleAdminRequest } = await builtHttp(httpOutput.href);
+  const { handleAdminRequest } = await builtHttp(output.href);
   const pool = new Pool({ connectionString: database });
   const core = createDurableCore(pool);
   const oldFetch = globalThis.fetch;
@@ -103,6 +99,7 @@ async function fixture(run: (fixture: Fixture) => Promise<void>) {
     afterRead: null,
     revokeOnExchange: false,
     currentToken: '',
+    rejectProductRead: null,
   };
   try {
     setAbstractFetchFunc(async (url, init) => {
@@ -169,6 +166,11 @@ async function fixture(run: (fixture: Fixture) => Promise<void>) {
         });
       if (query.includes('InsigniaReadPublicConfig'))
         return Response.json({ data: { shop: { id: model.shopId, field: null } } });
+      if (query.includes('M5001Product(') && model.rejectProductRead) {
+        model.catalogReads++;
+        model.rejectProductRead();
+        return new Response(null, { status: 401 });
+      }
       assert.match(query, /M5001Products/);
       model.catalogReads++;
       return Response.json({
@@ -404,6 +406,28 @@ test(
       await assert.rejects(services.catalog.list(required(first), { query: '', cursor: null, limit: 10 }), {
         message: 'Admin installation changed',
       });
+    }),
+);
+
+test(
+  'production editor recovery refuses a replacement installation without reconciling it',
+  { skip: !database, timeout: 30000 },
+  async () =>
+    fixture(async ({ core, services, model, shop, request, handleAdminRequest }) => {
+      assert.ok(await services.authenticate(request()));
+      const before = await core.tenants.getManagedInstallationState(shop);
+      model.rejectProductRead = () => {
+        model.install = 'gid://shopify/AppInstallation/32';
+      };
+      const response = await handleAdminRequest(
+        new Request('https://synthetic.example/api/admin/products/555/config', { headers: request().headers }),
+        services,
+        { kind: 'config', productId: 'gid://shopify/Product/555' },
+      );
+      assert.equal(response.status, 403);
+      assert.equal(model.catalogReads, 1);
+      assert.equal(model.installationReads, 2);
+      assert.deepEqual(await core.tenants.getManagedInstallationState(shop), before);
     }),
 );
 
