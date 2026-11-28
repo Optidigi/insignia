@@ -11,11 +11,11 @@ This directory retains the deployment configuration/data boundary; its `m5` name
 
 ## Current state
 
-As of 27 November 2026 (production on host alias `prod`, deploy BB). [Delivery state](../../docs/delivery/state.md#deployed-identities) holds the exact image digests and custody locators.
+As of 28 November 2026 (production on host alias `prod`, deploy BC). [Delivery state](../../docs/delivery/state.md#deployed-identities) holds the exact image digests and custody locators.
 - **Release profile.** `native-qa-guidance-81434785` binds sole active version `1269561884673`. Web, worker, verifier, and EUR v2 use this version. Shopify's manifest declares the production R2 origin. For each release, read the asset URL from a live Shopify product page and compare the CDN bytes with the qualified build. See the [release binding](native-qa-guidance-81434785-release-binding.json) and [module baseline](native-qa-guidance-81434785-module-baseline.json).
 - **Production database (16 Nov 2026):** fresh, data `/srv/data/saas/insignia/postgres` on the LUKS2 volume, container `insignia-database` (10.0.7.250, aliases `database` and `insignia-rewrite-m5-019-database`; the other clients use `database`, the verifier the pinned old alias). Artwork bucket `insignia-production` (EU), prefix `artwork`. Details in [delivery state](../../docs/delivery/state.md#production-cutover-16-november-2026).
 - **Functions.** AW rebuilt both cart-line v3 Functions from `4991bcf9`. They use the existing registrations, queries, and API version 2026-07. The current pins are in [Deployed identities](../../docs/delivery/state.md#deployed-identities).
-- **Application schema 75 and queue schema 48.** Migration `20261126000100` fixes the buyer cleanup batch bound. See the [queue cutover](pg-boss-48.md) for the pg-boss 12.40.0 upgrade, privileges and restore procedure.
+- **Application schema 76 and queue schema 48.** Migration `20261128000100` records the generation-scoped Free product choice. See the [queue cutover](pg-boss-48.md) for the pg-boss 12.40.0 upgrade, privileges and restore procedure.
 - **`INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON`** in web is `{"appKey":…}` only since 13 November 2026 ([Expected Function configuration](#expected-function-configuration)). Worker and verifier never carried it.
 - **Web grants on `buyer_visitor_admission`:** `SELECT, INSERT, DELETE` and `UPDATE(window_at,issued_at)`, as in [web-runtime-grants.sql](../m8-journey/web-runtime-grants.sql). The worker has no access.
 - **Rollback limits:**

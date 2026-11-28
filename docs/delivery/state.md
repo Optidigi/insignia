@@ -6,7 +6,7 @@ Updated 27 November 2026. **Shopify App Store review.** The pause ended on 25 No
 Shopify had reported that customized products could not be added to the cart (2.1.1) and requested evidence for plan changes,
 order scopes and reviewer access. Use the [resubmission checklist](shopify-review-resubmission.md)
 for the findings, the 24–25 November hardening evidence and the remaining review gaps. The November 19 resubmission remains historical
-evidence below. Insignia runs only on `app.insigniacustomizer.com` on host alias `prod`: one Compose project `insignia` from `/srv/saas/infra/stacks/insignia` (installed from [deployment/production/compose.yaml](../../deployment/production/compose.yaml)), data on the encrypted volume `/srv/data/saas/insignia`. Deploy BB runs backend `658fab8a` and Shopify version `1269561884673` on application schema 75 and queue schema 48. See [Deployed identities](#deployed-identities) for exact versions. Since the production cutover (16 Nov, fresh database) only the owner's dev and review stores are installed in production; no real merchant yet. The first real merchants are the Stitchs/Superfunny pilot, after the owner's backup and secret-rotation items. **A separate agent tests the storefront and merchant UI on rewrite-dev; its new issues wait for the owner's review before engineering picks them up.** Deploy AX includes #637 and #670. #656 (first publish) remains open. See the [backlog](../backlog/README.md). The [operating model](operating-model.md) owns permissions. The [specification](../architecture/implementation-plan.md) owns requirements.
+evidence below. Insignia runs only on `app.insigniacustomizer.com` on host alias `prod`: one Compose project `insignia` from `/srv/saas/infra/stacks/insignia` (installed from [deployment/production/compose.yaml](../../deployment/production/compose.yaml)), data on the encrypted volume `/srv/data/saas/insignia`. Deploy BC runs backend `9387f43b` and Shopify version `1269561884673` on application schema 76 and queue schema 48. See [Deployed identities](#deployed-identities) for exact versions. Since the production cutover (16 Nov, fresh database) only the owner's dev and review stores are installed in production; no real merchant yet. The first real merchants are the Stitchs/Superfunny pilot, after the owner's backup and secret-rotation items. **A separate agent tests the storefront and merchant UI on rewrite-dev; its new issues wait for the owner's review before engineering picks them up.** Deploy AX includes #637 and #670. #656 (first publish) remains open. See the [backlog](../backlog/README.md). The [operating model](operating-model.md) owns permissions. The [specification](../architecture/implementation-plan.md) owns requirements.
 
 **Hardening pass, 24–25 November 2026: done.** Deploys AS, AT and AU released its code
 (records below; PR list in the checklist). On 25 November, version `1265289363457` passed reviewer fixture keyboard
@@ -52,6 +52,14 @@ both carts were emptied. See [BA validation](shopify-review-resubmission.md#depl
 are deployed together. [#695](https://github.com/Optidigi/insignia/pull/695) bound Shopify version
 `1269561884673`. Web and worker agreed on fresh release evidence for USD and EUR at `18:22:12Z`.
 See [BB release validation](shopify-review-resubmission.md#deploy-bb-release-validation).
+
+**Deploy BC, 27–28 November.** [#700](https://github.com/Optidigi/insignia/pull/700) added
+the monthly Free, Standard and Pro plans. Foundation passed on the second main-run attempt
+after the initial runner package-mirror failure. The qualified images and additive migration
+are live. Shopify's draft listing shows Free, $49.99 monthly Standard and $69.99 monthly Pro.
+The billing dev store verified effective Standard → Pro → Standard → Free → Standard at zero
+cost. The exact USD reviewer product reached $30 checkout on BC and its cart was emptied.
+See [BC billing validation](shopify-review-resubmission.md#deploy-bc-billing-validation).
 
 **Before resubmission.** BB passed the focused Shopify walkthrough and both consecutive merchant
 and storefront QA rounds with no new confirmed functional regression. See
@@ -203,19 +211,19 @@ All on production (`app.insigniacustomizer.com`), proven on the review store `in
 
 ### Deployed identities
 
-Production on host alias `prod`, as of 27 November 2026 (deploy BB). One Compose project `insignia`: stack `/srv/saas/infra/stacks/insignia` (`compose.yaml` from [deployment/production/compose.yaml](../../deployment/production/compose.yaml), `.env`, `secrets/`); data on the LUKS2 volume mounted at `/srv/data/saas/insignia` (`srv-data-saas-insignia.mount`; docker drop-in `insignia-volume.conf` `Wants`/`After` it). Images run by local tag `insignia/<service>:<commit>`.
+Production on host alias `prod`, as of 28 November 2026 (deploy BC). One Compose project `insignia`: stack `/srv/saas/infra/stacks/insignia` (`compose.yaml` from [deployment/production/compose.yaml](../../deployment/production/compose.yaml), `.env`, `secrets/`); data on the LUKS2 volume mounted at `/srv/data/saas/insignia` (`srv-data-saas-insignia.mount`; docker drop-in `insignia-volume.conf` `Wants`/`After` it). Images run by local tag `insignia/<service>:<commit>`.
 
 | Component | Identity | Source |
 | --- | --- | --- |
 | Shopify Active version | `1269561884673`, profile `native-qa-guidance-81434785`. The inventory has 61 versions. The Active version has 15 modules, hash `dbf54e082b28…`. Scopes and Function modules match BA. Version `1248762724353` must never be released. | theme `81434785`, Functions `4991bcf9`, binding `658fab8a` (#695) |
 | Functions | Cart transform WASM `98f240a8…`, module `30886b08…`, query `02ab5bce…`. Cart validation WASM `9eaf1dcb…`, module `69b6edb6…`, query `5867e61f…`. Both use their existing registration and API version 2026-07. | `4991bcf9` |
-| Web | `insignia/web:658fab8a` = `sha256:cc9e0122…`. EUR v2 binds `1269561884673` and Function source `4991bcf9`. | main tree at `658fab8a` |
-| Worker | `insignia/worker:658fab8a` = `sha256:55542db1…`. Automatic shop erasure is enabled. | main tree at `658fab8a` |
-| Verifier | `insignia/verifier:658fab8a` = `sha256:e39fc752…`. Code manifest `86b6b6c8…`, 13 s reuse lead. | main tree at `658fab8a` |
+| Web | `insignia/web:9387f43b` = `sha256:2a76c7f0…`. EUR v2 binds `1269561884673` and Function source `4991bcf9`. | main tree at `9387f43b` |
+| Worker | `insignia/worker:9387f43b` = `sha256:3367b749…`. Automatic shop erasure is enabled. | main tree at `9387f43b` |
+| Verifier | `insignia/verifier:9387f43b` = `sha256:6c20525d…`. Code manifest `7cfda250…`, 13 s reuse lead. | main tree at `9387f43b` |
 | Signer | `insignia/signer:1fe7377d` = `sha256:e3feb8a9…`. The wrapping key is mounted from `secrets/signing-wrap-keys.json` with uid 10101 and mode 0400. | qualified worker image for main tree at `1fe7377d` |
 | Monitor | `insignia-heartbeat` and `insignia-heartbeat-snapshot` use `insignia/heartbeat:1fe7377d` = `sha256:a3a5c217…`. State is in `/srv/data/saas/insignia/monitor`. | main tree at `1fe7377d` |
 | Host inspector | `/srv/data/saas/insignia/artwork-inspector/releases/40c1dce4122e01f2f63f51dc60d621962fe0514e/`, manifest `e0c0e8d0…`, Node 24.22.3. Its startup file is `/srv/data/saas/insignia/artwork-inspector/inspection.env`. The AD package and prior unit are available for rollback. | main `4991bcf9`, runtime run `45808231334` |
-| Database | PostgreSQL 18.6, application schema 75 and pg-boss queue schema 48. Migration `20261126000100` bounds buyer cleanup batches. Container `insignia-database`, data on the encrypted volume, aliases `database` and `insignia-rewrite-m5-019-database`. The AX cutover preserved queue jobs, purchase facts, role memberships and the cleanup function ACL. | 75 application migrations, pg-boss 12.40.0 |
+| Database | PostgreSQL 18.6, application schema 76 and pg-boss queue schema 48. Migration `20261128000100` records the generation-scoped Free product choice. Container `insignia-database`, data on the encrypted volume, aliases `database` and `insignia-rewrite-m5-019-database`. The AX cutover preserved queue jobs, purchase facts, role memberships and the cleanup function ACL. | 76 application migrations, pg-boss 12.40.0 |
 
 ### Historical submission and release records
 
