@@ -421,13 +421,34 @@ asset prefix preserved the theme and app's inline markup, so this comparison mea
 the loaded assets' impact. Shopify's before-and-after install test can capture other changes.
 The private receipt and run summaries are under the final BB QA performance run directory.
 
+### Deploy BC billing validation
+
+Main `9387f43b` supplied the qualified images from Runtime `46076790812`. Foundation's second
+attempt passed after the first runner's package-mirror failure. The database checkpoint
+restored with matching protected records, and the Free product migration passed on that
+restore before it was applied. Application schema 76 and queue schema 48 are live.
+Protected purchase facts, ACLs and the Shopify Active app version `1269561884673` matched.
+
+Shopify's plan selector exposed Free, Standard and Pro with monthly paid pricing only.
+The draft English listing read back the names and plan features. The disposable
+`insignia-billing-qa-1126` store moved from its legacy annual development contract to monthly
+Standard, then Pro, Standard, Free and Standard. Approval screens showed no-charge test
+terms. Insignia's effective plan and the monthly Standard and Pro amounts matched Shopify.
+Free became effective on the test store and the Billing screen exposed the Free product
+choice. The store finished on monthly Standard. No payment, reinstall or order was needed.
+
+The exact USD reviewer fixture reached Shopify checkout at $30.00 with two $15.00 units
+on one signed v3 line. The cart was verified empty after cleanup. The live transition test
+did not exercise publishing on Free, Pro batch production, or a deferred paid-to-Free
+change. Those cases have supporting local checks and remain separate from this provider receipt.
+
 ## Other review items
 
 | Requirement | Verified and remaining evidence |
 | --- | --- |
 | 1.1.9 Buyer consent | AX showed the item subtotal, customization subtotal and quote before **Add to cart** in USD and EUR. The signed cart and native checkout subtotals matched. The expired quote browser regression requires a new acceptance when terms change. Shopify has yet to confirm how it classifies Insignia's Cart Transform price under the fee guidance. |
 | 1.2.2 Billing lifecycle | On 26 November, the new Basic dev store `insignia-billing-qa-1126` declined Standard and Insignia showed **No active subscription** with a link back to plan selection. The store approved the $0 annual plan, uninstalled, and reinstalled. Shopify retained the trial with cancellation scheduled. The merchant reapproved via **Manage plan in Shopify** and the cancellation notice cleared. Shopify showed €0/year after trial. The disposable store remains installed on the $0 plan. No payment or order was made. The dev-host receipt is in `~/insignia-qa/runs/2026-11-26-billing-lifecycle.QJ2UbX/receipt.md`. |
-| 1.2.3 Plan changes | **Settings → Billing → Manage plan** opens Shopify's selector for Standard at $49.99 every 30 days or $449.99 per year with identical features. Both no-charge switches passed on 23 November. On 24 November, Shopify admin **Settings → Apps → Insignia** showed **Insignia Standard · $0/month** on rewrite-dev. The owner confirmed there is no eligible billed installation for paid invoice evidence. Shopify's acceptance of switching billing periods under this requirement is open. |
+| 1.2.3 Plan changes | BC verified distinct Free, Standard and Pro switches in both directions through Shopify's plan selector, with effective Insignia readback and no reinstall. Shopify marked the approvals no-charge on the dev store. The owner has no billed installation for paid invoice evidence. See [BC billing validation](#deploy-bc-billing-validation). |
 | 3.2.1 Older order scope | The active scope baseline excludes `read_all_orders`. The 19 November fresh installation verified the required grant and recent orders. BA readback on 27 November confirmed `read_orders` without `read_all_orders` on the two tested shops. The older EUR review installation was outside that readback. |
 | 2.1.1 Customized product | Version `1265289363457` passed the reviewer fixture through Bogus order #1015 and the Canada explanation on 25 November. The AW validation is tracked above. |
 | 4.5.4 and 4.5.5 Access | On 24 November the listing form showed the app-account exemption selected. The saved private instructions direct reviewers through Shopify admin and give the test storefront, access instructions, expected cart total and both prices. The storefront path and Designer opened in a signed-out session on AX. Access to the merchant admin using the reviewer's own Shopify account remains unverified. |

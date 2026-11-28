@@ -120,7 +120,7 @@ services:
       HOST: 0.0.0.0
       INSIGNIA_CREDENTIAL_KEY_BASE64: '${INSIGNIA_CREDENTIAL_KEY_BASE64:?}'
       INSIGNIA_CREDENTIAL_KEY_ID: '${INSIGNIA_CREDENTIAL_KEY_ID:?}'
-      INSIGNIA_M5_ENTITLEMENT_POLICY_JSON: '{"policyVersion":"lean-v1-recurring-only","maxAgeMs":65000,"plans":[{"planHandle":"insignia-standard","policyId":"lean-v1-standard-all-features","features":["m5.configure","m5.required","m5.logo-later","m5.production-options","m5.pricing"],"billing":"recurring-only"}]}'
+      INSIGNIA_M5_ENTITLEMENT_POLICY_JSON: '{"policyVersion":"monthly-plans-v1","maxAgeMs":65000,"plans":[{"planHandle":"insignia-free","policyId":"monthly-free","features":["m5.configure","m5.required","m5.production-options","m5.pricing","m5.one-product"],"billing":"recurring-only"},{"planHandle":"insignia-standard","policyId":"monthly-standard","features":["m5.configure","m5.required","m5.production-options","m5.pricing"],"billing":"recurring-only"},{"planHandle":"insignia-pro","policyId":"monthly-pro","features":["m5.configure","m5.required","m5.logo-later","m5.production-options","m5.pricing","m5.production-tools"],"billing":"recurring-only"}]}'
       INSIGNIA_M5_FEATURES_JSON: '{"base":"m5.configure","required":"m5.required","logoLater":"m5.logo-later","options":"m5.production-options","pricing":"m5.pricing"}'
       INSIGNIA_M7_BUYER_ENABLED: '1'
       INSIGNIA_M7_EXPECTED_FUNCTIONS_JSON: '{"appKey":"1443cf6d03d39edae7c101a943c5c684"}'
@@ -150,7 +150,7 @@ services:
       interval: 15s
       retries: 3
       start_period: 15s
-    image: 'insignia/web:658fab8a'
+    image: 'insignia/web:9387f43b'
     init: true
     labels:
       traefik.docker.network: proxy
@@ -257,7 +257,7 @@ services:
       interval: 15s
       retries: 3
       start_period: 15s
-    image: 'insignia/worker:658fab8a'
+    image: 'insignia/worker:9387f43b'
     networks:
       worker-egress: null
       private: null
@@ -287,9 +287,9 @@ services:
     cpus: 1
     command:
     - --manifest-sha256
-    - 86b6b6c8921e7a11095fef5789d9c6e5871a4a5ed787853df1d978b2949d3f1f
+    - 7cfda250c2aa8d3fb17627590cb26a06e891bd60ed0c661df2dac4740e994ba5
     - native-qa-guidance-81434785
-    image: 'insignia/verifier:658fab8a'
+    image: 'insignia/verifier:9387f43b'
     init: true
     mem_limit: '536870912'
     memswap_limit: '536870912'
