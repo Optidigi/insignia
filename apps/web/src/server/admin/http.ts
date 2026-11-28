@@ -1,7 +1,12 @@
 import { CommandDigestConflictError } from '@insignia/application';
 import { MethodConfigurationSchema } from '@insignia/contracts';
 import { type AdminFailureDiagnostic, describeUnexpectedError } from '@insignia/observability';
-import { AdminOnlineIdentityError, PartnerSubscriptionError, ShopifyAdminUnavailableError } from '@insignia/shopify';
+import {
+  AdminOnlineIdentityError,
+  CatalogReadError,
+  PartnerSubscriptionError,
+  ShopifyAdminUnavailableError,
+} from '@insignia/shopify';
 import type { ConfigRejectionCode } from '../../shared/config-rejection.ts';
 import { PUBLICATION_REQUEST_DEADLINE_MS } from '../merchant-config.ts';
 import { SelectedSetupAuthorityError } from '../selected-product.ts';
@@ -178,6 +183,14 @@ async function authenticateAdmin(
     return adminJson(401, { error: 'Authentication required' });
   }
   return actor;
+}
+
+async function readProductConfig(services: AdminServices, actor: AdminActor, productId: string): Promise<Response> {
+  const product = await services.catalog.get(actor, productId);
+  if (!product || product.id !== productId) return adminJson(404, { error: 'Product not found' });
+  const view = await services.configs.read(actor, productId);
+  if (view.product.id !== productId) return adminJson(503, { error: 'Product identity mismatch' });
+  return adminJson(200, view);
 }
 
 /** A 422 from the configuration route: observable by reason code only, never by request content. */
@@ -374,11 +387,27 @@ export async function handleAdminRequest(
         );
       }
       if (!PRODUCT_ID.test(route.productId)) return adminJson(404, { error: 'Product not found' });
-      const product = await services.catalog.get(actor, route.productId);
-      if (!product || product.id !== route.productId) return adminJson(404, { error: 'Product not found' });
-      const view = await services.configs.read(actor, route.productId);
-      if (view.product.id !== route.productId) return adminJson(503, { error: 'Product identity mismatch' });
-      return adminJson(200, view);
+      try {
+        return await readProductConfig(services, actor, route.productId);
+      } catch (error) {
+        if (!(error instanceof CatalogReadError) || error.kind !== 'http_error' || error.status !== 401) throw error;
+        // A concurrent online exchange can revoke a cached grant after authentication. Only this
+        // read is repeated, after Shopify and the app both recheck the original staff session.
+        const refreshed = await authenticateAdmin(request, services, true);
+        if (refreshed instanceof Response) return refreshed;
+        if (
+          !refreshed.canRead ||
+          refreshed.shop !== actor.shop ||
+          refreshed.shopId !== actor.shopId ||
+          refreshed.tenantShopId !== actor.tenantShopId ||
+          refreshed.installationId !== actor.installationId ||
+          refreshed.installationGeneration !== actor.installationGeneration ||
+          refreshed.staffId !== actor.staffId ||
+          refreshed.sessionId !== actor.sessionId
+        )
+          return adminJson(403, { error: 'Current product read permission required' });
+        return await readProductConfig(services, refreshed, route.productId);
+      }
     }
     if (route.kind !== 'config' || !PRODUCT_ID.test(route.productId) || !['POST', 'PUT'].includes(request.method))
       return adminJson(405, { error: 'Method not allowed' });
